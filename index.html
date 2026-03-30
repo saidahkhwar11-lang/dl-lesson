@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DL Online Live System</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d}
+*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.hidden{display:none!important}.wrap{max-width:1300px;margin:0 auto;padding:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
+.row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}.student-layout{display:grid;grid-template-columns:280px 1fr;gap:16px;margin-top:16px}.sidebar,.main,.bonus-box,.top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}.top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0}.top-bar .item{padding:10px;text-align:center;cursor:pointer}.top-bar .item.active{background:var(--primary2);color:#fff}.station-box{padding:12px;border-radius:14px;background:#eef3ff;margin-bottom:10px;cursor:pointer}.station-box.active{background:var(--primary2);color:#fff}.station-box .small{opacity:.85}
+.question{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer}.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}.good{color:var(--good)}.bad{color:var(--bad)}
+input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff} textarea{min-height:100px;resize:vertical} button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:bold}.secondary{background:var(--accent)}.muted{background:#6c7b95}.goodbtn{background:var(--good)}
+.notice{padding:10px 12px;border-radius:12px;margin-top:10px}.notice.good{background:#e8f7ef;color:#145d3d}.notice.bad{background:#fdecec;color:#962d2d}.notice.warn{background:#fff7df;color:#8c6400}
+.teacher-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:8px;text-align:left;font-size:14px}.tracker-table th{background:#f0f5fd}.bonus-box{padding:14px;position:sticky;top:16px;max-height:80vh;overflow:auto}
+.reading-img{width:100%;max-height:280px;object-fit:cover;border-radius:14px;border:1px solid var(--line);margin-bottom:12px}.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
+@media (max-width: 980px){.row,.student-layout,.teacher-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>DL Online Live System</h1>
+    <p>Firebase-powered live lesson. Add your Firebase config once, then use the same file for teacher and students.</p>
+  </div>
+
+  <div id="setupCard" class="card">
+    <h2>1) Firebase Setup</h2>
+    <p>Paste your Firebase web app config and Realtime Database URL once, then click Save Config. Official Firebase web setup provides the config object, and Realtime Database supports live read/write listeners for the web. ([firebase.google.com](https://firebase.google.com/docs/web/setup?utm_source=chatgpt.com))</p>
+    <label>Lesson Key</label>
+    <input id="lessonKey" placeholder="Example: grade9-reading-lesson-1" value="grade9_lesson1" />
+    <label>Firebase Config JSON</label>
+    <textarea id="firebaseConfigText" placeholder='{"apiKey":"...","authDomain":"...","databaseURL":"https://...","projectId":"...","appId":"..."}'>{
+  "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  "authDomain": "online-english-lesson-grade-9.firebaseapp.com",
+  "databaseURL": "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  "projectId": "online-english-lesson-grade-9",
+  "appId": "1:542666648554:web:5190c68ea73b3536dae093"
+}</textarea>
+    <div class="btns">
+      <button onclick="saveConfig()">Save Config</button>
+      <button class="muted" onclick="loadSavedConfig()">Reload Saved Config</button>
+    </div>
+    <div id="setupNotice" class="notice warn">Not connected yet.</div>
+  </div>
+
+  <div class="row" style="margin-top:16px;">
+    <div class="card">
+      <h2>2) Student Login</h2>
+      <label>Student Name</label>
+      <input id="studentName" placeholder="Enter student name" />
+      <label>Student ID</label>
+      <input id="studentId" placeholder="Enter student ID" />
+      <button onclick="startStudentSession()">Start Student Session</button>
+      <div id="studentNotice" class="notice bad hidden"></div>
+    </div>
+    <div class="card">
+      <h2>3) Teacher View</h2>
+      <label>Teacher Password</label>
+      <input id="teacherPassword" type="password" placeholder="Enter password" />
+      <button onclick="openTeacherView()">Open Teacher View</button>
+      <div id="teacherNotice" class="notice bad hidden"></div>
+    </div>
+  </div>
+
+  <div id="studentView" class="hidden">
+    <div class="top-bar" id="topStations"></div>
+    <div class="student-layout">
+      <div class="sidebar">
+        <h3 style="margin-top:0">Stations</h3>
+        <div id="stationList"></div>
+      </div>
+      <div class="main" id="stationContent"></div>
+    </div>
+  </div>
+
+  <div id="teacherView" class="hidden">
+    <div class="teacher-grid">
+      <div class="card">
+        <div class="btns">
+          <button onclick="refreshTeacherNow()">Refresh Tracker</button>
+          <button class="secondary" onclick="exportTrackerCsv()">Export CSV</button>
+        </div>
+        <h2>Live Teacher Tracker</h2>
+        <div id="teacherTrackerWrap"></div>
+      </div>
+      <div class="bonus-box">
+        <h3 style="margin-top:0">Bonus Live Box</h3>
+        <div id="bonusLiveContent">No bonus yet.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden station templates -->
+  <template id="stationTpl"></template>
+</div>
+
+<script type="module">
+import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js';
+import { getDatabase, ref, set, update, onValue, get, push, remove } from 'https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js';
+
+const TEACHER_PASSWORD = 'Welcome@2020';
+const stationDefs = [
+  {id:'starter', title:'Starter', time:'5 min', q:1, marks:1, objective:'Warm-up', details:'Starter activity'},
+  {id:'st1', title:'Station 1', time:'10 min', q:1, marks:1, objective:'Main idea', details:'Station 1 activity'},
+  {id:'st2', title:'Station 2', time:'10 min', q:1, marks:1, objective:'Details', details:'Station 2 activity'},
+  {id:'st3', title:'Station 3', time:'10 min', q:1, marks:1, objective:'Understanding', details:'Station 3 activity'},
+  {id:'exit', title:'Exit Ticket', time:'5 min', q:1, marks:1, objective:'Check learning', details:'Exit activity'}
+];
+const stationContent = {
+  starter:{imageUrl:'', title:'Starter', prompt:'Question: What do you see?', correct:['anything']},
+  st1:{imageUrl:'', title:'Station 1', prompt:'Men and women are different? (yes/no)', correct:['yes']},
+  st2:{imageUrl:'', title:'Station 2', prompt:'Do they communicate differently? (yes/no)', correct:['yes']},
+  st3:{imageUrl:'', title:'Station 3', prompt:'Do men avoid stress talks? (yes/no)', correct:['yes']},
+  exit:{imageUrl:'', title:'Exit Ticket', prompt:'Word: stress meaning?', correct:['pressure']}
+};
+
+let firebaseConfig = null;
+let lessonKey = '';
+let app = null;
+let db = null;
+let currentStudent = null;
+let liveStudents = {};
+let liveBonus = {};
+let currentOpenStation = 'starter';
+let teacherTrackerUnsub = null;
+let teacherBonusUnsub = null;
+let studentBonusUnsub = null;
+
+function byId(id){return document.getElementById(id);}
+function showNotice(id,msg,type='good'){const el=byId(id); el.className='notice '+type; el.textContent=msg; el.classList.remove('hidden');}
+function hideNotice(id){byId(id).classList.add('hidden');}
+function sanitizeKey(s){return String(s).trim().replace(/[^a-zA-Z0-9_-]/g,'_');}
+function requireConnection(){
+  if(!db || !lessonKey){ showNotice('setupNotice','Please save Firebase config and lesson key first.','bad'); return false; }
+  return true;
+}
+
+window.saveConfig = function(){
+  try{
+    lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
+    firebaseConfig = JSON.parse(byId('firebaseConfigText').value);
+    localStorage.setItem('DL_firebase_config', JSON.stringify(firebaseConfig));
+    localStorage.setItem('DL_lesson_key', lessonKey);
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+    db = getDatabase(app);
+    showNotice('setupNotice','Connected successfully. Lesson key: '+lessonKey,'good');
+  }catch(err){
+    showNotice('setupNotice','Config error: '+err.message,'bad');
+  }
+}
+
+window.loadSavedConfig = function(){
+  const cfg = localStorage.getItem('DL_firebase_config');
+  const lk = localStorage.getItem('DL_lesson_key');
+  if(cfg){ byId('firebaseConfigText').value = cfg; }
+  if(lk){ byId('lessonKey').value = lk; }
+  if(cfg && lk){ window.saveConfig(); }
+}
+loadSavedConfig();
+if(!localStorage.getItem('DL_firebase_config')){
+  byId('lessonKey').value = 'grade9_lesson1';
+  byId('firebaseConfigText').value = JSON.stringify({
+    apiKey: 'AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI',
+    authDomain: 'online-english-lesson-grade-9.firebaseapp.com',
+    databaseURL: 'https://online-english-lesson-grade-9-default-rtdb.firebaseio.com',
+    projectId: 'online-english-lesson-grade-9',
+    appId: '1:542666648554:web:5190c68ea73b3536dae093'
+  }, null, 2);
+}
+
+function lessonBase(){ return `lessons/${lessonKey}`; }
+function studentPath(studentId){ return `${lessonBase()}/students/${studentId}`; }
+function bonusPath(){ return `${lessonBase()}/bonus`; }
+
+window.startStudentSession = async function(){
+  if(!requireConnection()) return;
+  const name = byId('studentName').value.trim();
+  const id = sanitizeKey(byId('studentId').value.trim());
+  if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
+  hideNotice('studentNotice');
+  currentStudent = {name,id};
+
+  const initial = { name, id, scores:{}, total:0, bonus:0, startedAt: Date.now(), currentStation:'starter' };
+  const snap = await get(ref(db, studentPath(id)));
+  if(!snap.exists()) await set(ref(db, studentPath(id)), initial);
+
+  byId('studentView').classList.remove('hidden');
+  renderStudentNav();
+  openStation('starter');
+  listenStudentBonus();
+}
+
+window.openTeacherView = function(){
+  if(!requireConnection()) return;
+  const pw = byId('teacherPassword').value;
+  if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
+  hideNotice('teacherNotice');
+  byId('teacherView').classList.remove('hidden');
+  startTeacherListeners();
+}
+
+function renderStudentNav(){
+  const side = byId('stationList');
+  const top = byId('topStations');
+  const studentScores = liveStudents[currentStudent?.id]?.scores || {};
+  side.innerHTML = stationDefs.map(s => `
+    <div class="station-box ${currentOpenStation===s.id?'active':''}" onclick="openStation('${s.id}')">
+      <strong>${s.title}</strong><div class="small">⏱ ${s.time} | 🎯 ${s.objective}</div><div class="small">❓ ${s.q} | ⭐ ${(studentScores[s.id] ?? 0)}/${s.marks}</div>
+    </div>`).join('');
+  top.innerHTML = stationDefs.map(s => `
+    <div class="item ${currentOpenStation===s.id?'active':''}" onclick="openStation('${s.id}')">
+      <strong>${s.title}</strong><div>⭐ ${(studentScores[s.id] ?? 0)}/${s.marks}</div>
+    </div>`).join('');
+}
+
+window.openStation = function(id){
+  currentOpenStation = id;
+  renderStudentNav();
+  const s = stationContent[id];
+  byId('stationContent').innerHTML = `
+    <h2>${s.title}</h2>
+    ${s.imageUrl ? `<img class="reading-img" src="${s.imageUrl}" alt="station image" />` : ''}
+    <div class="question" id="${id}-q0">
+      <div>${s.prompt}</div>
+      <button style="margin-top:12px" onclick="askAndSubmit('${id}')">Submit Answer</button>
+      <div class="feedback"></div>
+    </div>`;
+  if(currentStudent){ update(ref(db, studentPath(currentStudent.id)), { currentStation:id }); }
+}
+
+window.askAndSubmit = async function(stationId){
+  if(!currentStudent) return;
+  const answer = prompt('Type your answer:');
+  if(answer === null) return;
+  const correct = stationContent[stationId].correct[0];
+  const q = byId(`${stationId}-q0`);
+  let score = 0;
+  q.classList.remove('correct','wrong');
+  if(String(answer).trim().toLowerCase() === String(correct).trim().toLowerCase()){
+    score = 1; q.classList.add('correct'); q.querySelector('.feedback').innerHTML = '✅ Correct';
+  } else {
+    q.classList.add('wrong'); q.querySelector('.feedback').innerHTML = `❌ Correct answer: ${correct}`;
+  }
+  const prev = liveStudents[currentStudent.id]?.scores || {};
+  const nextScores = {...prev, [stationId]:score};
+  const total = Object.values(nextScores).reduce((a,b)=>a+Number(b||0),0);
+  await update(ref(db, studentPath(currentStudent.id)), { scores: nextScores, total });
+}
+
+function listenStudentBonus(){
+  if(studentBonusUnsub) studentBonusUnsub();
+  studentBonusUnsub = onValue(ref(db, bonusPath()), snap => {
+    liveBonus = snap.val() || {};
+    renderBonusBox();
+  });
+  onValue(ref(db, studentPath(currentStudent.id)), snap => {
+    if(!snap.exists()) return;
+    liveStudents[currentStudent.id] = snap.val();
+    renderStudentNav();
+  });
+}
+
+function startTeacherListeners(){
+  if(teacherTrackerUnsub) teacherTrackerUnsub();
+  if(teacherBonusUnsub) teacherBonusUnsub();
+  teacherTrackerUnsub = onValue(ref(db, `${lessonBase()}/students`), snap => {
+    liveStudents = snap.val() || {};
+    renderTeacherTracker();
+    if(currentStudent) renderStudentNav();
+  });
+  teacherBonusUnsub = onValue(ref(db, bonusPath()), snap => {
+    liveBonus = snap.val() || {};
+    renderBonusBox();
+  });
+}
+
+function renderTeacherTracker(){
+  const rows = Object.values(liveStudents).map(s => {
+    const bonus = (liveBonus[s.id]?.points)||0;
+    return `<tr>
+      <td>${s.name}</td>
+      <td>${s.id}</td>
+      <td>${s.currentStation || '-'}</td>
+      <td>${s.scores?.starter ?? 0}/${stationDefs[0].marks}</td>
+      <td>${s.scores?.st1 ?? 0}/${stationDefs[1].marks}</td>
+      <td>${s.scores?.st2 ?? 0}/${stationDefs[2].marks}</td>
+      <td>${s.scores?.st3 ?? 0}/${stationDefs[3].marks}</td>
+      <td>${s.scores?.exit ?? 0}/${stationDefs[4].marks}</td>
+      <td>${(s.total||0)+bonus}</td>
+      <td>
+        <button onclick="giveBonus('${s.name}','${s.id}',1)">+1</button>
+        <button class="secondary" onclick="giveBonus('${s.name}','${s.id}',-1)">-1</button>
+        <button class="muted" onclick="resetBonus('${s.id}')">Reset</button>
+      </td>
+    </tr>`;
+  }).join('');
+  byId('teacherTrackerWrap').innerHTML = `<table class="tracker-table"><thead><tr><th>Name</th><th>ID</th><th>Current</th><th>Starter</th><th>St1</th><th>St2</th><th>St3</th><th>Exit</th><th>Total</th><th>Bonus</th></tr></thead><tbody>${rows || '<tr><td colspan="10">No student data yet.</td></tr>'}</tbody></table>`;
+}
+
+function renderBonusBox(){
+  const items = Object.values(liveBonus).filter(x => Number(x.points||0) > 0).sort((a,b)=>Number(b.points)-Number(a.points));
+  byId('bonusLiveContent').innerHTML = items.length ? items.map(b => `<div class="card" style="padding:10px;margin-bottom:8px;border-radius:12px"><strong>${b.name}</strong><br><span style="font-size:13px;color:#5f6f89">ID: ${b.id}</span><div class="pill" style="margin-top:6px">Bonus: ${b.points}</div></div>`).join('') : 'No bonus yet.';
+}
+
+window.giveBonus = async function(name,id,delta){
+  if(!requireConnection()) return;
+  const nodeRef = ref(db, `${bonusPath()}/${id}`);
+  const snap = await get(nodeRef);
+  const curr = snap.exists() ? snap.val() : {name,id,points:0};
+  const next = Math.max(0, Number(curr.points||0) + Number(delta));
+  await set(nodeRef, { name, id, points: next });
+}
+
+window.resetBonus = async function(id){
+  if(!requireConnection()) return;
+  await remove(ref(db, `${bonusPath()}/${id}`));
+}
+
+window.refreshTeacherNow = function(){ startTeacherListeners(); }
+
+window.exportTrackerCsv = function(){
+  const rows = [['Name','ID','Current','Starter','St1','St2','St3','Exit','Bonus','Total']];
+  Object.values(liveStudents).forEach(s => {
+    const bonus = Number(liveBonus[s.id]?.points || 0);
+    rows.push([s.name,s.id,s.currentStation||'',s.scores?.starter||0,s.scores?.st1||0,s.scores?.st2||0,s.scores?.st3||0,s.scores?.exit||0,bonus,(s.total||0)+bonus]);
+  });
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = `dl_tracker_${lessonKey}.csv`;
+  link.click();
+}
+</script>
+</body>
+</html>
