@@ -5,49 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>DL Online Live System</title>
 <style>
-/* Question styling upgrade (number + header focus) */
-.question {
-  padding: 10px;
-  margin-bottom: 12px;
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e0e0e0;
-}
-
-/* Color ONLY question header */
-.question strong {
-  display: inline-block;
-  color: #1e88e5;
-  font-weight: bold;
-  font-size: 16px;
-}
-
-/* Highlight question number */
-.question strong::before {
-  content: "";
-}
-
-/* Alternative: style Q1 circle */
-.question strong span.qnum {
-  background: #1e88e5;
-  color: #fff;
-  border-radius: 50%;
-  padding: 4px 8px;
-  margin-right: 6px;
-}
-
-.choice {
-  margin: 6px 0;
-  padding: 6px 8px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
-  display: block;
-  background: #fff;
-}
-
-.choice:hover {
-  background: #f0f7ff;
-}
+:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.hidden{display:none!important}
+.wrap{max-width:1440px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}
+.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
+.row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
+input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff}
+textarea{min-height:100px;resize:vertical}
+button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:bold}
+.secondary{background:var(--accent)}.muted{background:#6c7b95}.goodbtn{background:var(--good)}.warnbtn{background:var(--warn)}
+.notice{padding:10px 12px;border-radius:12px;margin-top:10px}.notice.good{background:#e8f7ef;color:#145d3d}.notice.bad{background:#fdecec;color:#962d2d}.notice.warn{background:#fff7df;color:#8c6400}
+.small{font-size:13px;color:var(--muted)}
+.top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
+.top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center;cursor:pointer;transition:.2s}
+.top-bar .item.active{background:var(--primary2);color:#fff}.top-bar .item.locked{opacity:.55;cursor:not-allowed}
+.student-layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
+.sidebar,.main{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}
+.station-box{padding:10px;border-radius:14px;background:#eef3ff;margin-bottom:8px;cursor:pointer;transition:.2s;display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:start}
+.station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
+.station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}
+.station-box .meta{font-size:12px;opacity:.95;line-height:1.5}
+.question{padding:10px;margin-bottom:12px;background:#fff;border-radius:14px;border:1px solid #e0e0e0}
+.question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
+.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer;background:#fff}
+.choice:hover{background:#f0f7ff}
+.choice input{margin-right:8px}
+.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
+.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
+.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
+.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
+.reading-img{width:100%;max-height:340px;object-fit:contain;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
+.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
+.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
+.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -181,13 +179,13 @@
           <label>Source Text / Activity Notes</label>
           <textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
           <label>Picture AI Notes</label>
-          <textarea id="creatorImageNotes" placeholder="(Optional) System will try to generate automatically from the activity picture."></textarea>
+          <textarea id="creatorImageNotes" placeholder="(Optional) support notes"></textarea>
         </div>
         <div>
           <label>Question Builder</label>
           <div class="card" style="padding:12px;background:#f8fbff;">
             <label>Question Type</label>
-            <select id="builderQuestionType">
+            <select id="builderQuestionType" onchange="toggleBuilderFields()">
               <option value="mcq">Multiple Choice</option>
               <option value="tf">True / False</option>
             </select>
@@ -289,15 +287,13 @@ function attendancePath(studentId){ return lessonBase() + '/attendance/' + stude
 function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
 function getStationContent(id){ return lessonContent[id] || {imageUrl:'',sourceText:'',imageNotes:'',questions:[]}; }
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
-function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
-function dbRef(path){
-  if(appInstance && typeof appInstance.database === 'function') return appInstance.database().ref(path);
-  return firebase.database().ref(path);
-}
+function escapeJs(str){ return String(str == null ? '' : str).replace(/\/g, '\\').replace(/'/g, "\'"); }
+function dbRef(path){ return firebase.database(appInstance).ref(path); }
 function getSnap(path){ return dbRef(path).once('value'); }
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
 function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
+
 function bindButtons(){
   const studentBtn = byId('studentStartBtn');
   const teacherBtn = byId('teacherOpenBtn');
@@ -322,9 +318,7 @@ function initFirebaseFromInputs(){
       projectId: existing.options.projectId,
       appId: existing.options.appId
     };
-    if(!configsEqual(currentConfig, firebaseConfig)){
-      throw new Error('Firebase config changed. Refresh the page, then save again.');
-    }
+    if(!configsEqual(currentConfig, firebaseConfig)) throw new Error('Firebase config changed. Refresh the page, then save again.');
     appInstance = existing;
   } else {
     appInstance = firebase.initializeApp(firebaseConfig, APP_NAME);
@@ -336,19 +330,7 @@ async function ensureLessonDefaults(){
   const configSnap = await getSnap(configPath());
   if(!configSnap.exists()) await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
   const contentSnap = await getSnap(contentPath());
-  if(!contentSnap.exists()){
-    const seedContent = JSON.parse(JSON.stringify(defaultContent));
-    seedContent.st2 = JSON.parse(JSON.stringify(seedContent.st1));
-    seedContent.st3 = JSON.parse(JSON.stringify(seedContent.st1));
-    seedContent.exit = {imageUrl:'', sourceText:'', imageNotes:'', questions:[
-      {id:'exit_q1', type:'mcq', text:'The exit ticket checks the whole lesson.', choices:['True','False','Maybe','No idea'], answer:'True'},
-      {id:'exit_q2', type:'tf', text:'You should think about the whole lesson here.', answer:'True'},
-      {id:'exit_q3', type:'mcq', text:'Which key word is most connected to the lesson?', choices:['keyword','number','random','picture'], answer:'keyword'},
-      {id:'exit_q4', type:'mcq', text:'Which choice best shows understanding?', choices:['A correct idea','Wrong idea 1','Wrong idea 2','Wrong idea 3'], answer:'A correct idea'},
-      {id:'exit_q5', type:'tf', text:'The exit ticket is the final wrap up.', answer:'True'}
-    ]};
-    await dbRef(contentPath()).set(seedContent);
-  }
+  if(!contentSnap.exists()) await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
 }
 
 function isLegacyBadQuestion(q){
@@ -364,19 +346,9 @@ function sanitizeLegacyContent(content){
     if(!safe[id]) safe[id] = {imageUrl:'', sourceText:'', imageNotes:'', questions:[]};
     if(!Array.isArray(safe[id].questions)) safe[id].questions = [];
     const qs = safe[id].questions || [];
-    if(qs.some(isLegacyBadQuestion)){
-      safe[id].questions = [];
-    }
+    if(qs.some(isLegacyBadQuestion)) safe[id].questions = [];
   });
   return safe;
-}
-
-async function replaceLegacyContentIfNeeded(rawContent){
-  const cleaned = sanitizeLegacyContent(rawContent || {});
-  if(JSON.stringify(cleaned) !== JSON.stringify(rawContent || {})){
-    lessonContent = cleaned;
-    await dbRef(contentPath()).set(cleaned);
-  }
 }
 
 function startLessonConfigListener(){
@@ -395,9 +367,7 @@ function startLessonConfigListener(){
   lessonContentRef.on('value', function(snap){
     const raw = snap.val() || JSON.parse(JSON.stringify(defaultContent));
     lessonContent = sanitizeLegacyContent(raw);
-    if(JSON.stringify(lessonContent) !== JSON.stringify(raw)){
-      dbRef(contentPath()).set(lessonContent);
-    }
+    if(JSON.stringify(lessonContent) !== JSON.stringify(raw)) dbRef(contentPath()).set(lessonContent);
     renderStudentNav();
     renderTeacherOverview();
     renderTeacherTracker();
@@ -421,7 +391,7 @@ function tryAutoConnect(){
 function requireConnection(){
   if((db && lessonKey) || tryAutoConnect()) return true;
   showNotice('studentNotice','System is not connected yet.','bad');
-  showNotice('teacherNotice','Please check Firebase config and reconnect.','bad');
+  showNotice('teacherNotice','Please click Save Config first.','bad');
   showNotice('setupNotice','Please save Firebase config and lesson key first.','bad');
   return false;
 }
@@ -511,8 +481,7 @@ window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlC
 function scoreTextForStudent(stationId){
   const student = currentStudent && liveStudents[currentStudent.id];
   const got = ((student && student.stationResults && student.stationResults[stationId] && student.stationResults[stationId].score) || 0);
-  const max = totalMarksForStation(stationId);
-  return got + '/' + max;
+  return got + '/' + totalMarksForStation(stationId);
 }
 
 function isStationSubmitted(stationId){
@@ -522,9 +491,7 @@ function isStationSubmitted(stationId){
 
 function getNextUnlockedStationId(stationId){
   const idx = lessonStations.findIndex(function(s){ return s.id === stationId; });
-  for(let i = idx + 1; i < lessonStations.length; i++){
-    if(lessonStations[i].unlocked) return lessonStations[i].id;
-  }
+  for(let i = idx + 1; i < lessonStations.length; i++) if(lessonStations[i].unlocked) return lessonStations[i].id;
   return null;
 }
 
@@ -613,10 +580,7 @@ window.openStation = function(id){
 
 window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
-  if(isStationSubmitted(stationId)){
-    openStation(stationId);
-    return;
-  }
+  if(isStationSubmitted(stationId)) return openStation(stationId);
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
   let score = 0;
@@ -628,9 +592,8 @@ window.submitCurrentStation = async function(stationId){
     wrap.classList.remove('correct','wrong');
     const labels = wrap.querySelectorAll('.choice');
     labels.forEach(function(lbl){ lbl.style.background = ''; lbl.style.borderColor = ''; });
-    let answer = '';
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-    answer = checked ? checked.value : '';
+    const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
     labels.forEach(function(lbl){
       const input = lbl.querySelector('input');
@@ -657,10 +620,10 @@ window.submitCurrentStation = async function(stationId){
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
   const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}, stationAnswers:{}, submittedStations:{}};
-  const nextScores = Object.assign({}, existing.scores || {}, (function(){ const o={}; o[stationId]=score; return o; })());
-  const nextResults = Object.assign({}, existing.stationResults || {}, (function(){ const o={}; o[stationId]={score:score,max:questions.length}; return o; })());
-  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, (function(){ const o={}; o[stationId]=submittedAnswers; return o; })());
-  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, (function(){ const o={}; o[stationId]=true; return o; })());
+  const nextScores = Object.assign({}, existing.scores || {}, {[stationId]:score});
+  const nextResults = Object.assign({}, existing.stationResults || {}, {[stationId]:{score:score,max:questions.length}});
+  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]:submittedAnswers});
+  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, {[stationId]:true});
   const total = Object.values(nextScores).reduce(function(a,b){ return a + Number(b || 0); }, 0);
 
   await dbRef(studentPath(currentStudent.id)).update({
@@ -680,7 +643,7 @@ window.submitCurrentStation = async function(stationId){
 
   renderStudentNav();
   openStation(stationId);
-}
+};
 
 function listenStudentLive(){
   if(studentBonusRef) studentBonusRef.off();
@@ -707,7 +670,7 @@ function renderTeacherTracker(){
   const rows = Object.values(liveStudents || {}).map(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
     const scoreCells = lessonStations.map(function(st){ return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>'; }).join('');
-    return '<tr><td class="name-col">' + escapeHtml(s.name) + '</td><td class="id-col">' + escapeHtml(s.id) + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td><button onclick="giveBonus(\'' + escapeJs(s.name) + '\',\'' + escapeJs(s.id) + '\',1)">+1</button> <button class="muted" onclick="resetBonus(\'' + escapeJs(s.id) + '\')">Reset</button></td></tr>';
+    return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td><button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)">+1</button> <button class="muted" onclick="resetBonus(\'' + escapeJs(s.id || '') + '\')">Reset</button></td></tr>';
   }).join('');
   wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
   renderTeacherOverview();
@@ -717,27 +680,12 @@ function renderBonusBox(){
   const items = Object.values(liveBonus || {}).filter(function(x){ return Number(((x || {}).points) || 0) > 0; }).sort(function(a,b){ return Number(b.points) - Number(a.points); });
   const html = items.length ? items.map(function(b){ return '<div class="card" style="padding:10px;margin-bottom:8px;border-radius:12px"><strong>' + escapeHtml(b.name) + '</strong><br><span class="small">ID: ' + escapeHtml(b.id) + '</span><div class="pill" style="margin-top:6px">Bonus: ' + b.points + '</div></div>'; }).join('') : 'No bonus yet.';
   if(byId('bonusLiveContent')) byId('bonusLiveContent').innerHTML = html;
-  if(byId('bonusPopup')) byId('bonusPopup').style.display = items.length ? 'block' : 'none';
 }
 
-window.giveBonus = async function(name,id,delta){
-  if(!requireConnection()) return;
-  const snap = await getSnap(bonusPath() + '/' + id);
-  const curr = snap.exists() ? snap.val() : {name:name,id:id,points:0};
-  const next = Math.max(0, Number(curr.points || 0) + Number(delta));
-  await dbRef(bonusPath() + '/' + id).set({name:name,id:id,points:next});
-};
-
+window.giveBonus = async function(name,id,delta){ if(!requireConnection()) return; const snap = await getSnap(bonusPath() + '/' + id); const curr = snap.exists() ? snap.val() : {name:name,id:id,points:0}; const next = Math.max(0, Number(curr.points || 0) + Number(delta)); await dbRef(bonusPath() + '/' + id).set({name:name,id:id,points:next}); };
 window.resetBonus = async function(id){ if(!requireConnection()) return; await dbRef(bonusPath() + '/' + id).remove(); };
-window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); };
-window.clearTrackerData = async function(){
-  if(!requireConnection()) return;
-  await dbRef(lessonBase() + '/students').remove();
-  await dbRef(lessonBase() + '/attendance').remove();
-  liveStudents = {};
-  renderTeacherTracker();
-  renderStudentNav();
-};
+window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus = {}; renderBonusBox(); renderTeacherTracker(); };
+window.clearTrackerData = async function(){ if(!requireConnection()) return; await dbRef(lessonBase() + '/students').remove(); await dbRef(lessonBase() + '/attendance').remove(); liveStudents = {}; renderTeacherTracker(); renderStudentNav(); };
 window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
 
 window.exportTrackerCsv = function(){
@@ -746,7 +694,8 @@ window.exportTrackerCsv = function(){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
     rows.push([s.name,s.id,s.currentStation || ''].concat(lessonStations.map(function(st){ return ((((s.stationResults || {})[st.id] || {}).score) || 0); })).concat([bonus,(s.total || 0) + bonus]));
   });
-  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('
+');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
@@ -782,10 +731,8 @@ window.importLessonData = async function(event){
 
 function fillTeacherSelects(){
   const opts = lessonStations.map(function(s){ return '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.title) + '</option>'; }).join('');
-  const control = byId('controlStationSelect');
-  const creator = byId('creatorStationSelect');
-  if(control) control.innerHTML = opts;
-  if(creator) creator.innerHTML = opts;
+  byId('controlStationSelect').innerHTML = opts;
+  byId('creatorStationSelect').innerHTML = opts;
 }
 
 function renderTeacherOverview(){
@@ -800,30 +747,9 @@ function renderControlStatus(){
   wrap.innerHTML = '<table class="tracker-table"><thead><tr><th>Station</th><th>Status</th><th>Displayed</th><th>Marks</th></tr></thead><tbody>' + lessonStations.map(function(s){ return '<tr><td>' + escapeHtml(s.title) + '</td><td>' + (s.unlocked ? 'Unlocked' : 'Locked') + '</td><td>' + (s.displayed ? 'Yes' : 'No') + '</td><td>' + totalMarksForStation(s.id) + '</td></tr>'; }).join('') + '</tbody></table>';
 }
 
-window.displaySelectedStation = async function(){
-  if(!requireConnection()) return;
-  const id = byId('controlStationSelect').value;
-  lessonStations = lessonStations.map(function(s){ return Object.assign({}, s, {displayed:s.id === id}); });
-  await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Displayed station updated.','good');
-};
-
-window.unlockSelectedStation = async function(){
-  if(!requireConnection()) return;
-  const id = byId('controlStationSelect').value;
-  lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:true}) : s; });
-  await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Station unlocked.','good');
-};
-
-window.lockSelectedStation = async function(){
-  if(!requireConnection()) return;
-  const id = byId('controlStationSelect').value;
-  if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; }
-  lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; });
-  await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Station locked.','warn');
-};
+window.displaySelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return Object.assign({}, s, {displayed:s.id === id}); }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Displayed station updated.','good'); };
+window.unlockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:true}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station unlocked.','good'); };
+window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
 
 window.handleCreatorImage = function(event){
   const file = event.target.files && event.target.files[0];
@@ -834,7 +760,7 @@ window.handleCreatorImage = function(event){
 };
 
 window.loadCreatorStation = function(){
-  const id = (byId('creatorStationSelect') && byId('creatorStationSelect').value) || ((lessonStations[0] || {}).id);
+  const id = byId('creatorStationSelect').value || ((lessonStations[0] || {}).id);
   const st = getStationById(id);
   const ct = getStationContent(id);
   if(!st) return;
@@ -871,10 +797,7 @@ window.clearQuestionBuilder = function(){
 window.renderCreatorQuestionsList = function(){
   const wrap = byId('creatorQuestionsList');
   if(!wrap) return;
-  if(!creatorDraftQuestions.length){
-    wrap.innerHTML = '<div class="small">No questions added yet.</div>';
-    return;
-  }
+  if(!creatorDraftQuestions.length){ wrap.innerHTML = '<div class="small">No questions added yet.</div>'; return; }
   wrap.innerHTML = creatorDraftQuestions.map(function(q, i){
     const choices = q.type === 'mcq' ? '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' : '<div class="small">Choices: True | False</div>';
     return '<div class="card" style="padding:10px;margin-bottom:8px;">'
@@ -885,8 +808,7 @@ window.renderCreatorQuestionsList = function(){
       + '<div class="btns" style="margin-top:8px;">'
       + '<button type="button" onclick="editCreatorQuestion(' + i + ')">Edit</button>'
       + '<button type="button" class="warnbtn" onclick="removeCreatorQuestion(' + i + ')">Delete</button>'
-      + '</div>'
-      + '</div>';
+      + '</div></div>';
   }).join('');
 };
 
@@ -901,8 +823,7 @@ window.editCreatorQuestion = function(index){
     byId('builderChoiceC').value = q.choices[2] || '';
     byId('builderChoiceD').value = q.choices[3] || '';
     const correctIndex = (q.choices || []).findIndex(function(c){ return normalizeAnswer(c) === normalizeAnswer(q.answer); });
-    const map = ['A','B','C','D'];
-    byId('builderCorrectMcq').value = map[correctIndex] || 'A';
+    byId('builderCorrectMcq').value = ['A','B','C','D'][correctIndex] || 'A';
   } else {
     byId('builderCorrectTf').value = q.answer;
   }
@@ -916,16 +837,14 @@ window.addCreatorQuestion = function(){
   const type = byId('builderQuestionType').value;
   const text = byId('builderQuestionText').value.trim();
   if(!text){ showNotice('creatorNotice','Please write the question first.','bad'); return; }
-  let question = null;
+  let question;
   if(type === 'mcq'){
     const choices = [byId('builderChoiceA').value.trim(), byId('builderChoiceB').value.trim(), byId('builderChoiceC').value.trim(), byId('builderChoiceD').value.trim()];
     if(choices.some(function(c){ return !c; })){ showNotice('creatorNotice','Please fill all four choices.','bad'); return; }
-    const correctLetter = byId('builderCorrectMcq').value;
-    const map = {A:0,B:1,C:2,D:3};
-    question = createQuestion('tmp_' + Date.now(),'mcq',text,choices[map[correctLetter]],choices);
+    const correctIndex = {A:0,B:1,C:2,D:3}[byId('builderCorrectMcq').value];
+    question = createQuestion('tmp_' + Date.now(),'mcq',text,choices[correctIndex],choices);
   } else {
-    const correct = byId('builderCorrectTf').value;
-    question = createQuestion('tmp_' + Date.now(),'tf',text,correct,['True','False']);
+    question = createQuestion('tmp_' + Date.now(),'tf',text,byId('builderCorrectTf').value,['True','False']);
   }
   creatorDraftQuestions.push(question);
   renderCreatorQuestionsList();
@@ -933,220 +852,10 @@ window.addCreatorQuestion = function(){
   showNotice('creatorNotice','Question added.','good');
 };
 
-window.removeCreatorQuestion = function(index){
-  creatorDraftQuestions.splice(index,1);
-  renderCreatorQuestionsList();
-};
+window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
+window.clearAllCreatorQuestions = function(){ creatorDraftQuestions = []; renderCreatorQuestionsList(); showNotice('creatorNotice','All questions cleared.','warn'); };
 
-window.clearAllCreatorQuestions = function(){
-  creatorDraftQuestions = [];
-  renderCreatorQuestionsList();
-  showNotice('creatorNotice','All questions cleared.','warn');
-};
-
-function extractSentences(text){ return String(text || '').replace(/\s+/g,' ').trim().split(/[.!?]+\s+/).filter(Boolean); }
-function splitIntoChunks(text){
-  const clean = String(text || '').replace(/\s+/g,' ').trim();
-  if(!clean) return [];
-  const parts = clean.split(/[.!?]+\s+/).filter(Boolean);
-  return parts.length ? parts : [clean];
-}
-function inferAnswerFromText(chunk){
-  const words = String(chunk || '').trim().split(/\s+/).filter(Boolean);
-  return words.slice(0, Math.min(6, words.length)).join(' ') || 'keyword';
-}
-function extractKeywords(text){
-  const words = String(text || '').toLowerCase().match(/[a-zA-Z]{4,}/g) || [];
-  const stop = new Set(['this','that','with','from','have','there','their','about','would','could','should','after','before','because','while','these','those','which','where','when','they','them','your','into','than','then','also']);
-  const freq = {};
-  words.forEach(function(w){ if(!stop.has(w)) freq[w] = (freq[w] || 0) + 1; });
-  return Object.keys(freq).sort(function(a,b){ return freq[b] - freq[a]; }).slice(0,8);
-}
-function buildDistractors(correct, keywords, chunks, mode){
-  const norm = normalizeAnswer(correct);
-  const chunkList = (chunks || []).map(function(c){ return String(c || '').trim(); }).filter(Boolean);
-  const keyList = (keywords || []).map(function(k){ return String(k || '').trim(); }).filter(Boolean);
-
-  const generic = mode === 'keyword'
-    ? ['A different lesson word', 'A word from a minor detail', 'A word not related to the topic']
-    : mode === 'prediction'
-    ? ['A topic not shown by the picture', 'A small detail but not the topic', 'An idea that does not match the activity']
-    : mode === 'main_idea'
-    ? ['A supporting detail, not the main idea', 'A possible idea but too narrow', 'An idea not supported by the text']
-    : ['A partially correct idea', 'A small detail from the activity', 'An unrelated answer'];
-
-  const distractors = [];
-
-  chunkList.forEach(function(c){
-    if(distractors.length >= 2) return;
-    if(normalizeAnswer(c) !== norm && c.length > 8) distractors.push(c);
-  });
-
-  keyList.forEach(function(k){
-    if(distractors.length >= 2) return;
-    if(normalizeAnswer(k) !== norm) distractors.push(k);
-  });
-
-  generic.forEach(function(g){
-    if(distractors.length < 3 && normalizeAnswer(g) !== norm) distractors.push(g);
-  });
-
-  while(distractors.length < 3) distractors.push('An incorrect answer');
-
-  return [correct, distractors[0], distractors[1], distractors[2]].sort(function(){ return Math.random() - 0.5; });
-}
 function createQuestion(id, type, text, answer, choices){ return {id:id, type:type, text:text, answer:answer, choices:choices || []}; }
-function shuffleArray(arr){ return (arr || []).slice().sort(function(){ return Math.random() - 0.5; }); }
-window.allowGapDrop = function(ev){ ev.preventDefault(); };
-window.dragGapToken = function(ev){ ev.dataTransfer.setData('text/plain', ev.target.id); };
-window.dropGapToken = function(ev){
-  ev.preventDefault();
-  const tokenId = ev.dataTransfer.getData('text/plain');
-  const token = byId(tokenId);
-  const slot = ev.target.closest('.gap-slot');
-  if(!token || !slot) return;
-  if(slot.getAttribute('data-filled') === 'true') return;
-  slot.textContent = token.textContent;
-  slot.setAttribute('data-value', token.getAttribute('data-value') || token.textContent);
-  slot.setAttribute('data-filled','true');
-  slot.classList.add('filled');
-  token.classList.add('used');
-  token.draggable = false;
-};
-function titleFromMaterial(stationId, material){
-  const words = extractKeywords(material || '').slice(0,3);
-  if(stationId === 'starter') return 'Starter';
-  if(stationId === 'exit') return 'Exit Ticket';
-  return words.length ? 'Station ' + stationId.replace('st','') + ': ' + words.join(' ') : 'Station ' + stationId.replace('st','');
-}
-function objectiveFromMaterial(stationId, material){
-  const keywords = extractKeywords(material || '');
-  if(stationId === 'starter') return 'Predict the topic using the activity picture';
-  if(stationId === 'exit') return 'Show full understanding of the lesson';
-  return keywords.length ? 'Understand ' + keywords.slice(0,2).join(' and ') : 'Understand the station activity';
-}
-function detailsFromMaterial(stationId, material){
-  const first = splitIntoChunks(material || '')[0] || '';
-  if(stationId === 'starter') return first || 'Look carefully at the activity picture and think about the topic.';
-  if(stationId === 'exit') return first || 'Answer the wrap-up questions using what you learned from all stations.';
-  return first || 'Read the activity and answer the questions using evidence.';
-}
-function buildQuestionsForStation(stationId, sourceText, imageNotes, pattern){
-  const material = [sourceText || '', imageNotes || ''].join(' ').trim();
-  const chunks = splitIntoChunks(material);
-  const keywords = extractKeywords(material);
-  const objective = objectiveFromMaterial(stationId, material);
-  const questions = [];
-  const count = REQUIRED_COUNTS[stationId] || 5;
-
-  function moeDistractors(correct, kind){
-    const map = {
-      main_idea: [
-        'A supporting detail, not the main idea',
-        'A related idea, but too specific',
-        'An idea not mentioned in the activity'
-      ],
-      detail: [
-        'A detail that sounds correct but is not stated',
-        'A detail from another part of the lesson',
-        'A conclusion instead of a detail'
-      ],
-      keyword: [
-        'A word from a minor point',
-        'A word not connected to the topic',
-        'A word that looks similar but changes the meaning'
-      ],
-      prediction: [
-        'A topic not shown by the picture',
-        'A small detail instead of the topic',
-        'An unrelated classroom topic'
-      ]
-    };
-    const pool = (map[kind] || map.detail).filter(function(x){ return normalizeAnswer(x) !== normalizeAnswer(correct); });
-    return [correct, pool[0], pool[1], pool[2]].sort(function(){ return Math.random() - 0.5; });
-  }
-
-  function addMcq(qid, prompt, answerBase, difficulty, kind){
-    const answer = String(answerBase || inferAnswerFromText(chunks[0] || objective)).trim();
-    let choices;
-    if(difficulty === 'hard') choices = moeDistractors(answer, kind || 'detail');
-    else choices = buildDistractors(answer, keywords, chunks, kind || 'detail');
-    questions.push(createQuestion(qid,'mcq',prompt,answer,choices));
-  }
-
-  function addTf(qid, prompt, answer){
-    questions.push(createQuestion(qid,'tf',prompt,answer || 'True'));
-  }
-
-  function addKeywordMcq(qid, prompt, answer){
-    const finalAnswer = answer || keywords[0] || inferAnswerFromText(chunks[0] || objective);
-    const choices = buildDistractors(finalAnswer, keywords, chunks, 'keyword');
-    questions.push(createQuestion(qid,'mcq',prompt,finalAnswer,choices));
-  }
-
-  // 🔥 NEW STRUCTURE (as requested)
-  // Q1 = MAIN IDEA only
-  // rest = DETAILS + VOCABULARY ONLY
-
-  if(stationId === 'starter'){
-    addMcq(stationId + '_q1','What is the best prediction for this lesson?', objective,'easy','prediction');
-    addKeywordMcq(stationId + '_q2','Which word is most likely connected to this lesson?', keywords[0] || 'topic');
-  }
-  else if(stationId === 'exit'){
-    // 1 MAIN IDEA
-    addMcq(stationId + '_q1','What is the main idea of the whole lesson?', objective,'hard','main_idea');
-
-    // rest DETAILS + VOCAB
-    addMcq(stationId + '_q2','Which detail is correct based on the lesson?', chunks[0] || objective,'medium','detail');
-    addMcq(stationId + '_q3','Which detail is mentioned in the text?', chunks[1] || chunks[0] || objective,'medium','detail');
-    addKeywordMcq(stationId + '_q4','Which word best matches the lesson topic?', keywords[0] || 'topic');
-    addKeywordMcq(stationId + '_q5','Which word is closest in meaning to a key word in the lesson?', keywords[1] || keywords[0] || 'word');
-    addTf(stationId + '_q6','This lesson focuses on understanding ideas from the text.','True');
-    addMcq(stationId + '_q7','Which detail is NOT correct?', 'An idea not supported by the lesson','hard','detail');
-  }
-  else {
-    // MAIN IDEA (ONLY ONCE)
-    addMcq(stationId + '_q1','What is the main idea of this paragraph?', objective,'medium','main_idea');
-
-    // DETAILS (majority)
-    addMcq(stationId + '_q2','Which detail is correct?', chunks[0] || objective,'easy','detail');
-    addMcq(stationId + '_q3','Which detail is mentioned in the text?', chunks[1] || chunks[0] || objective,'medium','detail');
-    addMcq(stationId + '_q4','Which statement is TRUE based on the paragraph?', chunks[2] || chunks[0] || objective,'medium','detail');
-
-    // VOCABULARY (at least 1–2)
-    addKeywordMcq(stationId + '_q5','Which word best matches the meaning in the text?', keywords[0] || 'word');
-
-    if(count > 5){
-      addKeywordMcq(stationId + '_q6','Which word is closest in meaning to a key word?', keywords[1] || keywords[0] || 'word');
-    }
-  }
-
-  // fill remaining ONLY with DETAILS (no extra main idea)
-  while(questions.length < count){
-    addMcq(stationId + '_q' + (questions.length + 1),'Which detail is correct?', chunks[(questions.length - 1) % Math.max(chunks.length,1)] || objective,'medium','detail');
-  }
-
-  // enforce pattern if needed
-  if(pattern === 'mcq'){
-    questions.forEach(function(q, i){
-      if(q.type !== 'mcq') questions[i] = createQuestion(q.id,'mcq',q.text,q.answer,buildDistractors(q.answer, keywords, chunks, 'detail'));
-    });
-  }
-  if(pattern === 'tf'){
-    questions.forEach(function(q, i){
-      questions[i] = createQuestion(q.id,'tf',q.text,i % 2 === 0 ? 'True' : 'False');
-    });
-  }
-
-  return questions.map(function(q, i){ return Object.assign({}, q, { id: stationId + '_q' + (i + 1) }); });
-}
-
-window.generateStationDraft = function(){
-  showNotice('creatorNotice','This lesson creator is now manual. Add your questions in the Question Builder, then click Save Station.','warn');
-};
-window.generateFromPictureAssistant = function(){
-  showNotice('creatorNotice','Picture uploaded. Now add your station title, objective, details, and questions manually, then click Save Station.','good');
-};
 
 window.saveCreatorStation = async function(){
   if(!requireConnection()) return;
@@ -1180,18 +889,6 @@ window.saveCreatorStation = async function(){
 bindButtons();
 document.addEventListener('DOMContentLoaded', function(){ bindButtons(); toggleBuilderFields(); });
 if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig(); else tryAutoConnect();
-
-console.assert(typeof bindButtons === 'function', 'bindButtons should exist');
-console.assert(typeof window.saveConfig === 'function', 'saveConfig should exist');
-console.assert(typeof window.startStudentSession === 'function', 'startStudentSession should exist');
-console.assert(typeof window.openTeacherView === 'function', 'openTeacherView should exist');
-console.assert(typeof window.backToHome === 'function', 'backToHome should exist');
-console.assert(escapeJs("a'b\\c") === "a\\'b\\\\c", 'escapeJs should escape quotes and backslashes');
-console.assert(REQUIRED_COUNTS.starter === 2 && REQUIRED_COUNTS.st1 === 5 && REQUIRED_COUNTS.exit === 7, 'required question counts should be correct');
-console.assert(typeof configsEqual === 'function', 'configsEqual should exist');
-console.assert(typeof renderTeacherTracker === 'function', 'renderTeacherTracker should exist');
-console.assert(createQuestion('x','mcq','Question','word',['word','a','b','c']).type === 'mcq', 'mcq question type should exist');
-console.assert(Array.isArray(defaultContent.starter.questions) && defaultContent.starter.questions.length === 0, 'default stations should start with no questions');
 </script>
 </body>
 </html>
