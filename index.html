@@ -287,7 +287,7 @@ function attendancePath(studentId){ return lessonBase() + '/attendance/' + stude
 function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
 function getStationContent(id){ return lessonContent[id] || {imageUrl:'',sourceText:'',imageNotes:'',questions:[]}; }
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
-function escapeJs(str){ return String(str == null ? '' : str).replace(/\/g, '\\').replace(/'/g, "\'"); }
+function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
 function getSnap(path){ return dbRef(path).once('value'); }
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
@@ -694,8 +694,8 @@ window.exportTrackerCsv = function(){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
     rows.push([s.name,s.id,s.currentStation || ''].concat(lessonStations.map(function(st){ return ((((s.stationResults || {})[st.id] || {}).score) || 0); })).concat([bonus,(s.total || 0) + bonus]));
   });
-  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('
-');
+  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
