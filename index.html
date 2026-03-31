@@ -5,45 +5,49 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>DL Online Live System</title>
 <style>
-:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-.hidden{display:none!important}
-.wrap{max-width:1440px;margin:0 auto;padding:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
-.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}
-.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
-.row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-.btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
-input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff}
-textarea{min-height:100px;resize:vertical}
-button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:bold}
-.secondary{background:var(--accent)}.muted{background:#6c7b95}.goodbtn{background:var(--good)}.warnbtn{background:var(--warn)}
-.notice{padding:10px 12px;border-radius:12px;margin-top:10px}.notice.good{background:#e8f7ef;color:#145d3d}.notice.bad{background:#fdecec;color:#962d2d}.notice.warn{background:#fff7df;color:#8c6400}
-.small{font-size:13px;color:var(--muted)}
-.top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
-.top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center;cursor:pointer;transition:.2s}
-.top-bar .item.active{background:var(--primary2);color:#fff}.top-bar .item.locked{opacity:.55;cursor:not-allowed}
-.student-layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
-.sidebar,.main{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}
-.station-box{padding:10px;border-radius:14px;background:#eef3ff;margin-bottom:8px;cursor:pointer;transition:.2s;display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:start}
-.station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
-.station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}
-.station-box .meta{font-size:12px;opacity:.95;line-height:1.5}
-.question{border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px;background:#fff}.gap-bank{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.gap-token{padding:8px 12px;border:1px solid #cfd8e7;border-radius:10px;background:#f7faff;cursor:grab;font-weight:bold}.gap-slot{display:inline-flex;align-items:center;justify-content:center;min-width:120px;padding:8px 12px;border:2px dashed #b7c6de;border-radius:10px;background:#fffbe8;margin:0 6px;vertical-align:middle}.gap-slot.filled{border-style:solid;background:#eef6ff}.gap-token.used{opacity:.45;cursor:not-allowed}
-.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer}
-.choice input{margin-right:8px}
-.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
-.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
-.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{width:100%;max-height:340px;object-fit:contain;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
-.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
-.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
-.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
-.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
-.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}.station-box{grid-template-columns:60px 1fr}.station-thumb{width:60px;height:60px}}
+/* Question styling upgrade (number + header focus) */
+.question {
+  padding: 10px;
+  margin-bottom: 12px;
+  background: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+/* Color ONLY question header */
+.question strong {
+  display: inline-block;
+  color: #1e88e5;
+  font-weight: bold;
+  font-size: 16px;
+}
+
+/* Highlight question number */
+.question strong::before {
+  content: "";
+}
+
+/* Alternative: style Q1 circle */
+.question strong span.qnum {
+  background: #1e88e5;
+  color: #fff;
+  border-radius: 50%;
+  padding: 4px 8px;
+  margin-right: 6px;
+}
+
+.choice {
+  margin: 6px 0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  display: block;
+  background: #fff;
+}
+
+.choice:hover {
+  background: #f0f7ff;
+}
 </style>
 </head>
 <body>
@@ -180,24 +184,53 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
           <textarea id="creatorImageNotes" placeholder="(Optional) System will try to generate automatically from the activity picture."></textarea>
         </div>
         <div>
-          <label>Question Type Pattern</label>
-          <select id="creatorQuestionPattern">
-            <option value="mixed">Mixed</option>
-            <option value="mcq">MCQ Only</option>
-            <option value="tf">True / False Only</option>
-          </select>
-          <label>Question Prompt (optional manual override)</label>
-          <textarea id="creatorPrompt"></textarea>
-          <label>Choices (optional, one per line)</label>
-          <textarea id="creatorChoices"></textarea>
-          <label>Correct Answer (optional, one per line)</label>
-          <textarea id="creatorCorrect"></textarea>
-          <div class="btns">
-            <button onclick="generateStationDraft()">Generate Station Draft</button>
-            <button class="secondary" onclick="generateFromPictureAssistant()">Generate From Picture</button>
-            <button class="goodbtn" onclick="saveCreatorStation()">Save Station</button>
+          <label>Question Builder</label>
+          <div class="card" style="padding:12px;background:#f8fbff;">
+            <label>Question Type</label>
+            <select id="builderQuestionType">
+              <option value="mcq">Multiple Choice</option>
+              <option value="tf">True / False</option>
+            </select>
+            <label>Question Text</label>
+            <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
+            <div id="builderMcqFields">
+              <label>Choice A</label>
+              <input id="builderChoiceA" />
+              <label>Choice B</label>
+              <input id="builderChoiceB" />
+              <label>Choice C</label>
+              <input id="builderChoiceC" />
+              <label>Choice D</label>
+              <input id="builderChoiceD" />
+              <label>Correct Answer</label>
+              <select id="builderCorrectMcq">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div id="builderTfFields" class="hidden">
+              <label>Correct Answer</label>
+              <select id="builderCorrectTf">
+                <option value="True">True</option>
+                <option value="False">False</option>
+              </select>
+            </div>
+            <div class="btns" style="margin-top:10px;">
+              <button type="button" onclick="addCreatorQuestion()">Add Question</button>
+              <button type="button" class="muted" onclick="clearQuestionBuilder()">Clear Current Question</button>
+              <button type="button" class="warnbtn" onclick="clearAllCreatorQuestions()">Clear All Questions</button>
+            </div>
           </div>
-          <div class="small" style="margin-top:8px;">Starter = 2 questions. Station 1 to 3 = at least 5 questions. Exit Ticket = 5 questions.</div>
+          <div class="card" style="padding:12px;margin-top:12px;">
+            <h3 style="margin-top:0;">Questions Added</h3>
+            <div id="creatorQuestionsList"></div>
+          </div>
+          <div class="btns">
+            <button onclick="saveCreatorStation()">Save Station</button>
+          </div>
+          <div class="small" style="margin-top:8px;">Upload picture, fill station details, add questions with answers, then save. Students will see the picture and questions, and their marks will go to the tracker automatically.</div>
         </div>
       </div>
       <div id="creatorNotice" class="notice good hidden"></div>
@@ -223,44 +256,11 @@ const defaultStations = [
 ];
 
 const defaultContent = {
-  starter:{imageUrl:'', sourceText:'Reading 2: Different Planets? Before You Read. Think and discuss using the picture.', questions:[
-    {id:'starter_q1', type:'mcq', text:'What is the most likely topic of this lesson based on the picture?', choices:['Differences in how men and women think and react','Planets and space travel','Using phones in daily life','Family holidays'], answer:'Differences in how men and women think and react'},
-    {id:'starter_q2', type:'mcq', text:'What can you infer from the people’s reactions?', choices:['People react differently to the same situation','Everyone feels the same','Only one person is happy','They are studying science'], answer:'People react differently to the same situation'}
-  ]},
-
-  st1:{imageUrl:'', sourceText:'Men Are from Mars, Women Are from Venus is a popular book. It explains that men and women often behave differently, and these differences can cause problems in relationships.', questions:[
-    {id:'st1_q1', type:'mcq', text:'What is the main idea of paragraph 1?', choices:['Men and women behave differently and this affects relationships','Men and women live on different planets','The book is about science','Relationships are always easy'], answer:'Men and women behave differently and this affects relationships'},
-    {id:'st1_q2', type:'mcq', text:'Why do people use this book title in daily life?', choices:['To describe differences between men and women','To talk about planets','To teach science','To describe jobs'], answer:'To describe differences between men and women'},
-    {id:'st1_q3', type:'mcq', text:'What does “behave” mean?', choices:['Act in a certain way','Travel to places','Speak loudly','Study hard'], answer:'Act in a certain way'},
-    {id:'st1_q4', type:'mcq', text:'Which detail supports the main idea?', choices:['Men and women act differently','People read books','Planets are far','Students study'], answer:'Men and women act differently'},
-    {id:'st1_q5', type:'tf', text:'The book says men and women are completely the same.', answer:'False'}
-  ]},
-
-  st2:{imageUrl:'', sourceText:'A wife asks her husband to help. He gives a solution and thinks the conversation is finished. The wife becomes upset because she wanted to talk, not just hear a solution.', questions:[
-    {id:'st2_q1', type:'mcq', text:'What is the main idea of this paragraph?', choices:['Men and women may misunderstand each other','People should not talk','Only men solve problems','Only women communicate'], answer:'Men and women may misunderstand each other'},
-    {id:'st2_q2', type:'mcq', text:'Why does the wife feel upset?', choices:['She wanted discussion, not just a solution','She hates her husband','She solved the problem','She was tired'], answer:'She wanted discussion, not just a solution'},
-    {id:'st2_q3', type:'mcq', text:'What does the husband think?', choices:['The problem is solved','The problem is bigger','He is wrong','He should leave'], answer:'The problem is solved'},
-    {id:'st2_q4', type:'mcq', text:'What does “participate” mean?', choices:['Take part','Leave','Ignore','Sleep'], answer:'Take part'},
-    {id:'st2_q5', type:'tf', text:'The couple communicates perfectly.', answer:'False'}
-  ]},
-
-  st3:{imageUrl:'', sourceText:'Men and women react to stress differently. Men often withdraw and want to be alone. Women prefer to talk and connect with others.', questions:[
-    {id:'st3_q1', type:'mcq', text:'What is the main idea?', choices:['Men and women react differently to stress','Stress is always bad','Only men feel stress','Only women feel stress'], answer:'Men and women react differently to stress'},
-    {id:'st3_q2', type:'mcq', text:'How do men react to stress?', choices:['They withdraw and stay alone','They talk more','They celebrate','They laugh'], answer:'They withdraw and stay alone'},
-    {id:'st3_q3', type:'mcq', text:'How do women react to stress?', choices:['They talk and connect','They stay silent','They leave','They ignore'], answer:'They talk and connect'},
-    {id:'st3_q4', type:'mcq', text:'What does “withdraw” mean?', choices:['Move away','Speak loudly','Ask questions','Smile'], answer:'Move away'},
-    {id:'st3_q5', type:'tf', text:'Men and women react the same to stress.', answer:'False'}
-  ]},
-
-  exit:{imageUrl:'', sourceText:'Whole lesson review', questions:[
-    {id:'exit_q1', type:'mcq', text:'What is the main idea of the lesson?', choices:['Men and women think and behave differently','The lesson is about planets','The lesson is about phones','The lesson is about food'], answer:'Men and women think and behave differently'},
-    {id:'exit_q2', type:'mcq', text:'Which detail supports the lesson?', choices:['They react differently to stress','They like reading','They study science','They travel'], answer:'They react differently to stress'},
-    {id:'exit_q3', type:'mcq', text:'Why do misunderstandings happen?', choices:['Different communication styles','Different languages','Different countries','Different schools'], answer:'Different communication styles'},
-    {id:'exit_q4', type:'mcq', text:'What does stress mean?', choices:['Feeling pressure','A planet','A job','A game'], answer:'Feeling pressure'},
-    {id:'exit_q5', type:'mcq', text:'How do women react to stress?', choices:['They talk','They stay silent','They leave','They sleep'], answer:'They talk'},
-    {id:'exit_q6', type:'tf', text:'Men like to discuss problems immediately.', answer:'False'},
-    {id:'exit_q7', type:'mcq', text:'Which is NOT in the lesson?', choices:['Favorite colors','Communication','Stress','Behavior'], answer:'Favorite colors'}
-  ]}
+  starter:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st1:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st2:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st3:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  exit:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]}
 };
 
 let firebaseConfig = null;
@@ -274,6 +274,7 @@ let lessonStations = JSON.parse(JSON.stringify(defaultStations));
 let lessonContent = JSON.parse(JSON.stringify(defaultContent));
 let currentOpenStation = 'starter';
 let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, studentSelfRef = null, lessonConfigRef = null, lessonContentRef = null;
+let creatorDraftQuestions = [];
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -350,6 +351,34 @@ async function ensureLessonDefaults(){
   }
 }
 
+function isLegacyBadQuestion(q){
+  const text = String((q && q.text) || '').toLowerCase();
+  const answer = String((q && q.answer) || '').toLowerCase();
+  const choices = ((q && q.choices) || []).join(' ').toLowerCase();
+  return text.includes('best prediction for this lesson') && (choices.includes('auto') || choices.includes('generated') || choices.includes('activity picture') || answer.includes('auto-generated'));
+}
+
+function sanitizeLegacyContent(content){
+  const safe = JSON.parse(JSON.stringify(content || {}));
+  ['starter','st1','st2','st3','exit'].forEach(function(id){
+    if(!safe[id]) safe[id] = {imageUrl:'', sourceText:'', imageNotes:'', questions:[]};
+    if(!Array.isArray(safe[id].questions)) safe[id].questions = [];
+    const qs = safe[id].questions || [];
+    if(qs.some(isLegacyBadQuestion)){
+      safe[id].questions = [];
+    }
+  });
+  return safe;
+}
+
+async function replaceLegacyContentIfNeeded(rawContent){
+  const cleaned = sanitizeLegacyContent(rawContent || {});
+  if(JSON.stringify(cleaned) !== JSON.stringify(rawContent || {})){
+    lessonContent = cleaned;
+    await dbRef(contentPath()).set(cleaned);
+  }
+}
+
 function startLessonConfigListener(){
   if(lessonConfigRef) lessonConfigRef.off();
   if(lessonContentRef) lessonContentRef.off();
@@ -364,7 +393,11 @@ function startLessonConfigListener(){
     renderTeacherTracker();
   });
   lessonContentRef.on('value', function(snap){
-    lessonContent = snap.val() || JSON.parse(JSON.stringify(defaultContent));
+    const raw = snap.val() || JSON.parse(JSON.stringify(defaultContent));
+    lessonContent = sanitizeLegacyContent(raw);
+    if(JSON.stringify(lessonContent) !== JSON.stringify(raw)){
+      dbRef(contentPath()).set(lessonContent);
+    }
     renderStudentNav();
     renderTeacherOverview();
     renderTeacherTracker();
@@ -429,7 +462,7 @@ window.startStudentSession = async function(){
     if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
     hideNotice('studentNotice');
     currentStudent = {name:name, id:id};
-    const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{} };
+    const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{}, stationAnswers:{}, submittedStations:{} };
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
@@ -482,6 +515,19 @@ function scoreTextForStudent(stationId){
   return got + '/' + max;
 }
 
+function isStationSubmitted(stationId){
+  const student = currentStudent && liveStudents[currentStudent.id];
+  return !!(student && student.submittedStations && student.submittedStations[stationId]);
+}
+
+function getNextUnlockedStationId(stationId){
+  const idx = lessonStations.findIndex(function(s){ return s.id === stationId; });
+  for(let i = idx + 1; i < lessonStations.length; i++){
+    if(lessonStations[i].unlocked) return lessonStations[i].id;
+  }
+  return null;
+}
+
 function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
@@ -497,14 +543,22 @@ function renderStudentNav(){
 
 function renderQuestion(q, stationId, index){
   const inputName = 'answer_' + stationId + '_' + index;
+  const submitted = isStationSubmitted(stationId);
+  const student = currentStudent && liveStudents[currentStudent.id];
+  const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
+  const savedAnswer = savedAnswers[index] || '';
   let body = '';
   if(q.type === 'mcq'){
     body = (q.choices || []).map(function(choice){
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"> ' + escapeHtml(choice) + '</label>';
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
   } else if(q.type === 'tf'){
     body = ['True','False'].map(function(choice){
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"> ' + choice + '</label>';
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
     }).join('');
   } else {
     body = '<div class="small">Unsupported question type</div>';
@@ -519,31 +573,25 @@ window.openStation = function(id){
   currentOpenStation = id;
   renderStudentNav();
   const ct = getStationContent(id);
+  const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
   const resultText = scoreTextForStudent(id);
   const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
-  byId('stationContent').innerHTML = '<h2>' + escapeHtml(st.title) + '</h2><p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p><p><strong>Details:</strong> ' + escapeHtml(st.details) + '</p>' + imageBlock + '<div class="station-result">Your result in this station: ' + resultText + '</div>' + questionsHtml + '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
+  const nextStationId = getNextUnlockedStationId(id);
+  const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
+  const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
+  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+  const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
+  byId('stationContent').innerHTML = '<h2>' + escapeHtml(st.title) + '</h2><p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p><p><strong>Details:</strong> ' + escapeHtml(st.details) + '</p>' + imageBlock + '<div class="station-result">Your result in this station: ' + resultText + '</div>' + submittedNote + questionsHtml + actionBtns;
   if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
-};
 
-window.submitCurrentStation = async function(stationId){
-  if(!currentStudent) return;
-  const ct = getStationContent(stationId);
-  const questions = ct.questions || [];
-  let score = 0;
-  questions.forEach(function(q, i){
-    const wrap = byId('q_' + stationId + '_' + i);
-    if(!wrap) return;
-    wrap.classList.remove('correct','wrong');
-    const labels = wrap.querySelectorAll('.choice');
-    labels.forEach(function(lbl){
-      lbl.style.background = '';
-      lbl.style.borderColor = '';
-    });
-    let answer = '';
-    if(q.type === 'mcq' || q.type === 'tf'){
-      const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-      answer = checked ? checked.value : '';
+  if(submitted){
+    const student = liveStudents[currentStudent.id] || {};
+    const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
+    (ct.questions || []).forEach(function(q, i){
+      const wrap = byId('q_' + id + '_' + i);
+      if(!wrap) return;
+      const labels = wrap.querySelectorAll('.choice');
       labels.forEach(function(lbl){
         const input = lbl.querySelector('input');
         if(!input) return;
@@ -551,12 +599,52 @@ window.submitCurrentStation = async function(stationId){
           lbl.style.background = '#eafaf1';
           lbl.style.borderColor = '#2ecc71';
         }
-        if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+        if(savedAnswers[i] && normalizeAnswer(input.value) === normalizeAnswer(savedAnswers[i]) && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
           lbl.style.background = '#fdecea';
           lbl.style.borderColor = '#e74c3c';
         }
       });
-    }
+      const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
+      wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
+      wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+    });
+  }
+};
+
+window.submitCurrentStation = async function(stationId){
+  if(!currentStudent) return;
+  if(isStationSubmitted(stationId)){
+    openStation(stationId);
+    return;
+  }
+  const ct = getStationContent(stationId);
+  const questions = ct.questions || [];
+  let score = 0;
+  const submittedAnswers = {};
+
+  questions.forEach(function(q, i){
+    const wrap = byId('q_' + stationId + '_' + i);
+    if(!wrap) return;
+    wrap.classList.remove('correct','wrong');
+    const labels = wrap.querySelectorAll('.choice');
+    labels.forEach(function(lbl){ lbl.style.background = ''; lbl.style.borderColor = ''; });
+    let answer = '';
+    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
+    answer = checked ? checked.value : '';
+    submittedAnswers[i] = answer;
+    labels.forEach(function(lbl){
+      const input = lbl.querySelector('input');
+      if(!input) return;
+      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+        lbl.style.background = '#eafaf1';
+        lbl.style.borderColor = '#2ecc71';
+      }
+      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+        lbl.style.background = '#fdecea';
+        lbl.style.borderColor = '#e74c3c';
+      }
+      input.disabled = true;
+    });
     if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
       score += 1;
       wrap.classList.add('correct');
@@ -568,15 +656,28 @@ window.submitCurrentStation = async function(stationId){
   });
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
-  const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}};
+  const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}, stationAnswers:{}, submittedStations:{}};
   const nextScores = Object.assign({}, existing.scores || {}, (function(){ const o={}; o[stationId]=score; return o; })());
   const nextResults = Object.assign({}, existing.stationResults || {}, (function(){ const o={}; o[stationId]={score:score,max:questions.length}; return o; })());
+  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, (function(){ const o={}; o[stationId]=submittedAnswers; return o; })());
+  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, (function(){ const o={}; o[stationId]=true; return o; })());
   const total = Object.values(nextScores).reduce(function(a,b){ return a + Number(b || 0); }, 0);
-  await dbRef(studentPath(currentStudent.id)).update({ scores:nextScores, stationResults:nextResults, total:total });
+
+  await dbRef(studentPath(currentStudent.id)).update({
+    scores: nextScores,
+    stationResults: nextResults,
+    stationAnswers: nextAnswers,
+    submittedStations: nextSubmitted,
+    total: total
+  });
+
   if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
   liveStudents[currentStudent.id].scores = nextScores;
   liveStudents[currentStudent.id].stationResults = nextResults;
+  liveStudents[currentStudent.id].stationAnswers = nextAnswers;
+  liveStudents[currentStudent.id].submittedStations = nextSubmitted;
   liveStudents[currentStudent.id].total = total;
+
   renderStudentNav();
   openStation(stationId);
 }
@@ -744,9 +845,103 @@ window.loadCreatorStation = function(){
   byId('creatorImageUrl').value = ct.imageUrl || '';
   byId('creatorSourceText').value = ct.sourceText || '';
   byId('creatorImageNotes').value = ct.imageNotes || '';
-  byId('creatorPrompt').value = '';
-  byId('creatorChoices').value = '';
-  byId('creatorCorrect').value = '';
+  creatorDraftQuestions = JSON.parse(JSON.stringify(ct.questions || []));
+  renderCreatorQuestionsList();
+  clearQuestionBuilder();
+};
+
+window.toggleBuilderFields = function(){
+  const type = byId('builderQuestionType').value;
+  byId('builderMcqFields').classList.toggle('hidden', type !== 'mcq');
+  byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
+};
+
+window.clearQuestionBuilder = function(){
+  byId('builderQuestionType').value = 'mcq';
+  byId('builderQuestionText').value = '';
+  byId('builderChoiceA').value = '';
+  byId('builderChoiceB').value = '';
+  byId('builderChoiceC').value = '';
+  byId('builderChoiceD').value = '';
+  byId('builderCorrectMcq').value = 'A';
+  byId('builderCorrectTf').value = 'True';
+  toggleBuilderFields();
+};
+
+window.renderCreatorQuestionsList = function(){
+  const wrap = byId('creatorQuestionsList');
+  if(!wrap) return;
+  if(!creatorDraftQuestions.length){
+    wrap.innerHTML = '<div class="small">No questions added yet.</div>';
+    return;
+  }
+  wrap.innerHTML = creatorDraftQuestions.map(function(q, i){
+    const choices = q.type === 'mcq' ? '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' : '<div class="small">Choices: True | False</div>';
+    return '<div class="card" style="padding:10px;margin-bottom:8px;">'
+      + '<strong>Q' + (i + 1) + '.</strong> ' + escapeHtml(q.text)
+      + '<div class="small">Type: ' + escapeHtml(q.type.toUpperCase()) + '</div>'
+      + choices
+      + '<div class="small">Correct Answer: ' + escapeHtml(q.answer) + '</div>'
+      + '<div class="btns" style="margin-top:8px;">'
+      + '<button type="button" onclick="editCreatorQuestion(' + i + ')">Edit</button>'
+      + '<button type="button" class="warnbtn" onclick="removeCreatorQuestion(' + i + ')">Delete</button>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+};
+
+window.editCreatorQuestion = function(index){
+  const q = creatorDraftQuestions[index];
+  if(!q) return;
+  byId('builderQuestionType').value = q.type;
+  byId('builderQuestionText').value = q.text;
+  if(q.type === 'mcq'){
+    byId('builderChoiceA').value = q.choices[0] || '';
+    byId('builderChoiceB').value = q.choices[1] || '';
+    byId('builderChoiceC').value = q.choices[2] || '';
+    byId('builderChoiceD').value = q.choices[3] || '';
+    const correctIndex = (q.choices || []).findIndex(function(c){ return normalizeAnswer(c) === normalizeAnswer(q.answer); });
+    const map = ['A','B','C','D'];
+    byId('builderCorrectMcq').value = map[correctIndex] || 'A';
+  } else {
+    byId('builderCorrectTf').value = q.answer;
+  }
+  toggleBuilderFields();
+  creatorDraftQuestions.splice(index,1);
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
+};
+
+window.addCreatorQuestion = function(){
+  const type = byId('builderQuestionType').value;
+  const text = byId('builderQuestionText').value.trim();
+  if(!text){ showNotice('creatorNotice','Please write the question first.','bad'); return; }
+  let question = null;
+  if(type === 'mcq'){
+    const choices = [byId('builderChoiceA').value.trim(), byId('builderChoiceB').value.trim(), byId('builderChoiceC').value.trim(), byId('builderChoiceD').value.trim()];
+    if(choices.some(function(c){ return !c; })){ showNotice('creatorNotice','Please fill all four choices.','bad'); return; }
+    const correctLetter = byId('builderCorrectMcq').value;
+    const map = {A:0,B:1,C:2,D:3};
+    question = createQuestion('tmp_' + Date.now(),'mcq',text,choices[map[correctLetter]],choices);
+  } else {
+    const correct = byId('builderCorrectTf').value;
+    question = createQuestion('tmp_' + Date.now(),'tf',text,correct,['True','False']);
+  }
+  creatorDraftQuestions.push(question);
+  renderCreatorQuestionsList();
+  clearQuestionBuilder();
+  showNotice('creatorNotice','Question added.','good');
+};
+
+window.removeCreatorQuestion = function(index){
+  creatorDraftQuestions.splice(index,1);
+  renderCreatorQuestionsList();
+};
+
+window.clearAllCreatorQuestions = function(){
+  creatorDraftQuestions = [];
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice','All questions cleared.','warn');
 };
 
 function extractSentences(text){ return String(text || '').replace(/\s+/g,' ').trim().split(/[.!?]+\s+/).filter(Boolean); }
@@ -889,27 +1084,49 @@ function buildQuestionsForStation(stationId, sourceText, imageNotes, pattern){
     questions.push(createQuestion(qid,'mcq',prompt,finalAnswer,choices));
   }
 
+  // 🔥 NEW STRUCTURE (as requested)
+  // Q1 = MAIN IDEA only
+  // rest = DETAILS + VOCABULARY ONLY
+
   if(stationId === 'starter'){
     addMcq(stationId + '_q1','What is the best prediction for this lesson?', objective,'easy','prediction');
     addKeywordMcq(stationId + '_q2','Which word is most likely connected to this lesson?', keywords[0] || 'topic');
-  } else if(stationId === 'exit'){
+  }
+  else if(stationId === 'exit'){
+    // 1 MAIN IDEA
     addMcq(stationId + '_q1','What is the main idea of the whole lesson?', objective,'hard','main_idea');
-    addMcq(stationId + '_q2','Which detail best supports the lesson?', chunks[0] || objective,'medium','detail');
-    addKeywordMcq(stationId + '_q3','Which key word is most connected to the lesson?', keywords[0] || 'topic');
-    addTf(stationId + '_q4','All stations are connected to one main topic.','True');
-    addMcq(stationId + '_q5','Which statement is NOT correct about the lesson?', 'An idea not supported by the lesson','hard','detail');
-  } else {
-    addMcq(stationId + '_q1','What is the main idea of this station?', objective,'medium','main_idea');
-    addMcq(stationId + '_q2','Which detail matches the activity?', chunks[0] || objective,'easy','detail');
-    addMcq(stationId + '_q3','Which statement is the BEST answer?', chunks[1] || chunks[0] || objective,'hard','detail');
-    addKeywordMcq(stationId + '_q4','Which key word best matches this station?', keywords[0] || 'topic');
-    addTf(stationId + '_q5','This station checks understanding of the activity.','True');
+
+    // rest DETAILS + VOCAB
+    addMcq(stationId + '_q2','Which detail is correct based on the lesson?', chunks[0] || objective,'medium','detail');
+    addMcq(stationId + '_q3','Which detail is mentioned in the text?', chunks[1] || chunks[0] || objective,'medium','detail');
+    addKeywordMcq(stationId + '_q4','Which word best matches the lesson topic?', keywords[0] || 'topic');
+    addKeywordMcq(stationId + '_q5','Which word is closest in meaning to a key word in the lesson?', keywords[1] || keywords[0] || 'word');
+    addTf(stationId + '_q6','This lesson focuses on understanding ideas from the text.','True');
+    addMcq(stationId + '_q7','Which detail is NOT correct?', 'An idea not supported by the lesson','hard','detail');
+  }
+  else {
+    // MAIN IDEA (ONLY ONCE)
+    addMcq(stationId + '_q1','What is the main idea of this paragraph?', objective,'medium','main_idea');
+
+    // DETAILS (majority)
+    addMcq(stationId + '_q2','Which detail is correct?', chunks[0] || objective,'easy','detail');
+    addMcq(stationId + '_q3','Which detail is mentioned in the text?', chunks[1] || chunks[0] || objective,'medium','detail');
+    addMcq(stationId + '_q4','Which statement is TRUE based on the paragraph?', chunks[2] || chunks[0] || objective,'medium','detail');
+
+    // VOCABULARY (at least 1–2)
+    addKeywordMcq(stationId + '_q5','Which word best matches the meaning in the text?', keywords[0] || 'word');
+
+    if(count > 5){
+      addKeywordMcq(stationId + '_q6','Which word is closest in meaning to a key word?', keywords[1] || keywords[0] || 'word');
+    }
   }
 
+  // fill remaining ONLY with DETAILS (no extra main idea)
   while(questions.length < count){
     addMcq(stationId + '_q' + (questions.length + 1),'Which detail is correct?', chunks[(questions.length - 1) % Math.max(chunks.length,1)] || objective,'medium','detail');
   }
 
+  // enforce pattern if needed
   if(pattern === 'mcq'){
     questions.forEach(function(q, i){
       if(q.type !== 'mcq') questions[i] = createQuestion(q.id,'mcq',q.text,q.answer,buildDistractors(q.answer, keywords, chunks, 'detail'));
@@ -925,37 +1142,10 @@ function buildQuestionsForStation(stationId, sourceText, imageNotes, pattern){
 }
 
 window.generateStationDraft = function(){
-  const id = byId('creatorStationSelect').value;
-  const current = getStationById(id) || {title:'Station', time:'10 min'};
-  const imageUrl = byId('creatorImageUrl').value.trim();
-  const sourceText = byId('creatorSourceText').value.trim();
-  const imageNotes = byId('creatorImageNotes').value.trim();
-  const material = [sourceText, imageNotes].join(' ').trim();
-  const pattern = byId('creatorQuestionPattern').value;
-  const title = byId('creatorTitle').value.trim() || titleFromMaterial(id, material) || current.title;
-  const objective = byId('creatorObjective').value.trim() || objectiveFromMaterial(id, material);
-  const details = byId('creatorDetails').value.trim() || detailsFromMaterial(id, material);
-  const time = byId('creatorTime').value.trim() || current.time;
-  const questions = buildQuestionsForStation(id, sourceText, imageNotes, pattern);
-  lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {title:title, objective:objective, details:details, time:time, thumbnail:imageUrl}) : s; });
-  lessonContent[id] = { imageUrl:imageUrl, sourceText:sourceText, imageNotes:imageNotes, questions:questions };
-  showNotice('creatorNotice','Station draft generated with answers. Click Save Station to publish it.','good');
+  showNotice('creatorNotice','This lesson creator is now manual. Add your questions in the Question Builder, then click Save Station.','warn');
 };
 window.generateFromPictureAssistant = function(){
-  const id = byId('creatorStationSelect').value;
-  const imageUrl = byId('creatorImageUrl').value.trim();
-  const imageNotes = byId('creatorImageNotes').value.trim();
-  const sourceText = byId('creatorSourceText').value.trim();
-  const material = [imageNotes, sourceText].join(' ').trim();
-  if(!imageUrl){ showNotice('creatorNotice','Please upload or paste an activity picture first.','bad'); return; }
-  // Allow generation even without notes (auto infer)
-  if(!material){
-    byId('creatorImageNotes').value = 'Auto-generated from activity picture';
-  }
-  if(!byId('creatorTitle').value.trim()) byId('creatorTitle').value = titleFromMaterial(id, material);
-  if(!byId('creatorObjective').value.trim()) byId('creatorObjective').value = objectiveFromMaterial(id, material);
-  if(!byId('creatorDetails').value.trim()) byId('creatorDetails').value = detailsFromMaterial(id, material);
-  generateStationDraft();
+  showNotice('creatorNotice','Picture uploaded. Now add your station title, objective, details, and questions manually, then click Save Station.','good');
 };
 
 window.saveCreatorStation = async function(){
@@ -976,25 +1166,19 @@ window.saveCreatorStation = async function(){
   lessonContent[id].imageUrl = imageUrl;
   lessonContent[id].sourceText = sourceText;
   lessonContent[id].imageNotes = byId('creatorImageNotes').value.trim();
-  const manualPrompt = byId('creatorPrompt').value.trim();
-  const manualChoices = byId('creatorChoices').value.trim();
-  const manualCorrect = byId('creatorCorrect').value.trim();
-  if(manualPrompt && manualCorrect && (!lessonContent[id].questions || !lessonContent[id].questions.length)){
-    lessonContent[id].questions = [createQuestion(
-      id + '_manual_1',
-      manualChoices ? 'mcq' : 'tf',
-      manualPrompt,
-      manualCorrect,
-      manualChoices ? manualChoices.split('\n').map(function(x){ return x.trim(); }).filter(Boolean) : ['True','False']
-    )];
-  }
+  lessonContent[id].questions = creatorDraftQuestions.map(function(q, idx){
+    return createQuestion(id + '_q' + (idx + 1), q.type, q.text, q.answer, q.type === 'tf' ? ['True','False'] : (q.choices || []));
+  });
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
-  showNotice('creatorNotice','Station saved successfully.','good');
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+  showNotice('creatorNotice','Station saved successfully and sent to student page.','good');
 };
 
 bindButtons();
-document.addEventListener('DOMContentLoaded', bindButtons);
+document.addEventListener('DOMContentLoaded', function(){ bindButtons(); toggleBuilderFields(); });
 if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig(); else tryAutoConnect();
 
 console.assert(typeof bindButtons === 'function', 'bindButtons should exist');
@@ -1007,7 +1191,7 @@ console.assert(REQUIRED_COUNTS.starter === 2 && REQUIRED_COUNTS.st1 === 5 && REQ
 console.assert(typeof configsEqual === 'function', 'configsEqual should exist');
 console.assert(typeof renderTeacherTracker === 'function', 'renderTeacherTracker should exist');
 console.assert(createQuestion('x','mcq','Question','word',['word','a','b','c']).type === 'mcq', 'mcq question type should exist');
-console.assert(buildQuestionsForStation('starter','planet text','picture note','mixed').length === 2, 'starter should create 2 questions');
+console.assert(Array.isArray(defaultContent.starter.questions) && defaultContent.starter.questions.length === 0, 'default stations should start with no questions');
 </script>
 </body>
 </html>
