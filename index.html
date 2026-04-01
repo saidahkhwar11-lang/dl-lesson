@@ -286,6 +286,7 @@ let currentOpenStation = 'starter';
 let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, studentSelfRef = null, lessonConfigRef = null, lessonContentRef = null;
 let creatorDraftQuestions = [];
 let teacherQuestionVisibility = {};
+let teacherQuestionIndex = {};
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -512,30 +513,44 @@ window.openTeacherStationPreview = function(id){
   }
 
   let questionsHtml = '';
+
   if(content.questions && content.questions.length){
-    questionsHtml = content.questions.map(function(q, i){
-      let choicesHtml = '';
 
-      if(q.type === 'mcq' && q.choices){
-        choicesHtml = q.choices.map(function(choice){
-          return `<div class="choice">${choice}</div>`;
-        }).join('');
-      }
+    if(teacherQuestionIndex[id] === undefined){
+      teacherQuestionIndex[id] = 0;
+    }
 
-      if(q.type === 'tf'){
-        choicesHtml = `
-          <div class="choice">True</div>
-          <div class="choice">False</div>
-        `;
-      }
+    const currentIndex = teacherQuestionIndex[id];
+    const q = content.questions[currentIndex];
 
-      return `
-        <div class="question">
-          <div><strong>Q${i+1}.</strong> ${q.text}</div>
-          <div style="margin-top:10px;">${choicesHtml}</div>
-        </div>
+    let choicesHtml = '';
+
+    if(q.type === 'mcq' && q.choices){
+      choicesHtml = q.choices.map(function(choice){
+        return `<div class="choice">${choice}</div>`;
+      }).join('');
+    }
+
+    if(q.type === 'tf'){
+      choicesHtml = `
+        <div class="choice">True</div>
+        <div class="choice">False</div>
       `;
-    }).join('');
+    }
+
+    questionsHtml = `
+      <div class="question">
+        <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
+        <div style="margin-top:10px;">${choicesHtml}</div>
+      </div>
+
+      <div class="btns" style="margin-top:12px;">
+        <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
+        <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
+      </div>
+
+      <div class="small">Question ${currentIndex + 1} of ${content.questions.length}</div>
+    `;
   } else {
     questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
   }
@@ -553,16 +568,16 @@ window.openTeacherStationPreview = function(id){
         <button type="button" class="goodbtn" onclick="unlockTeacherStation('${station.id}')">Unlock</button>
         <button type="button" class="warnbtn" onclick="lockTeacherStation('${station.id}')">Lock</button>
         <button type="button" class="secondary" onclick="toggleTeacherQuestions('${station.id}')">
-  ${teacherQuestionVisibility[station.id] === false ? 'Show Questions' : 'Hide Questions'}
-</button>
+          ${teacherQuestionVisibility[station.id] === false ? 'Show Questions' : 'Hide Questions'}
+        </button>
       </div>
     </div>
 
     <div class="preview-right teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
-      ${teacherQuestionVisibility[station.id] === false 
-  ? '<div class="teacher-preview-empty">Questions hidden</div>' 
-  : questionsHtml}
+      ${teacherQuestionVisibility[station.id] === false
+        ? '<div class="teacher-preview-empty">Questions hidden</div>'
+        : questionsHtml}
     </div>
   `;
 };
