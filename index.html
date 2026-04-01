@@ -45,6 +45,13 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
 .section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
 .creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.teacher-station-card{cursor:pointer;text-align:left!important}
+.teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
+.teacher-preview{display:grid;grid-template-columns:1fr 1.1fr;gap:16px}
+.teacher-preview .preview-left,.teacher-preview .preview-right{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+.teacher-preview-questions .question{background:#f8fbff}
+.teacher-preview-empty{padding:18px;border:1px dashed var(--line);border-radius:16px;background:#f8fbff;color:var(--muted)}
+@media (max-width:980px){.teacher-preview{grid-template-columns:1fr}}
 @media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -120,7 +127,12 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
       <div id="teacherOverviewStations" class="top-bar"></div>
-    </div>
+      <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Station Presentation</h2>
+  <div id="teacherStationPreview" class="teacher-preview-empty">
+    Click any station box above to open its picture, objective, time, questions, and controls.
+  </div>
+</div>
 
     <div class="section-tabs">
       <button onclick="showTeacherSection('teacherTrackerCard')">Tracker</button>
@@ -463,6 +475,7 @@ window.openTeacherView = async function(){
     fillTeacherSelects();
     loadCreatorStation();
     renderTeacherOverview();
+    openTeacherStationPreview('starter');
     renderControlStatus();
     renderTeacherTracker();
     showTeacherSection('teacherTrackerCard');
@@ -477,7 +490,119 @@ window.openTeacherView = async function(){
 };
 
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
+  
+window.openTeacherStationPreview = function(id){
+  const wrap = byId('teacherStationPreview');
+  const station = getStationById(id);
+  const content = getStationContent(id);
 
+  if(!wrap || !station) return;
+
+  let imageHtml = '';
+  if(content.imageUrl){
+    imageHtml = `
+      <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
+      <div class="image-actions">
+        <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">Maximize Picture</button>
+      </div>
+    `;
+  } else {
+    imageHtml = `<div class="teacher-preview-empty">No activity picture added yet.</div>`;
+  }
+
+  let questionsHtml = '';
+  if(content.questions && content.questions.length){
+    questionsHtml = content.questions.map(function(q, i){
+      let choicesHtml = '';
+
+      if(q.type === 'mcq' && q.choices){
+        choicesHtml = q.choices.map(function(choice){
+          return `<div class="choice">${choice}</div>`;
+        }).join('');
+      }
+
+      if(q.type === 'tf'){
+        choicesHtml = `
+          <div class="choice">True</div>
+          <div class="choice">False</div>
+        `;
+      }
+
+      return `
+        <div class="question">
+          <div><strong>Q${i+1}.</strong> ${q.text}</div>
+          <div style="margin-top:10px;">${choicesHtml}</div>
+        </div>
+      `;
+    }).join('');
+  } else {
+    questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
+  }
+
+  wrap.className = 'teacher-preview';
+  wrap.innerHTML = `
+    <div class="preview-left">
+      <h3 style="margin-top:0;">${station.title}</h3>
+      <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
+      <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
+      <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
+      ${imageHtml}
+      <div class="btns" style="margin-top:12px;">
+        <button type="button" onclick="displayTeacherStation('${station.id}')">Display Station</button>
+        <button type="button" class="goodbtn" onclick="unlockTeacherStation('${station.id}')">Unlock</button>
+        <button type="button" class="warnbtn" onclick="lockTeacherStation('${station.id}')">Lock</button>
+      </div>
+    </div>
+
+    <div class="preview-right teacher-preview-questions">
+      <h3 style="margin-top:0;">Questions</h3>
+      ${questionsHtml}
+    </div>
+  `;
+};
+
+  window.displayTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    s.displayed = (s.id === id);
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+
+window.unlockTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === id) s.unlocked = true;
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+
+window.lockTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === id && s.id !== 'starter') s.unlocked = false;
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+  
 function scoreTextForStudent(stationId){
   const student = currentStudent && liveStudents[currentStudent.id];
   const got = ((student && student.stationResults && student.stationResults[stationId] && student.stationResults[stationId].score) || 0);
@@ -738,7 +863,14 @@ function fillTeacherSelects(){
 function renderTeacherOverview(){
   const box = byId('teacherOverviewStations');
   if(!box) return;
-  box.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (s.displayed ? 'active' : '') + '"><strong>' + escapeHtml(s.title) + '</strong><div class="small">' + (s.unlocked ? '🔓' : '🔒') + ' | ' + escapeHtml(s.time) + '</div><div class="small">' + escapeHtml(s.objective) + '</div><div class="small">⭐ ' + totalMarksForStation(s.id) + ' marks</div></div>'; }).join('');
+
+  box.innerHTML = lessonStations.map(function(s){
+    return '<div class="item teacher-station-card ' + (s.displayed ? 'active' : '') + '" onclick="openTeacherStationPreview(\'' + s.id + '\')">' +
+      '<strong>' + s.title + '</strong>' +
+      '<div class="small">' + (s.unlocked ? '🔓 Unlocked' : '🔒 Locked') + ' | ' + s.time + '</div>' +
+      '<div class="small">' + s.objective + '</div>' +
+    '</div>';
+  }).join('');
 }
 
 function renderControlStatus(){
