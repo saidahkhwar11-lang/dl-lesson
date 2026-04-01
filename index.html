@@ -93,6 +93,14 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
   </div>
 
+  <div class="card">
+  <h2>SLT View</h2>
+  <label>SLT Name</label>
+  <input id="sltName" placeholder="Enter your name" autocomplete="off" />
+  <button id="sltOpenBtn" type="button">Open SLT View</button>
+  <div id="sltNotice" class="notice bad hidden"></div>
+</div>
+
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
@@ -116,6 +124,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
           <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">Show / Hide Bonus Box</button>
           <button class="secondary" style="width:auto" onclick="exportLessonData()">Save Lesson Data</button>
           <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">Load Lesson Data</button>
+          <button class="secondary" style="width:auto" onclick="saveLessonPlanForSLT()">Save for SLT</button>
         </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -236,6 +245,24 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 </div>
 
+  <div id="sltView" class="hidden">
+
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h2 style="margin:0 0 8px 0;">SLT View</h2>
+    <div class="small" id="sltHeaderInfo">SLT review screen</div>
+  </div>
+
+  <div class="card">
+    <h2>Saved Lesson Plans</h2>
+    <div id="sltLessonList"></div>
+  </div>
+
+</div>
+
 <div id="imageModal" class="hidden"></div>
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
@@ -295,14 +322,35 @@ function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCas
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
 
 function bindButtons(){
-  const studentBtn = byId('studentStartBtn');
-  const teacherBtn = byId('teacherOpenBtn');
-  if(studentBtn) studentBtn.onclick = window.startStudentSession;
-  if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
+  const sb = byId('studentStartBtn');
+  const tb = byId('teacherOpenBtn');
+  const sltb = byId('sltOpenBtn');
+
+  if(sb) sb.onclick = window.startStudentSession;
+  if(tb) tb.onclick = window.openTeacherView;
+  if(sltb) sltb.onclick = window.openSLTView;
 }
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+function showOnly(viewId){
+  ['studentView','teacherView','sltView'].forEach(function(id){
+    byId(id).classList.add('hidden');
+  });
+  byId(viewId).classList.remove('hidden');
+  byId('homeRow').classList.add('hidden');
+  window.scrollTo(0,0);
+} 
+
+window.backToHome = function(){
+  byId('studentView').classList.add('hidden');
+  byId('teacherView').classList.add('hidden');
+  byId('sltView').classList.add('hidden');   // ⭐ ADD THIS LINE
+  byId('homeRow').classList.remove('hidden');
+  byId('teacherTrackerCard').classList.remove('hidden');
+  byId('teacherControlCard').classList.add('hidden');
+  byId('teacherCreatorCard').classList.add('hidden');
+  window.scrollTo(0,0);
+};
+
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 window.maximizeImage = function(src){ if(!src) return; const modal = byId('imageModal'); modal.className = 'maximized'; modal.innerHTML = '<img src="' + src + '" alt="maximized image" onclick="event.stopPropagation()" />'; modal.onclick = function(){ modal.className = 'hidden'; modal.innerHTML = ''; }; };
 
@@ -886,6 +934,104 @@ window.saveCreatorStation = async function(){
   showNotice('creatorNotice','Station saved successfully and sent to student page.','good');
 };
 
+window.saveLessonPlanForSLT = async function(){
+  if(!requireConnection()) return;
+
+  const lessonText = buildLessonPlanText();
+  const key = 'lessonplans/' + lessonKey;
+  const today = new Date();
+
+  const payload = {
+    lessonKey: lessonKey,
+    lessonName: (getStationById('st1') && getStationById('st1').title) || lessonKey,
+    teacher: 'Saidah Khwar',
+    day: today.toLocaleDateString('en-GB', { weekday:'long' }),
+    date: today.toLocaleDateString('en-GB'),
+    content: lessonText,
+    feedback: '',
+    updatedAt: Date.now()
+  };
+
+  await dbRef(key).set(payload);
+  showNotice('creatorNotice','Lesson plan saved for SLT.','good');
+};
+
+window.renderSLTLessonList = function(){
+  const wrap = byId('sltLessonList');
+  if(!wrap) return;
+
+  dbRef('lessonplans').once('value').then(function(snap){
+    const plans = snap.val() || {};
+    const keys = Object.keys(plans);
+
+    if(!keys.length){
+      wrap.innerHTML = '<div class="small">No lesson plans saved yet.</div>';
+      return;
+    }
+
+    wrap.innerHTML = keys.map(function(k){
+      const p = plans[k] || {};
+
+      return '<div class="card" style="margin-bottom:12px;">'
+        + '<h3 style="margin-top:0;">' + escapeHtml(p.lessonName || k) + '</h3>'
+        + '<div class="small">Teacher: ' + escapeHtml(p.teacher || '') + '</div>'
+
+        + '<label>Day</label>'
+        + '<input id="slt_day_' + escapeJs(k) + '" value="' + escapeHtml(p.day || '') + '" />'
+
+        + '<label>Date</label>'
+        + '<input id="slt_date_' + escapeJs(k) + '" value="' + escapeHtml(p.date || '') + '" />'
+
+        + '<div class="btns" style="margin-top:10px;">'
+        + '<button type="button" onclick="toggleSLTPlan(\'' + escapeJs(k) + '\')">View Lesson Plan</button>'
+        + '<button type="button" class="secondary" onclick="saveSLTMeta(\'' + escapeJs(k) + '\')">Save Day/Date</button>'
+        + '</div>'
+
+        + '<div id="slt_plan_' + escapeJs(k) + '" class="hidden" style="white-space:pre-wrap;line-height:1.7;margin-top:10px;background:#fcfdff;border:1px solid #d9e2f2;padding:12px;border-radius:12px;">'
+        + escapeHtml(p.content || '')
+        + '</div>'
+
+        + '<label style="margin-top:10px;display:block;">Feedback</label>'
+        + '<textarea id="slt_feedback_' + escapeJs(k) + '">' + escapeHtml(p.feedback || '') + '</textarea>'
+
+        + '<div class="btns" style="margin-top:10px;">'
+        + '<button type="button" onclick="saveSLTFeedback(\'' + escapeJs(k) + '\')">Save Feedback</button>'
+        + '</div>'
+
+        + '</div>';
+    }).join('');
+  });
+};
+
+window.toggleSLTPlan = function(k){
+  const el = byId('slt_plan_' + k);
+  if(el) el.classList.toggle('hidden');
+};
+
+window.saveSLTMeta = async function(k){
+  if(!requireConnection()) return;
+
+  await dbRef('lessonplans/' + k).update({
+    day: byId('slt_day_' + k).value,
+    date: byId('slt_date_' + k).value,
+    updatedAt: Date.now()
+  });
+
+  renderSLTLessonList();
+};
+
+window.saveSLTFeedback = async function(k){
+  if(!requireConnection()) return;
+
+  await dbRef('lessonplans/' + k).update({
+    feedback: byId('slt_feedback_' + k).value,
+    sltName: currentSLTName,
+    updatedAt: Date.now()
+  });
+
+  renderSLTLessonList();
+};
+  
 bindButtons();
 document.addEventListener('DOMContentLoaded', function(){ bindButtons(); toggleBuilderFields(); });
 if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig(); else tryAutoConnect();
