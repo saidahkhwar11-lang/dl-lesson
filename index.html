@@ -285,6 +285,7 @@ let lessonContent = JSON.parse(JSON.stringify(defaultContent));
 let currentOpenStation = 'starter';
 let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, studentSelfRef = null, lessonConfigRef = null, lessonContentRef = null;
 let creatorDraftQuestions = [];
+let teacherQuestionVisibility = {};
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -551,14 +552,24 @@ window.openTeacherStationPreview = function(id){
         <button type="button" onclick="displayTeacherStation('${station.id}')">Display Station</button>
         <button type="button" class="goodbtn" onclick="unlockTeacherStation('${station.id}')">Unlock</button>
         <button type="button" class="warnbtn" onclick="lockTeacherStation('${station.id}')">Lock</button>
+        <button type="button" class="secondary" onclick="toggleTeacherQuestions('${station.id}')">
+  ${teacherQuestionVisibility[station.id] === false ? 'Show Questions' : 'Hide Questions'}
+</button>
       </div>
     </div>
 
     <div class="preview-right teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
-      ${questionsHtml}
+      ${teacherQuestionVisibility[station.id] === false 
+  ? '<div class="teacher-preview-empty">Questions hidden</div>' 
+  : questionsHtml}
     </div>
   `;
+};
+  
+window.toggleTeacherQuestions = function(id){
+  teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
+  openTeacherStationPreview(id);
 };
 
   window.displayTeacherStation = async function(id){
