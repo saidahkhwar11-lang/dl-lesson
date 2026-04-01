@@ -47,10 +47,17 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .teacher-station-card{cursor:pointer;text-align:left!important}
 .teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
-.teacher-preview{display:grid;grid-template-columns:1fr 1.1fr;gap:16px}
+.teacher-preview{display:grid;grid-template-columns:1.45fr .75fr;gap:16px}
 .teacher-preview .preview-left,.teacher-preview .preview-right{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
 .teacher-preview-questions .question{background:#f8fbff}
 .teacher-preview-empty{padding:18px;border:1px dashed var(--line);border-radius:16px;background:#f8fbff;color:var(--muted)}
+.teacher-preview-left-large{min-width:0}
+.teacher-preview-right-small{min-width:0}
+.teacher-big-img{width:100%;max-height:520px;object-fit:contain;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.teacher-small-question{padding:8px;font-size:14px}
+.teacher-small-choice{padding:7px;margin:6px 0;font-size:13px}
+.teacher-q-nav{gap:8px}
+.teacher-q-nav button{width:auto;padding:10px 14px;font-size:14px}
 @media (max-width:980px){.teacher-preview{grid-template-columns:1fr}}
 @media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}}
 </style>
@@ -503,7 +510,7 @@ window.openTeacherStationPreview = function(id){
   let imageHtml = '';
   if(content.imageUrl){
     imageHtml = `
-      <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
+      <img class="teacher-big-img" src="${content.imageUrl}" alt="Station Image">
       <div class="image-actions">
         <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">Maximize Picture</button>
       </div>
@@ -515,9 +522,16 @@ window.openTeacherStationPreview = function(id){
   let questionsHtml = '';
 
   if(content.questions && content.questions.length){
-
-    if(teacherQuestionIndex[id] === undefined){
+    if(typeof teacherQuestionIndex[id] !== 'number'){
       teacherQuestionIndex[id] = 0;
+    }
+
+    if(teacherQuestionIndex[id] < 0){
+      teacherQuestionIndex[id] = 0;
+    }
+
+    if(teacherQuestionIndex[id] > content.questions.length - 1){
+      teacherQuestionIndex[id] = content.questions.length - 1;
     }
 
     const currentIndex = teacherQuestionIndex[id];
@@ -527,24 +541,24 @@ window.openTeacherStationPreview = function(id){
 
     if(q.type === 'mcq' && q.choices){
       choicesHtml = q.choices.map(function(choice){
-        return `<div class="choice">${choice}</div>`;
+        return `<div class="choice teacher-small-choice">${choice}</div>`;
       }).join('');
     }
 
     if(q.type === 'tf'){
       choicesHtml = `
-        <div class="choice">True</div>
-        <div class="choice">False</div>
+        <div class="choice teacher-small-choice">True</div>
+        <div class="choice teacher-small-choice">False</div>
       `;
     }
 
     questionsHtml = `
-      <div class="question">
+      <div class="question teacher-small-question">
         <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
         <div style="margin-top:10px;">${choicesHtml}</div>
       </div>
 
-      <div class="btns" style="margin-top:12px;">
+      <div class="btns teacher-q-nav" style="margin-top:12px;">
         <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
         <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
       </div>
@@ -557,7 +571,7 @@ window.openTeacherStationPreview = function(id){
 
   wrap.className = 'teacher-preview';
   wrap.innerHTML = `
-    <div class="preview-left">
+    <div class="preview-left teacher-preview-left-large">
       <h3 style="margin-top:0;">${station.title}</h3>
       <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
       <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
@@ -573,7 +587,7 @@ window.openTeacherStationPreview = function(id){
       </div>
     </div>
 
-    <div class="preview-right teacher-preview-questions">
+    <div class="preview-right teacher-preview-right-small teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
       ${teacherQuestionVisibility[station.id] === false
         ? '<div class="teacher-preview-empty">Questions hidden</div>'
@@ -627,6 +641,36 @@ window.lockTeacherStation = async function(id){
   renderTeacherOverview();
   renderControlStatus();
   openTeacherStationPreview(id);
+};
+
+  window.nextTeacherQuestion = function(id){
+  const content = getStationContent(id);
+  if(!content || !content.questions || !content.questions.length) return;
+
+  if(typeof teacherQuestionIndex[id] !== 'number'){
+    teacherQuestionIndex[id] = 0;
+  }
+
+  if(teacherQuestionIndex[id] < content.questions.length - 1){
+    teacherQuestionIndex[id]++;
+  }
+
+  window.openTeacherStationPreview(id);
+};
+
+window.prevTeacherQuestion = function(id){
+  const content = getStationContent(id);
+  if(!content || !content.questions || !content.questions.length) return;
+
+  if(typeof teacherQuestionIndex[id] !== 'number'){
+    teacherQuestionIndex[id] = 0;
+  }
+
+  if(teacherQuestionIndex[id] > 0){
+    teacherQuestionIndex[id]--;
+  }
+
+  window.openTeacherStationPreview(id);
 };
   
 function scoreTextForStudent(stationId){
