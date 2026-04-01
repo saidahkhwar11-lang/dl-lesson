@@ -1,821 +1,1913 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>DL Online Live System</title>
-<style>
-:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
-*{box-sizing:border-box} body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)} .hidden{display:none!important}
-.wrap{max-width:1440px;margin:0 auto;padding:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
-.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
-.row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}.btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
-input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff} textarea{min-height:100px;resize:vertical}
-button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:bold}.secondary{background:var(--accent)}.muted{background:#6c7b95}.goodbtn{background:var(--good)}.warnbtn{background:var(--warn)}
-.notice{padding:10px 12px;border-radius:12px;margin-top:10px}.notice.good{background:#e8f7ef;color:#145d3d}.notice.bad{background:#fdecec;color:#962d2d}.notice.warn{background:#fff7df;color:#8c6400}.small{font-size:13px;color:var(--muted)}
-.top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}.top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center;cursor:pointer}.top-bar .item.active{background:var(--primary2);color:#fff}.top-bar .item.locked{opacity:.55;cursor:not-allowed}
-.student-layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}.sidebar,.main{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}
-.station-box{padding:10px;border-radius:14px;background:#eef3ff;margin-bottom:8px;cursor:pointer;display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:start}.station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
-.station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}.station-box .meta{font-size:12px;line-height:1.5}
-.question{padding:10px;margin-bottom:12px;background:#fff;border-radius:14px;border:1px solid #e0e0e0}.question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
-.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer;background:#fff}.choice:hover{background:#f0f7ff}.choice input{margin-right:8px}
-.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
-.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{width:100%;max-height:340px;object-fit:contain;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
-.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
-.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-@media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Universal Lesson Stations Builder</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      color: #222;
+    }
+    .hidden { display: none !important; }
+    .topbar {
+      background: #1f4e79;
+      color: white;
+      padding: 14px 18px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 1320px;
+      margin: 20px auto;
+      padding: 0 16px 30px;
+    }
+    .card {
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .lesson-header-card {
+      background: #ffffff;
+      border: 1px solid #dcdcdc;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .lesson-header-card h2 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: #1f4e79;
+    }
+    .lesson-header-card p {
+      margin: 6px 0;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+    h1, h2, h3, h4, p { margin-top: 0; }
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .col { flex: 1 1 320px; }
+    input, textarea, button, select {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      font-size: 15px;
+      margin-top: 8px;
+      margin-bottom: 12px;
+      font-family: inherit;
+    }
+    textarea { min-height: 90px; resize: vertical; }
+    button {
+      cursor: pointer;
+      border: none;
+      background: #1f4e79;
+      color: white;
+      font-weight: bold;
+    }
+    button.secondary { background: #6c757d; }
+    button.green { background: #198754; }
+    button.orange { background: #fd7e14; }
+    button.red { background: #dc3545; }
+    button.purple { background: #6f42c1; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e9f2ff;
+      color: #1f4e79;
+      font-size: 13px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+    .notice {
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #fff3cd;
+      color: #664d03;
+      margin-bottom: 12px;
+    }
+    .good { background: #d1e7dd; color: #0f5132; }
+    .bad { background: #f8d7da; color: #842029; }
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .top-actions button {
+      width: auto;
+      min-width: 150px;
+    }
+    .timer-box {
+      font-size: 20px;
+      font-weight: bold;
+      color: #dc3545;
+    }
+    .student-layout {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    .station-list {
+      display: grid;
+      gap: 10px;
+    }
+    .station-box {
+      padding: 12px;
+      border-radius: 12px;
+      border: 1px solid #ddd;
+      background: #fafafa;
+    }
+    .station-box.current {
+      border-color: #93c5fd;
+      background: #eef6ff;
+    }
+    .station-box.locked {
+      background: #f1f1f1;
+      opacity: 0.8;
+    }
+    .station-box.done {
+      background: #d1e7dd;
+      border-color: #9ec5ae;
+    }
+    .station-box .mini-title {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 6px;
+    }
+    .small {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.45;
+    }
+    .question-card {
+      border: 1px solid #e2e2e2;
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 12px;
+      background: #fcfcfc;
+    }
+    .question-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+      color: #1f4e79;
+      line-height: 1.45;
+    }
+    .choice-btn {
+      width: 100%;
+      text-align: left;
+      background: #f7f7f7;
+      color: #222;
+      border: 1px solid #ddd;
+      margin-bottom: 8px;
+      font-weight: normal;
+    }
+    .choice-btn.selected {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+    .choice-btn.correct {
+      background: #d1e7dd;
+      border-color: #9ec5ae;
+    }
+    .choice-btn.incorrect {
+      background: #f8d7da;
+      border-color: #f1aeb5;
+    }
+    .feedback-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .feedback-box.correct {
+      background: #d1e7dd;
+      color: #0f5132;
+    }
+    .feedback-box.incorrect {
+      background: #f8d7da;
+      color: #842029;
+    }
+    .center { text-align: center; }
+    .score-big {
+      font-size: 30px;
+      font-weight: bold;
+      color: #1f4e79;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+      font-size: 14px;
+      vertical-align: top;
+    }
+    th { background: #eef4fa; }
+    .progress-live-wrap { margin-top: 14px; }
+    .progress-student-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      padding: 12px;
+      margin-bottom: 10px;
+    }
+    .progress-student-card h4 {
+      margin: 0 0 8px 0;
+      color: #1f4e79;
+      font-size: 16px;
+    }
+    .progress-meta {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .progress-bar-wrap {
+      width: 100%;
+      height: 12px;
+      background: #e9ecef;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 8px 0 10px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: #198754;
+    }
+    .station-mini-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .station-mini {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      background: #f1f3f5;
+      border: 1px solid #ddd;
+    }
+    .station-mini.done {
+      background: #d1e7dd;
+      border-color: #9ec5ae;
+    }
+    .station-mini.current {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+    .bonus-popup {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      width: 300px;
+      max-height: 70vh;
+      overflow-y: auto;
+      background: #ffffff;
+      border: 2px solid #dcdcdc;
+      border-radius: 14px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+      z-index: 9999;
+    }
+    .bonus-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      font-weight: bold;
+      background: #f7f7f7;
+      border-bottom: 1px solid #ececec;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+    }
+    .bonus-popup-close {
+      background: transparent;
+      color: #222;
+      border: none;
+      font-size: 22px;
+      cursor: pointer;
+      width: auto;
+      margin: 0;
+      padding: 0;
+    }
+    .bonus-popup-body { padding: 10px; }
+    .bonus-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      border-radius: 10px;
+      background: #fafafa;
+      border: 1px solid #ededed;
+      font-size: 14px;
+    }
+    .bonus-name { font-weight: 600; }
+    .bonus-points { font-weight: bold; color: #198754; }
+    .bonus-empty { padding: 12px; text-align: center; color: #777; }
+    .mini-btn {
+      width: auto;
+      margin: 0;
+      padding: 6px 10px;
+      font-size: 13px;
+      border-radius: 8px;
+    }
+    .bonus-btn-wrap {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .lesson-card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #fafafa;
+    }
+    .lesson-card.active {
+      border-color: #198754;
+      background: #eefaf2;
+    }
+    .muted {
+      color: #666;
+      font-size: 13px;
+    }
+    .image-preview {
+      max-width: 100%;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      margin-top: 8px;
+    }
+    .teacher-activity-image {
+      width: 180px;
+      max-width: 100%;
+      cursor: zoom-in;
+      transition: all 0.2s ease;
+    }
+    .teacher-activity-image-large {
+      width: 100%;
+      max-height: 80vh;
+      object-fit: contain;
+      cursor: zoom-out;
+    }
+    .teacher-station-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .teacher-station-card {
+      border: 1px solid #d8e2ee;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.06);
+    }
+    .teacher-station-card h4 {
+      margin: 6px 0 10px;
+      color: #1f4e79;
+      font-size: 18px;
+    }
+    .teacher-station-number {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: #e9f2ff;
+      color: #1f4e79;
+      font-size: 12px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+    @media (max-width: 900px) {
+      .student-layout {
+        grid-template-columns: 1fr;
+      }
+      .bonus-popup {
+        width: calc(100% - 30px);
+        right: 15px;
+        left: 15px;
+      }
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="hero"><h1>DL Online Live System</h1><p>Live Firebase lesson with teacher controls, lesson creator, station images, auto-checking, tracker, bonus popup, and attendance.</p></div>
+  <div class="topbar">Universal Lesson Stations App</div>
 
-  <div id="setupCard" class="card hidden">
-    <h2>Firebase Setup</h2>
-    <label>Lesson Key</label><input id="lessonKey" value="grade9_lesson1" />
-    <label>Firebase Config JSON</label>
-    <textarea id="firebaseConfigText">{
-  "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
-  "authDomain": "online-english-lesson-grade-9.firebaseapp.com",
-  "databaseURL": "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
-  "projectId": "online-english-lesson-grade-9",
-  "appId": "1:542666648554:web:5190c68ea73b3536dae093"
-}</textarea>
-    <div class="btns"><button onclick="saveConfig()">Save Config</button><button class="muted" onclick="loadSavedConfig()">Reload Saved Config</button></div>
-    <div id="setupNotice" class="notice warn">Not connected yet.</div>
-  </div>
+  <div class="container">
 
-  <div class="row" id="homeRow" style="margin-top:16px;">
-  <div class="card">
-    <h2>Student Login</h2>
-    <label>Student Name</label><input id="studentName" placeholder="Enter student name" autocomplete="off" />
-    <label>Student ID</label><input id="studentId" placeholder="Enter student ID" autocomplete="off" />
-    <button id="studentStartBtn" type="button">Start Student Session</button>
-    <div id="studentNotice" class="notice bad hidden"></div>
-  </div>
+    <!-- HOME SCREEN -->
+    <div id="homeScreen" class="card">
+      <div class="lesson-header-card" id="homeLessonHeaderWrap">
+        <h2 id="homeLessonTitle">Lesson Title: No Active Lesson</h2>
+        <p><strong>Day / Date:</strong> <span id="homeLessonDate">-</span></p>
+        <p><strong>Objectives:</strong> <span id="homeLessonObjectives">Create and activate a lesson first.</span></p>
+        <p><strong>Key Words:</strong> <span id="homeLessonKeywords">-</span></p>
+      </div>
 
-  <div class="card">
-    <h2>Teacher View</h2>
-    <label>Teacher Password</label><input id="teacherPassword" type="password" placeholder="Enter password" autocomplete="off" />
-    <button id="teacherOpenBtn" type="button">Open Teacher View</button>
+      <div class="row">
+        <div class="col">
+          <div class="card" style="margin-bottom:0;">
+            <h3>Student View</h3>
+            <label>Student Name</label>
+            <input id="studentName" type="text" placeholder="Enter student name" />
+
+            <label>Student ID</label>
+            <input id="studentId" type="text" placeholder="Enter student ID" />
+
+            <div id="studentNotice" class="notice bad hidden"></div>
+
+            <button onclick="startStudentActivity()">Start Activity</button>
+          </div>
+        </div>
+
+        <div class="col">
+  <div class="card" style="margin-bottom:0;">
+    <h3>Teacher View</h3>
+    <label>Password</label>
+    <input id="teacherPassword" type="password" placeholder="Enter teacher password" />
     <div id="teacherNotice" class="notice bad hidden"></div>
-  </div>
-
-  <div class="card">
-    <h2>SLT View</h2>
-    <label>SLT Name</label><input id="sltName" placeholder="Enter your name" autocomplete="off" />
-    <button id="sltOpenBtn" type="button">Open SLT View</button>
-    <div id="sltNotice" class="notice bad hidden"></div>
+    <button onclick="enterTeacherView()">Open Teacher View</button>
   </div>
 </div>
 
-<div id="studentView" class="hidden">
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
-    <div class="top-bar" id="topStations"></div>
-    <div class="student-layout"><div class="sidebar"><h3 style="margin-top:0">Stations</h3><div id="stationList"></div></div><div class="main" id="stationContent"></div></div>
-  </div>
-
-  <div id="teacherView" class="hidden">
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
-    <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;"><div class="btns" style="justify-content:space-between;align-items:center;"><h2 style="margin:0;">Lesson Stations</h2><div class="btns"><button class="secondary" style="width:auto" onclick="toggleBonusPopup()">Show / Hide Bonus Box</button><button class="secondary" style="width:auto" onclick="exportLessonData()">Save Lesson Data</button><button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">Load Lesson Data</button></div></div><input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" /><div id="teacherOverviewStations" class="top-bar"></div></div>
-    <div class="card" style="margin-bottom:12px;">
-      <div class="btns">
-        <button onclick="generateLessonPlanScreen()">Generate Lesson Plan</button>
-      </div>
-      <div id="lessonPlanScreen" class="hidden" style="margin-top:12px;">
-        <div class="card" style="background:#fcfdff;border:1px solid #d9e2f2;">
-          <div class="btns" style="justify-content:space-between;align-items:center;">
-            <h2 style="margin:0;">Printable Lesson Plan</h2>
-            <div class="btns">
-              <button class="secondary" style="width:auto" onclick="copyLessonPlanText()">Copy Lesson Plan</button>
-              <button class="secondary" style="width:auto" onclick="saveLessonPlanForSLT()">Save for SLT</button>
-            </div>
+        <div class="col">
+          <div class="card" style="margin-bottom:0;">
+            <h3>Lesson Details</h3>
+            <label>Password</label>
+            <input id="lessonBuilderPassword" type="password" placeholder="Enter teacher password" />
+            <div id="lessonBuilderNotice" class="notice bad hidden"></div>
+            <button class="purple" onclick="enterLessonBuilder()">Open Lesson Details</button>
+            <p class="small">Use this area to build, save, and activate one lesson at a time.</p>
           </div>
-          <div id="lessonPlanContent" style="margin-top:12px; white-space:pre-wrap; line-height:1.7;"></div>
         </div>
       </div>
     </div>
-    <div class="section-tabs"><button onclick="showTeacherSection('teacherTrackerCard')">Tracker</button><button onclick="showTeacherSection('teacherControlCard')">Lock / Unlock</button><button onclick="showTeacherSection('teacherCreatorCard')">Lesson Creator</button></div>
-    <div id="teacherTrackerCard" class="card"><div class="btns"><button onclick="refreshTeacherNow()">Refresh Tracker</button><button class="secondary" onclick="exportTrackerCsv()">Export CSV</button><button class="warnbtn" onclick="clearTrackerData()">Clear Tracker</button><button class="warnbtn" onclick="clearBonusData()">Clear Bonus</button></div><h2>Live Teacher Tracker</h2><div id="teacherTrackerWrap"></div></div>
-    <div id="bonusPopup" class="bonus-popup"><div class="btns" style="justify-content:space-between;margin-bottom:8px;"><button class="secondary" style="width:auto" onclick="toggleBonusPopup()">Hide Bonus Box</button></div><h3 style="margin-top:0">Bonus Live Box</h3><div id="bonusLiveContent">No bonus yet.</div></div>
-    <div id="teacherControlCard" class="card hidden"><h2>Display First & Unlock Control</h2><label>Select Station</label><select id="controlStationSelect"></select><div class="btns"><button onclick="displaySelectedStation()">Display Station</button><button class="goodbtn" onclick="unlockSelectedStation()">Unlock Station</button><button class="warnbtn" onclick="lockSelectedStation()">Lock Station</button></div><div id="controlNotice" class="notice good hidden"></div><div id="controlStatusWrap" style="margin-top:12px"></div></div>
-    <div id="teacherCreatorCard" class="card hidden">
-      <h2>Lesson Creator</h2><label>Select Station</label><select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
-      <div class="creator-grid" style="margin-top:12px;">
-        <div><label>Station Title</label><input id="creatorTitle" /><label>Mini Objective</label><input id="creatorObjective" /><label>Details</label><textarea id="creatorDetails"></textarea><label>Time</label><input id="creatorTime" /><label>Image URL</label><input id="creatorImageUrl" placeholder="Paste image URL" /><label>Upload Activity Picture</label><input id="creatorImageFile" type="file" accept="image/*" onchange="handleCreatorImage(event)" /><label>Source Text / Activity Notes</label><textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea><label>Picture AI Notes</label><textarea id="creatorImageNotes" placeholder="Optional support notes"></textarea></div>
-        <div><label>Question Builder</label><div class="card" style="padding:12px;background:#f8fbff;"><label>Question Type</label><select id="builderQuestionType" onchange="toggleBuilderFields()"><option value="mcq">Multiple Choice</option><option value="tf">True / False</option></select><label>Question Text</label><textarea id="builderQuestionText" placeholder="Write the question here"></textarea><div id="builderMcqFields"><label>Choice A</label><input id="builderChoiceA" /><label>Choice B</label><input id="builderChoiceB" /><label>Choice C</label><input id="builderChoiceC" /><label>Choice D</label><input id="builderChoiceD" /><label>Correct Answer</label><select id="builderCorrectMcq"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select></div><div id="builderTfFields" class="hidden"><label>Correct Answer</label><select id="builderCorrectTf"><option value="True">True</option><option value="False">False</option></select></div><div class="btns" style="margin-top:10px;"><button type="button" onclick="addCreatorQuestion()">Add Question</button><button type="button" class="muted" onclick="clearQuestionBuilder()">Clear Current Question</button><button type="button" class="warnbtn" onclick="clearAllCreatorQuestions()">Clear All Questions</button></div></div><div class="card" style="padding:12px;margin-top:12px;"><h3 style="margin-top:0;">Questions Added</h3><div id="creatorQuestionsList"></div></div><div class="btns"><button onclick="saveCreatorStation()">Save Station</button></div><div class="small" style="margin-top:8px;">Upload picture, fill station details, add questions with answers, then save. Students will see the picture and questions, and their marks will go to the tracker automatically.</div></div>
+
+    <!-- STUDENT SCREEN -->
+    <div id="activityScreen" class="hidden">
+      <div class="lesson-header-card">
+        <h2 id="studentLessonTitle">Lesson Title</h2>
+        <p><strong>Objectives:</strong> <span id="studentLessonObjectives"></span></p>
+        <p><strong>Key Words:</strong> <span id="studentLessonKeywords"></span></p>
       </div>
-      <div id="creatorNotice" class="notice good hidden"></div>
+
+      <div class="card">
+        <div class="top-actions">
+          <span id="studentBadge" class="pill">Student:</span>
+          <span id="stationBadge" class="pill">Station:</span>
+          <span id="progressBadge" class="pill">Progress:</span>
+          <span id="timerBadge" class="pill timer-box">40:00</span>
+          <button class="red" style="margin-left:auto; width:auto; min-width:140px;" onclick="endLessonEarly()">End Lesson</button>
+        </div>
+      </div>
+
+      <div class="student-layout">
+        <div class="card">
+          <h3>Stations Overview</h3>
+          <div id="studentStationList" class="station-list"></div>
+        </div>
+
+        <div>
+          <div class="card">
+            <h3 id="stationTitle">Station</h3>
+            <p id="stationObjective"></p>
+            <div id="stationQuestionsArea"></div>
+            <button id="submitStationBtn" class="green" onclick="submitCurrentStation()">Submit Station</button>
+            <button id="nextStationBtn" class="orange hidden" onclick="goToNextStation()">Next Station</button>
+          </div>
+
+          <div class="card">
+            <button class="secondary" onclick="goHome()">Back to Home</button>
+          </div>
+        </div>
+      </div>
     </div>
+
+    <!-- FINAL SCREEN -->
+    <div id="finalScreen" class="hidden">
+      <div class="card center">
+        <h2>Great Job!</h2>
+        <p>Your work has been completed.</p>
+        <div id="finalScoreBox" class="score-big">0 / 0</div>
+        <p id="finalPercentText"></p>
+        <button onclick="goHome()">Back to Home</button>
+      </div>
+    </div>
+
+    <!-- TEACHER SCREEN -->
+    <div id="teacherScreen" class="hidden">
+      <div id="teacherLessonHeader" class="lesson-header-card">
+        <h2 id="teacherLessonTitle">Lesson Title</h2>
+        <p><strong>Day / Date:</strong> <span id="teacherLessonDate"></span></p>
+        <p><strong>Objectives:</strong> <span id="teacherLessonObjectives"></span></p>
+        <p><strong>Key Words:</strong> <span id="teacherLessonKeywords"></span></p>
+      </div>
+
+      <div class="card">
+        <div class="top-actions">
+          <button onclick="goHome()" class="secondary">Back to Home</button>
+          <button onclick="resetLessonSessionData()" class="red">Reset Session Data</button>
+          <button onclick="exportResultsCsv()" class="orange">Export Results CSV</button>
+          <button onclick="toggleBonusPopup()" class="green">Show / Hide Bonus Box</button>
+          <button onclick="enterLessonBuilder()" class="purple">Lesson Details</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          
+
+          <div class="card">
+            <h3>Station Activity Preview</h3>
+            <div id="teacherStationPreviewWrap"></div>
+          </div>
+
+          <div class="card">
+            <h3>Live Progress Tracker</h3>
+            <div id="progressSummary"></div>
+            <div id="progressTableWrap" class="progress-live-wrap"></div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card">
+            <h3>Live Results</h3>
+            <div id="resultsSummary"></div>
+            <div id="resultsTableWrap"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bonusPopup" class="bonus-popup hidden">
+        <div class="bonus-popup-header">
+          <span>? Bonus Points Live</span>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <button type="button" class="mini-btn red" onclick="clearBonusList()">Clear</button>
+            <button type="button" class="bonus-popup-close" onclick="toggleBonusPopup()"> </button>
+          </div>
+        </div>
+        <div id="bonusPopupBody" class="bonus-popup-body">
+          <div class="bonus-empty">No bonus points yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LESSON BUILDER SCREEN -->
+    <div id="lessonBuilderScreen" class="hidden">
+      <div class="card">
+        <div class="top-actions">
+          <button onclick="goHome()" class="secondary">Back to Home</button>
+          <button onclick="resetBuilderForm()" class="orange">Clear Form</button>
+          <button onclick="saveLessonFromBuilder()" class="green">Save Lesson</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col">
+          <div class="card">
+            <h3>Create / Edit Lesson</h3>
+            <label>Lesson Title</label>
+            <input id="builderTitle" type="text" placeholder="e.g. Different Planets" />
+
+            <label>Day / Date</label>
+            <input id="builderDate" type="text" placeholder="e.g. Monday - 30/03/2026" />
+
+            <label>Lesson Objectives</label>
+            <textarea id="builderObjectives" placeholder="Write lesson objectives here"></textarea>
+
+            <label>Key Words</label>
+            <input id="builderKeywords" type="text" placeholder="e.g. planets, orbit, solar system" />
+
+            <label>Book Activity / Notes</label>
+            <textarea id="builderBookNotes" placeholder="Paste text from the book activity or describe the task here"></textarea>
+
+            <label>Book Activity Image</label>
+            <input id="builderImage" type="file" accept="image/*" onchange="previewBuilderImage(event)" />
+            <img id="builderImagePreview" class="image-preview hidden" alt="Preview" />
+
+            <label>AI Generator</label>
+            <div class="notice">
+              This version is ready for any lesson and saves lessons locally. True AI auto-generation from images requires an external AI API key or backend. Use the helper below to auto-build a draft lesson from your notes inside this app.
+            </div>
+            <button type="button" class="purple" onclick="generateDraftLessonFromNotes()">Generate Draft Stations</button>
+
+            <label>Lesson JSON (Optional advanced edit)</label>
+            <textarea id="builderStationsJson" placeholder="Stations JSON will appear here after generation or manual creation"></textarea>
+            <div id="builderNotice" class="notice hidden"></div>
+          </div>
+        </div>
+
+        <div class="col">
+          <div class="card">
+            <h3>Saved Lessons</h3>
+            <div id="savedLessonsWrap"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-space"></div>
   </div>
 
-  <div id="sltView" class="hidden">
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">SLT View</h2><div class="small" id="sltHeaderInfo">SLT review screen</div></div>
-    <div class="card"><h2>Saved Lesson Plans</h2><div id="sltLessonList"></div></div>
-  </div>
-</div>
-<div id="imageModal" class="hidden"></div>
+  <script>
+    // =========================
+    // CONFIG
+    // =========================
+    const TEACHER_PASSWORD = "1234";
+    const STORAGE_KEYS = {
+      lessons: "lesson_builder_lessons",
+      activeLessonId: "lesson_builder_active_lesson_id",
+      locks: "lesson_locks",
+      results: "lesson_results",
+      progress: "lesson_progress_map",
+      bonuses: "lesson_bonuses"
+    };
 
-<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
-<script>
-const TEACHER_PASSWORD = 'Welcome@2020';
-const APP_NAME = 'dl_online_live_app';
+    const DEFAULT_LESSON = {
+      id: "lesson_default_planets",
+      title: "Different Planets",
+      date: "Monday - 30/03/2026",
+      objectives: "Students will identify facts about planets, read for details, and use key vocabulary correctly.",
+      keywords: "planet, orbit, rocky, gas giant, solar system",
+      bookNotes: "Different Planets reading lesson",
+      imageDataUrl: "",
+      stations: [
+        {
+          id: 1,
+          title: "Starter",
+          objective: "Activate prior knowledge about planets.",
+          questions: [
+            {
+              type: "mcq",
+              text: "Which planet is known as the Red Planet?",
+              choices: ["Earth", "Mars", "Venus", "Jupiter"],
+              answer: 1,
+              explanation: "Mars is often called the Red Planet because of its reddish surface."
+            },
+            {
+              type: "mcq",
+              text: "Which word is related to planets moving around the sun?",
+              choices: ["orbit", "breathe", "climb", "freeze"],
+              answer: 0,
+              explanation: "Orbit means the path a planet follows around the sun."
+            }
+          ]
+        },
+        {
+          id: 2,
+          title: "Station 1",
+          objective: "Identify key facts about rocky planets.",
+          questions: [
+            {
+              type: "mcq",
+              text: "Which planet is rocky?",
+              choices: ["Mercury", "Saturn", "Jupiter", "Neptune"],
+              answer: 0,
+              explanation: "Mercury is one of the rocky inner planets."
+            },
+            {
+              type: "mcq",
+              text: "What is a main feature of rocky planets?",
+              choices: ["Solid surface", "Made mostly of gas", "Has rings only", "Always blue"],
+              answer: 0,
+              explanation: "Rocky planets have a solid surface."
+            }
+          ]
+        },
+        {
+          id: 3,
+          title: "Station 2",
+          objective: "Compare gas giants and inner planets.",
+          questions: [
+            {
+              type: "mcq",
+              text: "Which planet is a gas giant?",
+              choices: ["Earth", "Mars", "Jupiter", "Mercury"],
+              answer: 2,
+              explanation: "Jupiter is a gas giant."
+            },
+            {
+              type: "mcq",
+              text: "Gas giants are usually:",
+              choices: ["Smaller than rocks", "Very large", "Always closest to the sun", "Without atmosphere"],
+              answer: 1,
+              explanation: "Gas giants are very large planets."
+            }
+          ]
+        },
+        {
+          id: 4,
+          title: "Exit Ticket",
+          objective: "Show overall understanding of the lesson.",
+          questions: [
+            {
+              type: "mcq",
+              text: "I can now identify planets by their features.",
+              choices: ["Yes", "No", "Maybe", "Not sure"],
+              answer: 0,
+              explanation: "The lesson helps students identify planet features."
+            }
+          ]
+        }
+      ]
+    };
 
-const defaultStations = [
-  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:true, displayed:true, thumbnail:''},
-  {id:'st1', title:'Station 1', time:'10 min', objective:'Read and answer', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st2', title:'Station 2', time:'10 min', objective:'Read and answer', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st3', title:'Station 3', time:'10 min', objective:'Read and answer', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Show understanding', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''}
-];
+    // =========================
+    // STATE
+    // =========================
+    let lessons = loadData(STORAGE_KEYS.lessons, [DEFAULT_LESSON]);
+    let activeLessonId = loadData(STORAGE_KEYS.activeLessonId, DEFAULT_LESSON.id);
+    let lessonInfo = getActiveLesson() || DEFAULT_LESSON;
+    let stations = lessonInfo.stations || [];
 
-const defaultContent = {
-  starter:{imageUrl:'',sourceText:'',imageNotes:'',questions:[]},
-  st1:{imageUrl:'',sourceText:'',imageNotes:'',questions:[]},
-  st2:{imageUrl:'',sourceText:'',imageNotes:'',questions:[]},
-  st3:{imageUrl:'',sourceText:'',imageNotes:'',questions:[]},
-  exit:{imageUrl:'',sourceText:'',imageNotes:'',questions:[]}
-};
+    let studentName = "";
+    let studentId = "";
+    let currentStationIndex = 0;
+    let totalScore = 0;
+    let totalPossible = 0;
+    let totalSecondsLeft = 2400;
+    let totalTimer = null;
+    let teacherRefreshTimer = null;
 
-let currentSLTName = '';
-let firebaseConfig = null;
-let lessonKey = '';
-let appInstance = null;
-let currentStudent = null;
-let currentOpenStation = 'starter';
-let lessonStations = JSON.parse(JSON.stringify(defaultStations));
-let lessonContent = JSON.parse(JSON.stringify(defaultContent));
-let liveStudents = {};
-let liveBonus = {};
-let creatorDraftQuestions = [];
-let teacherTrackerRef = null;
-let teacherBonusRef = null;
-let studentBonusRef = null;
-let studentSelfRef = null;
-let lessonConfigRef = null;
-let lessonContentRef = null;
+    let locks = {}; // lock feature removed
+    let results = loadData(STORAGE_KEYS.results, []);
+    let studentProgressMap = loadData(STORAGE_KEYS.progress, {});
+    let bonuses = loadData(STORAGE_KEYS.bonuses, {});
 
-function byId(id){ return document.getElementById(id); }
-function showNotice(id,msg,type){ const el=byId(id); if(!el) return; el.className='notice '+(type||'good'); el.textContent=msg; el.classList.remove('hidden'); }
-function hideNotice(id){ const el=byId(id); if(el) el.classList.add('hidden'); }
-function sanitizeKey(s){ return String(s||'').trim().replace(/[^a-zA-Z0-9_-]/g,'_'); }
-function lessonBase(){ return 'lessons/' + lessonKey; }
-function studentPath(id){ return lessonBase() + '/students/' + id; }
-function bonusPath(){ return lessonBase() + '/bonus'; }
-function configPath(){ return lessonBase() + '/config'; }
-function contentPath(){ return lessonBase() + '/content'; }
-function attendancePath(id){ return lessonBase() + '/attendance/' + id; }
-function getStationById(id){ return lessonStations.find(s => s.id === id); }
-function getStationContent(id){ return lessonContent[id] || {imageUrl:'',sourceText:'',imageNotes:'',questions:[]}; }
-function escapeHtml(str){ return String(str==null?'':str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
-function escapeJs(str){ return String(str==null?'':str).replace(/\/g,'\\').replace(/'/g,"\'"); }
-function dbRef(path){ return firebase.database(appInstance).ref(path); }
-function getSnap(path){ return dbRef(path).once('value'); }
-function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
-function normalizeAnswer(v){ return String(v==null?'':v).trim().toLowerCase(); }
-function configsEqual(a,b){ return JSON.stringify(a||{}) === JSON.stringify(b||{}); }
-function createQuestion(id,type,text,answer,choices){ return {id:id, type:type, text:text, answer:answer, choices:choices||[]}; }
-function firstNonEmpty(arr){ return (arr || []).find(x => String(x || '').trim()) || ''; }
-function lessonDateString(){ return new Date().toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'short', year:'numeric' }); }
-function stationQuestionSummary(id){ const qs=(getStationContent(id).questions||[]); return qs.map((q,i) => (i+1)+'. '+q.text).join('
-'); }
+    let currentAnswers = {};
+    let stationScores = {};
+    let stationSubmitted = false;
+    let builderEditingLessonId = null;
 
-function bindButtons(){
-  const sb = byId('studentStartBtn');
-  const tb = byId('teacherOpenBtn');
-  const sltb = byId('sltOpenBtn');
-  if(sb) sb.onclick = window.startStudentSession;
-  if(tb) tb.onclick = window.openTeacherView;
-  if(sltb) sltb.onclick = window.openSLTView;
-}
+    // =========================
+    // HELPERS
+    // =========================
+    function byId(id) {
+      return document.getElementById(id);
+    }
 
-function showOnly(v){
-  ['studentView','teacherView','sltView'].forEach(id => byId(id).classList.add('hidden'));
-  byId(v).classList.remove('hidden');
-  byId('homeRow').classList.add('hidden');
-  window.scrollTo(0,0);
-}
+    function saveData(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
 
-window.backToHome = function(){
-  byId('studentView').classList.add('hidden');
-  byId('teacherView').classList.add('hidden');
-  byId('sltView').classList.add('hidden');
-  byId('homeRow').classList.remove('hidden');
-  showTeacherSection('teacherTrackerCard');
-  window.scrollTo(0,0);
-};
+    function loadData(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
 
-window.toggleBonusPopup = function(){ const p=byId('bonusPopup'); p.style.display = p.style.display==='block' ? 'none' : 'block'; };
-window.maximizeImage = function(src){ if(!src) return; const m=byId('imageModal'); m.className='maximized'; m.innerHTML='<img src="'+src+'" alt="maximized" onclick="event.stopPropagation()" />'; m.onclick=function(){ m.className='hidden'; m.innerHTML=''; }; };
+    function refreshStateFromStorage() {
+      lessons = loadData(STORAGE_KEYS.lessons, [DEFAULT_LESSON]);
+      activeLessonId = loadData(STORAGE_KEYS.activeLessonId, DEFAULT_LESSON.id);
+      lessonInfo = getActiveLesson() || lessons[0] || DEFAULT_LESSON;
+      stations = lessonInfo.stations || [];
+      locks = {}; // lock feature removed
+      results = loadData(STORAGE_KEYS.results, []);
+      studentProgressMap = loadData(STORAGE_KEYS.progress, {});
+      bonuses = loadData(STORAGE_KEYS.bonuses, {});
+    }
 
-function initFirebaseFromInputs(){
-  lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
-  firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
-  const existing = firebase.apps.find(a => a.name === APP_NAME);
-  if(existing){
-    const current = {apiKey:existing.options.apiKey, authDomain:existing.options.authDomain, databaseURL:existing.options.databaseURL, projectId:existing.options.projectId, appId:existing.options.appId};
-    if(!configsEqual(current, firebaseConfig)) throw new Error('Firebase config changed. Refresh the page, then save again.');
-    appInstance = existing;
-  } else {
-    appInstance = firebase.initializeApp(firebaseConfig, APP_NAME);
-  }
-}
+    function getActiveLesson() {
+      return (lessons || []).find(lesson => lesson.id === activeLessonId) || null;
+    }
 
-async function ensureLessonDefaults(){
-  const c = await getSnap(configPath());
-  if(!c.exists()) await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
-  const d = await getSnap(contentPath());
-  if(!d.exists()) await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
-}
+    function formatTime(seconds) {
+      const s = Math.max(0, Number(seconds || 0));
+      const m = Math.floor(s / 60);
+      const rem = s % 60;
+      return String(m).padStart(2, "0") + ":" + String(rem).padStart(2, "0");
+    }
 
-function sanitizeLegacyContent(content){
-  const safe = JSON.parse(JSON.stringify(content || {}));
-  ['starter','st1','st2','st3','exit'].forEach(id => {
-    if(!safe[id]) safe[id] = {imageUrl:'',sourceText:'',imageNotes:'',questions:[]};
-    if(!Array.isArray(safe[id].questions)) safe[id].questions = [];
-  });
-  return safe;
-}
+    function hideAllScreens() {
+      byId("homeScreen").classList.add("hidden");
+      byId("activityScreen").classList.add("hidden");
+      byId("teacherScreen").classList.add("hidden");
+      byId("finalScreen").classList.add("hidden");
+      byId("lessonBuilderScreen").classList.add("hidden");
+    }
 
-function startLessonConfigListener(){
-  if(lessonConfigRef) lessonConfigRef.off();
-  if(lessonContentRef) lessonContentRef.off();
-  lessonConfigRef = dbRef(configPath());
-  lessonContentRef = dbRef(contentPath());
+    function showNotice(id, text, good = false) {
+      const el = byId(id);
+      el.textContent = text;
+      el.classList.remove("hidden", "good", "bad");
+      el.classList.add("notice");
+      el.classList.add(good ? "good" : "bad");
+    }
 
-  lessonConfigRef.on('value', snap => {
-    lessonStations = snap.val() || JSON.parse(JSON.stringify(defaultStations));
-    renderStudentNav();
-    renderControlStatus();
-    fillTeacherSelects();
-    renderTeacherOverview();
-    renderTeacherTracker();
-  });
+    function hideNotice(id) {
+      const el = byId(id);
+      if (el) el.classList.add("hidden");
+    }
 
-  lessonContentRef.on('value', snap => {
-    lessonContent = sanitizeLegacyContent(snap.val() || JSON.parse(JSON.stringify(defaultContent)));
-    renderStudentNav();
-    renderTeacherOverview();
-    renderTeacherTracker();
-    if(currentStudent && !byId('studentView').classList.contains('hidden')) openStation(currentOpenStation);
-  });
-}
+    function escapeHtml(str) {
+      return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
 
-function tryAutoConnect(){
-  try{
-    if(appInstance && lessonKey) return true;
-    initFirebaseFromInputs();
-    ensureLessonDefaults().catch(console.warn);
-    startLessonConfigListener();
-    return true;
-  }catch(err){
-    console.warn(err);
-    return false;
-  }
-}
+    function getFirstName(fullName) {
+      if (!fullName) return "Student";
+      return String(fullName).trim().split(/\s+/)[0];
+    }
 
-function requireConnection(){
-  if((appInstance && lessonKey) || tryAutoConnect()) return true;
-  showNotice('studentNotice','System is not connected yet.','bad');
-  showNotice('teacherNotice','Please click Save Config first.','bad');
-  showNotice('sltNotice','Please click Save Config first.','bad');
-  showNotice('setupNotice','Please save Firebase config and lesson key first.','bad');
-  return false;
-}
+    function getCurrentStationTitle(progress) {
+      if (!progress) return "-";
+      const st = stations[Number(progress.currentStationIndex)];
+      return st ? st.title : "-";
+    }
 
-window.saveConfig = async function(){
-  try{
-    showNotice('setupNotice','Saving config and testing connection...','warn');
-    initFirebaseFromInputs();
-    localStorage.setItem('DL_firebase_config', JSON.stringify(firebaseConfig));
-    localStorage.setItem('DL_lesson_key', lessonKey);
-    await ensureLessonDefaults();
-    await dbRef(lessonBase() + '/_connection_test').set({ok:true, ts:Date.now()});
-    startLessonConfigListener();
-    showNotice('setupNotice','Connected successfully. Lesson key: ' + lessonKey,'good');
-    setTimeout(() => byId('setupCard').classList.add('hidden'), 500);
-  }catch(err){
-    console.error(err);
-    showNotice('setupNotice','Config error: ' + (err && err.message ? err.message : err),'bad');
-  }
-};
+    function getProgressPercent(progress) {
+      const doneCount = Object.values(progress.stationScores || {}).filter(s => s && s.done).length;
+      return stations.length ? Math.round((doneCount / stations.length) * 100) : 0;
+    }
 
-window.loadSavedConfig = function(){
-  const cfg = localStorage.getItem('DL_firebase_config');
-  const lk = localStorage.getItem('DL_lesson_key');
-  if(cfg) byId('firebaseConfigText').value = cfg;
-  if(lk) byId('lessonKey').value = lk;
-  tryAutoConnect();
-};
+    function estimateStationMinutes(station) {
+      return Math.max(1, Math.round((station.questions || []).length * 2));
+    }
 
-window.startStudentSession = async function(){
-  try{
-    showNotice('studentNotice','Starting student session...','warn');
-    if(!requireConnection()) return;
-    const name = byId('studentName').value.trim();
-    const id = sanitizeKey(byId('studentId').value.trim());
-    if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
-    hideNotice('studentNotice');
-    currentStudent = {name,id};
-    const initial = {name,id,scores:{},total:0,startedAt:Date.now(),currentStation:'starter',stationResults:{},stationAnswers:{},submittedStations:{}};
-    const snap = await getSnap(studentPath(id));
-    if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
-    await dbRef(attendancePath(id)).set({name,id,startedAt:Date.now(),present:true});
-    showOnly('studentView');
-    renderStudentNav();
-    listenStudentLive();
-    const displayed = (lessonStations.find(s => s.displayed && (s.unlocked || s.id==='starter')) || {id:'starter'}).id;
-    openStation(displayed);
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
-  }
-};
+    function generateId(prefix) {
+      return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8);
+    }
 
-window.openTeacherView = async function(){
-  try{
-    showNotice('teacherNotice','Opening teacher view...','warn');
-    const pw = byId('teacherPassword').value;
-    if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
-    if(!requireConnection()){ byId('setupCard').classList.remove('hidden'); return; }
-    hideNotice('teacherNotice');
-    byId('setupCard').classList.remove('hidden');
-    showOnly('teacherView');
-    fillTeacherSelects();
-    loadCreatorStation();
-    renderTeacherOverview();
-    renderControlStatus();
-    renderTeacherTracker();
-    showTeacherSection('teacherTrackerCard');
-    startTeacherListeners();
-    renderBonusBox();
-  }catch(err){
-    console.error(err);
-    showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
-    byId('teacherView').classList.add('hidden');
-    byId('homeRow').classList.remove('hidden');
-  }
-};
+    function normalizeStations(rawStations) {
+      return (rawStations || []).map((st, stationIndex) => ({
+        id: st.id || (stationIndex + 1),
+        title: st.title || `Station ${stationIndex + 1}`,
+        objective: st.objective || "Answer the questions in this station.",
+        questions: (st.questions || []).map((q, questionIndex) => ({
+          type: "mcq",
+          text: q.text || `Question ${questionIndex + 1}`,
+          choices: Array.isArray(q.choices) && q.choices.length >= 2 ? q.choices : ["Choice A", "Choice B", "Choice C", "Choice D"],
+          answer: Number.isInteger(q.answer) ? q.answer : 0,
+          explanation: q.explanation || "Check the text and review the correct idea."
+        }))
+      }));
+    }
 
-window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(sec => byId(sec).classList.add('hidden')); byId(id).classList.remove('hidden'); };
+    // =========================
+    // LESSON HEADER
+    // =========================
+    function renderLessonHeaders() {
+      refreshStateFromStorage();
+      const active = lessonInfo || { title: "No Active Lesson", date: "-", objectives: "Create and activate a lesson first.", keywords: "-" };
 
-window.openSLTView = function(){
-  const name = (byId('sltName').value || '').trim();
-  if(!name){ showNotice('sltNotice','Please enter your name.','bad'); return; }
-  if(!requireConnection()) return;
-  hideNotice('sltNotice');
-  currentSLTName = name;
-  byId('sltHeaderInfo').textContent = 'Welcome, ' + name;
-  showOnly('sltView');
-  renderSLTLessonList();
-};
+      byId("homeLessonTitle").textContent = "Lesson Title: " + active.title;
+      byId("homeLessonDate").textContent = active.date || "-";
+      byId("homeLessonObjectives").textContent = active.objectives || "-";
+      byId("homeLessonKeywords").textContent = active.keywords || "-";
 
-function scoreTextForStudent(id){ const st=currentStudent&&liveStudents[currentStudent.id]; const got=((st&&st.stationResults&&st.stationResults[id]&&st.stationResults[id].score)||0); return got+'/'+totalMarksForStation(id); }
-function isStationSubmitted(id){ const st=currentStudent&&liveStudents[currentStudent.id]; return !!(st&&st.submittedStations&&st.submittedStations[id]); }
-function getNextUnlockedStationId(id){ const idx=lessonStations.findIndex(s=>s.id===id); for(let i=idx+1;i<lessonStations.length;i++) if(lessonStations[i].unlocked) return lessonStations[i].id; return null; }
+      byId("teacherLessonTitle").textContent = "Lesson Title: " + active.title;
+      byId("teacherLessonDate").textContent = active.date || "-";
+      byId("teacherLessonObjectives").textContent = active.objectives || "-";
+      byId("teacherLessonKeywords").textContent = active.keywords || "-";
 
-function renderStudentNav(){
-  const side = byId('stationList');
-  const top = byId('topStations');
-  if(!side || !top) return;
-  if(currentStudent) byId('studentHeaderInfo').textContent = currentStudent.name + ' | ID: ' + currentStudent.id;
-  side.innerHTML = lessonStations.map(s => {
-    const ct = getStationContent(s.id);
-    const thumb = ct.imageUrl ? '<img class="station-thumb" src="'+ct.imageUrl+'" alt="thumb" />' : '<div class="station-thumb"></div>';
-    return '<div class="station-box '+(currentOpenStation===s.id?'active':'')+' '+(s.unlocked?'':'locked')+'" onclick="openStation(\''+escapeJs(s.id)+'\')">'+thumb+'<div><strong>'+escapeHtml(s.title)+'</strong><div class="meta">🎯 '+escapeHtml(s.objective)+'<br>⏱ '+escapeHtml(s.time)+' | '+(s.unlocked?'🔓':'🔒')+'<br>⭐ '+scoreTextForStudent(s.id)+'</div></div></div>';
-  }).join('');
-  top.innerHTML = lessonStations.map(s => '<div class="item '+(currentOpenStation===s.id?'active':'')+' '+(s.unlocked?'':'locked')+'" onclick="openStation(\''+escapeJs(s.id)+'\')"><strong>'+escapeHtml(s.title)+'</strong><div>⭐ '+scoreTextForStudent(s.id)+'</div></div>').join('');
-}
+      byId("studentLessonTitle").textContent = "Lesson Title: " + active.title;
+      byId("studentLessonObjectives").textContent = active.objectives || "-";
+      byId("studentLessonKeywords").textContent = active.keywords || "-";
+    }
 
-function renderQuestion(q,stationId,index){
-  const inputName='answer_'+stationId+'_'+index;
-  const submitted=isStationSubmitted(stationId);
-  const st=currentStudent&&liveStudents[currentStudent.id];
-  const saved=(st&&st.stationAnswers&&st.stationAnswers[stationId])||{};
-  const savedAnswer=saved[index]||'';
-  let body='';
-  if(q.type==='mcq') body=(q.choices||[]).map(choice => '<label class="choice"><input type="radio" name="'+inputName+'" value="'+escapeHtml(choice)+'"'+(normalizeAnswer(savedAnswer)===normalizeAnswer(choice)?' checked':'')+(submitted?' disabled':'')+'> '+escapeHtml(choice)+'</label>').join('');
-  else body=['True','False'].map(choice => '<label class="choice"><input type="radio" name="'+inputName+'" value="'+choice+'"'+(normalizeAnswer(savedAnswer)===normalizeAnswer(choice)?' checked':'')+(submitted?' disabled':'')+'> '+choice+'</label>').join('');
-  return '<div class="question" id="q_'+stationId+'_'+index+'"><div><strong>Q'+(index+1)+'.</strong> '+escapeHtml(q.text)+'</div><div style="margin-top:10px;">'+body+'</div><div class="feedback"></div></div>';
-}
+    // =========================
+    // HOME / NAVIGATION
+    // =========================
+    function startTeacherLiveRefresh() {
+      stopTeacherLiveRefresh();
+      refreshTeacherPanels();
+      teacherRefreshTimer = setInterval(() => {
+        if (!byId("teacherScreen").classList.contains("hidden")) {
+          refreshTeacherPanels();
+        }
+      }, 1000);
+    }
 
-window.openStation = function(id){
-  const s=getStationById(id);
-  if(!s) return;
-  if(!s.unlocked && id!=='starter') return;
-  currentOpenStation=id;
-  renderStudentNav();
-  const ct=getStationContent(id), submitted=isStationSubmitted(id), nextId=getNextUnlockedStationId(id);
-  const imageBlock=ct.imageUrl?'<img class="reading-img" src="'+ct.imageUrl+'" alt="station image" /><div class="image-actions"><button class="secondary" onclick="maximizeImage(\''+escapeJs(ct.imageUrl)+'\')">Maximize Picture</button></div>':'';
-  const questions=(ct.questions||[]).map((q,i)=>renderQuestion(q,id,i)).join('');
-  const submitBtn=submitted?'<button class="muted" disabled>Station Submitted</button>':'<button onclick="submitCurrentStation(\''+escapeJs(id)+'\')">Submit Station</button>';
-  const nextBtn=nextId?'<button class="secondary" onclick="openStation(\''+escapeJs(nextId)+'\')">Next Station</button>':'';
-  const submittedNote=submitted?'<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>':'';
-  byId('stationContent').innerHTML='<h2>'+escapeHtml(s.title)+'</h2><p><strong>Mini Objective:</strong> '+escapeHtml(s.objective)+'</p><p><strong>Details:</strong> '+escapeHtml(s.details)+'</p>'+imageBlock+'<div class="station-result">Your result in this station: '+scoreTextForStudent(id)+'</div>'+submittedNote+questions+'<div class="btns" style="margin-top:12px;">'+submitBtn+nextBtn+'</div>';
-  if(currentStudent) dbRef(studentPath(currentStudent.id)).update({currentStation:id});
-  if(submitted){
-    const st=liveStudents[currentStudent.id]||{}, saved=(st.stationAnswers&&st.stationAnswers[id])||{};
-    (ct.questions||[]).forEach((q,i)=>{
-      const wrap=byId('q_'+id+'_'+i); if(!wrap) return;
-      const labels=wrap.querySelectorAll('.choice');
-      labels.forEach(lbl=>{
-        const input=lbl.querySelector('input'); if(!input) return;
-        if(normalizeAnswer(input.value)===normalizeAnswer(q.answer)){ lbl.style.background='#eafaf1'; lbl.style.borderColor='#2ecc71'; }
-        if(saved[i] && normalizeAnswer(input.value)===normalizeAnswer(saved[i]) && normalizeAnswer(input.value)!==normalizeAnswer(q.answer)){ lbl.style.background='#fdecea'; lbl.style.borderColor='#e74c3c'; }
+    function stopTeacherLiveRefresh() {
+      if (teacherRefreshTimer) {
+        clearInterval(teacherRefreshTimer);
+        teacherRefreshTimer = null;
+      }
+    }
+
+    function refreshTeacherPanels() {
+      refreshStateFromStorage();
+      renderLessonHeaders();
+      renderTeacherStationPreview();
+      renderProgressTracker();
+      renderResults();
+      renderBonusPopup();
+      renderSavedLessons();
+    }
+
+    function goHome() {
+      stopTotalTimer();
+      stopTeacherLiveRefresh();
+      hideAllScreens();
+      byId("homeScreen").classList.remove("hidden");
+      hideNotice("studentNotice");
+      hideNotice("teacherNotice");
+      hideNotice("lessonBuilderNotice");
+      hideNotice("builderNotice");
+      if (byId("bonusPopup")) {
+        byId("bonusPopup").classList.add("hidden");
+      }
+      refreshTeacherPanels();
+      renderLessonHeaders();
+    }
+
+    function enterTeacherView() {
+      const pw = byId("teacherPassword").value.trim();
+      if (pw !== TEACHER_PASSWORD) {
+        showNotice("teacherNotice", "Wrong password.");
+        return;
+      }
+      hideNotice("teacherNotice");
+      hideAllScreens();
+      byId("teacherScreen").classList.remove("hidden");
+      byId("bonusPopup").classList.remove("hidden");
+      startTeacherLiveRefresh();
+    }
+
+    function enterLessonBuilder() {
+      const pw = byId("lessonBuilderPassword").value.trim() || byId("teacherPassword").value.trim();
+      if (pw !== TEACHER_PASSWORD) {
+        showNotice("lessonBuilderNotice", "Wrong password.");
+        return;
+      }
+      hideNotice("lessonBuilderNotice");
+      hideAllScreens();
+      byId("lessonBuilderScreen").classList.remove("hidden");
+      renderSavedLessons();
+      if (!builderEditingLessonId) resetBuilderForm();
+    }
+
+    // =========================
+    // STUDENT FLOW
+    // =========================
+    function startStudentActivity() {
+      refreshStateFromStorage();
+      if (!lessonInfo || !stations.length) {
+        showNotice("studentNotice", "No active lesson found. Please activate a lesson first.");
+        return;
+      }
+
+      studentName = byId("studentName").value.trim();
+      studentId = byId("studentId").value.trim();
+
+      if (!studentName || !studentId) {
+        showNotice("studentNotice", "Please enter both student name and ID.");
+        return;
+      }
+
+      hideNotice("studentNotice");
+
+      stationScores = {};
+      stations.forEach(st => {
+        stationScores[st.id] = {
+          score: 0,
+          total: st.questions.length,
+          done: false,
+          feedback: []
+        };
       });
-      const ok=normalizeAnswer(saved[i]||'')===normalizeAnswer(q.answer);
-      wrap.classList.add(ok?'correct':'wrong');
-      wrap.querySelector('.feedback').innerHTML=ok?'✅ Correct':'❌ Correct answer: '+escapeHtml(q.answer);
+
+      currentStationIndex = getFirstAvailableStationIndex();
+      totalScore = 0;
+      totalPossible = stations.reduce((sum, st) => sum + st.questions.length, 0);
+      totalSecondsLeft = 2400;
+      currentAnswers = {};
+      stationSubmitted = false;
+
+      saveStudentProgress();
+      saveStudentSessionState();
+
+      hideAllScreens();
+      byId("activityScreen").classList.remove("hidden");
+      byId("studentBadge").textContent = "Student: " + studentName + " (" + studentId + ")";
+      renderLessonHeaders();
+      startTotalTimer();
+      showCurrentStation();
+    }
+
+    function getFirstAvailableStationIndex() {
+      return 0;
+    }
+
+    function startTotalTimer() {
+      stopTotalTimer();
+      updateTimerUI();
+      totalTimer = setInterval(() => {
+        totalSecondsLeft--;
+        updateTimerUI();
+        saveStudentProgress();
+        if (totalSecondsLeft <= 0) {
+          stopTotalTimer();
+          finishStudentWork();
+        }
+      }, 1000);
+    }
+
+    function stopTotalTimer() {
+      if (totalTimer) {
+        clearInterval(totalTimer);
+        totalTimer = null;
+      }
+    }
+
+    function updateTimerUI() {
+      byId("timerBadge").textContent = formatTime(totalSecondsLeft);
+    }
+
+    function showCurrentStation() {
+      refreshStateFromStorage();
+      const st = stations[currentStationIndex];
+      if (!st) {
+        finishStudentWork();
+        return;
+      }
+
+      currentAnswers = {};
+      stationSubmitted = false;
+      byId("submitStationBtn").disabled = false;
+      byId("submitStationBtn").classList.remove("hidden");
+      byId("nextStationBtn").classList.add("hidden");
+      byId("stationTitle").textContent = st.title;
+      byId("stationObjective").textContent = st.objective;
+      byId("stationBadge").textContent = "Station: " + st.id + " / " + stations.length;
+      byId("progressBadge").textContent = "Completed: " + getCompletedCount() + " / " + stations.length;
+
+      const area = byId("stationQuestionsArea");
+      area.innerHTML = "";
+
+      st.questions.forEach((q, qIndex) => {
+        const box = document.createElement("div");
+        box.className = "question-card";
+
+        const title = document.createElement("div");
+        title.className = "question-title";
+        title.textContent = (qIndex + 1) + ". " + q.text;
+        box.appendChild(title);
+
+        q.choices.forEach((choice, cIndex) => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn";
+          btn.textContent = choice;
+          btn.onclick = () => {
+            if (stationSubmitted) return;
+            selectChoice(qIndex, cIndex, btn, box);
+          };
+          box.appendChild(btn);
+        });
+
+        const feedback = document.createElement("div");
+        feedback.id = `feedback_${qIndex}`;
+        feedback.className = "feedback-box hidden";
+        box.appendChild(feedback);
+
+        area.appendChild(box);
+      });
+
+      renderStudentStationList();
+      saveStudentProgress();
+      saveStudentSessionState();
+    }
+
+    function selectChoice(questionIndex, choiceIndex, btn, parentBox) {
+      currentAnswers[questionIndex] = choiceIndex;
+      const buttons = parentBox.querySelectorAll(".choice-btn");
+      buttons.forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+    }
+
+    function submitCurrentStation() {
+      const st = stations[currentStationIndex];
+      if (!st || stationSubmitted) return;
+
+      if (Object.keys(currentAnswers).length < st.questions.length) {
+        alert("Please answer all questions before submitting this station.");
+        return;
+      }
+
+      let stationScore = 0;
+      const feedbackLog = [];
+      const cards = byId("stationQuestionsArea").querySelectorAll(".question-card");
+
+      st.questions.forEach((q, i) => {
+        const isCorrect = currentAnswers[i] === q.answer;
+        if (isCorrect) stationScore++;
+
+        feedbackLog.push({
+          questionIndex: i,
+          chosen: currentAnswers[i],
+          correctAnswer: q.answer,
+          correct: isCorrect,
+          explanation: q.explanation || ""
+        });
+
+        const card = cards[i];
+        const buttons = card.querySelectorAll(".choice-btn");
+        buttons.forEach((btn, idx) => {
+          btn.disabled = true;
+          btn.classList.remove("selected");
+          if (idx === q.answer) btn.classList.add("correct");
+          if (idx === currentAnswers[i] && currentAnswers[i] !== q.answer) btn.classList.add("incorrect");
+        });
+
+        const feedbackEl = byId(`feedback_${i}`);
+        feedbackEl.classList.remove("hidden", "correct", "incorrect");
+        feedbackEl.classList.add(isCorrect ? "correct" : "incorrect");
+        feedbackEl.innerHTML = isCorrect
+          ? `? Correct. ${escapeHtml(q.explanation || "Well done.")}`
+          : `? Incorrect. Correct answer: <strong>${escapeHtml(q.choices[q.answer])}</strong><br>${escapeHtml(q.explanation || "Review the text and try to understand why this is correct.")}`;
+      });
+
+      stationScores[st.id] = {
+        score: stationScore,
+        total: st.questions.length,
+        done: true,
+        feedback: feedbackLog
+      };
+
+      stationSubmitted = true;
+      recalculateTotalScore();
+      saveStudentProgress();
+      saveStudentSessionState();
+      refreshTeacherPanels();
+
+      byId("submitStationBtn").disabled = true;
+      byId("submitStationBtn").classList.add("hidden");
+      byId("nextStationBtn").classList.remove("hidden");
+      byId("nextStationBtn").textContent = currentStationIndex + 1 < stations.length ? "Next Station" : "Finish Lesson";
+    }
+
+    function goToNextStation() {
+      const nextIndex = currentStationIndex + 1;
+      if (nextIndex < stations.length) {
+        currentStationIndex = nextIndex;
+        currentAnswers = {};
+        stationSubmitted = false;
+        saveStudentProgress();
+        saveStudentSessionState();
+        showCurrentStation();
+      } else {
+        finishStudentWork();
+      }
+    }
+
+    function recalculateTotalScore() {
+      totalScore = 0;
+      stations.forEach(st => {
+        totalScore += Number((stationScores[st.id] && stationScores[st.id].score) || 0);
+      });
+    }
+
+    function getCompletedCount() {
+      let count = 0;
+      Object.values(stationScores).forEach(v => {
+        if (v.done) count++;
+      });
+      return count;
+    }
+
+    function renderStudentStationList() {
+      const wrap = byId("studentStationList");
+      wrap.innerHTML = "";
+      refreshStateFromStorage();
+
+      stations.forEach((st, index) => {
+        const div = document.createElement("div");
+        div.className = "station-box";
+
+        if (index === currentStationIndex) div.classList.add("current");
+        if (stationScores[st.id] && stationScores[st.id].done) div.classList.add("done");
+
+        const stateText = stationScores[st.id] && stationScores[st.id].done
+          ? "Completed"
+          : (index === currentStationIndex ? "Current" : "Open");
+
+        const time = estimateStationMinutes(st);
+
+        div.innerHTML = `
+          <div class="mini-title">${escapeHtml(st.title)}</div>
+          <div class="small">${escapeHtml(st.objective)}</div>
+          <div class="small">${st.questions.length} Q | ${time} min</div>
+          <div class="small">${escapeHtml(stateText)}</div>
+          <div class="small">Score: ${(stationScores[st.id] && stationScores[st.id].score) || 0} / ${st.questions.length}</div>
+        `;
+        wrap.appendChild(div);
+      });
+    }
+
+    function finishStudentWork() {
+      stopTotalTimer();
+      recalculateTotalScore();
+      refreshStateFromStorage();
+
+      const resultRow = {
+        lessonId: lessonInfo.id,
+        lessonTitle: lessonInfo.title,
+        studentName,
+        studentId,
+        score: totalScore,
+        total: totalPossible,
+        percent: totalPossible ? Math.round((totalScore / totalPossible) * 100) : 0,
+        date: new Date().toLocaleString(),
+        stationSummary: stations.map(st => ({
+          station: st.title,
+          score: stationScores[st.id] ? stationScores[st.id].score : 0,
+          total: st.questions.length,
+          feedback: stationScores[st.id] ? stationScores[st.id].feedback || [] : []
+        }))
+      };
+
+      const existingIndex = results.findIndex(r => String(r.studentId) === String(studentId) && String(r.lessonId) === String(lessonInfo.id));
+      if (existingIndex === -1) {
+        results.push(resultRow);
+      } else {
+        results[existingIndex] = resultRow;
+      }
+
+      saveData(STORAGE_KEYS.results, results);
+
+      delete studentProgressMap[studentId];
+      saveData(STORAGE_KEYS.progress, studentProgressMap);
+      clearStudentSessionState();
+
+      hideAllScreens();
+      byId("finalScreen").classList.remove("hidden");
+      byId("finalScoreBox").textContent = totalScore + " / " + totalPossible;
+      byId("finalPercentText").textContent = "Percentage: " + resultRow.percent + "%";
+
+      refreshTeacherPanels();
+    }
+
+    function saveStudentProgress() {
+      if (!studentId) return;
+
+      studentProgressMap[studentId] = {
+        lessonId: lessonInfo.id,
+        lessonTitle: lessonInfo.title,
+        studentName,
+        studentId,
+        currentStationIndex,
+        totalScore,
+        totalPossible,
+        totalSecondsLeft,
+        stationScores
+      };
+
+      saveData(STORAGE_KEYS.progress, studentProgressMap);
+      renderProgressTracker();
+      renderBonusPopup();
+    }
+
+    function saveStudentSessionState() {
+      if (!studentId) return;
+      localStorage.setItem("active_student_session", JSON.stringify({
+        lessonId: lessonInfo.id,
+        studentName,
+        studentId,
+        currentStationIndex,
+        totalScore,
+        totalPossible,
+        totalSecondsLeft,
+        stationScores,
+        stationSubmitted
+      }));
+    }
+
+    function clearStudentSessionState() {
+      localStorage.removeItem("active_student_session");
+    }
+
+    function restoreStudentSession() {
+      const raw = localStorage.getItem("active_student_session");
+      if (!raw) return false;
+      try {
+        const session = JSON.parse(raw);
+        refreshStateFromStorage();
+        if (!session || String(session.lessonId) !== String(lessonInfo.id)) return false;
+        studentName = session.studentName || "";
+        studentId = session.studentId || "";
+        currentStationIndex = Number(session.currentStationIndex || 0);
+        totalScore = Number(session.totalScore || 0);
+        totalPossible = Number(session.totalPossible || 0);
+        totalSecondsLeft = Number(session.totalSecondsLeft || 2400);
+        stationScores = session.stationScores || {};
+        stationSubmitted = !!session.stationSubmitted;
+        hideAllScreens();
+        byId("activityScreen").classList.remove("hidden");
+        byId("studentBadge").textContent = "Student: " + studentName + " (" + studentId + ")";
+        renderLessonHeaders();
+        startTotalTimer();
+        showCurrentStation();
+        return true;
+      } catch (e) {
+        clearStudentSessionState();
+        return false;
+      }
+    }
+
+    function endLessonEarly() {
+      if (!confirm("End this lesson for the current student?")) return;
+      clearStudentSessionState();
+      stopTotalTimer();
+      goHome();
+    }
+
+    // =========================
+    // TEACHER
+    // =========================
+    function renderTeacherStationPreview() {
+      const wrap = byId("teacherStationPreviewWrap");
+      if (!wrap) return;
+      if (!stations.length) {
+        wrap.innerHTML = `<div class="notice">No active lesson stations found.</div>`;
+        return;
+      }
+
+      const imageHtml = lessonInfo && lessonInfo.imageDataUrl
+        ? `
+          <div class="card" style="margin-bottom:12px;">
+            <div class="top-actions" style="justify-content:space-between; align-items:center;">
+              <strong>Activity Picture</strong>
+              <div style="display:flex; gap:8px;">
+                <button class="mini-btn orange" onclick="toggleActivityImageSize()">Maximize / Minimize</button>
+                <button class="mini-btn secondary" onclick="toggleActivityImageBox()">Show / Hide</button>
+              </div>
+            </div>
+            <div id="teacherActivityImageBox">
+              <img id="teacherActivityImage" src="${lessonInfo.imageDataUrl}" class="image-preview teacher-activity-image" alt="Activity image" />
+            </div>
+          </div>
+        `
+        : `<div class="card"><div class="small">No activity image added for this lesson.</div></div>`;
+
+      const cards = stations.map((st, index) => {
+        const qCount = (st.questions || []).length;
+        const time = estimateStationMinutes(st);
+        const activityType = getStationActivityType(st);
+        return `
+          <div class="lesson-card teacher-station-card">
+            <div class="teacher-station-number">Station ${index + 1}</div>
+            <h4>${escapeHtml(st.title)}</h4>
+            <div class="small"><strong>Activity Type:</strong> ${escapeHtml(activityType)}</div>
+            <div class="small"><strong>Objective:</strong> ${escapeHtml(st.objective || "-")}</div>
+            <div class="small"><strong>Time:</strong> ${time} min</div>
+            <div class="small"><strong>Questions:</strong> ${qCount}</div>
+          </div>
+        `;
+      }).join("");
+
+      wrap.innerHTML = imageHtml + `<div class="teacher-station-grid">${cards}</div>`;
+    }
+
+    function getStationActivityType(station) {
+      const questions = station && station.questions ? station.questions : [];
+      const types = [...new Set(questions.map(q => (q.type || 'mcq').toLowerCase()))];
+      if (!types.length) return 'Activity';
+      const labels = types.map(type => {
+        if (type === 'mcq') return 'MCQ';
+        if (type === 'true_false') return 'True / False';
+        if (type === 'matching') return 'Matching';
+        if (type === 'drag_drop') return 'Drag and Drop';
+        return type.replace(/_/g, ' ');
+      });
+      return labels.join(', ');
+    }
+
+    function toggleActivityImageSize() {
+      const img = byId("teacherActivityImage");
+      if (!img) return;
+      img.classList.toggle("teacher-activity-image-large");
+    }
+
+    function toggleActivityImageBox() {
+      const box = byId("teacherActivityImageBox");
+      if (!box) return;
+      box.classList.toggle("hidden");
+    }
+
+    
+
+    function renderStudentStationListIfVisible() {
+      if (!byId("activityScreen").classList.contains("hidden")) {
+        renderStudentStationList();
+      }
+    }
+
+    function renderProgressTracker() {
+      const summary = byId("progressSummary");
+      const wrap = byId("progressTableWrap");
+      if (!summary || !wrap) return;
+
+      const progressList = Object.values(studentProgressMap || {}).filter(p => String(p.lessonId) === String(lessonInfo.id));
+      summary.innerHTML = `<p><strong>Students In Progress:</strong> ${progressList.length}</p>`;
+
+      if (progressList.length === 0) {
+        wrap.innerHTML = `<div class="notice">No students are working yet.</div>`;
+        return;
+      }
+
+      progressList.sort((a, b) => String(a.studentName).localeCompare(String(b.studentName)));
+
+      let html = "";
+      progressList.forEach(p => {
+        const doneCount = Object.values(p.stationScores || {}).filter(s => s && s.done).length;
+        const percent = getProgressPercent(p);
+        const currentTitle = getCurrentStationTitle(p);
+        const feedbackTotals = [];
+        Object.values(p.stationScores || {}).forEach(ss => {
+          (ss.feedback || []).forEach(f => feedbackTotals.push(f));
+        });
+        const correctCount = feedbackTotals.filter(f => f.correct).length;
+        const answeredCount = feedbackTotals.length;
+        const currentBonus = Number(bonuses[p.studentId] || 0);
+
+        html += `
+          <div class="progress-student-card">
+            <h4>${escapeHtml(p.studentName)} (${escapeHtml(p.studentId)})</h4>
+            <div class="progress-meta">
+              Current Station: <strong>${escapeHtml(currentTitle)}</strong><br>
+              Score So Far: <strong>${Number(p.totalScore || 0)} / ${Number(p.totalPossible || 0)}</strong><br>
+              Time Left: <strong>${formatTime(Number(p.totalSecondsLeft || 0))}</strong><br>
+              Auto-correction: <strong>${correctCount} correct</strong> out of <strong>${answeredCount}</strong> checked answers
+            </div>
+            <div class="bonus-btn-wrap" style="margin-bottom:10px;">
+              <span><strong>Bonus:</strong> +${currentBonus}</span>
+              <button class="mini-btn green" onclick="addBonus('${escapeHtml(p.studentId)}', 1)">+1</button>
+              <button class="mini-btn orange" onclick="addBonus('${escapeHtml(p.studentId)}', 2)">+2</button>
+              <button class="mini-btn red" onclick="addBonus('${escapeHtml(p.studentId)}', -1)">-1</button>
+            </div>
+            <div class="progress-bar-wrap">
+              <div class="progress-bar-fill" style="width:${percent}%"></div>
+            </div>
+            <div class="small">Completed ${doneCount} of ${stations.length} stations (${percent}%)</div>
+            <div class="station-mini-list">
+              ${stations.map((st, index) => {
+                const ss = p.stationScores && p.stationScores[st.id];
+                const isDone = ss && ss.done;
+                const isCurrent = index === p.currentStationIndex;
+                const stationCorrect = (ss && ss.feedback ? ss.feedback.filter(f => f.correct).length : 0);
+                const stationAnswered = (ss && ss.feedback ? ss.feedback.length : 0);
+                return `
+                  <span class="station-mini ${isDone ? 'done' : ''} ${isCurrent ? 'current' : ''}">
+                    ${escapeHtml(st.title)} ${stationAnswered ? `(${stationCorrect}/${stationAnswered})` : ''}
+                  </span>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        `;
+      });
+
+      wrap.innerHTML = html;
+    }
+
+    function renderResults() {
+      const summary = byId("resultsSummary");
+      const wrap = byId("resultsTableWrap");
+      if (!summary || !wrap) return;
+
+      const lessonResults = results.filter(r => String(r.lessonId) === String(lessonInfo.id));
+      summary.innerHTML = `<p><strong>Total Students:</strong> ${lessonResults.length}</p>`;
+
+      if (lessonResults.length === 0) {
+        wrap.innerHTML = `<div class="notice">No student results yet.</div>`;
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>ID</th>
+              <th>Score</th>
+              <th>%</th>
+              <th>Auto Feedback</th>
+              <th>Bonus</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      lessonResults.forEach(r => {
+        const bonus = Number(bonuses[r.studentId] || 0);
+        const allFeedback = (r.stationSummary || []).flatMap(s => s.feedback || []);
+        const correctCount = allFeedback.filter(f => f.correct).length;
+        const answeredCount = allFeedback.length;
+        html += `
+          <tr>
+            <td>${escapeHtml(r.studentName)}</td>
+            <td>${escapeHtml(r.studentId)}</td>
+            <td>${r.score} / ${r.total}</td>
+            <td>${r.percent}%</td>
+            <td>${correctCount} / ${answeredCount} correct</td>
+            <td>
+              <div class="bonus-btn-wrap">
+                <span>+${bonus}</span>
+                <button class="mini-btn green" onclick="addBonus('${escapeHtml(r.studentId)}', 1)">+1</button>
+                <button class="mini-btn red" onclick="addBonus('${escapeHtml(r.studentId)}', -1)">-1</button>
+              </div>
+            </td>
+            <td>${escapeHtml(r.date)}</td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      wrap.innerHTML = html;
+    }
+
+    function toggleBonusPopup() {
+      byId("bonusPopup").classList.toggle("hidden");
+    }
+
+    function renderBonusPopup() {
+      const body = byId("bonusPopupBody");
+      if (!body) return;
+
+      const list = Object.keys(bonuses)
+        .map(id => {
+          const progress = studentProgressMap[id];
+          const result = results.find(r => String(r.studentId) === String(id) && String(r.lessonId) === String(lessonInfo.id));
+          return {
+            studentId: id,
+            studentName: progress ? progress.studentName : (result ? result.studentName : id),
+            bonus: Number(bonuses[id] || 0)
+          };
+        })
+        .filter(item => item.bonus > 0)
+        .sort((a, b) => b.bonus - a.bonus || String(a.studentName).localeCompare(String(b.studentName)));
+
+      if (!list.length) {
+        body.innerHTML = `<div class="bonus-empty">No bonus points yet.</div>`;
+        return;
+      }
+
+      body.innerHTML = list.map(item => `
+        <div class="bonus-item">
+          <span class="bonus-name">${escapeHtml(item.studentName)}</span>
+          <span class="bonus-points">+${item.bonus}</span>
+        </div>
+      `).join("");
+    }
+
+    function clearBonusList() {
+      if (!confirm("Clear all bonus points?")) return;
+      bonuses = {};
+      saveData(STORAGE_KEYS.bonuses, bonuses);
+      renderBonusPopup();
+      renderResults();
+      renderProgressTracker();
+    }
+
+    function addBonus(studentId, amount) {
+      const current = Number(bonuses[studentId] || 0);
+      const next = Math.max(0, current + amount);
+      bonuses[studentId] = next;
+      saveData(STORAGE_KEYS.bonuses, bonuses);
+      renderResults();
+      renderBonusPopup();
+    }
+
+    function exportResultsCsv() {
+      const lessonResults = results.filter(r => String(r.lessonId) === String(lessonInfo.id));
+      const headers = ["Lesson", "Name", "ID", "Score", "Total", "Percent", "Auto Feedback", "Bonus", "Date"];
+      const rows = lessonResults.map(r => {
+        const allFeedback = (r.stationSummary || []).flatMap(s => s.feedback || []);
+        const correctCount = allFeedback.filter(f => f.correct).length;
+        const answeredCount = allFeedback.length;
+        return [
+          r.lessonTitle,
+          r.studentName,
+          r.studentId,
+          r.score,
+          r.total,
+          r.percent,
+          `${correctCount}/${answeredCount} correct`,
+          Number(bonuses[r.studentId] || 0),
+          r.date
+        ];
+      });
+
+      let csv = [headers, ...rows].map(row =>
+        row.map(cell => `"${String(cell == null ? "" : cell).replace(/"/g, '""')}"`).join(",")
+      ).join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${lessonInfo.title.replace(/\s+/g, '_').toLowerCase()}_results.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function resetLessonSessionData() {
+      if (!confirm("Are you sure you want to delete the current session progress and results?")) return;
+
+      const lessonId = lessonInfo.id;
+      results = results.filter(r => String(r.lessonId) !== String(lessonId));
+      studentProgressMap = Object.fromEntries(Object.entries(studentProgressMap).filter(([, value]) => String(value.lessonId) !== String(lessonId)));
+
+      saveData(STORAGE_KEYS.results, results);
+      saveData(STORAGE_KEYS.progress, studentProgressMap);
+
+      renderTeacherControls();
+      renderProgressTracker();
+      renderResults();
+      renderBonusPopup();
+      alert("Lesson session data has been reset.");
+    }
+
+    // =========================
+    // LESSON BUILDER
+    // =========================
+    function previewBuilderImage(event) {
+      const file = event.target.files && event.target.files[0];
+      const preview = byId("builderImagePreview");
+      if (!file) {
+        preview.src = "";
+        preview.classList.add("hidden");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.classList.remove("hidden");
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function resetBuilderForm() {
+      builderEditingLessonId = null;
+      byId("builderTitle").value = "";
+      byId("builderDate").value = "";
+      byId("builderObjectives").value = "";
+      byId("builderKeywords").value = "";
+      byId("builderBookNotes").value = "";
+      byId("builderImage").value = "";
+      byId("builderImagePreview").src = "";
+      byId("builderImagePreview").classList.add("hidden");
+      byId("builderStationsJson").value = "";
+      hideNotice("builderNotice");
+    }
+
+    function generateDraftLessonFromNotes() {
+      const title = byId("builderTitle").value.trim() || "New Lesson";
+      const objectives = byId("builderObjectives").value.trim() || "Students will read, understand, and answer questions.";
+      const keywords = byId("builderKeywords").value.trim();
+      const notes = byId("builderBookNotes").value.trim();
+
+      const keywordList = keywords ? keywords.split(",").map(k => k.trim()).filter(Boolean) : ["main idea", "details", "vocabulary"];
+      const topicWords = notes ? notes.split(/\s+/).slice(0, 8).join(" ") : title;
+
+      const draft = [
+        {
+          id: 1,
+          title: "Starter",
+          objective: `Activate prior knowledge about ${title.toLowerCase()}.`,
+          questions: [
+            {
+              type: "mcq",
+              text: `Which word is connected to ${title.toLowerCase()}?`,
+              choices: [keywordList[0] || "idea", "banana", "window", "shoe"],
+              answer: 0,
+              explanation: `The lesson is about ${title.toLowerCase()}, so this keyword fits the topic.`
+            },
+            {
+              type: "mcq",
+              text: `What should students do first in this lesson?`,
+              choices: ["Read carefully", "Skip the text", "Guess every answer", "Close the page"],
+              answer: 0,
+              explanation: "Reading carefully helps students understand the activity."
+            }
+          ]
+        },
+        {
+          id: 2,
+          title: "Station 1",
+          objective: "Focus on main idea and details.",
+          questions: [
+            {
+              type: "mcq",
+              text: `What is the lesson mainly about?`,
+              choices: [topicWords || title, "A random subject", "Only colors", "Only numbers"],
+              answer: 0,
+              explanation: "The main idea should match the lesson topic."
+            },
+            {
+              type: "mcq",
+              text: "Which choice shows a useful reading skill?",
+              choices: ["Finding details", "Ignoring the text", "Choosing fast", "Skipping questions"],
+              answer: 0,
+              explanation: "Finding details is an important reading skill."
+            }
+          ]
+        },
+        {
+          id: 3,
+          title: "Station 2",
+          objective: "Use vocabulary and context clues.",
+          questions: [
+            {
+              type: "mcq",
+              text: `Which keyword belongs to this lesson?`,
+              choices: [keywordList[1] || keywordList[0] || "keyword", "pencil case", "garage", "bottle"],
+              answer: 0,
+              explanation: "The correct answer uses the lesson keyword list."
+            },
+            {
+              type: "mcq",
+              text: "What helps students understand new words?",
+              choices: ["Context clues", "Random guessing", "Skipping", "Silence"],
+              answer: 0,
+              explanation: "Context clues help explain word meaning."
+            }
+          ]
+        },
+        {
+          id: 4,
+          title: "Exit Ticket",
+          objective: "Show overall understanding.",
+          questions: [
+            {
+              type: "mcq",
+              text: `I can now understand this lesson about ${title.toLowerCase()}.`,
+              choices: ["Yes", "No", "Never", "Maybe not"],
+              answer: 0,
+              explanation: "This checks final confidence and understanding."
+            }
+          ]
+        }
+      ];
+
+      byId("builderStationsJson").value = JSON.stringify(draft, null, 2);
+      showNotice("builderNotice", "Draft stations generated. Review and edit before saving.", true);
+    }
+
+    function saveLessonFromBuilder() {
+      try {
+        const title = byId("builderTitle").value.trim();
+        const date = byId("builderDate").value.trim();
+        const objectives = byId("builderObjectives").value.trim();
+        const keywords = byId("builderKeywords").value.trim();
+        const bookNotes = byId("builderBookNotes").value.trim();
+        const imageDataUrl = !byId("builderImagePreview").classList.contains("hidden") ? byId("builderImagePreview").src : "";
+        const stationsJson = byId("builderStationsJson").value.trim();
+
+        if (!title) {
+          showNotice("builderNotice", "Please enter a lesson title.");
+          return;
+        }
+        if (!stationsJson) {
+          showNotice("builderNotice", "Please generate or paste lesson stations JSON first.");
+          return;
+        }
+
+        const parsedStations = JSON.parse(stationsJson);
+        const normalizedStations = normalizeStations(parsedStations);
+        if (!normalizedStations.length) {
+          showNotice("builderNotice", "Your lesson needs at least one station.");
+          return;
+        }
+
+        const lesson = {
+          id: builderEditingLessonId || generateId("lesson"),
+          title,
+          date,
+          objectives,
+          keywords,
+          bookNotes,
+          imageDataUrl,
+          stations: normalizedStations
+        };
+
+        const existingIndex = lessons.findIndex(l => l.id === lesson.id);
+        if (existingIndex === -1) lessons.push(lesson);
+        else lessons[existingIndex] = lesson;
+
+        saveData(STORAGE_KEYS.lessons, lessons);
+        renderSavedLessons();
+        showNotice("builderNotice", "Lesson saved. Activate it when you are ready.", true);
+        refreshTeacherPanels();
+      } catch (err) {
+        showNotice("builderNotice", "Stations JSON is not valid. Please check it carefully.");
+      }
+    }
+
+    function renderSavedLessons() {
+      const wrap = byId("savedLessonsWrap");
+      if (!wrap) return;
+      refreshStateFromStorage();
+      if (!lessons.length) {
+        wrap.innerHTML = `<div class="notice">No lessons saved yet.</div>`;
+        return;
+      }
+
+      wrap.innerHTML = lessons.map(lesson => {
+        const isActive = lesson.id === activeLessonId;
+        return `
+          <div class="lesson-card ${isActive ? 'active' : ''}">
+            <h4>${escapeHtml(lesson.title)}</h4>
+            <div class="muted">${escapeHtml(lesson.date || '-')}</div>
+            <div class="muted">Stations: ${(lesson.stations || []).length}</div>
+            <div class="muted">${escapeHtml(lesson.keywords || '-')}</div>
+            <div class="top-actions" style="margin-top:10px;">
+              <button class="green" onclick="activateLesson('${lesson.id}')">${isActive ? 'Active Lesson' : 'Activate'}</button>
+              <button class="orange" onclick="loadLessonIntoBuilder('${lesson.id}')">Edit</button>
+              <button class="red" onclick="deleteLesson('${lesson.id}')" ${isActive ? 'disabled' : ''}>Delete</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function activateLesson(lessonId) {
+      activeLessonId = lessonId;
+      saveData(STORAGE_KEYS.activeLessonId, activeLessonId);
+      refreshStateFromStorage();
+      renderLessonHeaders();
+      renderSavedLessons();
+      showNotice("builderNotice", "Lesson activated. Students will now see this lesson when they log in.", true);
+      refreshTeacherPanels();
+    }
+
+    function loadLessonIntoBuilder(lessonId) {
+      const lesson = lessons.find(l => l.id === lessonId);
+      if (!lesson) return;
+      builderEditingLessonId = lesson.id;
+      byId("builderTitle").value = lesson.title || "";
+      byId("builderDate").value = lesson.date || "";
+      byId("builderObjectives").value = lesson.objectives || "";
+      byId("builderKeywords").value = lesson.keywords || "";
+      byId("builderBookNotes").value = lesson.bookNotes || "";
+      byId("builderStationsJson").value = JSON.stringify(lesson.stations || [], null, 2);
+      if (lesson.imageDataUrl) {
+        byId("builderImagePreview").src = lesson.imageDataUrl;
+        byId("builderImagePreview").classList.remove("hidden");
+      } else {
+        byId("builderImagePreview").src = "";
+        byId("builderImagePreview").classList.add("hidden");
+      }
+      hideNotice("builderNotice");
+    }
+
+    function deleteLesson(lessonId) {
+      if (!confirm("Delete this saved lesson?")) return;
+      lessons = lessons.filter(l => l.id !== lessonId);
+      saveData(STORAGE_KEYS.lessons, lessons);
+      if (builderEditingLessonId === lessonId) resetBuilderForm();
+      renderSavedLessons();
+      renderLessonHeaders();
+    }
+
+    // =========================
+    // STORAGE EVENT
+    // =========================
+    window.addEventListener("storage", function() {
+      refreshStateFromStorage();
+      renderLessonHeaders();
+      renderSavedLessons();
+      if (!byId("teacherScreen").classList.contains("hidden")) {
+        renderTeacherControls();
+        renderProgressTracker();
+        renderResults();
+        renderBonusPopup();
+      }
+      if (!byId("activityScreen").classList.contains("hidden")) {
+        renderStudentStationList();
+      }
     });
-  }
-};
 
-window.submitCurrentStation = async function(stationId){
-  if(!currentStudent) return;
-  if(isStationSubmitted(stationId)) return openStation(stationId);
-  const ct=getStationContent(stationId), qs=ct.questions||[];
-  let score=0;
-  const submittedAnswers={};
-  qs.forEach((q,i)=>{
-    const wrap=byId('q_'+stationId+'_'+i); if(!wrap) return;
-    const labels=wrap.querySelectorAll('.choice');
-    const checked=document.querySelector('input[name="answer_'+stationId+'_'+i+'"]:checked');
-    const answer=checked?checked.value:'';
-    submittedAnswers[i]=answer;
-    labels.forEach(lbl=>{
-      const input=lbl.querySelector('input'); if(!input) return;
-      if(normalizeAnswer(input.value)===normalizeAnswer(q.answer)){ lbl.style.background='#eafaf1'; lbl.style.borderColor='#2ecc71'; }
-      if(checked && input===checked && normalizeAnswer(input.value)!==normalizeAnswer(q.answer)){ lbl.style.background='#fdecea'; lbl.style.borderColor='#e74c3c'; }
-      input.disabled=true;
-    });
-    if(normalizeAnswer(answer)===normalizeAnswer(q.answer)){ score++; wrap.classList.add('correct'); wrap.querySelector('.feedback').innerHTML='✅ Correct'; }
-    else { wrap.classList.add('wrong'); wrap.querySelector('.feedback').innerHTML='❌ Correct answer: '+escapeHtml(q.answer); }
-  });
-  const snap=await getSnap(studentPath(currentStudent.id));
-  const ex=snap.exists()?snap.val():{scores:{},stationResults:{},stationAnswers:{},submittedStations:{}};
-  const nextScores=Object.assign({},ex.scores||{},{[stationId]:score});
-  const nextResults=Object.assign({},ex.stationResults||{},{[stationId]:{score:score,max:qs.length}});
-  const nextAnswers=Object.assign({},ex.stationAnswers||{},{[stationId]:submittedAnswers});
-  const nextSubmitted=Object.assign({},ex.submittedStations||{},{[stationId]:true});
-  const total=Object.values(nextScores).reduce((a,b)=>a+Number(b||0),0);
-  await dbRef(studentPath(currentStudent.id)).update({scores:nextScores,stationResults:nextResults,stationAnswers:nextAnswers,submittedStations:nextSubmitted,total:total});
-  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id]={};
-  Object.assign(liveStudents[currentStudent.id],{scores:nextScores,stationResults:nextResults,stationAnswers:nextAnswers,submittedStations:nextSubmitted,total:total});
-  renderStudentNav();
-  openStation(stationId);
-};
-
-function listenStudentLive(){
-  if(studentBonusRef) studentBonusRef.off();
-  if(studentSelfRef) studentSelfRef.off();
-  studentBonusRef=dbRef(bonusPath());
-  studentSelfRef=dbRef(studentPath(currentStudent.id));
-  studentBonusRef.on('value',snap=>{ liveBonus=snap.val()||{}; });
-  studentSelfRef.on('value',snap=>{ if(!snap.exists()) return; liveStudents[currentStudent.id]=snap.val(); renderStudentNav(); });
-}
-
-function startTeacherListeners(){
-  if(teacherTrackerRef) teacherTrackerRef.off();
-  if(teacherBonusRef) teacherBonusRef.off();
-  teacherTrackerRef=dbRef(lessonBase()+'/students');
-  teacherBonusRef=dbRef(bonusPath());
-  teacherTrackerRef.on('value',snap=>{ liveStudents=snap.val()||{}; renderTeacherTracker(); if(currentStudent) renderStudentNav(); });
-  teacherBonusRef.on('value',snap=>{ liveBonus=snap.val()||{}; renderBonusBox(); renderTeacherTracker(); });
-}
-
-function renderTeacherTracker(){
-  const wrap=byId('teacherTrackerWrap'); if(!wrap) return;
-  const header=lessonStations.map(st=>'<th>'+escapeHtml(st.title)+'<br><span class="small">/'+totalMarksForStation(st.id)+'</span></th>').join('');
-  const rows=Object.values(liveStudents||{}).map(s=>{
-    const bonus=Number(((liveBonus[s.id]||{}).points)||0);
-    const scoreCells=lessonStations.map(st=>'<td>'+((((s.stationResults||{})[st.id]||{}).score)||0)+'/'+totalMarksForStation(st.id)+'</td>').join('');
-    return '<tr><td class="name-col">'+escapeHtml(s.name||'')+'</td><td class="id-col">'+escapeHtml(s.id||'')+'</td><td>'+escapeHtml(s.currentStation||'-')+'</td>'+scoreCells+'<td>'+((s.total||0)+bonus)+'</td><td><button onclick="giveBonus(\''+escapeJs(s.name||'')+'\',\''+escapeJs(s.id||'')+'\',1)">+1</button> <button class="muted" onclick="resetBonus(\''+escapeJs(s.id||'')+'\')">Reset</button></td></tr>';
-  }).join('');
-  wrap.innerHTML='<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>'+header+'<th>Total</th><th>Bonus</th></tr></thead><tbody>'+(rows||'<tr><td colspan="'+(lessonStations.length+5)+'">No student data yet.</td></tr>')+'</tbody></table>';
-  renderTeacherOverview();
-}
-
-function renderBonusBox(){
-  const items=Object.values(liveBonus||{}).filter(x=>Number(((x||{}).points)||0)>0).sort((a,b)=>Number(b.points)-Number(a.points));
-  if(byId('bonusLiveContent')) byId('bonusLiveContent').innerHTML=items.length?items.map(b=>'<div class="card" style="padding:10px;margin-bottom:8px;border-radius:12px"><strong>'+escapeHtml(b.name)+'</strong><br><span class="small">ID: '+escapeHtml(b.id)+'</span><div class="pill" style="margin-top:6px">Bonus: '+b.points+'</div></div>').join(''):'No bonus yet.';
-}
-
-window.giveBonus = async function(name,id,delta){ if(!requireConnection()) return; const snap=await getSnap(bonusPath()+'/'+id); const curr=snap.exists()?snap.val():{name,id,points:0}; const next=Math.max(0,Number(curr.points||0)+Number(delta)); await dbRef(bonusPath()+'/'+id).set({name,id,points:next}); };
-window.resetBonus = async function(id){ if(!requireConnection()) return; await dbRef(bonusPath()+'/'+id).remove(); };
-window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus={}; renderBonusBox(); renderTeacherTracker(); };
-window.clearTrackerData = async function(){ if(!requireConnection()) return; await dbRef(lessonBase()+'/students').remove(); await dbRef(lessonBase()+'/attendance').remove(); liveStudents={}; renderTeacherTracker(); renderStudentNav(); };
-window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
-
-window.exportTrackerCsv = function(){
-  const rows=[['Name','ID','Current'].concat(lessonStations.map(s=>s.title)).concat(['Bonus','Total'])];
-  Object.values(liveStudents||{}).forEach(s=>{
-    const bonus=Number(((liveBonus[s.id]||{}).points)||0);
-    rows.push([s.name,s.id,s.currentStation||''].concat(lessonStations.map(st=>((((s.stationResults||{})[st.id]||{}).score)||0))).concat([bonus,(s.total||0)+bonus]));
-  });
-  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('
-');
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='dl_tracker_'+lessonKey+'.csv';
-  link.click();
-};
-
-window.exportLessonData = async function(){
-  const payload={stations:lessonStations,content:lessonContent,exportedAt:new Date().toISOString()};
-  const today=new Date();
-  const lessonPlanPayload={
-    lessonKey:lessonKey,
-    lessonName:(getStationById('st1')&&getStationById('st1').title)||lessonKey,
-    teacher:'Saidah Khwar',
-    day:today.toLocaleDateString('en-GB',{weekday:'long'}),
-    date:today.toLocaleDateString('en-GB'),
-    content:buildLessonPlanText(),
-    feedback:'',
-    updatedAt:Date.now()
-  };
-  if(requireConnection()) await dbRef('lessonplans/'+lessonKey).set(lessonPlanPayload);
-  const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8;'});
-  const link=document.createElement('a');
-  link.href=URL.createObjectURL(blob);
-  link.download='lesson_data_snapshot.json';
-  link.click();
-  showNotice('creatorNotice','Lesson data saved and lesson plan sent to SLT view.','good');
-};
-
-window.importLessonData = async function(event){
-  const file=event.target.files&&event.target.files[0]; if(!file) return;
-  const text=await file.text();
-  const parsed=JSON.parse(text);
-  if(parsed.stations) lessonStations=parsed.stations;
-  if(parsed.content) lessonContent=parsed.content;
-  await dbRef(configPath()).set(lessonStations);
-  await dbRef(contentPath()).set(lessonContent);
-  fillTeacherSelects();
-  loadCreatorStation();
-  renderTeacherOverview();
-  renderControlStatus();
-  showNotice('creatorNotice','Lesson data restored successfully.','good');
-  event.target.value='';
-};
-
-function fillTeacherSelects(){
-  const opts=lessonStations.map(s=>'<option value="'+escapeHtml(s.id)+'">'+escapeHtml(s.title)+'</option>').join('');
-  byId('controlStationSelect').innerHTML=opts;
-  byId('creatorStationSelect').innerHTML=opts;
-}
-
-function renderTeacherOverview(){
-  const box=byId('teacherOverviewStations'); if(!box) return;
-  box.innerHTML=lessonStations.map(s=>'<div class="item '+(s.displayed?'active':'')+'"><strong>'+escapeHtml(s.title)+'</strong><div class="small">'+(s.unlocked?'🔓':'🔒')+' | '+escapeHtml(s.time)+'</div><div class="small">'+escapeHtml(s.objective)+'</div><div class="small">⭐ '+totalMarksForStation(s.id)+' marks</div></div>').join('');
-}
-
-function renderControlStatus(){
-  const wrap=byId('controlStatusWrap'); if(!wrap) return;
-  wrap.innerHTML='<table class="tracker-table"><thead><tr><th>Station</th><th>Status</th><th>Displayed</th><th>Marks</th></tr></thead><tbody>'+lessonStations.map(s=>'<tr><td>'+escapeHtml(s.title)+'</td><td>'+(s.unlocked?'Unlocked':'Locked')+'</td><td>'+(s.displayed?'Yes':'No')+'</td><td>'+totalMarksForStation(s.id)+'</td></tr>').join('')+'</tbody></table>';
-}
-
-window.displaySelectedStation = async function(){ if(!requireConnection()) return; const id=byId('controlStationSelect').value; lessonStations=lessonStations.map(s=>Object.assign({},s,{displayed:s.id===id})); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Displayed station updated.','good'); };
-window.unlockSelectedStation = async function(){ if(!requireConnection()) return; const id=byId('controlStationSelect').value; lessonStations=lessonStations.map(s=>s.id===id?Object.assign({},s,{unlocked:true}):s); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station unlocked.','good'); };
-window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id=byId('controlStationSelect').value; if(id==='starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations=lessonStations.map(s=>s.id===id?Object.assign({},s,{unlocked:false}):s); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
-
-window.handleCreatorImage = function(event){
-  const file=event.target.files&&event.target.files[0]; if(!file) return;
-  const reader=new FileReader();
-  reader.onload=e=>byId('creatorImageUrl').value=e.target.result;
-  reader.readAsDataURL(file);
-};
-
-window.loadCreatorStation = function(){
-  const id=byId('creatorStationSelect').value||((lessonStations[0]||{}).id);
-  const st=getStationById(id), ct=getStationContent(id);
-  if(!st) return;
-  byId('creatorTitle').value=st.title||'';
-  byId('creatorObjective').value=st.objective||'';
-  byId('creatorDetails').value=st.details||'';
-  byId('creatorTime').value=st.time||'';
-  byId('creatorImageUrl').value=ct.imageUrl||'';
-  byId('creatorSourceText').value=ct.sourceText||'';
-  byId('creatorImageNotes').value=ct.imageNotes||'';
-  creatorDraftQuestions=JSON.parse(JSON.stringify(ct.questions||[]));
-  renderCreatorQuestionsList();
-  clearQuestionBuilder();
-};
-
-window.toggleBuilderFields = function(){ const type=byId('builderQuestionType').value; byId('builderMcqFields').classList.toggle('hidden',type!=='mcq'); byId('builderTfFields').classList.toggle('hidden',type!=='tf'); };
-window.clearQuestionBuilder = function(){ byId('builderQuestionType').value='mcq'; byId('builderQuestionText').value=''; byId('builderChoiceA').value=''; byId('builderChoiceB').value=''; byId('builderChoiceC').value=''; byId('builderChoiceD').value=''; byId('builderCorrectMcq').value='A'; byId('builderCorrectTf').value='True'; toggleBuilderFields(); };
-
-window.renderCreatorQuestionsList = function(){
-  const wrap=byId('creatorQuestionsList'); if(!wrap) return;
-  if(!creatorDraftQuestions.length){ wrap.innerHTML='<div class="small">No questions added yet.</div>'; return; }
-  wrap.innerHTML=creatorDraftQuestions.map((q,i)=>{
-    const choices=q.type==='mcq'?'<div class="small">Choices: '+(q.choices||[]).map(escapeHtml).join(' | ')+'</div>':'<div class="small">Choices: True | False</div>';
-    return '<div class="card" style="padding:10px;margin-bottom:8px;"><strong>Q'+(i+1)+'.</strong> '+escapeHtml(q.text)+'<div class="small">Type: '+escapeHtml(q.type.toUpperCase())+'</div>'+choices+'<div class="small">Correct Answer: '+escapeHtml(q.answer)+'</div><div class="btns" style="margin-top:8px;"><button type="button" onclick="editCreatorQuestion('+i+')">Edit</button><button type="button" class="warnbtn" onclick="removeCreatorQuestion('+i+')">Delete</button></div></div>';
-  }).join('');
-};
-
-window.editCreatorQuestion = function(index){
-  const q=creatorDraftQuestions[index]; if(!q) return;
-  byId('builderQuestionType').value=q.type;
-  byId('builderQuestionText').value=q.text;
-  if(q.type==='mcq'){
-    byId('builderChoiceA').value=q.choices[0]||'';
-    byId('builderChoiceB').value=q.choices[1]||'';
-    byId('builderChoiceC').value=q.choices[2]||'';
-    byId('builderChoiceD').value=q.choices[3]||'';
-    const ci=(q.choices||[]).findIndex(c=>normalizeAnswer(c)===normalizeAnswer(q.answer));
-    byId('builderCorrectMcq').value=['A','B','C','D'][ci]||'A';
-  } else byId('builderCorrectTf').value=q.answer;
-  toggleBuilderFields();
-  creatorDraftQuestions.splice(index,1);
-  renderCreatorQuestionsList();
-  showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
-};
-
-window.addCreatorQuestion = function(){
-  const type=byId('builderQuestionType').value;
-  const text=byId('builderQuestionText').value.trim();
-  if(!text){ showNotice('creatorNotice','Please write the question first.','bad'); return; }
-  let question;
-  if(type==='mcq'){
-    const choices=[byId('builderChoiceA').value.trim(),byId('builderChoiceB').value.trim(),byId('builderChoiceC').value.trim(),byId('builderChoiceD').value.trim()];
-    if(choices.some(c=>!c)){ showNotice('creatorNotice','Please fill all four choices.','bad'); return; }
-    const ci={A:0,B:1,C:2,D:3}[byId('builderCorrectMcq').value];
-    question=createQuestion('tmp_'+Date.now(),'mcq',text,choices[ci],choices);
-  } else {
-    question=createQuestion('tmp_'+Date.now(),'tf',text,byId('builderCorrectTf').value,['True','False']);
-  }
-  creatorDraftQuestions.push(question);
-  renderCreatorQuestionsList();
-  clearQuestionBuilder();
-  showNotice('creatorNotice','Question added.','good');
-};
-
-window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
-window.clearAllCreatorQuestions = function(){ creatorDraftQuestions=[]; renderCreatorQuestionsList(); showNotice('creatorNotice','All questions cleared.','warn'); };
-
-window.saveCreatorStation = async function(){
-  if(!requireConnection()) return;
-  const id=byId('creatorStationSelect').value, imageUrl=byId('creatorImageUrl').value.trim(), sourceText=byId('creatorSourceText').value.trim();
-  lessonStations=lessonStations.map(s=>s.id===id?Object.assign({},s,{title:byId('creatorTitle').value.trim()||s.title,objective:byId('creatorObjective').value.trim()||s.objective,details:byId('creatorDetails').value.trim()||s.details,time:byId('creatorTime').value.trim()||s.time,thumbnail:imageUrl}):s);
-  if(!lessonContent[id]) lessonContent[id]={imageUrl:'',sourceText:'',imageNotes:'',questions:[]};
-  lessonContent[id].imageUrl=imageUrl;
-  lessonContent[id].sourceText=sourceText;
-  lessonContent[id].imageNotes=byId('creatorImageNotes').value.trim();
-  lessonContent[id].questions=creatorDraftQuestions.map((q,idx)=>createQuestion(id+'_q'+(idx+1),q.type,q.text,q.answer,q.type==='tf'?['True','False']:(q.choices||[])));
-  await dbRef(configPath()).set(lessonStations);
-  await dbRef(contentPath()).set(lessonContent);
-  renderTeacherOverview();
-  renderControlStatus();
-  renderTeacherTracker();
-  showNotice('creatorNotice','Station saved successfully and sent to student page.','good');
-};
-
-function buildLessonPlanText(){
-  const starter=getStationById('starter')||{}, st1=getStationById('st1')||{}, st2=getStationById('st2')||{}, st3=getStationById('st3')||{}, exitSt=getStationById('exit')||{};
-  const starterContent=getStationContent('starter'), st1Content=getStationContent('st1'), st2Content=getStationContent('st2'), st3Content=getStationContent('st3'), exitContent=getStationContent('exit');
-  const lessonTitle=firstNonEmpty([st1.title,'DL Reading Lesson']);
-  const keywordMatches=[starterContent,st1Content,st2Content,st3Content,exitContent].map(c => c.sourceText||c.imageNotes||'').join(' ').match(/[A-Za-z][A-Za-z-]{3,}/g);
-  const uniqueKeywords=Array.from(new Set((keywordMatches||[]).map(w => w.toLowerCase()))).slice(0,8);
-  const keyWordsText=uniqueKeywords.length?uniqueKeywords.join(' – '):'main idea – details – vocabulary – reading';
-  const hotQuestion=firstNonEmpty([starterContent.questions&&starterContent.questions[0]&&starterContent.questions[0].text,'How can understanding differences improve communication?']);
-  return [
-    'Date: '+lessonDateString(),
-    'Subject: English Language',
-    'Teacher: Saidah Khwar',
-    'Lesson Title: '+lessonTitle,
-    '',
-    'Key Learning Objectives:',
-    '• Identify the main idea of the text or paragraph.',
-    '• Find supporting details from the reading tasks.',
-    '• Understand key vocabulary from context.',
-    '',
-    'Lesson Topic:',
-    firstNonEmpty([starter.objective,st1.objective,'Reading comprehension']),
-    '',
-    'H.O.T. Question:',
-    hotQuestion,
-    '',
-    'Keywords / New Vocabulary:',
-    keyWordsText,
-    '',
-    'Success Criteria:',
-    'Students will be able to identify main idea, find details, and understand vocabulary from the lesson tasks.',
-    '',
-    'Warm up / Starter:',
-    'Starter ('+(starter.time||'5 min')+')',
-    'Students look at the activity picture and answer starter questions.',
-    'Teacher Role: Guide predictions and activate prior knowledge.',
-    'Student Role: Observe, predict, and share ideas.',
-    'AFL: Oral responses and quick checking.',
-    '',
-    'Main Activities linked to LO:',
-    'Main Activity 1 ('+(st1.time||'10 min')+') – '+(st1.title||'Station 1'),
-    'Focus: '+(st1.objective||'Read for main idea and details')+'.',
-    'Question focus: '+(stationQuestionSummary('st1')||'Main idea, details, and vocabulary questions.'),
-    'Teacher Role: Monitor and support reading comprehension.',
-    'Student Role: Read carefully and answer independently.',
-    'AFL: Immediate feedback after submission.',
-    '',
-    'Main Activity 2 ('+(st2.time||'10 min')+') – '+(st2.title||'Station 2'),
-    'Focus: '+(st2.objective||'Read for details and vocabulary')+'.',
-    'Question focus: '+(stationQuestionSummary('st2')||'Details and vocabulary questions.'),
-    'Teacher Role: Check progress in tracker and support where needed.',
-    'Student Role: Read, think, and answer using evidence from the text.',
-    'AFL: Live tracker and station score.',
-    '',
-    'Main Activity 3 ('+(st3.time||'10 min')+') – '+(st3.title||'Station 3'),
-    'Focus: '+(st3.objective||'Use evidence from the text')+'.',
-    'Question focus: '+(stationQuestionSummary('st3')||'Details and vocabulary questions.'),
-    'Teacher Role: Facilitate discussion and track completion.',
-    'Student Role: Complete the station and review feedback.',
-    'AFL: Auto-correction and teacher tracker.',
-    '',
-    'Differentiation:',
-    'H: Answer independently with full accuracy.',
-    'M: Answer with teacher support when needed.',
-    'L: Use picture support, shorter guidance, and direct checking.',
-    '',
-    'E-Implementation Tool:',
-    'DL Online Live System',
-    '',
-    'Plenary:',
-    'Exit Ticket ('+(exitSt.time||'5 min')+')',
-    'Students complete the exit ticket to show overall understanding.',
-    'Exit focus: '+(stationQuestionSummary('exit')||'Whole lesson understanding questions.'),
-    'Teacher Role: Review results and wrap up the lesson.',
-    'Student Role: Answer independently and reflect on learning.',
-    '',
-    'Learning Skills:',
-    'Independent Learners, Critical Thinking, Clear Communication, Collaboration, Real World Connections',
-    '',
-    'Cross Curricular Links:',
-    'ICT / Digital Learning',
-    '',
-    'UAE Vision 2031:',
-    'Promotes digital learning, clear communication, and responsible participation.'
-  ].join('
-');
-}
-
-window.generateLessonPlanScreen = function(){ byId('lessonPlanContent').textContent=buildLessonPlanText(); byId('lessonPlanScreen').classList.remove('hidden'); };
-window.copyLessonPlanText = async function(){ const text=byId('lessonPlanContent').textContent||''; try{ await navigator.clipboard.writeText(text); showNotice('creatorNotice','Lesson plan copied.','good'); }catch(e){ showNotice('creatorNotice','Copy failed. Please copy manually.','warn'); } };
-window.saveLessonPlanForSLT = async function(){
-  if(!requireConnection()) return;
-  const lessonText=buildLessonPlanText();
-  const key='lessonplans/'+lessonKey;
-  const today=new Date();
-  const existing=await getSnap(key);
-  const old=existing.exists()?existing.val():{};
-  const payload={
-    lessonKey:lessonKey,
-    lessonName:(getStationById('st1')&&getStationById('st1').title)||lessonKey,
-    teacher:'Saidah Khwar',
-    day:old.day||today.toLocaleDateString('en-GB',{weekday:'long'}),
-    date:old.date||today.toLocaleDateString('en-GB'),
-    content:lessonText,
-    feedback:old.feedback||'',
-    updatedAt:Date.now()
-  };
-  await dbRef(key).set(payload);
-  showNotice('creatorNotice','Lesson plan saved for SLT.','good');
-};
-
-window.renderSLTLessonList = function(){
-  const wrap=byId('sltLessonList'); if(!wrap) return;
-  dbRef('lessonplans').once('value').then(function(snap){
-    const plans=snap.val()||{};
-    const keys=Object.keys(plans);
-    if(!keys.length){ wrap.innerHTML='<div class="small">No lesson plans saved yet.</div>'; return; }
-    wrap.innerHTML=keys.map(function(k){
-      const p=plans[k]||{};
-      return '<div class="card" style="margin-bottom:12px;">'
-        + '<h3 style="margin-top:0;">'+escapeHtml(p.lessonName||k)+'</h3>'
-        + '<div class="small">Teacher: '+escapeHtml(p.teacher||'')+'</div>'
-        + '<label>Day</label><input id="slt_day_'+escapeJs(k)+'" value="'+escapeHtml(p.day||'')+'" />'
-        + '<label>Date</label><input id="slt_date_'+escapeJs(k)+'" value="'+escapeHtml(p.date||'')+'" />'
-        + '<div class="btns" style="margin-top:10px;"><button type="button" onclick="toggleSLTPlan(\''+escapeJs(k)+'\')">View Lesson Plan</button><button type="button" class="secondary" onclick="saveSLTMeta(\''+escapeJs(k)+'\')">Save Day/Date</button></div>'
-        + '<div id="slt_plan_'+escapeJs(k)+'" class="hidden" style="white-space:pre-wrap;line-height:1.7;margin-top:10px;background:#fcfdff;border:1px solid #d9e2f2;padding:12px;border-radius:12px;">'+escapeHtml(p.content||'')+'</div>'
-        + '<label style="margin-top:10px;display:block;">Feedback</label><textarea id="slt_feedback_'+escapeJs(k)+'">'+escapeHtml(p.feedback||'')+'</textarea>'
-        + '<div class="btns" style="margin-top:10px;"><button type="button" onclick="saveSLTFeedback(\''+escapeJs(k)+'\')">Save Feedback</button></div>'
-        + '</div>';
-    }).join('');
-  });
-};
-
-window.toggleSLTPlan = function(k){ const el=byId('slt_plan_'+k); if(el) el.classList.toggle('hidden'); };
-window.saveSLTMeta = async function(k){ if(!requireConnection()) return; await dbRef('lessonplans/'+k).update({day:byId('slt_day_'+k).value, date:byId('slt_date_'+k).value, updatedAt:Date.now()}); renderSLTLessonList(); };
-window.saveSLTFeedback = async function(k){ if(!requireConnection()) return; await dbRef('lessonplans/'+k).update({feedback:byId('slt_feedback_'+k).value, updatedAt:Date.now(), sltName:currentSLTName}); renderSLTLessonList(); };
-
-bindButtons();
-document.addEventListener('DOMContentLoaded',function(){ bindButtons(); toggleBuilderFields(); });
-if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig(); else tryAutoConnect();
-</script>
+    // =========================
+    // INIT
+    // =========================
+    renderLessonHeaders();
+    renderSavedLessons();
+    if (!restoreStudentSession()) {
+      goHome();
+    }
+  </script>
 </body>
 </html>
