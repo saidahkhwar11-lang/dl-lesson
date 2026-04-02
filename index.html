@@ -157,6 +157,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
      <div class="btns">
   <button onclick="refreshTeacherNow()">🔄 Refresh</button>
   <button class="secondary" onclick="exportTrackerCsv()">📊 Export</button>
+  <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
+  <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
+  <button onclick="exportLessonData()">💾 Save Lesson Data</button>
+  <button onclick="triggerImportLesson()">📂 Load Lesson Data</button>
 </div>
 
 <div class="card" style="margin-top:10px; padding:10px; background:#fff5f5;">
@@ -1042,7 +1046,50 @@ window.exportTrackerCsv = function(){
   link.download = 'dl_tracker_' + lessonKey + '.csv';
   link.click();
 };
+function exportLessonData(){
+  const data = {
+    lessonStations: lessonStations,
+    stationContent: stationContent || {},
+    lessonMeta: {
+      savedAt: new Date().toISOString()
+    }
+  };
 
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lesson-data.json';
+  a.click();
+}
+
+function triggerImportLesson(){
+  const input = byId('lessonDataFile');
+  if(input) input.click();
+}
+
+function importLessonData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+
+      lessonStations = data.lessonStations || [];
+      stationContent = data.stationContent || {};
+
+      renderTeacherOverview();
+      openTeacherStationPreview('starter');
+
+      alert('Lesson loaded successfully ✅');
+    }catch(err){
+      alert('Error loading lesson ❌');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
 window.exportLessonData = function(){
   const payload = { stations:lessonStations, content:lessonContent, exportedAt:new Date().toISOString() };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8;'});
