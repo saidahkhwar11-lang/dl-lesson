@@ -982,12 +982,30 @@ wrap.innerHTML = top5.map(function(s, index){
 }).join('');
 }  
 
-window.giveBonus = async function(name,id,delta){ if(!requireConnection()) return; const snap = await getSnap(bonusPath() + '/' + id); const curr = snap.exists() ? snap.val() : {name:name,id:id,points:0}; const next = Math.max(0, Number(curr.points || 0) + Number(delta)); await dbRef(bonusPath() + '/' + id).set({name:name,id:id,points:next}); };
-window.resetBonus = async function(id){ if(!requireConnection()) return; await dbRef(bonusPath() + '/' + id).remove(); };
+window.giveBonus = async function(name,id,delta){
+  if(!requireConnection()) return;
+
+  const snap = await getSnap(bonusPath() + '/' + id);
+  const currentData = snap.exists() ? (snap.val() || {}) : {};
+  const current = Number(currentData.points || 0);
+  const newPoints = current + delta;
+
+  await dbRef(bonusPath() + '/' + id).set({
+    name: name,
+    id: id,
+    points: newPoints
+  });
+};
   window.takeBonus = function(id){
-  const current = Number((liveBonus[id] || {}).points || 0);
+  const currentData = liveBonus[id] || {};
+  const current = Number(currentData.points || 0);
   const newPoints = current - 1 < 0 ? 0 : current - 1;
-  dbRef(bonusPath()).child(id).set({ points:newPoints });
+
+  dbRef(bonusPath()).child(id).set({
+    name: currentData.name || '',
+    id: id,
+    points: newPoints
+  });
 };
 
 window.removeStudent = function(id){
