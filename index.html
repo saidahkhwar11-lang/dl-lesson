@@ -616,7 +616,8 @@ if(content.videoUrl){
     questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
   }
 
-  wrap.className = 'teacher-preview';
+wrap.className = '';
+wrap.classList.add('teacher-preview');
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
       <h3 style="margin-top:0;">${station.title}</h3>
@@ -630,6 +631,8 @@ ${videoHtml}
 <div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
   Use <strong>Station Control</strong> below to display, unlock, or lock this station.
 </div>
+</div>
+
     
 
     <div class="preview-right teacher-preview-right-small teacher-preview-questions">
