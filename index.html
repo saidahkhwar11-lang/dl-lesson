@@ -951,36 +951,39 @@ function renderTopStudents(){
   const wrap = byId('topStudentsList');
   if(!wrap) return;
 
-const studentsArray = Object.values(liveStudents || {});
+  const studentsArray = Object.values(liveStudents || {});
 
-if(!studentsArray.length){
-  wrap.innerHTML = 'No data yet.';
-  return;
+  if(!studentsArray.length){
+    wrap.innerHTML = 'No data yet.';
+    return;
+  }
+
+  const ranked = studentsArray.map(function(s){
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+    const finalScore = Number(s.total || 0) + bonus;
+
+    return {
+      id: s.id || '',
+      name: s.name || '',
+      finalScore: finalScore
+    };
+  });
+
+  ranked.sort(function(a, b){
+    return b.finalScore - a.finalScore;
+  });
+
+  const top5 = ranked.slice(0, 5);
+
+  wrap.innerHTML = top5.map(function(s, index){
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1);
+
+    return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
+      '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || s.id || '') + '</span>' +
+      '<span>⭐ ' + s.finalScore + '</span>' +
+    '</div>';
+  }).join('');
 }
-
-const ranked = studentsArray.map(function(s){
-  const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
-  const finalScore = Number(s.total || 0) + bonus;
-
-return {
-  id: s.id,
-  name: s.name || '',
-  finalScore: finalScore
-};
-
-ranked.sort(function(a, b){
-  return b.finalScore - a.finalScore;
-});
-
-const top5 = ranked.slice(0, 5);
-
-wrap.innerHTML = top5.map(function(s, index){
- return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
-  '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || 'Student') + '</span>' +
-  '<span>⭐ ' + s.finalScore + '</span>' +
-'</div>';
-}).join('');
-}  
 
 window.giveBonus = async function(name,id,delta){
   if(!requireConnection()) return;
