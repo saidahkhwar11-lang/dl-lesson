@@ -348,9 +348,7 @@ function bindButtons(){
 }
 
 function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role');
-sessionStorage.removeItem('dl_student_name');
-sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 window.maximizeImage = function(src){ if(!src) return; const modal = byId('imageModal'); modal.className = 'maximized'; modal.innerHTML = '<img src="' + src + '" alt="maximized image" onclick="event.stopPropagation()" />'; modal.onclick = function(){ modal.className = 'hidden'; modal.innerHTML = ''; }; };
 
@@ -481,8 +479,8 @@ window.startStudentSession = async function(){
     hideNotice('studentNotice');
     currentStudent = {name:name, id:id};
     sessionStorage.setItem('dl_role', 'student');
-sessionStorage.setItem('dl_student_name', name);
-sessionStorage.setItem('dl_student_id', id);
+    sessionStorage.setItem('dl_student_name', name);
+    sessionStorage.setItem('dl_student_id', id);
     const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{}, stationAnswers:{}, submittedStations:{} };
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
