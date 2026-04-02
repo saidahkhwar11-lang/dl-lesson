@@ -742,7 +742,12 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').textContent = currentStudent.name + ' | ID: ' + currentStudent.id;
+  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
+  currentStudent.name +
+  ' | ID: ' + currentStudent.id +
+  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+  (liveBonus[currentStudent.id]?.points || 0) +
+  '</span>';
   side.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
     const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
@@ -926,11 +931,18 @@ function renderTeacherTracker(){
   const rows = Object.values(liveStudents || {}).map(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
     const scoreCells = lessonStations.map(function(st){ return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>'; }).join('');
-    return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td><button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)">+1</button> <button class="muted" onclick="resetBonus(\'' + escapeJs(s.id || '') + '\')">Reset</button></td></tr>';
+   return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td>' +
+'<div style="display:flex; align-items:center; gap:8px;">' +
+'<button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>' +
+'<div style="min-width:28px; text-align:center; font-weight:bold;">' + bonus + '</div>' +
+'<button class="warnbtn" onclick="takeBonus(\'' + escapeJs(s.id || '') + '\')" style="width:40px; padding:8px 0; font-size:20px;">−</button>' +
+'<button class="muted" onclick="removeStudent(\'' + escapeJs(s.id || '') + '\')" style="padding:6px 10px;">✖</button>' +
+'</div>' +
+'</td></tr>';
   }).join('');
   wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
-  renderTeacherOverview();
-  renderTopStudents();
+renderTeacherOverview();
+if(typeof renderTopStudents === 'function') renderTopStudents();
 }
 
 function renderBonusBox(){
@@ -941,6 +953,18 @@ function renderBonusBox(){
 
 window.giveBonus = async function(name,id,delta){ if(!requireConnection()) return; const snap = await getSnap(bonusPath() + '/' + id); const curr = snap.exists() ? snap.val() : {name:name,id:id,points:0}; const next = Math.max(0, Number(curr.points || 0) + Number(delta)); await dbRef(bonusPath() + '/' + id).set({name:name,id:id,points:next}); };
 window.resetBonus = async function(id){ if(!requireConnection()) return; await dbRef(bonusPath() + '/' + id).remove(); };
+  window.takeBonus = function(id){
+  const current = Number((liveBonus[id] || {}).points || 0);
+  const newPoints = current - 1 < 0 ? 0 : current - 1;
+  dbRef(bonusPath()).child(id).set({ points:newPoints });
+};
+
+window.removeStudent = function(id){
+  if(!confirm('Remove this student?')) return;
+
+  dbRef(studentPath(id)).remove();
+  dbRef(bonusPath()).child(id).remove();
+};
 window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus = {}; renderBonusBox(); renderTeacherTracker(); };
 window.clearTrackerData = async function(){ if(!requireConnection()) return; await dbRef(lessonBase() + '/students').remove(); await dbRef(lessonBase() + '/attendance').remove(); liveStudents = {}; renderTeacherTracker(); renderStudentNav(); };
 window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
