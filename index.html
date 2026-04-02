@@ -537,14 +537,6 @@ if(content.audioUrl){
   `;
 }
   
-let audioHtml = '';
-if(content.audioUrl){
-  audioHtml = `
-    <audio controls style="width:100%; margin-bottom:12px;">
-      <source src="${content.audioUrl}">
-    </audio>
-  `;
-}
 let videoHtml = '';
 if(content.videoUrl){
   videoHtml = `
