@@ -964,10 +964,9 @@ const ranked = studentsArray.map(function(s){
 
 return {
   id: s.id,
-  name: s.name || 'Student',
+  name: s.name || '',
   finalScore: finalScore
 };
-});
 
 ranked.sort(function(a, b){
   return b.finalScore - a.finalScore;
@@ -976,10 +975,10 @@ ranked.sort(function(a, b){
 const top5 = ranked.slice(0, 5);
 
 wrap.innerHTML = top5.map(function(s, index){
-  return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
-    '<span><strong>#' + (index + 1) + '</strong></span>' +
-    '<span>⭐ ' + s.finalScore + '</span>' +
-  '</div>';
+ return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
+  '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || 'Student') + '</span>' +
+  '<span>⭐ ' + s.finalScore + '</span>' +
+'</div>';
 }).join('');
 }  
 
@@ -1260,6 +1259,7 @@ function renderTopStudents(){
 
     return {
       id: s.id,
+      name: s.name || '',
       finalScore: finalScore
     };
   });
@@ -1270,16 +1270,14 @@ function renderTopStudents(){
 
   const top5 = ranked.slice(0, 5);
 
-wrap.innerHTML = top5.map(function(s, index){
+  wrap.innerHTML = top5.map(function(s, index){
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1);
 
-  const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index+1);
-
-return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
-  '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || 'Student') + '</span>' +
-  '<span>⭐ ' + s.finalScore + '</span>' +
-'</div>';
-
-}).join('');
+    return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
+      '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || 'Student') + '</span>' +
+      '<span>⭐ ' + s.finalScore + '</span>' +
+    '</div>';
+  }).join('');
 }
 bindButtons();
 
