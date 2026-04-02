@@ -201,14 +201,25 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
           <label>Time</label>
           <input id="creatorTime" />
           <label>Image URL</label>
-          <input id="creatorImageUrl" placeholder="Paste image URL" />
-          <label>Upload Activity Picture</label>
-          <input id="creatorImageFile" type="file" accept="image/*" onchange="handleCreatorImage(event)" />
-          <label>Source Text / Activity Notes</label>
-          <textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
-          <label>Picture AI Notes</label>
-          <textarea id="creatorImageNotes" placeholder="(Optional) support notes"></textarea>
-        </div>
+<input id="creatorImageUrl" placeholder="Paste image URL" />
+
+<label>Upload Activity Picture</label>
+<input id="creatorImageFile" type="file" accept="image/*" onchange="handleCreatorImage(event)" />
+
+<label>Audio URL</label>
+<input id="creatorAudioUrl" placeholder="Paste MP3 or audio URL" />
+
+<label>Upload Audio (MP3)</label>
+<input id="creatorAudioFile" type="file" accept="audio/*" onchange="handleCreatorAudio(event)" />
+
+<label>Video URL</label>
+<input id="creatorVideoUrl" placeholder="Paste video URL" />
+
+<label>Upload Video</label>
+<input id="creatorVideoFile" type="file" accept="video/*" onchange="handleCreatorVideo(event)" />
+
+<label>Source Text / Activity Notes</label>
+<textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
         <div>
           <label>Question Builder</label>
           <div class="card" style="padding:12px;background:#f8fbff;">
@@ -517,6 +528,31 @@ window.openTeacherStationPreview = function(id){
   if(!wrap || !station) return;
 
   let imageHtml = '';
+  let audioHtml = '';
+if(content.audioUrl){
+  audioHtml = `
+    <audio controls style="width:100%; margin-bottom:12px;">
+      <source src="${content.audioUrl}">
+    </audio>
+  `;
+}
+  
+let audioHtml = '';
+if(content.audioUrl){
+  audioHtml = `
+    <audio controls style="width:100%; margin-bottom:12px;">
+      <source src="${content.audioUrl}">
+    </audio>
+  `;
+}
+let videoHtml = '';
+if(content.videoUrl){
+  videoHtml = `
+    <video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;">
+      <source src="${content.videoUrl}">
+    </video>
+  `;
+}
   if(content.imageUrl){
     imageHtml = `
       <img class="teacher-big-img" src="${content.imageUrl}" alt="Station Image">
@@ -586,15 +622,13 @@ window.openTeacherStationPreview = function(id){
       <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
       <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
       ${imageHtml}
-      <div class="btns" style="margin-top:12px;">
-        <button type="button" onclick="displayTeacherStation('${station.id}')">Display Station</button>
-        <button type="button" class="goodbtn" onclick="unlockTeacherStation('${station.id}')">Unlock</button>
-        <button type="button" class="warnbtn" onclick="lockTeacherStation('${station.id}')">Lock</button>
-        <button type="button" class="secondary" onclick="toggleTeacherQuestions('${station.id}')">
-          ${teacherQuestionVisibility[station.id] === false ? 'Show Questions' : 'Hide Questions'}
-        </button>
-      </div>
-    </div>
+${audioHtml}
+${videoHtml}
+
+<div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
+  Use <strong>Station Control</strong> below to display, unlock, or lock this station.
+</div>
+    
 
     <div class="preview-right teacher-preview-right-small teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
@@ -747,13 +781,26 @@ window.openStation = function(id){
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
   const resultText = scoreTextForStudent(id);
-  const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
-  const nextStationId = getNextUnlockedStationId(id);
+const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
+
+const audioBlock = ct.audioUrl ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>' : '';
+
+const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>' : '';  const nextStationId = getNextUnlockedStationId(id);
   const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
   const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
   const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
   const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
-  byId('stationContent').innerHTML = '<h2>' + escapeHtml(st.title) + '</h2><p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p><p><strong>Details:</strong> ' + escapeHtml(st.details) + '</p>' + imageBlock + '<div class="station-result">Your result in this station: ' + resultText + '</div>' + submittedNote + questionsHtml + actionBtns;
+byId('stationContent').innerHTML =
+  '<h2>' + escapeHtml(st.title) + '</h2>' +
+  '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
+  '<p>' + escapeHtml(st.details || '') + '</p>' +
+  imageBlock +
+  audioBlock +
+  videoBlock +
+  '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
+  submittedNote +
+  questionsHtml +
+  actionBtns;
   if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
 
   if(submitted){
