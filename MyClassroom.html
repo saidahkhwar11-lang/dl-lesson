@@ -307,6 +307,9 @@ const DEMO_LESSONS = [
   { id: "l1", title: "Reading Lesson 1", locked: false },
   { id: "l2", title: "Vocabulary Assignment", locked: true }
 ];
+function getAvailableLessons(){
+  return DEMO_LESSONS;
+}
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
 
 const defaultStations = [
@@ -357,7 +360,7 @@ function loadStudentDashboard(){
 
   list.innerHTML = "";
 
-  DEMO_LESSONS.forEach(lesson => {
+  getAvailableLessons().forEach(lesson => {
     const div = document.createElement("div");
     div.style.marginBottom = "8px";
 
