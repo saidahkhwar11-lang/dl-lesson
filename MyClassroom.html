@@ -133,6 +133,29 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="teacherView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
+    <div id="classManagerCard" class="card" style="margin-bottom:12px;">
+  <h3 style="margin-top:0;">Class Management</h3>
+  <div class="small" style="margin-bottom:10px;">Create a class, choose a class, and upload students from Excel.</div>
+
+  <label>Class Name</label>
+  <input id="newClassName" type="text" placeholder="Example: 9_1">
+
+  <div class="btns" style="margin-top:10px;">
+    <button type="button" class="secondary" onclick="addClass()">➕ Add Class</button>
+  </div>
+
+  <label style="margin-top:12px;">Select Class</label>
+  <select id="classSelect"></select>
+
+  <label style="margin-top:12px;">Upload Student Excel</label>
+  <input id="studentExcelFile" type="file" accept=".xlsx,.xls,.csv">
+
+  <div class="btns" style="margin-top:10px;">
+    <button type="button" onclick="importStudentsFromFile()">📥 Import Students</button>
+  </div>
+
+  <div id="classManagerMsg" class="small" style="margin-top:10px;"></div>
+</div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
@@ -307,8 +330,50 @@ const DEMO_LESSONS = [
   { id: "l1", title: "Reading Lesson 1", locked: false },
   { id: "l2", title: "Vocabulary Assignment", locked: true }
 ];
+const DEMO_ASSIGNMENTS = [
+  { lessonId: "l1", assignedTo: "9_1", locked: false },
+  { lessonId: "l2", assignedTo: "9_1", locked: true }
+];
+const DEMO_CURRENT_STUDENT = {
+  fullName: "Sara Ahmed",
+  classId: "9_1"
+};
+  const STUDENTS = [
+  {
+    fullName: "Sara Ahmed",
+    username: "sara",
+    password: "20124567",
+    classId: "9_1"
+  },
+  {
+    fullName: "Mona Ali",
+    username: "mona",
+    password: "20124568",
+    classId: "9_2"
+  }
+];
+
+let CLASSES = [
+  { id: "9_1", name: "9_1" },
+  { id: "9_2", name: "9_2" }
+];
 function getAvailableLessons(){
-  return DEMO_LESSONS;
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+  const currentClass = (user && user.classId) ? user.classId : DEMO_CURRENT_STUDENT.classId;
+
+  return DEMO_ASSIGNMENTS
+    .filter(assign => assign.assignedTo === currentClass)
+    .map(assign => {
+      const lesson = DEMO_LESSONS.find(l => l.id === assign.lessonId);
+      if(!lesson) return null;
+
+      return {
+        id: lesson.id,
+        title: lesson.title,
+        locked: assign.locked
+      };
+    })
+    .filter(Boolean);
 }
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
 
@@ -346,6 +411,47 @@ let teacherQuestionIndex = {};
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
 function hideNotice(id){ const el = byId(id); if(el) el.classList.add('hidden'); }
+  function renderClassOptions(){
+  const select = byId('classSelect');
+  if(!select) return;
+
+  select.innerHTML = '';
+
+  CLASSES.forEach(cls => {
+    const option = document.createElement('option');
+    option.value = cls.id;
+    option.textContent = cls.name;
+    select.appendChild(option);
+  });
+}
+
+function addClass(){
+  const input = byId('newClassName');
+  const msg = byId('classManagerMsg');
+  if(!input) return;
+
+  const className = input.value.trim();
+  if(!className){
+    if(msg) msg.textContent = 'Please enter a class name.';
+    return;
+  }
+
+  const exists = CLASSES.some(c => c.id === className);
+  if(exists){
+    if(msg) msg.textContent = 'This class already exists.';
+    return;
+  }
+
+  CLASSES.push({
+    id: className,
+    name: className
+  });
+
+  input.value = '';
+  renderClassOptions();
+
+  if(msg) msg.textContent = 'Class added successfully.';
+}
 function loadStudentDashboard(){
   const user = JSON.parse(localStorage.getItem("currentUser"));
 
@@ -353,7 +459,15 @@ function loadStudentDashboard(){
   const list = document.getElementById("lessonList");
 
   if(welcome){
-    welcome.innerText = user ? ("Welcome, " + (user.name || user.fullName || "Student")) : "Welcome, Student";
+const displayName = user
+  ? (user.name || user.fullName || "Student")
+  : (DEMO_CURRENT_STUDENT.fullName || "Student");
+
+const displayClass = user
+  ? (user.classId || "")
+  : (DEMO_CURRENT_STUDENT.classId || "");
+
+welcome.innerText = "Welcome, " + displayName + (displayClass ? " | Class: " + displayClass : "");
   }
 
   if(!list) return;
@@ -551,12 +665,26 @@ window.startStudentSession = async function(){
     if(!requireConnection()) return;
     const name = byId('studentName').value.trim();
     const id = sanitizeKey(byId('studentId').value.trim());
+    const student = STUDENTS.find(s => s.password === id);
     if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
     hideNotice('studentNotice');
-    currentStudent = {name:name, id:id};
+    if(!student){
+  showNotice('studentNotice','Student not found.','bad');
+  return;
+}
+
+currentStudent = {
+  fullName: student.fullName,
+  username: student.username,
+  classId: student.classId
+};
+
+// save full student for dashboard
+localStorage.setItem("currentUser", JSON.stringify(currentStudent));
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
+    sessionStorage.setItem('dl_student_class', student.classId);
     const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{}, stationAnswers:{}, submittedStations:{} };
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
@@ -586,8 +714,9 @@ window.openTeacherView = async function(){
     localStorage.setItem('dl_role', 'teacher');
     localStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
-    showOnly('teacherView');
-    fillTeacherSelects();
+showOnly('teacherView');
+renderClassOptions();
+fillTeacherSelects();
     loadCreatorStation();
     renderTeacherOverview();
     openTeacherStationPreview('starter');
