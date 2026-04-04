@@ -162,6 +162,28 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="classStudentsList" class="small">No students yet.</div>
 </div>
 </div>
+    <div class="card" style="margin-bottom:12px;">
+  <h3>Class Management</h3>
+
+  <label>Select Class</label>
+  <select id="classSelect" onchange="renderClassStudents()"></select>
+
+  <label style="margin-top:10px;">Add New Class</label>
+  <input id="newClassName" placeholder="Enter class name (e.g. 9_1)" />
+  <button onclick="addClass()">Add Class</button>
+
+  <label style="margin-top:10px;">Upload Student Excel</label>
+  <input id="studentExcelFile" type="file" accept=".xlsx,.xls,.csv" />
+
+  <button style="margin-top:10px;" onclick="importStudentsFromFile()">Import Students</button>
+
+  <div id="classManagerMsg" class="small" style="margin-top:10px;"></div>
+
+  <div id="classStudentsWrap" class="card" style="margin-top:12px; padding:12px; background:#f8fbff;">
+    <h4 style="margin-top:0;">Class Students</h4>
+    <div id="classStudentsList" class="small">No students yet.</div>
+  </div>
+</div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
