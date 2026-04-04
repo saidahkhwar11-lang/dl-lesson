@@ -338,6 +338,49 @@ let teacherQuestionIndex = {};
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
 function hideNotice(id){ const el = byId(id); if(el) el.classList.add('hidden'); }
+function loadStudentDashboard(){
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+
+  const welcome = document.getElementById("welcomeStudent");
+  const list = document.getElementById("lessonList");
+
+  if(welcome){
+    welcome.innerText = user ? ("Welcome, " + (user.name || user.fullName || "Student")) : "Welcome, Student";
+  }
+
+  if(!list) return;
+
+  list.innerHTML = "";
+
+  DEMO_LESSONS.forEach(lesson => {
+    const div = document.createElement("div");
+    div.style.marginBottom = "8px";
+
+    if(lesson.locked){
+      div.innerHTML = `
+        <button disabled style="width:100%">
+          🔒 ${lesson.title} (Locked)
+        </button>
+      `;
+    } else {
+      div.innerHTML = `
+        <button style="width:100%" onclick="openLesson('${lesson.id}')">
+          ▶ ${lesson.title}
+        </button>
+      `;
+    }
+
+    list.appendChild(div);
+  });
+}
+
+function openLesson(id){
+  const dash = document.getElementById("studentDashboard");
+  const area = document.getElementById("lessonArea");
+
+  if(dash) dash.classList.add("hidden");
+  if(area) area.classList.remove("hidden");
+}
 function sanitizeKey(s){ return String(s || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_'); }
 function lessonBase(){ return 'lessons/' + lessonKey; }
 function studentPath(studentId){ return lessonBase() + '/students/' + studentId; }
@@ -362,8 +405,18 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+function showOnly(viewId){
+  ['studentView','teacherView'].forEach(function(id){
+    byId(id).classList.add('hidden');
+  });
+
+  byId(viewId).classList.remove('hidden');
+  if(viewId === 'studentView'){ loadStudentDashboard(); }
+  
+  byId('homeRow').classList.add('hidden');
+  window.scrollTo(0,0);
+}
+  window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 window.maximizeImage = function(src){ if(!src) return; const modal = byId('imageModal'); modal.className = 'maximized'; modal.innerHTML = '<img src="' + src + '" alt="maximized image" onclick="event.stopPropagation()" />'; modal.onclick = function(){ modal.className = 'hidden'; modal.innerHTML = ''; }; };
 
