@@ -323,6 +323,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 <script>
 const TEACHER_PASSWORD = 'Welcome@2020';
 const APP_NAME = 'dl_online_live_app';
@@ -424,7 +425,68 @@ function hideNotice(id){ const el = byId(id); if(el) el.classList.add('hidden');
     select.appendChild(option);
   });
 }
+function importStudentsFromFile(){
+  const fileInput = byId('studentExcelFile');
+  const classSelect = byId('classSelect');
+  const msg = byId('classManagerMsg');
 
+  if(!fileInput || !fileInput.files || !fileInput.files[0]){
+    if(msg) msg.textContent = 'Please choose an Excel file first.';
+    return;
+  }
+
+  const selectedClass = classSelect ? classSelect.value : '';
+  if(!selectedClass){
+    if(msg) msg.textContent = 'Please select a class first.';
+    return;
+  }
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function(e){
+    try{
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(firstSheet);
+
+      let addedCount = 0;
+
+      rows.forEach(row => {
+        const fullName = String(row.full_name || row.Full_Name || '').trim();
+        const studentId = String(row.student_id || row.Student_ID || '').trim();
+
+        if(!fullName || !studentId) return;
+
+        const firstName = fullName.split(' ')[0].toLowerCase();
+        const exists = STUDENTS.some(s => s.password === studentId);
+
+        if(exists) return;
+
+        STUDENTS.push({
+          fullName: fullName,
+          username: firstName,
+          password: studentId,
+          classId: selectedClass
+        });
+
+        addedCount++;
+      });
+
+      if(msg){
+        msg.textContent = addedCount + ' student(s) imported into class ' + selectedClass + '.';
+      }
+
+      fileInput.value = '';
+    } catch(err){
+      console.error(err);
+      if(msg) msg.textContent = 'Import failed. Check Excel column names.';
+    }
+  };
+
+  reader.readAsArrayBuffer(file);
+}
 function addClass(){
   const input = byId('newClassName');
   const msg = byId('classManagerMsg');
