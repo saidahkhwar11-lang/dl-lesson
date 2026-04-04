@@ -1,0 +1,1383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Grade 9 English Lesson</title>
+  <style>
+:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.hidden{display:none!important}
+.wrap{max-width:1440px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
+.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}
+.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
+.row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
+input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff}
+textarea{min-height:100px;resize:vertical}
+button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weight:bold}
+.secondary{background:var(--accent)}.muted{background:#6c7b95}.goodbtn{background:var(--good)}.warnbtn{background:var(--warn)}
+.notice{padding:10px 12px;border-radius:12px;margin-top:10px}.notice.good{background:#e8f7ef;color:#145d3d}.notice.bad{background:#fdecec;color:#962d2d}.notice.warn{background:#fff7df;color:#8c6400}
+.small{font-size:13px;color:var(--muted)}
+.top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
+.top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center;cursor:pointer;transition:.2s}
+.top-bar .item.active{background:var(--primary2);color:#fff}.top-bar .item.locked{opacity:.55;cursor:not-allowed}
+.student-layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
+.sidebar,.main{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}
+.station-box{padding:10px;border-radius:14px;background:#eef3ff;margin-bottom:8px;cursor:pointer;transition:.2s;display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:start}
+.station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
+.station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}
+.station-box .meta{font-size:12px;opacity:.95;line-height:1.5}
+.question{padding:10px;margin-bottom:12px;background:#fff;border-radius:14px;border:1px solid #e0e0e0}
+.question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
+.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer;background:#fff}
+.choice:hover{background:#f0f7ff}
+.choice input{margin-right:8px}
+.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
+.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
+.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
+.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
+.reading-img{width:100%;max-height:400px;object-fit:cover;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
+.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
+.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
+.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
+.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.teacher-station-card{cursor:pointer;text-align:left!important}
+.teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
+.teacher-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+.teacher-preview .preview-left,.teacher-preview .preview-right{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
+.teacher-preview-questions .question{background:#f8fbff}
+.teacher-preview-empty{padding:18px;border:1px dashed var(--line);border-radius:16px;background:#f8fbff;color:var(--muted)}
+.teacher-preview-left-large{min-width:0}
+.teacher-preview-right-small{min-width:0}
+.teacher-big-img{width:100%;max-height:420px;object-fit:contain;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.teacher-small-question{padding:8px;font-size:14px}
+.teacher-small-choice{padding:7px;margin:6px 0;font-size:13px}
+.teacher-q-nav{gap:8px}
+.teacher-q-nav button{width:auto;padding:10px 14px;font-size:14px}
+@media (max-width:700px){.teacher-preview{grid-template-columns:1fr}}
+@media (max-width:980px){.row,.student-layout,.creator-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hero">
+    <h1>DL Online Live System</h1>
+    <p>Live Firebase lesson with teacher controls, lesson creator, station images, auto-checking, tracker, bonus popup, and attendance.</p>
+  </div>
+
+  <div id="setupCard" class="card hidden">
+    <h2>Firebase Setup</h2>
+    <label>Lesson Name</label>
+<input id="lessonKey" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
+    <label>Firebase Config JSON</label>
+    <textarea id="firebaseConfigText">{
+  "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  "authDomain": "online-english-lesson-grade-9.firebaseapp.com",
+  "databaseURL": "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  "projectId": "online-english-lesson-grade-9",
+  "appId": "1:542666648554:web:5190c68ea73b3536dae093"
+}</textarea>
+    <div class="btns">
+      <button onclick="saveConfig()">Save Config</button>
+      <button class="muted" onclick="loadSavedConfig()">Reload Saved Config</button>
+    </div>
+    <div id="setupNotice" class="notice warn">Not connected yet.</div>
+  </div>
+
+  <div class="row" id="homeRow" style="margin-top:16px;">
+    <div class="card">
+      <h2>Student Login</h2>
+      <label>Student Name</label>
+      <input id="studentName" placeholder="Enter student name" />
+      <label>Student ID</label>
+      <input id="studentId" placeholder="Enter student ID" />
+      <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+      <div id="studentNotice" class="notice bad hidden"></div>
+    </div>
+    <div class="card">
+      <h2>Teacher View</h2>
+      <label>Teacher Password</label>
+      <input id="teacherPassword" type="password" placeholder="Enter password" />
+      <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
+      <div id="teacherNotice" class="notice bad hidden"></div>
+    </div>
+  </div>
+
+  <div id="studentView" class="hidden">
+    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
+    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
+    <div class="top-bar" id="topStations"></div>
+    <div class="student-layout">
+      <div class="sidebar">
+        <h3 style="margin-top:0">Stations</h3>
+        <div id="stationList"></div>
+      </div>
+      <div class="main" id="stationContent"></div>
+    </div>
+  </div>
+
+  <div id="teacherView" class="hidden">
+    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
+    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
+    <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+      <div class="btns" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Lesson Stations</h2>
+        <div class="btns">
+  <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
+  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+</div>
+      </div>
+      <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+      <div id="teacherOverviewStations" class="top-bar"></div>
+<div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
+  <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
+  <div id="topStudentsList" class="small">No data yet.</div>
+</div>
+      <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Station Presentation</h2>
+  <div id="teacherStationPreview" class="teacher-preview-empty">
+    Click any station box above to open its picture, objective, time, questions, and controls.
+  </div>
+</div>
+
+    <div class="section-tabs">
+  <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
+  <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
+  <button onclick="showTeacherSection('teacherCreatorCard')">🛠 Lesson Builder</button>
+</div>
+<button onclick="toggleTopStudents()" class="secondary">
+  Show Top 5
+</button>
+    <div id="teacherTrackerCard" class="card">
+     <div class="btns">
+  <button onclick="refreshTeacherNow()">🔄 Refresh</button>
+  <button class="secondary" onclick="exportTrackerCsv()">📊 Export</button>
+  <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
+  <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
+  <button onclick="exportLessonData()">💾 Save Lesson Data</button>
+  <button onclick="triggerImportLesson()">📂 Load Lesson Data</button>
+</div>
+
+<div class="card" style="margin-top:10px; padding:10px; background:#fff5f5;">
+  <div class="small" style="margin-bottom:6px;">⚠️ Reset Options</div>
+  <div class="btns">
+    <button class="warnbtn" onclick="clearTrackerData()">Clear Tracker</button>
+    <button class="warnbtn" onclick="clearBonusData()">Clear Bonus</button>
+  </div>
+</div>
+      <h2>Live Teacher Tracker</h2>
+      <div id="teacherTrackerWrap"></div>
+    </div>
+
+    <div id="bonusPopup" class="bonus-popup">
+  <div class="btns" style="justify-content:space-between;margin-bottom:8px;">
+    <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">✖ Close</button>
+  </div>
+
+  <h3 style="margin-top:0">Bonus Live Box</h3>
+
+  <div id="bonusLiveContent">No bonus yet.</div>
+</div>
+
+    <div id="teacherControlCard" class="card hidden">
+      <h2>Display First & Unlock Control</h2>
+      <label>Select Station</label>
+      <select id="controlStationSelect"></select>
+      <div class="btns">
+        <button onclick="displaySelectedStation()">Display Station</button>
+        <button class="goodbtn" onclick="unlockSelectedStation()">Unlock Station</button>
+        <button class="warnbtn" onclick="lockSelectedStation()">Lock Station</button>
+      </div>
+      <div id="controlNotice" class="notice good hidden"></div>
+      <div id="controlStatusWrap" style="margin-top:12px"></div>
+    </div>
+
+    <div id="teacherCreatorCard" class="card hidden">
+      <h2>Lesson Creator</h2>
+      <label>Select Station</label>
+      <select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
+      <div class="creator-grid" style="margin-top:12px;">
+        <div>
+          <label>Station Title</label>
+          <input id="creatorTitle" />
+          <label>Mini Objective</label>
+          <input id="creatorObjective" />
+          <label>Details</label>
+          <textarea id="creatorDetails"></textarea>
+          <label>Time</label>
+          <input id="creatorTime" />
+          <label>Image URL</label>
+<input id="creatorImageUrl" placeholder="Paste image URL" />
+
+<label>Upload Activity Picture</label>
+<input id="creatorImageFile" type="file" accept="image/*" onchange="handleCreatorImage(event)" />
+
+<label>Audio URL</label>
+<input id="creatorAudioUrl" placeholder="Paste MP3 or audio URL" />
+
+<label>Upload Audio (MP3)</label>
+<input id="creatorAudioFile" type="file" accept="audio/*" onchange="handleCreatorAudio(event)" />
+
+<label>Video URL</label>
+<input id="creatorVideoUrl" placeholder="Paste video URL" />
+
+<label>Upload Video</label>
+<input id="creatorVideoFile" type="file" accept="video/*" onchange="handleCreatorVideo(event)" />
+
+<label>Source Text / Activity Notes</label>
+<textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
+        <div>
+          <label>Question Builder</label>
+          <div class="card" style="padding:12px;background:#f8fbff;">
+            <label>Question Type</label>
+            <select id="builderQuestionType" onchange="toggleBuilderFields()">
+              <option value="mcq">Multiple Choice</option>
+              <option value="tf">True / False</option>
+            </select>
+            <label>Question Text</label>
+            <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
+            <div id="builderMcqFields">
+              <label>Choice A</label>
+              <input id="builderChoiceA" />
+              <label>Choice B</label>
+              <input id="builderChoiceB" />
+              <label>Choice C</label>
+              <input id="builderChoiceC" />
+              <label>Choice D</label>
+              <input id="builderChoiceD" />
+              <label>Correct Answer</label>
+              <select id="builderCorrectMcq">
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+            <div id="builderTfFields" class="hidden">
+              <label>Correct Answer</label>
+              <select id="builderCorrectTf">
+                <option value="True">True</option>
+                <option value="False">False</option>
+              </select>
+            </div>
+            <div class="btns" style="margin-top:10px;">
+              <button type="button" onclick="addCreatorQuestion()">Add Question</button>
+              <button type="button" class="muted" onclick="clearQuestionBuilder()">Clear Current Question</button>
+              <button type="button" class="warnbtn" onclick="clearAllCreatorQuestions()">Clear All Questions</button>
+            </div>
+          </div>
+          <div class="card" style="padding:12px;margin-top:12px;">
+            <h3 style="margin-top:0;">Questions Added</h3>
+            <div id="creatorQuestionsList"></div>
+          </div>
+          <div class="btns">
+            <button onclick="saveCreatorStation()">Save Station</button>
+          </div>
+          <div class="small" style="margin-top:8px;">Upload picture, fill station details, add questions with answers, then save. Students will see the picture and questions, and their marks will go to the tracker automatically.</div>
+        </div>
+      </div>
+      <div id="creatorNotice" class="notice good hidden"></div>
+    </div>
+  </div>
+</div>
+
+<div id="imageModal" class="hidden"></div>
+
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
+<script>
+const TEACHER_PASSWORD = 'Welcome@2020';
+const APP_NAME = 'dl_online_live_app';
+const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
+
+const defaultStations = [
+  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:true, displayed:true, thumbnail:''},
+  {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
+  {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
+  {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
+  {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Wrap up the whole lesson', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''}
+];
+
+const defaultContent = {
+  starter:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st1:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st2:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  st3:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
+  exit:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]}
+};
+
+let firebaseConfig = null;
+let lessonKey = '';
+let appInstance = null;
+let db = null;
+let currentStudent = null;
+let liveStudents = {};
+let liveBonus = {};
+let lessonStations = JSON.parse(JSON.stringify(defaultStations));
+let lessonContent = JSON.parse(JSON.stringify(defaultContent));
+let currentOpenStation = 'starter';
+let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, studentSelfRef = null, lessonConfigRef = null, lessonContentRef = null;
+let creatorDraftQuestions = [];
+let teacherQuestionVisibility = {};
+let teacherQuestionIndex = {};
+
+function byId(id){ return document.getElementById(id); }
+function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
+function hideNotice(id){ const el = byId(id); if(el) el.classList.add('hidden'); }
+function sanitizeKey(s){ return String(s || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_'); }
+function lessonBase(){ return 'lessons/' + lessonKey; }
+function studentPath(studentId){ return lessonBase() + '/students/' + studentId; }
+function bonusPath(){ return lessonBase() + '/bonus'; }
+function configPath(){ return lessonBase() + '/config'; }
+function contentPath(){ return lessonBase() + '/content'; }
+function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
+function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
+function getStationContent(id){ return lessonContent[id] || {imageUrl:'',sourceText:'',imageNotes:'',questions:[]}; }
+function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function dbRef(path){ return firebase.database(appInstance).ref(path); }
+function getSnap(path){ return dbRef(path).once('value'); }
+function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
+function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
+function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
+
+function bindButtons(){
+  const studentBtn = byId('studentStartBtn');
+  const teacherBtn = byId('teacherOpenBtn');
+  if(studentBtn) studentBtn.onclick = window.startStudentSession;
+  if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
+}
+
+function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
+window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
+window.maximizeImage = function(src){ if(!src) return; const modal = byId('imageModal'); modal.className = 'maximized'; modal.innerHTML = '<img src="' + src + '" alt="maximized image" onclick="event.stopPropagation()" />'; modal.onclick = function(){ modal.className = 'hidden'; modal.innerHTML = ''; }; };
+
+function initFirebaseFromInputs(){
+  lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
+  firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
+  const existing = firebase.apps.find(function(app){ return app.name === APP_NAME; });
+  if(existing){
+    const currentConfig = {
+      apiKey: existing.options.apiKey,
+      authDomain: existing.options.authDomain,
+      databaseURL: existing.options.databaseURL,
+      projectId: existing.options.projectId,
+      appId: existing.options.appId
+    };
+    if(!configsEqual(currentConfig, firebaseConfig)) throw new Error('Firebase config changed. Refresh the page, then save again.');
+    appInstance = existing;
+  } else {
+    appInstance = firebase.initializeApp(firebaseConfig, APP_NAME);
+  }
+  db = firebase.database(appInstance);
+}
+
+async function ensureLessonDefaults(){
+  const configSnap = await getSnap(configPath());
+  if(!configSnap.exists()) await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
+  const contentSnap = await getSnap(contentPath());
+  if(!contentSnap.exists()) await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
+}
+
+function isLegacyBadQuestion(q){
+  const text = String((q && q.text) || '').toLowerCase();
+  const answer = String((q && q.answer) || '').toLowerCase();
+  const choices = ((q && q.choices) || []).join(' ').toLowerCase();
+  return text.includes('best prediction for this lesson') && (choices.includes('auto') || choices.includes('generated') || choices.includes('activity picture') || answer.includes('auto-generated'));
+}
+
+function sanitizeLegacyContent(content){
+  const safe = JSON.parse(JSON.stringify(content || {}));
+  ['starter','st1','st2','st3','exit'].forEach(function(id){
+    if(!safe[id]) safe[id] = {imageUrl:'', sourceText:'', imageNotes:'', questions:[]};
+    if(!Array.isArray(safe[id].questions)) safe[id].questions = [];
+    const qs = safe[id].questions || [];
+    if(qs.some(isLegacyBadQuestion)) safe[id].questions = [];
+  });
+  return safe;
+}
+
+function startLessonConfigListener(){
+  if(lessonConfigRef) lessonConfigRef.off();
+  if(lessonContentRef) lessonContentRef.off();
+  lessonConfigRef = dbRef(configPath());
+  lessonContentRef = dbRef(contentPath());
+  lessonConfigRef.on('value', function(snap){
+    lessonStations = snap.val() || JSON.parse(JSON.stringify(defaultStations));
+    renderStudentNav();
+    renderControlStatus();
+    fillTeacherSelects();
+    renderTeacherOverview();
+    renderTeacherTracker();
+  });
+  lessonContentRef.on('value', function(snap){
+    const raw = snap.val() || JSON.parse(JSON.stringify(defaultContent));
+    lessonContent = sanitizeLegacyContent(raw);
+    if(JSON.stringify(lessonContent) !== JSON.stringify(raw)) dbRef(contentPath()).set(lessonContent);
+    renderStudentNav();
+    renderTeacherOverview();
+    renderTeacherTracker();
+    if(currentStudent && !byId('studentView').classList.contains('hidden')) openStation(currentOpenStation);
+  });
+}
+
+function tryAutoConnect(){
+  try{
+    if(db && lessonKey) return true;
+    initFirebaseFromInputs();
+    ensureLessonDefaults().catch(console.warn);
+    startLessonConfigListener();
+    return true;
+  }catch(err){
+    console.warn('Auto connect failed:', err);
+    return false;
+  }
+}
+
+function requireConnection(){
+  if((db && lessonKey) || tryAutoConnect()) return true;
+  showNotice('studentNotice','System is not connected yet.','bad');
+  showNotice('teacherNotice','Please click Save Config first.','bad');
+  showNotice('setupNotice','Please save Firebase config and lesson key first.','bad');
+  return false;
+}
+
+window.saveConfig = async function(){
+  try{
+    showNotice('setupNotice','Saving config and testing connection...','warn');
+    initFirebaseFromInputs();
+    localStorage.setItem('DL_firebase_config', JSON.stringify(firebaseConfig));
+    localStorage.setItem('DL_lesson_key', lessonKey);
+    await ensureLessonDefaults();
+    await dbRef(lessonBase() + '/_connection_test').set({ok:true, ts:Date.now()});
+    const ping = await getSnap(lessonBase() + '/_connection_test');
+    if(!ping.exists()) throw new Error('Connection test failed');
+    startLessonConfigListener();
+    showNotice('setupNotice','Connected successfully. Lesson key: ' + lessonKey,'good');
+    setTimeout(function(){ byId('setupCard').classList.add('hidden'); }, 500);
+  }catch(err){
+    console.error('Save config error:', err);
+    showNotice('setupNotice','Config error: ' + (err && err.message ? err.message : err),'bad');
+  }
+};
+
+window.loadSavedConfig = function(){
+  const cfg = localStorage.getItem('DL_firebase_config');
+  const lk = localStorage.getItem('DL_lesson_key');
+  if(cfg) byId('firebaseConfigText').value = cfg;
+  if(lk) byId('lessonKey').value = lk;
+  tryAutoConnect();
+};
+
+window.startStudentSession = async function(){
+  try{
+    showNotice('studentNotice','Starting student session...','warn');
+    if(!requireConnection()) return;
+    const name = byId('studentName').value.trim();
+    const id = sanitizeKey(byId('studentId').value.trim());
+    if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
+    hideNotice('studentNotice');
+    currentStudent = {name:name, id:id};
+    sessionStorage.setItem('dl_role', 'student');
+    sessionStorage.setItem('dl_student_name', name);
+    sessionStorage.setItem('dl_student_id', id);
+    const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{}, stationAnswers:{}, submittedStations:{} };
+    const snap = await getSnap(studentPath(id));
+    if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
+    await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
+    showOnly('studentView');
+    renderStudentNav();
+    listenStudentLive();
+    const displayedStation = (lessonStations.find(function(s){ return s.displayed && (s.unlocked || s.id === 'starter'); }) || {id:'starter'}).id;
+    openStation(displayedStation);
+  }catch(err){
+    console.error('Student session error:', err);
+    showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
+  }
+};
+
+window.openTeacherView = async function(){
+  try{
+    showNotice('teacherNotice','Opening teacher view...','warn');
+    const pw = byId('teacherPassword').value;
+    if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
+    if(!requireConnection()){
+      byId('setupCard').classList.remove('hidden');
+      showNotice('teacherNotice','Please click Save Config first.','bad');
+      return;
+    }
+    hideNotice('teacherNotice');
+    localStorage.setItem('dl_role', 'teacher');
+    localStorage.setItem('dl_role', 'teacher');
+    byId('setupCard').classList.remove('hidden');
+    showOnly('teacherView');
+    fillTeacherSelects();
+    loadCreatorStation();
+    renderTeacherOverview();
+    openTeacherStationPreview('starter');
+    renderControlStatus();
+    renderTeacherTracker();
+    showTeacherSection('teacherTrackerCard');
+    startTeacherListeners();
+    if(typeof renderBonusBox === 'function') renderBonusBox();
+    }catch(err){
+    console.error('Teacher view error:', err);
+    showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
+    byId('teacherView').classList.add('hidden');
+    byId('homeRow').classList.remove('hidden');
+  }
+};
+
+window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
+  
+window.openTeacherStationPreview = function(id){
+  const wrap = byId('teacherStationPreview');
+  const station = getStationById(id);
+  const content = getStationContent(id);
+
+  if(!wrap || !station) return;
+
+  let imageHtml = '';
+  let audioHtml = '';
+if(content.audioUrl){
+  audioHtml = `
+    <audio controls style="width:100%; margin-bottom:12px;">
+      <source src="${content.audioUrl}">
+    </audio>
+  `;
+}
+  
+let videoHtml = '';
+if(content.videoUrl){
+  videoHtml = `
+    <video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;">
+      <source src="${content.videoUrl}">
+    </video>
+  `;
+}
+  if(content.imageUrl){
+    imageHtml = `
+      <img class="teacher-big-img" src="${content.imageUrl}" alt="Station Image">
+      <div class="image-actions">
+        <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">Maximize Picture</button>
+      </div>
+    `;
+  } else {
+    imageHtml = `<div class="teacher-preview-empty">No activity picture added yet.</div>`;
+  }
+
+  let questionsHtml = '';
+
+  if(content.questions && content.questions.length){
+    if(typeof teacherQuestionIndex[id] !== 'number'){
+      teacherQuestionIndex[id] = 0;
+    }
+
+    if(teacherQuestionIndex[id] < 0){
+      teacherQuestionIndex[id] = 0;
+    }
+
+    if(teacherQuestionIndex[id] > content.questions.length - 1){
+      teacherQuestionIndex[id] = content.questions.length - 1;
+    }
+
+    const currentIndex = teacherQuestionIndex[id];
+    const q = content.questions[currentIndex];
+
+    let choicesHtml = '';
+
+    if(q.type === 'mcq' && q.choices){
+      choicesHtml = q.choices.map(function(choice){
+        return `<div class="choice teacher-small-choice">${choice}</div>`;
+      }).join('');
+    }
+
+    if(q.type === 'tf'){
+      choicesHtml = `
+        <div class="choice teacher-small-choice">True</div>
+        <div class="choice teacher-small-choice">False</div>
+      `;
+    }
+
+    questionsHtml = `
+      <div class="question teacher-small-question">
+        <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
+        <div style="margin-top:10px;">${choicesHtml}</div>
+      </div>
+
+      <div class="btns teacher-q-nav" style="margin-top:12px;">
+        <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
+        <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
+      </div>
+
+      <div class="small">Question ${currentIndex + 1} of ${content.questions.length}</div>
+    `;
+  } else {
+    questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
+  }
+
+wrap.className = '';
+wrap.classList.add('teacher-preview');
+  wrap.innerHTML = `
+    <div class="preview-left teacher-preview-left-large">
+      <h3 style="margin-top:0;">${station.title}</h3>
+      <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
+      <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
+      <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
+      ${imageHtml}
+${audioHtml}
+${videoHtml}
+
+<div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
+  Use <strong>Station Control</strong> below to display, unlock, or lock this station.
+</div>
+</div>
+
+    
+
+    <div class="preview-right teacher-preview-right-small teacher-preview-questions">
+      <h3 style="margin-top:0;">Questions</h3>
+      ${teacherQuestionVisibility[station.id] === false
+        ? '<div class="teacher-preview-empty">Questions hidden</div>'
+        : questionsHtml}
+    </div>
+  `;
+};
+  
+window.toggleTeacherQuestions = function(id){
+  teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
+  openTeacherStationPreview(id);
+};
+
+  window.displayTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    s.displayed = (s.id === id);
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+
+window.unlockTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === id) s.unlocked = true;
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+
+window.lockTeacherStation = async function(id){
+  if(!requireConnection()) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === id && s.id !== 'starter') s.unlocked = false;
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  renderTeacherOverview();
+  renderControlStatus();
+  openTeacherStationPreview(id);
+};
+
+  window.nextTeacherQuestion = function(id){
+  const content = getStationContent(id);
+  if(!content || !content.questions || !content.questions.length) return;
+
+  if(typeof teacherQuestionIndex[id] !== 'number'){
+    teacherQuestionIndex[id] = 0;
+  }
+
+  if(teacherQuestionIndex[id] < content.questions.length - 1){
+    teacherQuestionIndex[id]++;
+  }
+
+  window.openTeacherStationPreview(id);
+};
+
+window.prevTeacherQuestion = function(id){
+  const content = getStationContent(id);
+  if(!content || !content.questions || !content.questions.length) return;
+
+  if(typeof teacherQuestionIndex[id] !== 'number'){
+    teacherQuestionIndex[id] = 0;
+  }
+
+  if(teacherQuestionIndex[id] > 0){
+    teacherQuestionIndex[id]--;
+  }
+
+  window.openTeacherStationPreview(id);
+};
+  
+function scoreTextForStudent(stationId){
+  const student = currentStudent && liveStudents[currentStudent.id];
+  const got = ((student && student.stationResults && student.stationResults[stationId] && student.stationResults[stationId].score) || 0);
+  return got + '/' + totalMarksForStation(stationId);
+}
+
+function isStationSubmitted(stationId){
+  const student = currentStudent && liveStudents[currentStudent.id];
+  return !!(student && student.submittedStations && student.submittedStations[stationId]);
+}
+
+function getNextUnlockedStationId(stationId){
+  const idx = lessonStations.findIndex(function(s){ return s.id === stationId; });
+  for(let i = idx + 1; i < lessonStations.length; i++) if(lessonStations[i].unlocked) return lessonStations[i].id;
+  return null;
+}
+
+function renderStudentNav(){
+  const side = byId('stationList');
+  const top = byId('topStations');
+  if(!side || !top) return;
+  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
+  currentStudent.name +
+  ' | ID: ' + currentStudent.id +
+  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+  (liveBonus[currentStudent.id]?.points || 0) +
+  '</span>';
+  side.innerHTML = lessonStations.map(function(s){
+    const ct = getStationContent(s.id);
+    const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
+    return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
+  }).join('');
+  top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
+}
+
+function renderQuestion(q, stationId, index){
+  const inputName = 'answer_' + stationId + '_' + index;
+  const submitted = isStationSubmitted(stationId);
+  const student = currentStudent && liveStudents[currentStudent.id];
+  const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
+  const savedAnswer = savedAnswers[index] || '';
+  let body = '';
+  if(q.type === 'mcq'){
+    body = (q.choices || []).map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
+    }).join('');
+  } else if(q.type === 'tf'){
+    body = ['True','False'].map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
+    }).join('');
+  } else {
+    body = '<div class="small">Unsupported question type</div>';
+  }
+  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index+1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
+}
+
+window.openStation = function(id){
+  const st = getStationById(id);
+  if(!st) return;
+  if(!st.unlocked && id !== 'starter') return;
+  currentOpenStation = id;
+  renderStudentNav();
+  const ct = getStationContent(id);
+  const submitted = isStationSubmitted(id);
+  const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
+  const resultText = scoreTextForStudent(id);
+const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
+
+const audioBlock = ct.audioUrl ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>' : '';
+
+const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>' : '';  const nextStationId = getNextUnlockedStationId(id);
+  const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
+  const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
+  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+  const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
+byId('stationContent').innerHTML =
+  '<h2>' + escapeHtml(st.title) + '</h2>' +
+  '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
+  '<p>' + escapeHtml(st.details || '') + '</p>' +
+  imageBlock +
+  audioBlock +
+  videoBlock +
+  '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
+  submittedNote +
+  questionsHtml +
+  actionBtns;
+  if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
+
+  if(submitted){
+    const student = liveStudents[currentStudent.id] || {};
+    const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
+    (ct.questions || []).forEach(function(q, i){
+      const wrap = byId('q_' + id + '_' + i);
+      if(!wrap) return;
+      const labels = wrap.querySelectorAll('.choice');
+      labels.forEach(function(lbl){
+        const input = lbl.querySelector('input');
+        if(!input) return;
+        if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+          lbl.style.background = '#eafaf1';
+          lbl.style.borderColor = '#2ecc71';
+        }
+        if(savedAnswers[i] && normalizeAnswer(input.value) === normalizeAnswer(savedAnswers[i]) && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+          lbl.style.background = '#fdecea';
+          lbl.style.borderColor = '#e74c3c';
+        }
+      });
+      const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
+      wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
+      wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+    });
+  }
+};
+
+window.submitCurrentStation = async function(stationId){
+  if(!currentStudent) return;
+  if(isStationSubmitted(stationId)) return openStation(stationId);
+  const ct = getStationContent(stationId);
+  const questions = ct.questions || [];
+  let score = 0;
+  const submittedAnswers = {};
+
+  questions.forEach(function(q, i){
+    const wrap = byId('q_' + stationId + '_' + i);
+    if(!wrap) return;
+    wrap.classList.remove('correct','wrong');
+    const labels = wrap.querySelectorAll('.choice');
+    labels.forEach(function(lbl){ lbl.style.background = ''; lbl.style.borderColor = ''; });
+    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
+    const answer = checked ? checked.value : '';
+    submittedAnswers[i] = answer;
+    labels.forEach(function(lbl){
+      const input = lbl.querySelector('input');
+      if(!input) return;
+      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+        lbl.style.background = '#eafaf1';
+        lbl.style.borderColor = '#2ecc71';
+      }
+      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+        lbl.style.background = '#fdecea';
+        lbl.style.borderColor = '#e74c3c';
+      }
+      input.disabled = true;
+    });
+    if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+      score += 1;
+      wrap.classList.add('correct');
+      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+    } else {
+      wrap.classList.add('wrong');
+      wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
+    }
+  });
+
+  const studentSnap = await getSnap(studentPath(currentStudent.id));
+  const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}, stationAnswers:{}, submittedStations:{}};
+  const nextScores = Object.assign({}, existing.scores || {}, {[stationId]:score});
+  const nextResults = Object.assign({}, existing.stationResults || {}, {[stationId]:{score:score,max:questions.length}});
+  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]:submittedAnswers});
+  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, {[stationId]:true});
+  const total = Object.values(nextScores).reduce(function(a,b){ return a + Number(b || 0); }, 0);
+
+  await dbRef(studentPath(currentStudent.id)).update({
+    scores: nextScores,
+    stationResults: nextResults,
+    stationAnswers: nextAnswers,
+    submittedStations: nextSubmitted,
+    total: total
+  });
+
+  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
+  liveStudents[currentStudent.id].scores = nextScores;
+  liveStudents[currentStudent.id].stationResults = nextResults;
+  liveStudents[currentStudent.id].stationAnswers = nextAnswers;
+  liveStudents[currentStudent.id].submittedStations = nextSubmitted;
+  liveStudents[currentStudent.id].total = total;
+
+  renderStudentNav();
+  openStation(stationId);
+};
+
+function listenStudentLive(){
+  if(studentBonusRef) studentBonusRef.off();
+  if(studentSelfRef) studentSelfRef.off();
+  studentBonusRef = dbRef(bonusPath());
+  studentSelfRef = dbRef(studentPath(currentStudent.id));
+  studentBonusRef.on('value', function(snap){ liveBonus = snap.val() || {}; });
+  studentSelfRef.on('value', function(snap){ if(!snap.exists()) return; liveStudents[currentStudent.id] = snap.val(); renderStudentNav(); });
+}
+
+function startTeacherListeners(){
+  if(teacherTrackerRef) teacherTrackerRef.off();
+  if(teacherBonusRef) teacherBonusRef.off();
+  teacherTrackerRef = dbRef(lessonBase() + '/students');
+  teacherBonusRef = dbRef(bonusPath());
+  teacherTrackerRef.on('value', function(snap){ liveStudents = snap.val() || {}; renderTeacherTracker(); if(currentStudent) renderStudentNav(); });
+  teacherBonusRef.on('value', function(snap){ liveBonus = snap.val() || {}; renderBonusBox(); renderTeacherTracker(); });
+}
+
+function renderTeacherTracker(){
+  const wrap = byId('teacherTrackerWrap');
+  if(!wrap) return;
+  const header = lessonStations.map(function(st){ return '<th>' + escapeHtml(st.title) + '<br><span class="small">/' + totalMarksForStation(st.id) + '</span></th>'; }).join('');
+  const rows = Object.values(liveStudents || {}).map(function(s){
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+    const scoreCells = lessonStations.map(function(st){ return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>'; }).join('');
+   return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td>' +
+'<div style="display:flex; align-items:center; gap:8px;">' +
+'<button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>' +
+'<div style="min-width:28px; text-align:center; font-weight:bold;">' + bonus + '</div>' +
+'<button class="warnbtn" onclick="takeBonus(\'' + escapeJs(s.id || '') + '\')" style="width:40px; padding:8px 0; font-size:20px;">−</button>' +
+'<button class="muted" onclick="removeStudent(\'' + escapeJs(s.id || '') + '\')" style="padding:6px 10px;">✖</button>' +
+'</div>' +
+'</td></tr>';
+  }).join('');
+  wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
+renderTeacherOverview();
+if(typeof renderTopStudents === 'function') renderTopStudents();
+}
+
+function renderTopStudents(){
+  const wrap = byId('topStudentsList');
+  if(!wrap) return;
+
+  const studentsArray = Object.values(liveStudents || {});
+
+  if(!studentsArray.length){
+    wrap.innerHTML = 'No data yet.';
+    return;
+  }
+
+  const ranked = studentsArray.map(function(s){
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+    const finalScore = Number(s.total || 0) + bonus;
+
+    return {
+      id: s.id || '',
+      name: s.name || '',
+      finalScore: finalScore
+    };
+  });
+
+  ranked.sort(function(a, b){
+    return b.finalScore - a.finalScore;
+  });
+
+  const top5 = ranked.slice(0, 5);
+
+  wrap.innerHTML = top5.map(function(s, index){
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1);
+
+    return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
+      '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || s.id || '') + '</span>' +
+      '<span>⭐ ' + s.finalScore + '</span>' +
+    '</div>';
+  }).join('');
+}
+
+window.giveBonus = async function(name,id,delta){
+  if(!requireConnection()) return;
+
+  const snap = await getSnap(bonusPath() + '/' + id);
+  const currentData = snap.exists() ? (snap.val() || {}) : {};
+  const current = Number(currentData.points || 0);
+  const newPoints = current + delta;
+
+  await dbRef(bonusPath() + '/' + id).set({
+    name: name,
+    id: id,
+    points: newPoints
+  });
+};
+  window.takeBonus = function(id){
+  const currentData = liveBonus[id] || {};
+  const current = Number(currentData.points || 0);
+  const newPoints = current - 1 < 0 ? 0 : current - 1;
+
+  dbRef(bonusPath()).child(id).set({
+    name: currentData.name || '',
+    id: id,
+    points: newPoints
+  });
+};
+
+window.removeStudent = function(id){
+  if(!confirm('Remove this student?')) return;
+
+  dbRef(studentPath(id)).remove();
+  dbRef(bonusPath()).child(id).remove();
+};
+  
+window.toggleTopStudents = function(){
+  const el = byId('topStudentsBoard');
+  if(!el) return;
+  el.classList.toggle('hidden');
+};
+  
+window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus = {}; renderBonusBox(); renderTeacherTracker(); };
+window.clearTrackerData = async function(){ if(!requireConnection()) return; await dbRef(lessonBase() + '/students').remove(); await dbRef(lessonBase() + '/attendance').remove(); liveStudents = {}; renderTeacherTracker(); renderStudentNav(); };
+window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
+
+window.exportTrackerCsv = function(){
+  const rows = [['Name','ID','Current'].concat(lessonStations.map(function(s){ return s.title; })).concat(['Bonus','Total'])];
+  Object.values(liveStudents || {}).forEach(function(s){
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+    rows.push([s.name,s.id,s.currentStation || ''].concat(lessonStations.map(function(st){ return ((((s.stationResults || {})[st.id] || {}).score) || 0); })).concat([bonus,(s.total || 0) + bonus]));
+  });
+  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'dl_tracker_' + lessonKey + '.csv';
+  link.click();
+};
+function exportLessonData(){
+  const data = {
+    lessonStations: lessonStations,
+    stationContent: stationContent || {},
+    lessonMeta: {
+      savedAt: new Date().toISOString()
+    }
+  };
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lesson-data.json';
+  a.click();
+}
+
+function triggerImportLesson(){
+  const input = byId('lessonDataFile');
+  if(input) input.click();
+}
+
+function importLessonData(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const data = JSON.parse(e.target.result);
+
+      lessonStations = data.lessonStations || [];
+      stationContent = data.stationContent || {};
+
+      renderTeacherOverview();
+      openTeacherStationPreview('starter');
+
+      alert('Lesson loaded successfully ✅');
+    }catch(err){
+      alert('Error loading lesson ❌');
+      console.error(err);
+    }
+  };
+  reader.readAsText(file);
+}
+window.exportLessonData = function(){
+  const payload = { stations:lessonStations, content:lessonContent, exportedAt:new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'lesson_data_snapshot.json';
+  link.click();
+};
+
+window.importLessonData = async function(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const text = await file.text();
+  const parsed = JSON.parse(text);
+  if(parsed.stations) lessonStations = parsed.stations;
+  if(parsed.content) lessonContent = parsed.content;
+  await dbRef(configPath()).set(lessonStations);
+  await dbRef(contentPath()).set(lessonContent);
+  fillTeacherSelects();
+  loadCreatorStation();
+  renderTeacherOverview();
+  renderControlStatus();
+  showNotice('creatorNotice','Lesson data restored successfully.','good');
+  event.target.value = '';
+};
+
+function fillTeacherSelects(){
+  const opts = lessonStations.map(function(s){ return '<option value="' + escapeHtml(s.id) + '">' + escapeHtml(s.title) + '</option>'; }).join('');
+  byId('controlStationSelect').innerHTML = opts;
+  byId('creatorStationSelect').innerHTML = opts;
+}
+
+function renderTeacherOverview(){
+  const box = byId('teacherOverviewStations');
+  if(!box) return;
+
+  box.innerHTML = lessonStations.map(function(s){
+    return '<div class="item teacher-station-card ' + (s.displayed ? 'active' : '') + '" onclick="openTeacherStationPreview(\'' + s.id + '\')">' +
+      '<strong>' + s.title + '</strong>' +
+      '<div class="small">' + (s.unlocked ? '🔓 Unlocked' : '🔒 Locked') + ' | ' + s.time + '</div>' +
+      '<div class="small">' + s.objective + '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function renderControlStatus(){
+  const wrap = byId('controlStatusWrap');
+  if(!wrap) return;
+  wrap.innerHTML = '<table class="tracker-table"><thead><tr><th>Station</th><th>Status</th><th>Displayed</th><th>Marks</th></tr></thead><tbody>' + lessonStations.map(function(s){ return '<tr><td>' + escapeHtml(s.title) + '</td><td>' + (s.unlocked ? 'Unlocked' : 'Locked') + '</td><td>' + (s.displayed ? 'Yes' : 'No') + '</td><td>' + totalMarksForStation(s.id) + '</td></tr>'; }).join('') + '</tbody></table>';
+}
+
+window.displaySelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return Object.assign({}, s, {displayed:s.id === id}); }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Displayed station updated.','good'); };
+window.unlockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:true}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station unlocked.','good'); };
+window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
+
+window.handleCreatorImage = function(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){ byId('creatorImageUrl').value = e.target.result; };
+  reader.readAsDataURL(file);
+};
+
+window.loadCreatorStation = function(){
+  const id = byId('creatorStationSelect').value || ((lessonStations[0] || {}).id);
+  const st = getStationById(id);
+  const ct = getStationContent(id);
+  if(!st) return;
+const creatorTitle = byId('creatorTitle');
+const creatorObjective = byId('creatorObjective');
+const creatorDetails = byId('creatorDetails');
+const creatorTime = byId('creatorTime');
+const creatorImageUrl = byId('creatorImageUrl');
+const creatorAudioUrl = byId('creatorAudioUrl');
+const creatorVideoUrl = byId('creatorVideoUrl');
+const creatorSourceText = byId('creatorSourceText');
+const creatorImageNotes = byId('creatorImageNotes');
+
+if(creatorTitle) creatorTitle.value = st.title || '';
+if(creatorObjective) creatorObjective.value = st.objective || '';
+if(creatorDetails) creatorDetails.value = st.details || '';
+if(creatorTime) creatorTime.value = st.time || '';
+if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
+if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
+if(creatorVideoUrl) creatorVideoUrl.value = ct.videoUrl || '';
+if(creatorSourceText) creatorSourceText.value = ct.sourceText || '';
+if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
+  creatorDraftQuestions = JSON.parse(JSON.stringify(ct.questions || []));
+  renderCreatorQuestionsList();
+  clearQuestionBuilder();
+};
+
+window.toggleBuilderFields = function(){
+  const type = byId('builderQuestionType').value;
+  byId('builderMcqFields').classList.toggle('hidden', type !== 'mcq');
+  byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
+};
+
+window.clearQuestionBuilder = function(){
+  byId('builderQuestionType').value = 'mcq';
+  byId('builderQuestionText').value = '';
+  byId('builderChoiceA').value = '';
+  byId('builderChoiceB').value = '';
+  byId('builderChoiceC').value = '';
+  byId('builderChoiceD').value = '';
+  byId('builderCorrectMcq').value = 'A';
+  byId('builderCorrectTf').value = 'True';
+  toggleBuilderFields();
+};
+
+window.renderCreatorQuestionsList = function(){
+  const wrap = byId('creatorQuestionsList');
+  if(!wrap) return;
+  if(!creatorDraftQuestions.length){ wrap.innerHTML = '<div class="small">No questions added yet.</div>'; return; }
+  wrap.innerHTML = creatorDraftQuestions.map(function(q, i){
+    const choices = q.type === 'mcq' ? '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' : '<div class="small">Choices: True | False</div>';
+    return '<div class="card" style="padding:10px;margin-bottom:8px;">'
+      + '<strong>Q' + (i + 1) + '.</strong> ' + escapeHtml(q.text)
+      + '<div class="small">Type: ' + escapeHtml(q.type.toUpperCase()) + '</div>'
+      + choices
+      + '<div class="small">Correct Answer: ' + escapeHtml(q.answer) + '</div>'
+      + '<div class="btns" style="margin-top:8px;">'
+      + '<button type="button" onclick="editCreatorQuestion(' + i + ')">Edit</button>'
+      + '<button type="button" class="warnbtn" onclick="removeCreatorQuestion(' + i + ')">Delete</button>'
+      + '</div></div>';
+  }).join('');
+};
+
+window.editCreatorQuestion = function(index){
+  const q = creatorDraftQuestions[index];
+  if(!q) return;
+  byId('builderQuestionType').value = q.type;
+  byId('builderQuestionText').value = q.text;
+  if(q.type === 'mcq'){
+    byId('builderChoiceA').value = q.choices[0] || '';
+    byId('builderChoiceB').value = q.choices[1] || '';
+    byId('builderChoiceC').value = q.choices[2] || '';
+    byId('builderChoiceD').value = q.choices[3] || '';
+    const correctIndex = (q.choices || []).findIndex(function(c){ return normalizeAnswer(c) === normalizeAnswer(q.answer); });
+    byId('builderCorrectMcq').value = ['A','B','C','D'][correctIndex] || 'A';
+  } else {
+    byId('builderCorrectTf').value = q.answer;
+  }
+  toggleBuilderFields();
+  creatorDraftQuestions.splice(index,1);
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
+};
+
+window.addCreatorQuestion = function(){
+  const type = byId('builderQuestionType').value;
+  const text = byId('builderQuestionText').value.trim();
+  if(!text){ showNotice('creatorNotice','Please write the question first.','bad'); return; }
+  let question;
+  if(type === 'mcq'){
+    const choices = [byId('builderChoiceA').value.trim(), byId('builderChoiceB').value.trim(), byId('builderChoiceC').value.trim(), byId('builderChoiceD').value.trim()];
+    if(choices.some(function(c){ return !c; })){ showNotice('creatorNotice','Please fill all four choices.','bad'); return; }
+    const correctIndex = {A:0,B:1,C:2,D:3}[byId('builderCorrectMcq').value];
+    question = createQuestion('tmp_' + Date.now(),'mcq',text,choices[correctIndex],choices);
+  } else {
+    question = createQuestion('tmp_' + Date.now(),'tf',text,byId('builderCorrectTf').value,['True','False']);
+  }
+  creatorDraftQuestions.push(question);
+  renderCreatorQuestionsList();
+  clearQuestionBuilder();
+  showNotice('creatorNotice','Question added.','good');
+};
+
+window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
+window.clearAllCreatorQuestions = function(){ creatorDraftQuestions = []; renderCreatorQuestionsList(); showNotice('creatorNotice','All questions cleared.','warn'); };
+
+function createQuestion(id, type, text, answer, choices){ return {id:id, type:type, text:text, answer:answer, choices:choices || []}; }
+
+window.saveCreatorStation = async function(){
+  if(!requireConnection()) return;
+  const id = byId('creatorStationSelect').value;
+  const imageUrl = byId('creatorImageUrl').value.trim();
+  const sourceText = byId('creatorSourceText').value.trim();
+  lessonStations = lessonStations.map(function(s){
+    return s.id === id ? Object.assign({}, s, {
+      title: byId('creatorTitle').value.trim() || s.title,
+      objective: byId('creatorObjective').value.trim() || s.objective,
+      details: byId('creatorDetails').value.trim() || s.details,
+      time: byId('creatorTime').value.trim() || s.time,
+      thumbnail: imageUrl
+    }) : s;
+  });
+  if(!lessonContent[id]) lessonContent[id] = {imageUrl:'', sourceText:'', imageNotes:'', questions:[]};
+  lessonContent[id].imageUrl = imageUrl;
+  lessonContent[id].sourceText = sourceText;
+  lessonContent[id].imageNotes = byId('creatorImageNotes').value.trim();
+  lessonContent[id].questions = creatorDraftQuestions.map(function(q, idx){
+    return createQuestion(id + '_q' + (idx + 1), q.type, q.text, q.answer, q.type === 'tf' ? ['True','False'] : (q.choices || []));
+  });
+  await dbRef(configPath()).set(lessonStations);
+  await dbRef(contentPath()).set(lessonContent);
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+  showNotice('creatorNotice','Station saved successfully and sent to student page.','good');
+};
+
+function renderTopStudents(){
+  const wrap = byId('topStudentsList');
+  if(!wrap) return;
+
+  const studentsArray = Object.values(liveStudents || {});
+
+  if(!studentsArray.length){
+    wrap.innerHTML = 'No data yet.';
+    return;
+  }
+
+  const ranked = studentsArray.map(function(s){
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+    const finalScore = Number(s.total || 0) + bonus;
+
+    return {
+      id: s.id,
+      name: s.name || '',
+      finalScore: finalScore
+    };
+  });
+
+  ranked.sort(function(a, b){
+    return b.finalScore - a.finalScore;
+  });
+
+  const top5 = ranked.slice(0, 5);
+
+  wrap.innerHTML = top5.map(function(s, index){
+    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '#' + (index + 1);
+
+    return '<div style="display:flex; justify-content:space-between; padding:10px 12px; margin-bottom:8px; background:#f0f5ff; border-radius:10px;">' +
+      '<span><strong>' + medal + '</strong> ' + escapeHtml(s.name || 'Student') + '</span>' +
+      '<span>⭐ ' + s.finalScore + '</span>' +
+    '</div>';
+  }).join('');
+}
+bindButtons();
+
+document.addEventListener('DOMContentLoaded', function(){
+  bindButtons();
+  toggleBuilderFields();
+
+  if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig();
+  else tryAutoConnect();
+
+  const savedRole = sessionStorage.getItem('dl_role');
+
+  if(savedRole === 'teacher'){
+    setTimeout(function(){
+      try{
+        showOnly('teacherView');
+        byId('setupCard').classList.remove('hidden');
+        fillTeacherSelects();
+        loadCreatorStation();
+        renderTeacherOverview();
+        openTeacherStationPreview('starter');
+        renderControlStatus();
+        renderTeacherTracker();
+        showTeacherSection('teacherTrackerCard');
+        startTeacherListeners();
+        renderBonusBox();
+      }catch(e){
+        console.warn('Teacher restore failed', e);
+      }
+    }, 600);
+  }
+
+  if(savedRole === 'student'){
+    const savedName = sessionStorage.getItem('dl_student_name');
+    const savedId = sessionStorage.getItem('dl_student_id');
+
+    if(savedName && savedId){
+      byId('studentName').value = savedName;
+      byId('studentId').value = savedId;
+
+      setTimeout(function(){
+        try{
+          startStudentSession();
+        }catch(e){
+          console.warn('Student restore failed', e);
+        }
+      }, 600);
+    }
+  }
+});
+</script>
+</body>
+</html>
