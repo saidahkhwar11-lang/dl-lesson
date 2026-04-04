@@ -145,8 +145,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 
   <label style="margin-top:12px;">Select Class</label>
-  <select id="classSelect"></select>
-
+      
+<select id="classSelect" onchange="renderClassStudents()"></select>
+      
   <label style="margin-top:12px;">Upload Student Excel</label>
   <input id="studentExcelFile" type="file" accept=".xlsx,.xls,.csv">
 
@@ -155,6 +156,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 
   <div id="classManagerMsg" class="small" style="margin-top:10px;"></div>
+      
+  <div id="classStudentsWrap" class="card" style="margin-top:12px; padding:12px; background:#f8fbff;">
+  <h4 style="margin-top:0;">Class Students</h4>
+  <div id="classStudentsList" class="small">No students yet.</div>
+</div>
 </div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
       <div class="btns" style="justify-content:space-between;align-items:center;">
@@ -424,6 +430,7 @@ function hideNotice(id){ const el = byId(id); if(el) el.classList.add('hidden');
     option.textContent = cls.name;
     select.appendChild(option);
   });
+    renderClassStudents();
 }
 function importStudentsFromFile(){
   const fileInput = byId('studentExcelFile');
@@ -474,18 +481,38 @@ function importStudentsFromFile(){
         addedCount++;
       });
 
-      if(msg){
-        msg.textContent = addedCount + ' student(s) imported into class ' + selectedClass + '.';
-      }
+if(msg){
+  msg.textContent = addedCount + ' student(s) imported into class ' + selectedClass + '.';
+}
 
-      fileInput.value = '';
-    } catch(err){
-      console.error(err);
-      if(msg) msg.textContent = 'Import failed. Check Excel column names.';
-    }
+renderClassStudents();
+fileInput.value = '';
+} catch(err){
+  console.error(err);
+  if(msg) msg.textContent = 'Import failed. Check Excel column names.';
+}
   };
 
   reader.readAsArrayBuffer(file);
+}
+  function renderClassStudents(){
+  const classSelect = byId('classSelect');
+  const list = byId('classStudentsList');
+  if(!classSelect || !list) return;
+
+  const selectedClass = classSelect.value;
+  const classStudents = STUDENTS.filter(s => s.classId === selectedClass);
+
+  if(!classStudents.length){
+    list.innerHTML = 'No students in this class yet.';
+    return;
+  }
+
+  list.innerHTML = classStudents.map((s, index) => {
+    return (index + 1) + '. ' + s.fullName + 
+           ' | username: ' + s.username + 
+           ' | password: ' + s.password;
+  }).join('<br>');
 }
 function addClass(){
   const input = byId('newClassName');
@@ -511,6 +538,9 @@ function addClass(){
 
   input.value = '';
   renderClassOptions();
+  
+  byId('classSelect').value = className;
+renderClassStudents();
 
   if(msg) msg.textContent = 'Class added successfully.';
 }
