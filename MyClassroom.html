@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Grade 9 English Lesson</title>
+<title>My English Online Classroom</title>
   <style>
 :root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
 *{box-sizing:border-box}
@@ -110,9 +110,14 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
+    <div id="studentDashboard" class="card" style="margin-bottom:12px;">
+  <h3>My Classroom</h3>
+  <div id="welcomeStudent" class="small"></div>
+  <div id="lessonList" style="margin-top:10px;"></div>
+</div>
     <div class="top-bar" id="topStations"></div>
-    <div class="student-layout">
-      <div class="sidebar">
+<div class="student-layout hidden" id="lessonArea">
+  <div class="sidebar">
         <h3 style="margin-top:0">Stations</h3>
         <div id="stationList"></div>
       </div>
@@ -293,6 +298,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <script>
 const TEACHER_PASSWORD = 'Welcome@2020';
 const APP_NAME = 'dl_online_live_app';
+const DEMO_LESSONS = [
+  { id: "l1", title: "Reading Lesson 1", locked: false },
+  { id: "l2", title: "Vocabulary Assignment", locked: true }
+];
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
 
 const defaultStations = [
