@@ -804,47 +804,25 @@ function renderQuestion(q, stationId, index){
   const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
+
   if(q.type === 'mcq'){
-  body = (q.choices || []).map(function(choice){
-    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-    const disabled = submitted ? ' disabled' : '';
-    return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-  }).join('');
+    body = (q.choices || []).map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
+    }).join('');
 
-} else if(q.type === 'tf'){
-  body = ['True','False'].map(function(choice){
-    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-    const disabled = submitted ? ' disabled' : '';
-    return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
-  }).join('');
+  } else if(q.type === 'tf'){
+    body = ['True','False'].map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
+    }).join('');
 
-} else if(q.type === 'matching'){
-  const pairs = Array.isArray(q.pairs) ? q.pairs : [];
-  const options = pairs.map(function(pair){ return pair.right; });
-  const disabled = submitted ? ' disabled' : '';
-
-  body = pairs.map(function(pair, pairIndex){
-    const savedMatchAnswer = savedAnswer[pairIndex] || '';
-    const opts = ['<option value="">Select answer</option>'].concat(
-      options.map(function(opt){
-        const selected = normalizeAnswer(savedMatchAnswer) === normalizeAnswer(opt) ? ' selected' : '';
-        return '<option value="' + escapeHtml(opt) + '"' + selected + '>' + escapeHtml(opt) + '</option>';
-      })
-    ).join('');
-
-    return `
-      <div style="margin-bottom:10px; padding:10px; border:1px solid #dbe4f0; border-radius:10px; background:#fff;">
-        <div style="margin-bottom:6px;"><strong>${pairIndex + 1}.</strong> ${escapeHtml(pair.left)}</div>
-        <select data-match-left="${escapeHtml(pair.left)}" style="width:100%; padding:10px; border-radius:10px; border:1px solid #cfd8e7;">
-          ${opts}
-        </select>
-      </div>
-    `;
-  }).join('');
-}
   } else {
     body = '<div class="small">Unsupported question type</div>';
   }
+
   return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index+1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
 
