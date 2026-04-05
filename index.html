@@ -442,7 +442,7 @@ function startLessonConfigListener(){
   });
   lessonContentRef.on('value', function(snap){
     const raw = snap.val() || JSON.parse(JSON.stringify(defaultContent));
-    lessonContent = sanitizeLegacyContent(raw);
+   lessonContent = raw;
     if(JSON.stringify(lessonContent) !== JSON.stringify(raw)) dbRef(contentPath()).set(lessonContent);
     renderStudentNav();
     renderTeacherOverview();
