@@ -1372,12 +1372,12 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
-  if(!window.creatorQuestions) window.creatorQuestions = [];
-  window.creatorQuestions.push(newQuestion);
+ if(!creatorDraftQuestions) creatorDraftQuestions = [];
+creatorDraftQuestions.push(newQuestion);
 
-  if(typeof renderCreatorQuestions === 'function'){
-    renderCreatorQuestions();
-  }
+  if(typeof renderCreatorQuestionsList === 'function'){
+  renderCreatorQuestionsList();
+}
 
   clearQuestionBuilder();
 };
