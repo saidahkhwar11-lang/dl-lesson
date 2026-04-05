@@ -1426,12 +1426,17 @@ window.saveCreatorStation = async function(){
   lessonContent[id].imageUrl = imageUrl;
   lessonContent[id].sourceText = sourceText;
   lessonContent[id].imageNotes = byId('creatorImageNotes').value.trim();
-  lessonContent[id].questions = creatorDraftQuestions.map(function(q, idx){
-  return {
-    id: id + '_q' + (idx + 1),
-    ...q
-  };
+  const savedQuestions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
+savedQuestions.forEach(function(q, idx){
+  q.id = id + '_q' + (idx + 1);
 });
+lessonContent[id].questions = savedQuestions;
+
+showNotice(
+  'creatorNotice',
+  'Saving station with ' + lessonContent[id].questions.length + ' question(s).',
+  'warn'
+);
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
 
