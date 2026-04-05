@@ -1394,14 +1394,13 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
- if(!creatorDraftQuestions) creatorDraftQuestions = [];
+if(!creatorDraftQuestions) creatorDraftQuestions = [];
 creatorDraftQuestions.push(newQuestion);
 
-  if(typeof renderCreatorQuestionsList === 'function'){
-  renderCreatorQuestionsList();
-}
+renderCreatorQuestionsList();
 showNotice('creatorNotice','Question added successfully.','good');
-  clearQuestionBuilder();
+clearQuestionBuilder();
+  
 };
 
 window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
