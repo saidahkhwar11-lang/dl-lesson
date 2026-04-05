@@ -1273,21 +1273,120 @@ window.editCreatorQuestion = function(index){
 
 window.addCreatorQuestion = function(){
   const type = byId('builderQuestionType').value;
-  const text = byId('builderQuestionText').value.trim();
-  if(!text){ showNotice('creatorNotice','Please write the question first.','bad'); return; }
-  let question;
-  if(type === 'mcq'){
-    const choices = [byId('builderChoiceA').value.trim(), byId('builderChoiceB').value.trim(), byId('builderChoiceC').value.trim(), byId('builderChoiceD').value.trim()];
-    if(choices.some(function(c){ return !c; })){ showNotice('creatorNotice','Please fill all four choices.','bad'); return; }
-    const correctIndex = {A:0,B:1,C:2,D:3}[byId('builderCorrectMcq').value];
-    question = createQuestion('tmp_' + Date.now(),'mcq',text,choices[correctIndex],choices);
-  } else {
-    question = createQuestion('tmp_' + Date.now(),'tf',text,byId('builderCorrectTf').value,['True','False']);
+  const questionText = byId('builderQuestionText').value.trim();
+
+  if(!questionText){
+    alert('Please write the question text first.');
+    return;
   }
-  creatorDraftQuestions.push(question);
-  renderCreatorQuestionsList();
+
+  let newQuestion = {
+    type: type,
+    question: questionText
+  };
+
+  // MCQ
+  if(type === 'mcq'){
+    const choiceA = byId('builderChoiceA').value.trim();
+    const choiceB = byId('builderChoiceB').value.trim();
+    const choiceC = byId('builderChoiceC').value.trim();
+    const choiceD = byId('builderChoiceD').value.trim();
+    const correct = byId('builderCorrectMcq').value;
+
+    if(!choiceA || !choiceB || !choiceC || !choiceD){
+      alert('Please complete all MCQ choices.');
+      return;
+    }
+
+    newQuestion.options = [
+      { key:'A', text: choiceA },
+      { key:'B', text: choiceB },
+      { key:'C', text: choiceC },
+      { key:'D', text: choiceD }
+    ];
+    newQuestion.answer = correct;
+  }
+
+  // TRUE / FALSE
+  else if(type === 'tf'){
+    newQuestion.answer = byId('builderCorrectTf').value;
+  }
+
+  // MATCHING
+  else if(type === 'matching'){
+    const raw = byId('builderMatchingPairs').value.trim();
+
+    if(!raw){
+      alert('Please add matching pairs.');
+      return;
+    }
+
+    const pairs = raw.split('\n')
+      .map(line => line.trim())
+      .filter(Boolean)
+      .map(line => {
+        const parts = line.split('|');
+        return {
+          left: (parts[0] || '').trim(),
+          right: (parts[1] || '').trim()
+        };
+      })
+      .filter(pair => pair.left && pair.right);
+
+    if(!pairs.length){
+      alert('Please write valid matching pairs like: word|meaning');
+      return;
+    }
+
+    newQuestion.pairs = pairs;
+  }
+
+  // DRAG GAP
+  else if(type === 'drag_gap'){
+    const parts = byId('builderGapParts').value
+      .split('|')
+      .map(x => x.trim());
+
+    const answers = byId('builderGapAnswers').value
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean);
+
+    const words = byId('builderGapWords').value
+      .split(',')
+      .map(x => x.trim())
+      .filter(Boolean);
+
+    if(parts.length < 2){
+      alert('Please write sentence parts using | to split the gaps.');
+      return;
+    }
+
+    if(!answers.length){
+      alert('Please add the correct answers.');
+      return;
+    }
+
+    if(!words.length){
+      alert('Please add the word bank.');
+      return;
+    }
+
+    newQuestion.parts = parts;
+    newQuestion.answers = answers;
+    newQuestion.words = words;
+  }
+
+  // IMPORTANT: save into current station draft
+  if(!window.creatorQuestions) window.creatorQuestions = [];
+  window.creatorQuestions.push(newQuestion);
+
+  // refresh question list preview if you already have one
+  if(typeof renderCreatorQuestions === 'function'){
+    renderCreatorQuestions();
+  }
+
   clearQuestionBuilder();
-  showNotice('creatorNotice','Question added.','good');
 };
 
 window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
