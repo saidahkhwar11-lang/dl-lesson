@@ -1336,6 +1336,7 @@ window.renderCreatorQuestionsList = function(){
         ${extra}
         <div class="btns" style="margin-top:8px;">
           <button type="button" onclick="editCreatorQuestion(${i})">Edit</button>
+          <button type="button" class="secondary" onclick="moveCreatorQuestion(${i})">Move</button>
           <button type="button" class="warnbtn" onclick="removeCreatorQuestion(${i})">Delete</button>
         </div>
       </div>
@@ -1515,6 +1516,43 @@ window.saveCreatorStation = async function(){
   renderTeacherTracker();
 
   showNotice('creatorNotice', 'Station saved successfully.', 'good');
+};
+
+  window.moveCreatorQuestion = async function(index){
+  const currentId = byId('creatorStationSelect').value;
+  const targetId = prompt('Move question to which station? starter, st1, st2, st3, exit');
+
+  if(!targetId) return;
+  if(!lessonContent[targetId]){
+    alert('Target station not found.');
+    return;
+  }
+
+  const q = creatorDraftQuestions[index];
+  if(!q) return;
+
+  // remove from current station draft
+  creatorDraftQuestions.splice(index, 1);
+
+  // save current station questions back
+  lessonContent[currentId].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
+  lessonContent[currentId].questions.forEach(function(item, idx){
+    item.id = currentId + '_q' + (idx + 1);
+  });
+
+  // add to target station
+  const targetQuestions = JSON.parse(JSON.stringify(lessonContent[targetId].questions || []));
+  targetQuestions.push(JSON.parse(JSON.stringify(q)));
+  targetQuestions.forEach(function(item, idx){
+    item.id = targetId + '_q' + (idx + 1);
+  });
+  lessonContent[targetId].questions = targetQuestions;
+
+  await dbRef(contentPath()).set(lessonContent);
+
+  renderCreatorQuestionsList();
+  openTeacherStationPreview(currentId);
+  showNotice('creatorNotice','Question moved successfully to ' + targetId + '.','good');
 };
   
 function renderTopStudents(){
