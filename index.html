@@ -1282,7 +1282,7 @@ window.addCreatorQuestion = function(){
 
   let newQuestion = {
     type: type,
-    question: questionText
+    text: questionText
   };
 
   // MCQ
@@ -1298,12 +1298,7 @@ window.addCreatorQuestion = function(){
       return;
     }
 
-    newQuestion.options = [
-      { key:'A', text: choiceA },
-      { key:'B', text: choiceB },
-      { key:'C', text: choiceC },
-      { key:'D', text: choiceD }
-    ];
+    newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
     newQuestion.answer = correct;
   }
 
@@ -1377,11 +1372,9 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
-  // IMPORTANT: save into current station draft
   if(!window.creatorQuestions) window.creatorQuestions = [];
   window.creatorQuestions.push(newQuestion);
 
-  // refresh question list preview if you already have one
   if(typeof renderCreatorQuestions === 'function'){
     renderCreatorQuestions();
   }
