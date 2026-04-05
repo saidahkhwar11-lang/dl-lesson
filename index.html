@@ -1126,16 +1126,23 @@ window.exportLessonData = function(){
 window.importLessonData = async function(event){
   const file = event.target.files && event.target.files[0];
   if(!file) return;
+
   const text = await file.text();
   const parsed = JSON.parse(text);
+
   if(parsed.stations) lessonStations = parsed.stations;
   if(parsed.content) lessonContent = parsed.content;
+
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
+
   fillTeacherSelects();
   loadCreatorStation();
   renderTeacherOverview();
   renderControlStatus();
+  renderTeacherTracker();
+  openTeacherStationPreview(byId('creatorStationSelect').value || 'starter');
+
   showNotice('creatorNotice','Lesson data restored successfully.','good');
   event.target.value = '';
 };
@@ -1253,24 +1260,39 @@ window.renderCreatorQuestionsList = function(){
 window.editCreatorQuestion = function(index){
   const q = creatorDraftQuestions[index];
   if(!q) return;
+
   byId('builderQuestionType').value = q.type;
-  byId('builderQuestionText').value = q.text;
+  byId('builderQuestionText').value = q.text || '';
+
   if(q.type === 'mcq'){
     byId('builderChoiceA').value = q.choices[0] || '';
     byId('builderChoiceB').value = q.choices[1] || '';
     byId('builderChoiceC').value = q.choices[2] || '';
     byId('builderChoiceD').value = q.choices[3] || '';
-    const correctIndex = (q.choices || []).findIndex(function(c){ return normalizeAnswer(c) === normalizeAnswer(q.answer); });
+    const correctIndex = (q.choices || []).findIndex(function(c){
+      return normalizeAnswer(c) === normalizeAnswer(q.answer);
+    });
     byId('builderCorrectMcq').value = ['A','B','C','D'][correctIndex] || 'A';
-  } else {
-    byId('builderCorrectTf').value = q.answer;
   }
+  else if(q.type === 'tf'){
+    byId('builderCorrectTf').value = q.answer || 'True';
+  }
+  else if(q.type === 'matching'){
+    byId('builderMatchingPairs').value = (q.pairs || []).map(function(pair){
+      return (pair.left || '') + '|' + (pair.right || '');
+    }).join('\n');
+  }
+  else if(q.type === 'drag_gap'){
+    byId('builderGapParts').value = (q.parts || []).join(' | ');
+    byId('builderGapAnswers').value = (q.answers || []).join(', ');
+    byId('builderGapWords').value = (q.words || []).join(', ');
+  }
+
   toggleBuilderFields();
   creatorDraftQuestions.splice(index,1);
   renderCreatorQuestionsList();
   showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
 };
-
 window.addCreatorQuestion = function(){
   const type = byId('builderQuestionType').value;
   const questionText = byId('builderQuestionText').value.trim();
@@ -1299,7 +1321,7 @@ window.addCreatorQuestion = function(){
     }
 
     newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
-    newQuestion.answer = correct;
+    newQuestion.answer = { A: choiceA, B: choiceB, C: choiceC, D: choiceD }[correct];
   }
 
   // TRUE / FALSE
@@ -1378,7 +1400,7 @@ creatorDraftQuestions.push(newQuestion);
   if(typeof renderCreatorQuestionsList === 'function'){
   renderCreatorQuestionsList();
 }
-
+showNotice('creatorNotice','Question added successfully.','good');
   clearQuestionBuilder();
 };
 
@@ -1413,6 +1435,11 @@ window.saveCreatorStation = async function(){
 });
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
+
+  creatorDraftQuestions = JSON.parse(JSON.stringify(lessonContent[id].questions || []));
+renderCreatorQuestionsList();
+openTeacherStationPreview(id);
+  
   renderTeacherOverview();
   renderControlStatus();
   renderTeacherTracker();
