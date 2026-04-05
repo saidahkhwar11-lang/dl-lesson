@@ -1242,18 +1242,41 @@ byId('builderGapWords').value = '';
 window.renderCreatorQuestionsList = function(){
   const wrap = byId('creatorQuestionsList');
   if(!wrap) return;
-  if(!creatorDraftQuestions.length){ wrap.innerHTML = '<div class="small">No questions added yet.</div>'; return; }
+
+  if(!creatorDraftQuestions || !creatorDraftQuestions.length){
+    wrap.innerHTML = '<div class="small">No questions added yet.</div>';
+    return;
+  }
+
   wrap.innerHTML = creatorDraftQuestions.map(function(q, i){
-    const choices = q.type === 'mcq' ? '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' : '<div class="small">Choices: True | False</div>';
-    return '<div class="card" style="padding:10px;margin-bottom:8px;">'
-      + '<strong>Q' + (i + 1) + '.</strong> ' + escapeHtml(q.text)
-      + '<div class="small">Type: ' + escapeHtml(q.type.toUpperCase()) + '</div>'
-      + choices
-      + '<div class="small">Correct Answer: ' + escapeHtml(q.answer) + '</div>'
-      + '<div class="btns" style="margin-top:8px;">'
-      + '<button type="button" onclick="editCreatorQuestion(' + i + ')">Edit</button>'
-      + '<button type="button" class="warnbtn" onclick="removeCreatorQuestion(' + i + ')">Delete</button>'
-      + '</div></div>';
+    let extra = '';
+
+    if(q.type === 'mcq'){
+      extra = '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' +
+              '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+    }
+    else if(q.type === 'tf'){
+      extra = '<div class="small">Choices: True | False</div>' +
+              '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+    }
+    else if(q.type === 'matching'){
+      extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+    }
+    else if(q.type === 'drag_gap'){
+      extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
+    }
+
+    return `
+      <div class="card" style="padding:10px;margin-bottom:8px;">
+        <strong>Q${i + 1}.</strong> ${escapeHtml(q.text || '')}
+        <div class="small">Type: ${escapeHtml((q.type || '').toUpperCase())}</div>
+        ${extra}
+        <div class="btns" style="margin-top:8px;">
+          <button type="button" onclick="editCreatorQuestion(${i})">Edit</button>
+          <button type="button" class="warnbtn" onclick="removeCreatorQuestion(${i})">Delete</button>
+        </div>
+      </div>
+    `;
   }).join('');
 };
 
@@ -1293,6 +1316,7 @@ window.editCreatorQuestion = function(index){
   renderCreatorQuestionsList();
   showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
 };
+  
 window.addCreatorQuestion = function(){
   const type = byId('builderQuestionType').value;
   const questionText = byId('builderQuestionText').value.trim();
@@ -1302,12 +1326,11 @@ window.addCreatorQuestion = function(){
     return;
   }
 
-  let newQuestion = {
+  const newQuestion = {
     type: type,
     text: questionText
   };
 
-  // MCQ
   if(type === 'mcq'){
     const choiceA = byId('builderChoiceA').value.trim();
     const choiceB = byId('builderChoiceB').value.trim();
@@ -1323,22 +1346,17 @@ window.addCreatorQuestion = function(){
     newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
     newQuestion.answer = { A: choiceA, B: choiceB, C: choiceC, D: choiceD }[correct];
   }
-
-  // TRUE / FALSE
   else if(type === 'tf'){
     newQuestion.answer = byId('builderCorrectTf').value;
   }
-
-  // MATCHING
   else if(type === 'matching'){
     const raw = byId('builderMatchingPairs').value.trim();
-
     if(!raw){
       alert('Please add matching pairs.');
       return;
     }
 
-    const pairs = raw.split('\n')
+    newQuestion.pairs = raw.split('\n')
       .map(line => line.trim())
       .filter(Boolean)
       .map(line => {
@@ -1349,41 +1367,20 @@ window.addCreatorQuestion = function(){
         };
       })
       .filter(pair => pair.left && pair.right);
-
-    if(!pairs.length){
-      alert('Please write valid matching pairs like: word|meaning');
-      return;
-    }
-
-    newQuestion.pairs = pairs;
   }
-
-  // DRAG GAP
   else if(type === 'drag_gap'){
-    const parts = byId('builderGapParts').value
-      .split('|')
-      .map(x => x.trim());
-
-    const answers = byId('builderGapAnswers').value
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean);
-
-    const words = byId('builderGapWords').value
-      .split(',')
-      .map(x => x.trim())
-      .filter(Boolean);
+    const parts = byId('builderGapParts').value.split('|').map(x => x.trim());
+    const answers = byId('builderGapAnswers').value.split(',').map(x => x.trim()).filter(Boolean);
+    const words = byId('builderGapWords').value.split(',').map(x => x.trim()).filter(Boolean);
 
     if(parts.length < 2){
       alert('Please write sentence parts using | to split the gaps.');
       return;
     }
-
     if(!answers.length){
       alert('Please add the correct answers.');
       return;
     }
-
     if(!words.length){
       alert('Please add the word bank.');
       return;
@@ -1394,12 +1391,10 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
-creatorDraftQuestions.push(newQuestion);
-
-renderCreatorQuestionsList();
-showNotice('creatorNotice','Draft now has ' + creatorDraftQuestions.length + ' question(s).','good');
-clearQuestionBuilder();
-  
+  creatorDraftQuestions.push(newQuestion);
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice', 'Question added successfully.', 'good');
+  clearQuestionBuilder();
 };
 
 window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
@@ -1409,9 +1404,11 @@ function createQuestion(id, type, text, answer, choices){ return {id:id, type:ty
 
 window.saveCreatorStation = async function(){
   if(!requireConnection()) return;
+
   const id = byId('creatorStationSelect').value;
   const imageUrl = byId('creatorImageUrl').value.trim();
   const sourceText = byId('creatorSourceText').value.trim();
+
   lessonStations = lessonStations.map(function(s){
     return s.id === id ? Object.assign({}, s, {
       title: byId('creatorTitle').value.trim() || s.title,
@@ -1421,34 +1418,42 @@ window.saveCreatorStation = async function(){
       thumbnail: imageUrl
     }) : s;
   });
-  if(!lessonContent[id]) lessonContent[id] = {imageUrl:'', sourceText:'', imageNotes:'', questions:[]};
+
+  if(!lessonContent[id]){
+    lessonContent[id] = {
+      imageUrl: '',
+      sourceText: '',
+      imageNotes: '',
+      audioUrl: '',
+      videoUrl: '',
+      questions: []
+    };
+  }
+
   lessonContent[id].imageUrl = imageUrl;
   lessonContent[id].sourceText = sourceText;
-  lessonContent[id].imageNotes = byId('creatorImageNotes').value.trim();
-  const savedQuestions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
-savedQuestions.forEach(function(q, idx){
-  q.id = id + '_q' + (idx + 1);
-});
-lessonContent[id].questions = savedQuestions;
+  lessonContent[id].imageNotes = byId('creatorImageNotes') ? byId('creatorImageNotes').value.trim() : '';
+  lessonContent[id].audioUrl = byId('creatorAudioUrl') ? byId('creatorAudioUrl').value.trim() : '';
+  lessonContent[id].videoUrl = byId('creatorVideoUrl') ? byId('creatorVideoUrl').value.trim() : '';
 
-showNotice(
-  'creatorNotice',
-  'Saving station with ' + lessonContent[id].questions.length + ' question(s).',
-  'warn'
-);
+  lessonContent[id].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
+  lessonContent[id].questions.forEach(function(q, idx){
+    q.id = id + '_q' + (idx + 1);
+  });
+
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
 
   creatorDraftQuestions = JSON.parse(JSON.stringify(lessonContent[id].questions || []));
-renderCreatorQuestionsList();
-openTeacherStationPreview(id);
-  
+  renderCreatorQuestionsList();
+  openTeacherStationPreview(id);
   renderTeacherOverview();
   renderControlStatus();
   renderTeacherTracker();
-  showNotice('creatorNotice','Station saved successfully and sent to student page.','good');
-};
 
+  showNotice('creatorNotice', 'Station saved successfully.', 'good');
+};
+  
 function renderTopStudents(){
   const wrap = byId('topStudentsList');
   if(!wrap) return;
