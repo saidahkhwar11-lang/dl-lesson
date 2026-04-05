@@ -239,6 +239,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
             <select id="builderQuestionType" onchange="toggleBuilderFields()">
               <option value="mcq">Multiple Choice</option>
               <option value="tf">True / False</option>
+              <option value="matching">Matching</option>
+              <option value="drag_gap">Drag Gap Fill</option>
             </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
@@ -259,6 +261,27 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
                 <option value="D">D</option>
               </select>
             </div>
+            <!-- MATCHING FIELDS -->
+<div id="builderMatchingFields" class="hidden">
+  <label>Matching Pairs</label>
+  <textarea id="builderMatchingPairs"
+    placeholder="word|meaning&#10;gesture|body movement&#10;solve|find answer">
+  </textarea>
+</div>
+
+<!-- DRAG GAP FIELDS -->
+<div id="builderGapFields" class="hidden">
+  <label>Sentence Parts (use | to split)</label>
+  <textarea id="builderGapParts"
+    placeholder="Women use | language to | ideas.">
+  </textarea>
+
+  <label>Correct Answers (comma separated)</label>
+  <input id="builderGapAnswers" placeholder="body, share" />
+
+  <label>Word Bank (comma separated)</label>
+  <input id="builderGapWords" placeholder="body, share, quickly" />
+</div>
             <div id="builderTfFields" class="hidden">
               <label>Correct Answer</label>
               <select id="builderCorrectTf">
@@ -1185,8 +1208,12 @@ if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
 
 window.toggleBuilderFields = function(){
   const type = byId('builderQuestionType').value;
+
+  // hide/show all types
   byId('builderMcqFields').classList.toggle('hidden', type !== 'mcq');
   byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
+  byId('builderMatchingFields').classList.toggle('hidden', type !== 'matching');
+  byId('builderGapFields').classList.toggle('hidden', type !== 'drag_gap');
 };
 
 window.clearQuestionBuilder = function(){
@@ -1198,6 +1225,10 @@ window.clearQuestionBuilder = function(){
   byId('builderChoiceD').value = '';
   byId('builderCorrectMcq').value = 'A';
   byId('builderCorrectTf').value = 'True';
+  byId('builderMatchingPairs').value = '';
+byId('builderGapParts').value = '';
+byId('builderGapAnswers').value = '';
+byId('builderGapWords').value = '';
   toggleBuilderFields();
 };
 
