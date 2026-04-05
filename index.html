@@ -1394,11 +1394,10 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
-if(!creatorDraftQuestions) creatorDraftQuestions = [];
 creatorDraftQuestions.push(newQuestion);
 
 renderCreatorQuestionsList();
-showNotice('creatorNotice','Question added successfully.','good');
+showNotice('creatorNotice','Draft now has ' + creatorDraftQuestions.length + ' question(s).','good');
 clearQuestionBuilder();
   
 };
