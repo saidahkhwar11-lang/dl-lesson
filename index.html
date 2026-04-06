@@ -326,7 +326,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-storage-compat.js"></script>
 
-    <script>
+<script>
 function storageRef(path){
   return firebase.storage().ref(path);
 }
@@ -366,30 +366,16 @@ window.handleCreatorVideo = async function(event){
 };
 
 const TEACHER_PASSWORD = 'Welcome@2020';
-...
-function storageRef(path){
-  return firebase.storage().ref(path);
-}
-
-window.handleCreatorAudio = async function(event){
-  ...
-};
-
-window.handleCreatorVideo = async function(event){
-  ...
-};
-      
-const TEACHER_PASSWORD = 'Welcome@2020';
 const APP_NAME = 'dl_online_live_app';
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
-
-const defaultStations = [
-  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:true, displayed:true, thumbnail:''},
-  {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Wrap up the whole lesson', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''}
-];
+  
+const defaultContent = {
+  starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
+  st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
+  st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
+  st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
+  exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]}
+};
 
 const defaultContent = {
   starter:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
