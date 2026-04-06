@@ -377,14 +377,6 @@ const defaultContent = {
   exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]}
 };
 
-const defaultContent = {
-  starter:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
-  st1:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
-  st2:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
-  st3:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]},
-  exit:{imageUrl:'', sourceText:'', imageNotes:'', questions:[]}
-};
-
 let firebaseConfig = null;
 let lessonKey = '';
 let appInstance = null;
@@ -411,7 +403,16 @@ function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
 function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
-function getStationContent(id){ return lessonContent[id] || {imageUrl:'',sourceText:'',imageNotes:'',questions:[]}; }
+function getStationContent(id){
+  return lessonContent[id] || {
+    imageUrl:'',
+    sourceText:'',
+    imageNotes:'',
+    audioUrl:'',
+    videoUrl:'',
+    questions:[]
+  };
+}
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
