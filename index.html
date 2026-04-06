@@ -324,29 +324,61 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
-// ===== AUDIO UPLOAD =====
-window.handleCreatorAudio = function(event){
+<script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-storage-compat.js"></script>
+
+    <script>
+function storageRef(path){
+  return firebase.storage().ref(path);
+}
+
+window.handleCreatorAudio = async function(event){
   const file = event.target.files[0];
   if(!file) return;
 
-  const url = URL.createObjectURL(file);
+  showNotice('creatorNotice','Uploading audio...','warn');
+
+  const stationId = byId('creatorStationSelect').value;
+  const fileName = Date.now() + '_' + file.name;
+  const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
+
+  await ref.put(file);
+  const url = await ref.getDownloadURL();
+
   byId('creatorAudioUrl').value = url;
-
-  showNotice('creatorNotice','Audio uploaded successfully.','good');
+  showNotice('creatorNotice','Audio uploaded successfully','good');
 };
 
-// ===== VIDEO UPLOAD =====
-window.handleCreatorVideo = function(event){
+window.handleCreatorVideo = async function(event){
   const file = event.target.files[0];
   if(!file) return;
 
-  const url = URL.createObjectURL(file);
-  byId('creatorVideoUrl').value = url;
+  showNotice('creatorNotice','Uploading video...','warn');
 
-  showNotice('creatorNotice','Video uploaded successfully.','good');
+  const stationId = byId('creatorStationSelect').value;
+  const fileName = Date.now() + '_' + file.name;
+  const ref = storageRef('lesson_media/' + stationId + '/video/' + fileName);
+
+  await ref.put(file);
+  const url = await ref.getDownloadURL();
+
+  byId('creatorVideoUrl').value = url;
+  showNotice('creatorNotice','Video uploaded successfully','good');
 };
-    
-<script>
+
+const TEACHER_PASSWORD = 'Welcome@2020';
+...
+function storageRef(path){
+  return firebase.storage().ref(path);
+}
+
+window.handleCreatorAudio = async function(event){
+  ...
+};
+
+window.handleCreatorVideo = async function(event){
+  ...
+};
+      
 const TEACHER_PASSWORD = 'Welcome@2020';
 const APP_NAME = 'dl_online_live_app';
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
