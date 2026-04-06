@@ -675,21 +675,26 @@ if(content.videoUrl){
     const currentIndex = teacherQuestionIndex[id];
     const q = content.questions[currentIndex];
 
-    let choicesHtml = '';
+   let choicesHtml = '';
 
-    if(q.type === 'mcq' && q.choices){
-      choicesHtml = q.choices.map(function(choice){
-        return `<div class="choice teacher-small-choice">${choice}</div>`;
-      }).join('');
-    }
+if(q.type === 'mcq' && q.choices){
+  choicesHtml = q.choices.map(function(choice){
+    return `<div class="choice teacher-small-choice">${choice}</div>`;
+  }).join('');
+}
 
-    if(q.type === 'tf'){
-      choicesHtml = `
-        <div class="choice teacher-small-choice">True</div>
-        <div class="choice teacher-small-choice">False</div>
-      `;
-    }
+if(q.type === 'tf'){
+  choicesHtml = `
+    <div class="choice teacher-small-choice">True</div>
+    <div class="choice teacher-small-choice">False</div>
+  `;
+}
 
+if(q.type === 'matching' && q.pairs){
+  choicesHtml = q.pairs.map(function(pair){
+    return `<div class="choice teacher-small-choice">${escapeHtml(pair.left)} → ${escapeHtml(pair.right)}</div>`;
+  }).join('');
+}
     questionsHtml = `
       <div class="question teacher-small-question">
         <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
