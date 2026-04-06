@@ -324,6 +324,28 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
+// ===== AUDIO UPLOAD =====
+window.handleCreatorAudio = function(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const url = URL.createObjectURL(file);
+  byId('creatorAudioUrl').value = url;
+
+  showNotice('creatorNotice','Audio uploaded successfully.','good');
+};
+
+// ===== VIDEO UPLOAD =====
+window.handleCreatorVideo = function(event){
+  const file = event.target.files[0];
+  if(!file) return;
+
+  const url = URL.createObjectURL(file);
+  byId('creatorVideoUrl').value = url;
+
+  showNotice('creatorNotice','Video uploaded successfully.','good');
+};
+    
 <script>
 const TEACHER_PASSWORD = 'Welcome@2020';
 const APP_NAME = 'dl_online_live_app';
