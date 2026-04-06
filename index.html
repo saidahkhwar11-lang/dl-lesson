@@ -503,9 +503,11 @@ window.saveConfig = async function(){
 
 window.loadSavedConfig = function(){
   const cfg = localStorage.getItem('DL_firebase_config');
-  const lk = localStorage.getItem('DL_lesson_key');
   if(cfg) byId('firebaseConfigText').value = cfg;
-  if(lk) byId('lessonKey').value = lk;
+
+  // 🔥 force your lesson key (ignore old saved one)
+  byId('lessonKey').value = 'Reading3_Dreams_and_Daydreams';
+
   tryAutoConnect();
 };
 
@@ -1640,10 +1642,12 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }
 });
-  window.addEventListener('load', function(){
+window.addEventListener('load', function(){
+  localStorage.removeItem('DL_lesson_key');
   byId('lessonKey').value = 'Reading3_Dreams_and_Daydreams';
   tryAutoConnect();
 });
+  
 </script>
 </body>
 </html>
