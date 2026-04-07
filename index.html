@@ -715,8 +715,6 @@ ${videoHtml}
 </div>
 </div>
 
-    
-
     <div class="preview-right teacher-preview-right-small teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
       ${teacherQuestionVisibility[station.id] === false
@@ -991,166 +989,58 @@ if(submitted){
 window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
   if(isStationSubmitted(stationId)) return openStation(stationId);
+
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
   let score = 0;
   const submittedAnswers = {};
 
-questions.forEach(function(q, i){
-  const wrap = byId('q_' + stationId + '_' + i);
-  if(!wrap) return;
-
-  wrap.classList.remove('correct','wrong');
-  const labels = wrap.querySelectorAll('.choice');
-  labels.forEach(function(lbl){
-    lbl.style.background = '';
-    lbl.style.borderColor = '';
-  });
-
-  // MATCHING
-  if(q.type === 'matching'){
-    const selects = wrap.querySelectorAll('select[data-match-index]');
-    const submittedMatchAnswers = [];
-    let matchScore = 0;
-
-    selects.forEach(function(sel, pairIndex){
-      const selectedValue = sel.value || '';
-      submittedMatchAnswers[pairIndex] = selectedValue;
-
-      const correctAnswer = q.pairs && q.pairs[pairIndex] ? q.pairs[pairIndex].right : '';
-
-      if(normalizeAnswer(selectedValue) === normalizeAnswer(correctAnswer)){
-        matchScore += 1;
-        sel.style.background = '#eafaf1';
-        sel.style.borderColor = '#2ecc71';
-      } else {
-        sel.style.background = '#fdecea';
-        sel.style.borderColor = '#e74c3c';
-      }
-
-      sel.disabled = true;
-    });
-
-   function renderQuestion(q, stationId, index){
-  const inputName = 'answer_' + stationId + '_' + index;
-  const submitted = isStationSubmitted(stationId);
-  const student = currentStudent && liveStudents[currentStudent.id];
-  const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
-  const savedAnswer = savedAnswers[index] || '';
-  let body = '';
-
-  if(q.type === 'mcq'){
-    body = (q.choices || []).map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-    }).join('');
-  }
-  else if(q.type === 'tf'){
-    body = ['True','False'].map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
-    }).join('');
-  }
-  else if(q.type === 'matching'){
-    const rights = (q.pairs || []).map(function(pair){ return pair.right; });
-    const disabled = submitted ? ' disabled' : '';
-
-    body = (q.pairs || []).map(function(pair, pairIndex){
-      const selectedValue = Array.isArray(savedAnswer) ? (savedAnswer[pairIndex] || '') : '';
-      return `
-<div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-<div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
-          <select data-match-index="${pairIndex}" ${disabled}>
-            <option value="">Select answer</option>
-            ${rights.map(function(right){
-              const selected = normalizeAnswer(selectedValue) === normalizeAnswer(right) ? ' selected' : '';
-              return '<option value="' + escapeHtml(right) + '"' + selected + '>' + escapeHtml(right) + '</option>';
-            }).join('')}
-          </select>
-        </div>
-      `;
-    }).join('');
-  }
-  else if(q.type === 'drag_gap'){
-    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-  }
-  else {
-    body = '<div class="small">Unsupported question type</div>';
-  }
-
-  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
-}
-window.openStation = function(id){
-  const st = getStationById(id);
-  if(!st) return;
-  if(!st.unlocked && id !== 'starter') return;
-  currentOpenStation = id;
-  renderStudentNav();
-  const ct = getStationContent(id);
-  const submitted = isStationSubmitted(id);
-  const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
-  const resultText = scoreTextForStudent(id);
-const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
-
-const audioBlock = ct.audioUrl ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>' : '';
-
-const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>' : '';  const nextStationId = getNextUnlockedStationId(id);
-  const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
-  const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
-  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
-  const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
-byId('stationContent').innerHTML =
-  '<h2>' + escapeHtml(st.title) + '</h2>' +
-  '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
-  '<p>' + escapeHtml(st.details || '') + '</p>' +
-  imageBlock +
-  audioBlock +
-  videoBlock +
-  '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
-  submittedNote +
-  questionsHtml +
-  actionBtns;
-  if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
-
-if(submitted){
-  const student = liveStudents[currentStudent.id] || {};
-  const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
-
-  (ct.questions || []).forEach(function(q, i){
-    const wrap = byId('q_' + id + '_' + i);
+  questions.forEach(function(q, i){
+    const wrap = byId('q_' + stationId + '_' + i);
     if(!wrap) return;
 
+    wrap.classList.remove('correct','wrong');
+
+    const labels = wrap.querySelectorAll('.choice');
+    labels.forEach(function(lbl){
+      lbl.style.background = '';
+      lbl.style.borderColor = '';
+    });
+
+    // MATCHING
     if(q.type === 'matching'){
       const selects = wrap.querySelectorAll('select[data-match-index]');
-      const studentMatchAnswers = Array.isArray(savedAnswers[i]) ? savedAnswers[i] : [];
-      let correctCount = 0;
+      const submittedMatchAnswers = [];
+      let matchScore = 0;
 
       selects.forEach(function(sel, pairIndex){
+        const selectedValue = sel.value || '';
+        submittedMatchAnswers[pairIndex] = selectedValue;
+
         const correctAnswer = q.pairs && q.pairs[pairIndex] ? q.pairs[pairIndex].right : '';
-        const studentAnswer = studentMatchAnswers[pairIndex] || '';
 
-        sel.value = studentAnswer;
-        sel.disabled = true;
-
-        if(normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer)){
+        if(normalizeAnswer(selectedValue) === normalizeAnswer(correctAnswer)){
+          matchScore++;
           sel.style.background = '#eafaf1';
           sel.style.borderColor = '#2ecc71';
-          correctCount++;
         } else {
           sel.style.background = '#fdecea';
           sel.style.borderColor = '#e74c3c';
         }
+
+        sel.disabled = true;
       });
 
-      if(correctCount === (q.pairs || []).length){
+      submittedAnswers[i] = submittedMatchAnswers;
+      score += matchScore;
+
+      if(matchScore === (q.pairs || []).length){
         wrap.classList.add('correct');
         wrap.querySelector('.feedback').innerHTML = '✅ Correct';
       } else {
         wrap.classList.add('wrong');
         wrap.querySelector('.feedback').innerHTML =
-          '❌ Correct answers:<br>' +
+          '❌ Correct answers: ' +
           (q.pairs || []).map(function(pair){
             return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
           }).join('<br>');
@@ -1159,134 +1049,7 @@ if(submitted){
       return;
     }
 
-    const labels = wrap.querySelectorAll('.choice');
-    labels.forEach(function(lbl){
-      const input = lbl.querySelector('input');
-      if(!input) return;
-
-      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
-        lbl.style.background = '#eafaf1';
-        lbl.style.borderColor = '#2ecc71';
-      }
-
-      if(savedAnswers[i] && normalizeAnswer(input.value) === normalizeAnswer(savedAnswers[i]) && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
-        lbl.style.background = '#fdecea';
-        lbl.style.borderColor = '#e74c3c';
-      }
-    });
-
-    const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
-    wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
-    wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
-  });
-}
-
-window.submitCurrentStation = async function(stationId){
-  if(!currentStudent) return;
-  if(isStationSubmitted(stationId)) return openStation(stationId);
-  const ct = getStationContent(stationId);
-  const questions = ct.questions || [];
-  let score = 0;
-  const submittedAnswers = {};
-
-questions.forEach(function(q, i){
-  const wrap = byId('q_' + stationId + '_' + i);
-  if(!wrap) return;
-
-  wrap.classList.remove('correct','wrong');
-  const labels = wrap.querySelectorAll('.choice');
-  labels.forEach(function(lbl){
-    lbl.style.background = '';
-    lbl.style.borderColor = '';
-  });
-
-  // MATCHING
-  if(q.type === 'matching'){
-    const selects = wrap.querySelectorAll('select[data-match-index]');
-    const submittedMatchAnswers = [];
-    let matchScore = 0;
-
-    selects.forEach(function(sel, pairIndex){
-      const selectedValue = sel.value || '';
-      submittedMatchAnswers[pairIndex] = selectedValue;
-
-      const correctAnswer = q.pairs && q.pairs[pairIndex] ? q.pairs[pairIndex].right : '';
-
-      if(normalizeAnswer(selectedValue) === normalizeAnswer(correctAnswer)){
-        matchScore += 1;
-        sel.style.background = '#eafaf1';
-        sel.style.borderColor = '#2ecc71';
-      } else {
-        sel.style.background = '#fdecea';
-        sel.style.borderColor = '#e74c3c';
-      }
-
-      sel.disabled = true;
-    });
-
-    submittedAnswers[i] = submittedMatchAnswers;
-    score += matchScore;
-
-    if(matchScore === (q.pairs || []).length){
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML =
-        '❌ Correct answers: ' +
-        (q.pairs || []).map(function(pair){
-          return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-        }).join('<br>');
-    }
-
-    return;
-  }
-
-  // MCQ / TF
-  const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-  const answer = checked ? checked.value : '';
-  submittedAnswers[i] = answer;
-
-  labels.forEach(function(lbl){
-    const input = lbl.querySelector('input');
-    if(!input) return;
-
-    if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
-      lbl.style.background = '#eafaf1';
-      lbl.style.borderColor = '#2ecc71';
-    }
-    if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
-      lbl.style.background = '#fdecea';
-      lbl.style.borderColor = '#e74c3c';
-    }
-    input.disabled = true;
-  });
-
-  if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-    score += 1;
-    wrap.classList.add('correct');
-    wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-  } else {
-    wrap.classList.add('wrong');
-    wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
-  }
-});
-    submittedAnswers[i] = submittedMatchAnswers;
-    score += matchScore;
-
-    if(matchScore === (q.pairs || []).length){
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML =
-        '❌ Correct answers: ' +
-        (q.pairs || []).map(function(pair){
-          return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-        }).join('<br>');
-    }
-
-  } else {
+    // MCQ / TF
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
@@ -1299,94 +1062,47 @@ questions.forEach(function(q, i){
         lbl.style.background = '#eafaf1';
         lbl.style.borderColor = '#2ecc71';
       }
+
       if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
         lbl.style.background = '#fdecea';
         lbl.style.borderColor = '#e74c3c';
       }
+
       input.disabled = true;
     });
 
     if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-      score += 1;
+      score++;
       wrap.classList.add('correct');
       wrap.querySelector('.feedback').innerHTML = '✅ Correct';
     } else {
       wrap.classList.add('wrong');
       wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
     }
-  }
-});
-
-
-  if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-    score += 1;
-    wrap.classList.add('correct');
-    wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-  } else {
-    wrap.classList.add('wrong');
-    wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
-  }
-});
-    submittedAnswers[i] = submittedMatchAnswers;
-    score += matchScore;
-
-    if(matchScore === (q.pairs || []).length){
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML =
-        '❌ Correct answers: ' +
-        (q.pairs || []).map(function(pair){
-          return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-        }).join('<br>');
-    }
-
-  } else {
-    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-    const answer = checked ? checked.value : '';
-    submittedAnswers[i] = answer;
-
-    labels.forEach(function(lbl){
-      const input = lbl.querySelector('input');
-      if(!input) return;
-
-      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
-        lbl.style.background = '#eafaf1';
-        lbl.style.borderColor = '#2ecc71';
-      }
-      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
-        lbl.style.background = '#fdecea';
-        lbl.style.borderColor = '#e74c3c';
-      }
-      input.disabled = true;
-    });
-
-    if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-      score += 1;
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
-    }
-  }
-});
+  });
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
-  const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}, stationAnswers:{}, submittedStations:{}};
-  const nextScores = Object.assign({}, existing.scores || {}, {[stationId]:score});
-  const stationMax = questions.reduce(function(total, q){
-  if(q.type === 'matching') return total + ((q.pairs || []).length);
-  return total + 1;
-}, 0);
+  const existing = studentSnap.exists() ? studentSnap.val() : {
+    scores:{},
+    stationResults:{},
+    stationAnswers:{},
+    submittedStations:{}
+  };
 
-const nextResults = Object.assign({}, existing.stationResults || {}, {
-  [stationId]: { score: score, max: stationMax }
-});
-  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]:submittedAnswers});
-  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, {[stationId]:true});
-  const total = Object.values(nextScores).reduce(function(a,b){ return a + Number(b || 0); }, 0);
+  const nextScores = Object.assign({}, existing.scores || {}, {[stationId]: score});
+
+  const stationMax = questions.reduce(function(total, q){
+    if(q.type === 'matching') return total + ((q.pairs || []).length);
+    return total + 1;
+  }, 0);
+
+  const nextResults = Object.assign({}, existing.stationResults || {}, {
+    [stationId]: { score: score, max: stationMax }
+  });
+
+  const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]: submittedAnswers});
+  const nextSubmitted = Object.assign({}, existing.submittedStations || {}, {[stationId]: true});
+  const total = Object.values(nextScores).reduce(function(a, b){ return a + Number(b || 0); }, 0);
 
   await dbRef(studentPath(currentStudent.id)).update({
     scores: nextScores,
@@ -1406,7 +1122,7 @@ const nextResults = Object.assign({}, existing.stationResults || {}, {
   renderStudentNav();
   openStation(stationId);
 };
-
+  
 function listenStudentLive(){
   if(studentBonusRef) studentBonusRef.off();
   if(studentSelfRef) studentSelfRef.off();
