@@ -1028,6 +1028,7 @@ questions.forEach(function(q, i){
     lbl.style.borderColor = '';
   });
 
+  // MATCHING
   if(q.type === 'matching'){
     const selects = wrap.querySelectorAll('select[data-match-index]');
     const submittedMatchAnswers = [];
@@ -1051,6 +1052,53 @@ questions.forEach(function(q, i){
       sel.disabled = true;
     });
 
+    submittedAnswers[i] = submittedMatchAnswers;
+    score += matchScore;
+
+    if(matchScore === (q.pairs || []).length){
+      wrap.classList.add('correct');
+      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+    } else {
+      wrap.classList.add('wrong');
+      wrap.querySelector('.feedback').innerHTML =
+        '❌ Correct answers: ' +
+        (q.pairs || []).map(function(pair){
+          return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
+        }).join('<br>');
+    }
+
+    return;
+  }
+
+  // MCQ / TF
+  const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
+  const answer = checked ? checked.value : '';
+  submittedAnswers[i] = answer;
+
+  labels.forEach(function(lbl){
+    const input = lbl.querySelector('input');
+    if(!input) return;
+
+    if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+      lbl.style.background = '#eafaf1';
+      lbl.style.borderColor = '#2ecc71';
+    }
+    if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+      lbl.style.background = '#fdecea';
+      lbl.style.borderColor = '#e74c3c';
+    }
+    input.disabled = true;
+  });
+
+  if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+    score += 1;
+    wrap.classList.add('correct');
+    wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+  } else {
+    wrap.classList.add('wrong');
+    wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
+  }
+});
     submittedAnswers[i] = submittedMatchAnswers;
     score += matchScore;
 
@@ -1100,7 +1148,14 @@ questions.forEach(function(q, i){
   const studentSnap = await getSnap(studentPath(currentStudent.id));
   const existing = studentSnap.exists() ? studentSnap.val() : {scores:{}, stationResults:{}, stationAnswers:{}, submittedStations:{}};
   const nextScores = Object.assign({}, existing.scores || {}, {[stationId]:score});
-  const nextResults = Object.assign({}, existing.stationResults || {}, {[stationId]:{score:score,max:questions.length}});
+  const stationMax = questions.reduce(function(total, q){
+  if(q.type === 'matching') return total + ((q.pairs || []).length);
+  return total + 1;
+}, 0);
+
+const nextResults = Object.assign({}, existing.stationResults || {}, {
+  [stationId]: { score: score, max: stationMax }
+});
   const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]:submittedAnswers});
   const nextSubmitted = Object.assign({}, existing.submittedStations || {}, {[stationId]:true});
   const total = Object.values(nextScores).reduce(function(a,b){ return a + Number(b || 0); }, 0);
