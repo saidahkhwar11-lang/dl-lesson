@@ -648,58 +648,55 @@ if(content.videoUrl){
 
   let questionsHtml = '';
 
-  if(content.questions && content.questions.length){
-    if(typeof teacherQuestionIndex[id] !== 'number'){
-      teacherQuestionIndex[id] = 0;
-    }
-
-    if(teacherQuestionIndex[id] < 0){
-      teacherQuestionIndex[id] = 0;
-    }
-
-    if(teacherQuestionIndex[id] > content.questions.length - 1){
-      teacherQuestionIndex[id] = content.questions.length - 1;
-    }
-
-    const currentIndex = teacherQuestionIndex[id];
-    const q = content.questions[currentIndex];
-
-   let choicesHtml = '';
-
-if(q.type === 'mcq' && q.choices){
-  choicesHtml = q.choices.map(function(choice){
-    return `<div class="choice teacher-small-choice">${choice}</div>`;
-  }).join('');
-}
-
-if(q.type === 'tf'){
-  choicesHtml = `
-    <div class="choice teacher-small-choice">True</div>
-    <div class="choice teacher-small-choice">False</div>
-  `;
-}
-
-if(q.type === 'matching' && q.pairs){
-  choicesHtml = q.pairs.map(function(pair){
-    return `<div class="choice teacher-small-choice">${escapeHtml(pair.left)} → ${escapeHtml(pair.right)}</div>`;
-  }).join('');
-}
-    questionsHtml = `
-      <div class="question teacher-small-question">
-        <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
-        <div style="margin-top:10px;">${choicesHtml}</div>
-      </div>
-
-      <div class="btns teacher-q-nav" style="margin-top:12px;">
-        <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
-        <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
-      </div>
-
-      <div class="small">Question ${currentIndex + 1} of ${content.questions.length}</div>
-    `;
-  } else {
-    questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
+if(content.questions && content.questions.length){
+  if(typeof teacherQuestionIndex[id] !== 'number'){
+    teacherQuestionIndex[id] = 0;
   }
+
+  if(teacherQuestionIndex[id] < 0){
+    teacherQuestionIndex[id] = 0;
+  }
+
+  if(teacherQuestionIndex[id] > content.questions.length - 1){
+    teacherQuestionIndex[id] = content.questions.length - 1;
+  }
+
+  const currentIndex = teacherQuestionIndex[id];
+  const q = content.questions[currentIndex];
+
+  let choicesHtml = '';
+
+  if(q.type === 'mcq' && q.choices){
+    choicesHtml = q.choices.map(function(choice){
+      return `<div class="choice teacher-small-choice">${choice}</div>`;
+    }).join('');
+  } else if(q.type === 'tf'){
+    choicesHtml = `
+      <div class="choice teacher-small-choice">True</div>
+      <div class="choice teacher-small-choice">False</div>
+    `;
+  } else if(q.type === 'matching' && q.pairs){
+    choicesHtml = q.pairs.map(function(pair){
+      return `<div class="choice teacher-small-choice">${escapeHtml(pair.left)} → ${escapeHtml(pair.right)}</div>`;
+    }).join('');
+  }
+
+  questionsHtml = `
+    <div class="question teacher-small-question">
+      <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
+      <div style="margin-top:10px;">${choicesHtml}</div>
+    </div>
+
+    <div class="btns teacher-q-nav" style="margin-top:12px;">
+      <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
+      <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
+    </div>
+
+    <div class="small">Question ${currentIndex + 1} of ${content.questions.length}</div>
+  `;
+} else {
+  questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
+}
 
 wrap.className = '';
 wrap.classList.add('teacher-preview');
