@@ -883,8 +883,8 @@ function renderQuestion(q, stationId, index){
     body = (q.pairs || []).map(function(pair, pairIndex){
       const selectedValue = Array.isArray(savedAnswer) ? (savedAnswer[pairIndex] || '') : '';
       return `
-        <div class="choice" style="cursor:default;">
-          <div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
+<div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
+<div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
           <select data-match-index="${pairIndex}" ${disabled}>
             <option value="">Select answer</option>
             ${rights.map(function(right){
@@ -940,31 +940,74 @@ byId('stationContent').innerHTML =
   actionBtns;
   if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
 
-  if(submitted){
-    const student = liveStudents[currentStudent.id] || {};
-    const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
-    (ct.questions || []).forEach(function(q, i){
-      const wrap = byId('q_' + id + '_' + i);
-      if(!wrap) return;
-      const labels = wrap.querySelectorAll('.choice');
-      labels.forEach(function(lbl){
-        const input = lbl.querySelector('input');
-        if(!input) return;
-        if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
-          lbl.style.background = '#eafaf1';
-          lbl.style.borderColor = '#2ecc71';
-        }
-        if(savedAnswers[i] && normalizeAnswer(input.value) === normalizeAnswer(savedAnswers[i]) && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
-          lbl.style.background = '#fdecea';
-          lbl.style.borderColor = '#e74c3c';
+if(submitted){
+  const student = liveStudents[currentStudent.id] || {};
+  const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
+
+  (ct.questions || []).forEach(function(q, i){
+    const wrap = byId('q_' + id + '_' + i);
+    if(!wrap) return;
+
+    // MATCHING REVIEW
+    if(q.type === 'matching'){
+      const selects = wrap.querySelectorAll('select[data-match-index]');
+      const studentMatchAnswers = Array.isArray(savedAnswers[i]) ? savedAnswers[i] : [];
+      let correctCount = 0;
+
+      selects.forEach(function(sel, pairIndex){
+        const correctAnswer = q.pairs && q.pairs[pairIndex] ? q.pairs[pairIndex].right : '';
+        const studentAnswer = studentMatchAnswers[pairIndex] || '';
+
+        sel.value = studentAnswer;
+        sel.disabled = true;
+
+        if(normalizeAnswer(studentAnswer) === normalizeAnswer(correctAnswer)){
+          sel.style.background = '#eafaf1';
+          sel.style.borderColor = '#2ecc71';
+          correctCount++;
+        } else {
+          sel.style.background = '#fdecea';
+          sel.style.borderColor = '#e74c3c';
         }
       });
-      const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
-      wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
-      wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+
+      if(correctCount === (q.pairs || []).length){
+        wrap.classList.add('correct');
+        wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+      } else {
+        wrap.classList.add('wrong');
+        wrap.querySelector('.feedback').innerHTML =
+          '❌ Correct answers:<br>' +
+          (q.pairs || []).map(function(pair){
+            return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
+          }).join('<br>');
+      }
+
+      return;
+    }
+
+    // MCQ / TF REVIEW
+    const labels = wrap.querySelectorAll('.choice');
+    labels.forEach(function(lbl){
+      const input = lbl.querySelector('input');
+      if(!input) return;
+
+      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+        lbl.style.background = '#eafaf1';
+        lbl.style.borderColor = '#2ecc71';
+      }
+
+      if(savedAnswers[i] && normalizeAnswer(input.value) === normalizeAnswer(savedAnswers[i]) && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+        lbl.style.background = '#fdecea';
+        lbl.style.borderColor = '#e74c3c';
+      }
     });
-  }
-};
+
+    const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
+    wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
+    wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+  });
+}
 
 window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
