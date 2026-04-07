@@ -599,7 +599,6 @@ window.openTeacherView = async function(){
     }
     hideNotice('teacherNotice');
     localStorage.setItem('dl_role', 'teacher');
-    localStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
     showOnly('teacherView');
     fillTeacherSelects();
@@ -866,17 +865,15 @@ function renderQuestion(q, stationId, index){
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
-  }
-
-  else if(q.type === 'tf'){
+    
+  } else if(q.type === 'tf'){
     body = ['True','False'].map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
     }).join('');
-  }
-
-  else if(q.type === 'matching'){
+    
+  } else if(q.type === 'matching'){
     const rights = (q.pairs || []).map(function(pair){ return pair.right; });
     const disabled = submitted ? ' disabled' : '';
 
@@ -895,13 +892,11 @@ function renderQuestion(q, stationId, index){
         </div>
       `;
     }).join('');
-  }
-
-  else if(q.type === 'drag_gap'){
+    
+  } else if(q.type === 'drag_gap'){
     body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-  }
-
-  else {
+    
+  } else {
     body = '<div class="small">Unsupported question type</div>';
   }
 
@@ -1114,7 +1109,7 @@ questions.forEach(function(q, i){
         }).join('<br>');
     }
 
-  else {
+  } else {
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
@@ -1497,15 +1492,15 @@ window.renderCreatorQuestionsList = function(){
     if(q.type === 'mcq'){
       extra = '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' +
               '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
-    }
-    else if(q.type === 'tf'){
+      
+    } else if(q.type === 'tf'){
       extra = '<div class="small">Choices: True | False</div>' +
               '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
-    }
-    else if(q.type === 'matching'){
+      
+    } else if(q.type === 'matching'){
       extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
-    }
-    else if(q.type === 'drag_gap'){
+      
+    } else if(q.type === 'drag_gap'){
       extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
     }
 
@@ -1540,16 +1535,16 @@ window.editCreatorQuestion = function(index){
       return normalizeAnswer(c) === normalizeAnswer(q.answer);
     });
     byId('builderCorrectMcq').value = ['A','B','C','D'][correctIndex] || 'A';
-  }
-  else if(q.type === 'tf'){
+    
+  } else if(q.type === 'tf'){
     byId('builderCorrectTf').value = q.answer || 'True';
-  }
-  else if(q.type === 'matching'){
+    
+  } else if(q.type === 'matching'){
     byId('builderMatchingPairs').value = (q.pairs || []).map(function(pair){
       return (pair.left || '') + '|' + (pair.right || '');
     }).join('\n');
-  }
-  else if(q.type === 'drag_gap'){
+    
+  } else if(q.type === 'drag_gap'){
     byId('builderGapParts').value = (q.parts || []).join(' | ');
     byId('builderGapAnswers').value = (q.answers || []).join(', ');
     byId('builderGapWords').value = (q.words || []).join(', ');
@@ -1589,11 +1584,11 @@ window.addCreatorQuestion = function(){
 
     newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
     newQuestion.answer = { A: choiceA, B: choiceB, C: choiceC, D: choiceD }[correct];
-  }
-  else if(type === 'tf'){
+    
+  } else if(type === 'tf'){
     newQuestion.answer = byId('builderCorrectTf').value;
-  }
-  else if(type === 'matching'){
+    
+  } else if(type === 'matching'){
     const raw = byId('builderMatchingPairs').value.trim();
     if(!raw){
       alert('Please add matching pairs.');
@@ -1611,8 +1606,8 @@ window.addCreatorQuestion = function(){
         };
       })
       .filter(pair => pair.left && pair.right);
-  }
-  else if(type === 'drag_gap'){
+    
+  } else if(type === 'drag_gap'){
     const parts = byId('builderGapParts').value.split('|').map(x => x.trim());
     const answers = byId('builderGapAnswers').value.split(',').map(x => x.trim()).filter(Boolean);
     const words = byId('builderGapWords').value.split(',').map(x => x.trim()).filter(Boolean);
