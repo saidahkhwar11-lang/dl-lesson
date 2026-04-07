@@ -236,12 +236,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
           <div class="card" style="padding:12px;background:#f8fbff;">
             <label>Question Type</label>
             <select id="builderQuestionType" onchange="toggleBuilderFields()">
-              <option value="mcq">Multiple Choice</option>
-              <option value="tf">True / False</option>
-              <option value="matching">Matching</option>
-              <option value="drag_gap">Drag Gap Fill</option>
-              <option value="matching">Matching (Dropdown)</option>
-            </select>
+  <option value="mcq">Multiple Choice</option>
+  <option value="tf">True / False</option>
+  <option value="matching">Matching</option>
+  <option value="drag_gap">Drag Gap Fill</option>
+</select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
             <div id="builderMcqFields">
@@ -289,16 +288,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
                 <option value="False">False</option>
               </select>
             </div>
-            <div id="builderMatchingFields" class="hidden">
-  <label>Left Items (one per line)</label>
-  <textarea id="builderMatchLeft" placeholder="dreamless&#10;theta&#10;delta"></textarea>
 
-  <label>Right Options (one per line)</label>
-  <textarea id="builderMatchRight" placeholder="without dreams&#10;a brain wave&#10;another brain wave"></textarea>
-
-  <label>Correct Answers (in order)</label>
-  <textarea id="builderMatchAnswers" placeholder="without dreams&#10;a brain wave&#10;another brain wave"></textarea>
-</div>
             <div class="btns" style="margin-top:10px;">
               <button type="button" onclick="addCreatorQuestion()">Add Question</button>
               <button type="button" class="muted" onclick="clearQuestionBuilder()">Clear Current Question</button>
@@ -865,15 +855,15 @@ function renderQuestion(q, stationId, index){
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
-    
-  } else if(q.type === 'tf'){
+  }
+  else if(q.type === 'tf'){
     body = ['True','False'].map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
     }).join('');
-    
-  } else if(q.type === 'matching'){
+  }
+  else if(q.type === 'matching'){
     const rights = (q.pairs || []).map(function(pair){ return pair.right; });
     const disabled = submitted ? ' disabled' : '';
 
@@ -892,17 +882,16 @@ function renderQuestion(q, stationId, index){
         </div>
       `;
     }).join('');
-    
-  } else if(q.type === 'drag_gap'){
+  }
+  else if(q.type === 'drag_gap'){
     body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-    
-  } else {
+  }
+  else {
     body = '<div class="small">Unsupported question type</div>';
   }
 
   return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
-
 window.openStation = function(id){
   const st = getStationById(id);
   if(!st) return;
@@ -943,7 +932,6 @@ if(submitted){
     const wrap = byId('q_' + id + '_' + i);
     if(!wrap) return;
 
-    // MATCHING REVIEW
     if(q.type === 'matching'){
       const selects = wrap.querySelectorAll('select[data-match-index]');
       const studentMatchAnswers = Array.isArray(savedAnswers[i]) ? savedAnswers[i] : [];
@@ -981,7 +969,6 @@ if(submitted){
       return;
     }
 
-    // MCQ / TF REVIEW
     const labels = wrap.querySelectorAll('.choice');
     labels.forEach(function(lbl){
       const input = lbl.querySelector('input');
@@ -1454,7 +1441,6 @@ if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
 window.toggleBuilderFields = function(){
   const type = byId('builderQuestionType').value;
 
-  // hide/show all types
   byId('builderMcqFields').classList.toggle('hidden', type !== 'mcq');
   byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
   byId('builderMatchingFields').classList.toggle('hidden', type !== 'matching');
@@ -1471,9 +1457,9 @@ window.clearQuestionBuilder = function(){
   byId('builderCorrectMcq').value = 'A';
   byId('builderCorrectTf').value = 'True';
   byId('builderMatchingPairs').value = '';
-byId('builderGapParts').value = '';
-byId('builderGapAnswers').value = '';
-byId('builderGapWords').value = '';
+  byId('builderGapParts').value = '';
+  byId('builderGapAnswers').value = '';
+  byId('builderGapWords').value = '';
   toggleBuilderFields();
 };
 
