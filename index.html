@@ -983,9 +983,12 @@ if(submitted){
     const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
     wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
     wrap.querySelector('.feedback').innerHTML = wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+   
   });
 }
 
+};
+  
 window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
   if(isStationSubmitted(stationId)) return openStation(stationId);
