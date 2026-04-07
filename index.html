@@ -1114,7 +1114,7 @@ questions.forEach(function(q, i){
         }).join('<br>');
     }
 
-  } else {
+  else {
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
