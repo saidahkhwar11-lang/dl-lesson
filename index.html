@@ -898,9 +898,9 @@ window.openStation = function(id){
   currentOpenStation = id;
   renderStudentNav();
   const ct = getStationContent(id);
-  
-  const stationMinutes = ct.time || st.time || 0;
-startStationTimer(id, stationMinutes);
+const stationMinutes = ct.time || st.time || 0;
+// startStationTimer(id, stationMinutes);
+listenToStationTimer(id);
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
@@ -1817,17 +1817,94 @@ function startStationTimer(id, minutes){
   startStationTimer(stationId, minutes);
 }
 
-function teacherResetStationTimer(stationId){
+function timerPath(stationId){
+  return 'lessons/' + lessonKey + '/stationTimers/' + stationId;
+}
+
+window.teacherStartStationTimer = async function(stationId){
+  if(!requireConnection()) return;
+
   const st = getStationById(stationId);
   const ct = getStationContent(stationId);
   if(!st) return;
 
-  stopStationTimer();
+  const minutes = Number(ct.time || st.time || 0);
+
+  if(minutes <= 0){
+    alert('Please set time for this station first.');
+    return;
+  }
+
+  await dbRef(timerPath(stationId)).set({
+    running: true,
+    duration: minutes * 60,
+    startedAt: Date.now()
+  });
+
+  showNotice('controlNotice', 'Timer started.', 'good');
+};
+
+window.teacherResetStationTimer = async function(stationId){
+  if(!requireConnection()) return;
+
+  const st = getStationById(stationId);
+  const ct = getStationContent(stationId);
+  if(!st) return;
 
   const minutes = Number(ct.time || st.time || 0);
-  stationTimeLeft = Math.max(0, minutes * 60);
 
-  updateStationTimerDisplay();
+  await dbRef(timerPath(stationId)).set({
+    running: false,
+    duration: minutes * 60,
+    startedAt: null
+  });
+
+  showNotice('controlNotice', 'Timer reset.', 'good');
+};
+
+let liveTimerRef = null;
+
+function listenToStationTimer(stationId){
+  if(liveTimerRef){
+    liveTimerRef.off();
+    liveTimerRef = null;
+  }
+
+  const ref = dbRef(timerPath(stationId));
+  liveTimerRef = ref;
+
+  ref.on('value', function(snapshot){
+    const data = snapshot.val();
+
+    stopStationTimer();
+
+    if(!data){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
+      return;
+    }
+
+    const duration = Number(data.duration || 0);
+
+    if(!data.running){
+      stationTimeLeft = duration;
+      updateStationTimerDisplay();
+      return;
+    }
+
+    function tick(){
+      const elapsed = Math.floor((Date.now() - Number(data.startedAt || Date.now())) / 1000);
+      stationTimeLeft = Math.max(0, duration - elapsed);
+      updateStationTimerDisplay();
+
+      if(stationTimeLeft <= 0){
+        stopStationTimer();
+      }
+    }
+
+    tick();
+    stationTimerInterval = setInterval(tick, 1000);
+  });
 }
 </script>
 </body>
