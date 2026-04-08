@@ -898,7 +898,7 @@ window.openStation = function(id){
 const ct = getStationContent(id);
 const stationMinutes = Number(ct.time || st.time || 0);
 console.log('station', id, 'ct.time=', ct.time, 'st.time=', st.time, 'minutes=', stationMinutes);
-startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
+startStationTimerFromUnlock
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
