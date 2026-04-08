@@ -898,7 +898,7 @@ window.openStation = function(id){
   
   const stationMinutes = ct.time || st.time || 0;
 startStationTimer(id, stationMinutes);
-
+  
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
   const resultText = scoreTextForStudent(id);
@@ -1738,6 +1738,64 @@ document.addEventListener('DOMContentLoaded', function(){
 window.addEventListener('load', function(){
   loadSavedConfig();
 });
+
+  let stationTimerInterval = null;
+let stationTimeLeft = 0;
+let currentTimedStationId = null;
+
+function formatStationTime(totalSeconds){
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+}
+
+function stopStationTimer(){
+  if(stationTimerInterval){
+    clearInterval(stationTimerInterval);
+    stationTimerInterval = null;
+  }
+}
+
+function updateStationTimerDisplay(){
+  const timerBox = byId('studentStationTimer');
+  if(!timerBox) return;
+
+  const text = stationTimeLeft > 0
+    ? '⏳ Time Left: ' + formatStationTime(stationTimeLeft)
+    : '⛔ Time is up';
+
+  timerBox.classList.remove('hidden', 'time-low', 'time-up');
+  timerBox.innerHTML = text;
+
+  if(stationTimeLeft <= 0){
+    timerBox.classList.add('time-up');
+  } else if(stationTimeLeft <= 60){
+    timerBox.classList.add('time-low');
+  }
+}
+
+function startStationTimer(id, minutes){
+  stopStationTimer();
+  currentTimedStationId = id;
+  stationTimeLeft = Math.max(0, (Number(minutes) || 0) * 60);
+
+  updateStationTimerDisplay();
+
+  if(stationTimeLeft <= 0) return;
+
+  stationTimerInterval = setInterval(function(){
+    stationTimeLeft--;
+
+    if(stationTimeLeft <= 0){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
+      stopStationTimer();
+      return;
+    }
+
+    updateStationTimerDisplay();
+  }, 1000);
+}
   
 </script>
 </body>
