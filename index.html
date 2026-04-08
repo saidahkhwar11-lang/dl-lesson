@@ -189,10 +189,13 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <label>Select Station</label>
       <select id="controlStationSelect"></select>
       <div class="btns">
-        <button onclick="displaySelectedStation()">Display Station</button>
-        <button class="goodbtn" onclick="unlockSelectedStation()">Unlock Station</button>
-        <button class="warnbtn" onclick="lockSelectedStation()">Lock Station</button>
-      </div>
+  <button onclick="displaySelectedStation()">Display Station</button>
+  <button class="goodbtn" onclick="unlockSelectedStation()">Unlock Station</button>
+  <button class="warnbtn" onclick="lockSelectedStation()">Lock Station</button>
+
+  <button onclick="teacherStartStationTimer(byId('controlStationSelect').value)">▶ Start Timer</button>
+  <button class="secondary" onclick="teacherResetStationTimer(byId('controlStationSelect').value)">🔄 Reset Timer</button>
+</div>
       <div id="controlNotice" class="notice good hidden"></div>
       <div id="controlStatusWrap" style="margin-top:12px"></div>
     </div>
@@ -1359,7 +1362,7 @@ const creatorImageNotes = byId('creatorImageNotes');
 if(creatorTitle) creatorTitle.value = st.title || '';
 if(creatorObjective) creatorObjective.value = st.objective || '';
 if(creatorDetails) creatorDetails.value = st.details || '';
-if(creatorTime) creatorTime.value = st.time || '';
+if(creatorTime) creatorTime.value = ct.time || st.time || '';
 if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
 if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
 if(creatorVideoUrl) creatorVideoUrl.value = ct.videoUrl || '';
@@ -1566,15 +1569,17 @@ window.saveCreatorStation = async function(){
   const imageUrl = byId('creatorImageUrl').value.trim();
   const sourceText = byId('creatorSourceText').value.trim();
 
-  lessonStations = lessonStations.map(function(s){
-    return s.id === id ? Object.assign({}, s, {
-      title: byId('creatorTitle').value.trim() || s.title,
-      objective: byId('creatorObjective').value.trim() || s.objective,
-      details: byId('creatorDetails').value.trim() || s.details,
-      time: byId('creatorTime').value.trim() || s.time,
-      thumbnail: imageUrl
-    }) : s;
-  });
+  const stationTime = Number(byId('creatorTime').value.trim() || 0);
+
+lessonStations = lessonStations.map(function(s){
+  return s.id === id ? Object.assign({}, s, {
+    title: byId('creatorTitle').value.trim() || s.title,
+    objective: byId('creatorObjective').value.trim() || s.objective,
+    details: byId('creatorDetails').value.trim() || s.details,
+    time: stationTime,
+    thumbnail: imageUrl
+  }) : s;
+});
 
   if(!lessonContent[id]){
     lessonContent[id] = {
@@ -1592,6 +1597,7 @@ window.saveCreatorStation = async function(){
   lessonContent[id].imageNotes = byId('creatorImageNotes') ? byId('creatorImageNotes').value.trim() : '';
   lessonContent[id].audioUrl = byId('creatorAudioUrl') ? byId('creatorAudioUrl').value.trim() : '';
   lessonContent[id].videoUrl = byId('creatorVideoUrl') ? byId('creatorVideoUrl').value.trim() : '';
+  lessonContent[id].time = stationTime;
 
   lessonContent[id].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
   lessonContent[id].questions.forEach(function(q, idx){
@@ -1796,7 +1802,33 @@ function startStationTimer(id, minutes){
     updateStationTimerDisplay();
   }, 1000);
 }
-  
+  function teacherStartStationTimer(stationId){
+  const st = getStationById(stationId);
+  const ct = getStationContent(stationId);
+  if(!st) return;
+
+  const minutes = Number(ct.time || st.time || 0);
+
+  if(minutes <= 0){
+    alert('⚠️ Please set time for this station first');
+    return;
+  }
+
+  startStationTimer(stationId, minutes);
+}
+
+function teacherResetStationTimer(stationId){
+  const st = getStationById(stationId);
+  const ct = getStationContent(stationId);
+  if(!st) return;
+
+  stopStationTimer();
+
+  const minutes = Number(ct.time || st.time || 0);
+  stationTimeLeft = Math.max(0, minutes * 60);
+
+  updateStationTimerDisplay();
+}
 </script>
 </body>
 </html>
