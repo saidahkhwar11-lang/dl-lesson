@@ -700,20 +700,28 @@ if(content.questions && content.questions.length){
 
 wrap.className = '';
 wrap.classList.add('teacher-preview');
-  wrap.innerHTML = `
-    <div class="preview-left teacher-preview-left-large">
-      <h3 style="margin-top:0;">${station.title}</h3>
-      <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
-      <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
-      <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
-      ${imageHtml}
-${audioHtml}
-${videoHtml}
 
-<div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
-  Use <strong>Station Control</strong> below to display, unlock, or lock this station.
-</div>
-</div>
+wrap.innerHTML = `
+  <div class="preview-left teacher-preview-left-large">
+
+    <h3 style="margin-top:0;">${station.title}</h3>
+
+    <!-- 🔥 Teacher Timer -->
+    <div id="teacherStationTimer" class="station-live-timer hidden"></div>
+
+    <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
+    <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
+    <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
+
+    ${imageHtml}
+    ${audioHtml}
+    ${videoHtml}
+
+    <div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
+      Use <strong>Station Control</strong> below to display, unlock, or lock this station.
+    </div>
+
+  </div>
 
     <div class="preview-right teacher-preview-right-small teacher-preview-questions">
       <h3 style="margin-top:0;">Questions</h3>
@@ -1781,29 +1789,33 @@ function stopStationTimer(){
 }
 
 function updateStationTimerDisplay(){
-  const timerBox = byId('studentStationTimer');
-  if(!timerBox) return;
+  const studentTimerBox = byId('studentStationTimer');
+  const teacherTimerBox = byId('teacherStationTimer');
 
   if(currentTimedStationId === 'starter'){
-    timerBox.classList.add('hidden');
+    if(studentTimerBox) studentTimerBox.classList.add('hidden');
+    if(teacherTimerBox) teacherTimerBox.classList.add('hidden');
     return;
   }
-
-  timerBox.classList.remove('hidden', 'time-low', 'time-up');
 
   const text = stationTimeLeft > 0
     ? '⏳ Time Left: ' + formatStationTime(stationTimeLeft)
     : '⛔ Time is up';
 
-  timerBox.innerHTML = text;
+  [studentTimerBox, teacherTimerBox].forEach(function(timerBox){
+    if(!timerBox) return;
 
-  if(stationTimeLeft <= 0){
-    timerBox.classList.add('time-up');
-  } else if(stationTimeLeft <= 60){
-    timerBox.classList.add('time-low');
-  }
+    timerBox.classList.remove('hidden', 'time-low', 'time-up');
+    timerBox.innerHTML = text;
+
+    if(stationTimeLeft <= 0){
+      timerBox.classList.add('time-up');
+    } else if(stationTimeLeft <= 60){
+      timerBox.classList.add('time-low');
+    }
+  });
 }
-
+  
 function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
