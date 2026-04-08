@@ -1802,36 +1802,30 @@ function startStationTimer(id, minutes){
     updateStationTimerDisplay();
   }, 1000);
 }
-  function teacherStartStationTimer(stationId){
-  const st = getStationById(stationId);
-  const ct = getStationContent(stationId);
-  if(!st) return;
-
-  const minutes = Number(ct.time || st.time || 0);
-
-  if(minutes <= 0){
-    alert('⚠️ Please set time for this station first');
-    return;
-  }
-
-  startStationTimer(stationId, minutes);
-}
-
-function timerPath(stationId){
+ 
+  function timerPath(stationId){
   return 'lessons/' + lessonKey + '/stationTimers/' + stationId;
 }
 
 window.teacherStartStationTimer = async function(stationId){
-  if(!requireConnection()) return;
+  console.log('Start timer clicked for:', stationId);
 
   const st = getStationById(stationId);
   const ct = getStationContent(stationId);
-  if(!st) return;
+  if(!st){
+    alert('Station not found');
+    return;
+  }
 
   const minutes = Number(ct.time || st.time || 0);
 
   if(minutes <= 0){
     alert('Please set time for this station first.');
+    return;
+  }
+
+  if(typeof lessonKey === 'undefined' || !lessonKey){
+    alert('lessonKey is missing');
     return;
   }
 
@@ -1845,13 +1839,21 @@ window.teacherStartStationTimer = async function(stationId){
 };
 
 window.teacherResetStationTimer = async function(stationId){
-  if(!requireConnection()) return;
+  console.log('Reset timer clicked for:', stationId);
 
   const st = getStationById(stationId);
   const ct = getStationContent(stationId);
-  if(!st) return;
+  if(!st){
+    alert('Station not found');
+    return;
+  }
 
   const minutes = Number(ct.time || st.time || 0);
+
+  if(typeof lessonKey === 'undefined' || !lessonKey){
+    alert('lessonKey is missing');
+    return;
+  }
 
   await dbRef(timerPath(stationId)).set({
     running: false,
