@@ -899,7 +899,7 @@ window.openStation = function(id){
   renderStudentNav();
   const ct = getStationContent(id);
 const stationMinutes = ct.time || st.time || 0;
-// startStationTimer(id, stationMinutes);
+ startStationTimer(id, stationMinutes);
 listenToStationTimer(id);
   
   const submitted = isStationSubmitted(id);
@@ -1806,71 +1806,6 @@ function startStationTimer(id, minutes){
   function timerPath(stationId){
   return 'lessons/' + lessonKey + '/stationTimers/' + stationId;
 }
-
-window.teacherStartStationTimer = async function(stationId){
-  console.log('Start timer clicked for:', stationId);
-
-  const st = getStationById(stationId);
-  const ct = getStationContent(stationId);
-  if(!st){
-    alert('Station not found');
-    return;
-  }
-
-  const minutes = Number(ct.time || st.time || 0);
-
-  if(minutes <= 0){
-    alert('Please set time for this station first.');
-    return;
-  }
-
-  if(typeof lessonKey === 'undefined' || !lessonKey){
-    alert('lessonKey is missing');
-    return;
-  }
-
-  await dbRef(timerPath(stationId)).set({
-    running: true,
-    duration: minutes * 60,
-    startedAt: Date.now()
-  });
-
-  showNotice('controlNotice', 'Timer started.', 'good');
-};
-
-window.teacherResetStationTimer = async function(stationId){
-  console.log('Reset timer clicked for:', stationId);
-
-  const st = getStationById(stationId);
-  const ct = getStationContent(stationId);
-  if(!st){
-    alert('Station not found');
-    return;
-  }
-
-  const minutes = Number(ct.time || st.time || 0);
-
-  if(typeof lessonKey === 'undefined' || !lessonKey){
-    alert('lessonKey is missing');
-    return;
-  }
-
-  await dbRef(timerPath(stationId)).set({
-    running: false,
-    duration: minutes * 60,
-    startedAt: null
-  });
-
-  showNotice('controlNotice', 'Timer reset.', 'good');
-};
-
-window.teacherStartStationTimer = async function(stationId){
-  alert('Start button works: ' + stationId);
-};
-
-window.teacherResetStationTimer = async function(stationId){
-  alert('Reset button works: ' + stationId);
-};
 
 let liveTimerRef = null;
 
