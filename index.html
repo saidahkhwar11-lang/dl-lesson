@@ -897,7 +897,6 @@ window.openStation = function(id){
   
 const ct = getStationContent(id);
 const stationMinutes = Number(st.time || 0);
-alert('Station: ' + id + '\nst.time = ' + st.time + '\nminutes = ' + stationMinutes + '\ntimerStartedAt = ' + st.timerStartedAt);
 startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   
   const submitted = isStationSubmitted(id);
@@ -1587,7 +1586,8 @@ window.saveCreatorStation = async function(){
   const imageUrl = byId('creatorImageUrl').value.trim();
   const sourceText = byId('creatorSourceText').value.trim();
 
-  const stationTime = Number(byId('creatorTime').value.trim() || 0);
+  const rawTime = byId('creatorTime').value.trim();
+const stationTime = Number(rawTime.replace(/[^\d]/g, '')) || 0;
 
 lessonStations = lessonStations.map(function(s){
   return s.id === id ? Object.assign({}, s, {
