@@ -898,7 +898,7 @@ window.openStation = function(id){
 const ct = getStationContent(id);
 const stationMinutes = Number(ct.time || st.time || 0);
 console.log('station', id, 'ct.time=', ct.time, 'st.time=', st.time, 'minutes=', stationMinutes);
-startStationTimerFromUnlock
+startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
@@ -1795,29 +1795,32 @@ function updateStationTimerDisplay(){
   }
 }
 
-function startStationTimer(id, minutes){
+function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
-  currentTimedStationId = id;
-  stationTimeLeft = Math.max(0, (Number(minutes) || 0) * 60);
+  currentTimedStationId = stationId;
 
-  updateStationTimerDisplay();
+  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
 
-  if(stationTimeLeft <= 0) return;
-
-  stationTimerInterval = setInterval(function(){
-    stationTimeLeft--;
-
-    if(stationTimeLeft <= 0){
-      stationTimeLeft = 0;
+  function tick(){
+    if(!timerStartedAt){
+      stationTimeLeft = totalSeconds;
       updateStationTimerDisplay();
-      stopStationTimer();
       return;
     }
 
+    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
+    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
     updateStationTimerDisplay();
-  }, 1000);
-}
 
+    if(stationTimeLeft <= 0){
+      stopStationTimer();
+    }
+  }
+
+  tick();
+  stationTimerInterval = setInterval(tick, 1000);
+}
+  
 function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
 
