@@ -896,7 +896,7 @@ window.openStation = function(id){
   renderStudentNav();
   
 const ct = getStationContent(id);
-const stationMinutes = Number(ct.time || st.time || 0);
+const stationMinutes = Number(st.time || 0);
 console.log('station', id, 'ct.time=', ct.time, 'st.time=', st.time, 'minutes=', stationMinutes);
 startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   
@@ -1318,7 +1318,7 @@ function renderTeacherOverview(){
   box.innerHTML = lessonStations.map(function(s){
     return '<div class="item teacher-station-card ' + (s.displayed ? 'active' : '') + '" onclick="openTeacherStationPreview(\'' + s.id + '\')">' +
       '<strong>' + s.title + '</strong>' +
-      '<div class="small">' + (s.unlocked ? '🔓 Unlocked' : '🔒 Locked') + ' | ' + s.time + '</div>' +
+      '<div class="small">' + (s.unlocked ? '🔓 Unlocked' : '🔒 Locked') + ' | ⏱ ' + (s.id === 'starter' ? 'No timer' : ((s.time || 0) + ' min')) + '</div>' +
       '<div class="small">' + s.objective + '</div>' +
     '</div>';
   }).join('');
@@ -1340,15 +1340,18 @@ window.unlockSelectedStation = async function(){
     if(s.id === id){
       return Object.assign({}, s, {
         unlocked: true,
-        timerStartedAt: Date.now()   // 🔥 THIS STARTS THE TIMER
+        timerStartedAt: id === 'starter' ? null : Date.now()
       });
     }
     return s;
   });
 
   await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Station unlocked & timer started.','good');
+  showNotice('controlNotice', id === 'starter'
+    ? 'Starter unlocked.'
+    : 'Station unlocked and timer started.', 'good');
 };
+  
 window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
 
 window.handleCreatorImage = function(event){
@@ -1377,7 +1380,7 @@ const creatorImageNotes = byId('creatorImageNotes');
 if(creatorTitle) creatorTitle.value = st.title || '';
 if(creatorObjective) creatorObjective.value = st.objective || '';
 if(creatorDetails) creatorDetails.value = st.details || '';
-if(creatorTime) creatorTime.value = ct.time || st.time || '';
+if(creatorTime) creatorTime.value = st.time || '';
 if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
 if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
 if(creatorVideoUrl) creatorVideoUrl.value = ct.videoUrl || '';
@@ -1781,11 +1784,17 @@ function updateStationTimerDisplay(){
   const timerBox = byId('studentStationTimer');
   if(!timerBox) return;
 
+  if(currentTimedStationId === 'starter'){
+    timerBox.classList.add('hidden');
+    return;
+  }
+
+  timerBox.classList.remove('hidden', 'time-low', 'time-up');
+
   const text = stationTimeLeft > 0
     ? '⏳ Time Left: ' + formatStationTime(stationTimeLeft)
     : '⛔ Time is up';
 
-  timerBox.classList.remove('hidden', 'time-low', 'time-up');
   timerBox.innerHTML = text;
 
   if(stationTimeLeft <= 0){
