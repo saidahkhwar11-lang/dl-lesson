@@ -617,8 +617,7 @@ window.openTeacherStationPreview = function(id){
 
   if(!wrap || !station) return;
 
-  const stationMinutes = Number(station.time || 0);
-  startStationTimerFromUnlock(id, stationMinutes, station.timerStartedAt);
+  
 
   let imageHtml = '';
   let audioHtml = '';
@@ -733,7 +732,6 @@ wrap.innerHTML = `
         : questionsHtml}
     </div>
 
-updateStationTimerDisplay();
 };
   
 window.toggleTeacherQuestions = function(id){
