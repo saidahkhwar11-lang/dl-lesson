@@ -614,6 +614,9 @@ window.openTeacherStationPreview = function(id){
   const wrap = byId('teacherStationPreview');
   const station = getStationById(id);
   const content = getStationContent(id);
+  
+  const stationMinutes = Number(station.time || 0);
+startStationTimerFromUnlock(id, stationMinutes, station.timerStartedAt);
 
   if(!wrap || !station) return;
 
@@ -729,7 +732,8 @@ wrap.innerHTML = `
         ? '<div class="teacher-preview-empty">Questions hidden</div>'
         : questionsHtml}
     </div>
-  `;
+
+updateStationTimerDisplay();
 };
   
 window.toggleTeacherQuestions = function(id){
