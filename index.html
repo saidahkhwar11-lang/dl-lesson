@@ -898,7 +898,7 @@ window.openStation = function(id){
 const ct = getStationContent(id);
 const stationMinutes = Number(ct.time || st.time || 0);
 console.log('station', id, 'ct.time=', ct.time, 'st.time=', st.time, 'minutes=', stationMinutes);
-startStationTimer(id, stationMinutes);
+startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
@@ -1331,7 +1331,24 @@ function renderControlStatus(){
 }
 
 window.displaySelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return Object.assign({}, s, {displayed:s.id === id}); }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Displayed station updated.','good'); };
-window.unlockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:true}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station unlocked.','good'); };
+window.unlockSelectedStation = async function(){
+  if(!requireConnection()) return;
+
+  const id = byId('controlStationSelect').value;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === id){
+      return Object.assign({}, s, {
+        unlocked: true,
+        timerStartedAt: Date.now()   // 🔥 THIS STARTS THE TIMER
+      });
+    }
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+  showNotice('controlNotice','Station unlocked & timer started.','good');
+};
 window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
 
 window.handleCreatorImage = function(event){
@@ -1800,7 +1817,33 @@ function startStationTimer(id, minutes){
     updateStationTimerDisplay();
   }, 1000);
 }
- 
+
+function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
+  stopStationTimer();
+
+  currentTimedStationId = stationId;
+
+  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
+
+  function tick(){
+    if(!timerStartedAt){
+      stationTimeLeft = totalSeconds;
+      updateStationTimerDisplay();
+      return;
+    }
+
+    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
+    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
+    updateStationTimerDisplay();
+
+    if(stationTimeLeft <= 0){
+      stopStationTimer();
+    }
+  }
+
+  tick();
+  stationTimerInterval = setInterval(tick, 1000);
+}
   
 </script>
 </body>
