@@ -192,10 +192,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button onclick="displaySelectedStation()">Display Station</button>
   <button class="goodbtn" onclick="unlockSelectedStation()">Unlock Station</button>
   <button class="warnbtn" onclick="lockSelectedStation()">Lock Station</button>
-
-  <button onclick="teacherStartStationTimer(byId('controlStationSelect').value)">▶ Start Timer</button>
-  <button class="secondary" onclick="teacherResetStationTimer(byId('controlStationSelect').value)">🔄 Reset Timer</button>
-</div>
+  </div>
       <div id="controlNotice" class="notice good hidden"></div>
       <div id="controlStatusWrap" style="margin-top:12px"></div>
     </div>
@@ -897,10 +894,10 @@ window.openStation = function(id){
   if(!st.unlocked && id !== 'starter') return;
   currentOpenStation = id;
   renderStudentNav();
-  const ct = getStationContent(id);
-const stationMinutes = ct.time || st.time || 0;
- startStationTimer(id, stationMinutes);
-listenToStationTimer(id);
+  
+const ct = getStationContent(id);
+const stationMinutes = Number(ct.time || st.time || 0);
+startStationTimer(id, stationMinutes);
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
@@ -1803,54 +1800,7 @@ function startStationTimer(id, minutes){
   }, 1000);
 }
  
-  function timerPath(stationId){
-  return 'lessons/' + lessonKey + '/stationTimers/' + stationId;
-}
-
-let liveTimerRef = null;
-
-function listenToStationTimer(stationId){
-  if(liveTimerRef){
-    liveTimerRef.off();
-    liveTimerRef = null;
-  }
-
-  const ref = dbRef(timerPath(stationId));
-  liveTimerRef = ref;
-
-  ref.on('value', function(snapshot){
-    const data = snapshot.val();
-
-    stopStationTimer();
-
-    if(!data){
-      stationTimeLeft = 0;
-      updateStationTimerDisplay();
-      return;
-    }
-
-    const duration = Number(data.duration || 0);
-
-    if(!data.running){
-      stationTimeLeft = duration;
-      updateStationTimerDisplay();
-      return;
-    }
-
-    function tick(){
-      const elapsed = Math.floor((Date.now() - Number(data.startedAt || Date.now())) / 1000);
-      stationTimeLeft = Math.max(0, duration - elapsed);
-      updateStationTimerDisplay();
-
-      if(stationTimeLeft <= 0){
-        stopStationTimer();
-      }
-    }
-
-    tick();
-    stationTimerInterval = setInterval(tick, 1000);
-  });
-}
+  
 </script>
 </body>
 </html>
