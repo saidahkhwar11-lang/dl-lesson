@@ -887,6 +887,7 @@ function renderQuestion(q, stationId, index){
 
   return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
+  
 window.openStation = function(id){
   const st = getStationById(id);
   if(!st) return;
@@ -894,6 +895,10 @@ window.openStation = function(id){
   currentOpenStation = id;
   renderStudentNav();
   const ct = getStationContent(id);
+  
+  const stationMinutes = ct.time || st.time || 0;
+startStationTimer(id, stationMinutes);
+
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
   const resultText = scoreTextForStudent(id);
@@ -905,9 +910,11 @@ const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:
   const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
   const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
   const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
-  const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
+const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
+
 byId('stationContent').innerHTML =
   '<h2>' + escapeHtml(st.title) + '</h2>' +
+  '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
   '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
   '<p>' + escapeHtml(st.details || '') + '</p>' +
   imageBlock +
@@ -917,7 +924,10 @@ byId('stationContent').innerHTML =
   submittedNote +
   questionsHtml +
   actionBtns;
-  if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
+
+updateStationTimerDisplay();
+
+if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
 
 if(submitted){
   const student = liveStudents[currentStudent.id] || {};
