@@ -1864,6 +1864,14 @@ window.teacherResetStationTimer = async function(stationId){
   showNotice('controlNotice', 'Timer reset.', 'good');
 };
 
+window.teacherStartStationTimer = async function(stationId){
+  alert('Start button works: ' + stationId);
+};
+
+window.teacherResetStationTimer = async function(stationId){
+  alert('Reset button works: ' + stationId);
+};
+
 let liveTimerRef = null;
 
 function listenToStationTimer(stationId){
