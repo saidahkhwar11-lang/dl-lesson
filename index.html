@@ -617,121 +617,50 @@ window.openTeacherStationPreview = function(id){
 
   if(!wrap || !station) return;
 
-  
-
   let imageHtml = '';
   let audioHtml = '';
-if(content.audioUrl){
-  audioHtml = `
-    <audio controls style="width:100%; margin-bottom:12px;">
-      <source src="${content.audioUrl}">
-    </audio>
-  `;
-}
-  
-let videoHtml = '';
-if(content.videoUrl){
-  videoHtml = `
-    <video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;">
-      <source src="${content.videoUrl}">
-    </video>
-  `;
-}
+  let videoHtml = '';
+
   if(content.imageUrl){
     imageHtml = `
-      <img class="teacher-big-img" src="${content.imageUrl}" alt="Station Image">
-      <div class="image-actions">
-        <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">Maximize Picture</button>
-      </div>
+      <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
     `;
-  } else {
-    imageHtml = `<div class="teacher-preview-empty">No activity picture added yet.</div>`;
   }
 
-  let questionsHtml = '';
-
-if(content.questions && content.questions.length){
-  if(typeof teacherQuestionIndex[id] !== 'number'){
-    teacherQuestionIndex[id] = 0;
-  }
-
-  if(teacherQuestionIndex[id] < 0){
-    teacherQuestionIndex[id] = 0;
-  }
-
-  if(teacherQuestionIndex[id] > content.questions.length - 1){
-    teacherQuestionIndex[id] = content.questions.length - 1;
-  }
-
-  const currentIndex = teacherQuestionIndex[id];
-  const q = content.questions[currentIndex];
-
-  let choicesHtml = '';
-
-  if(q.type === 'mcq' && q.choices){
-    choicesHtml = q.choices.map(function(choice){
-      return `<div class="choice teacher-small-choice">${choice}</div>`;
-    }).join('');
-  } else if(q.type === 'tf'){
-    choicesHtml = `
-      <div class="choice teacher-small-choice">True</div>
-      <div class="choice teacher-small-choice">False</div>
+  if(content.audioUrl){
+    audioHtml = `
+      <audio controls style="width:100%; margin-bottom:12px;">
+        <source src="${content.audioUrl}">
+      </audio>
     `;
-  } else if(q.type === 'matching' && q.pairs){
-    choicesHtml = q.pairs.map(function(pair){
-      return `<div class="choice teacher-small-choice">${escapeHtml(pair.left)} → ${escapeHtml(pair.right)}</div>`;
-    }).join('');
   }
 
-  questionsHtml = `
-    <div class="question teacher-small-question">
-      <div><strong>Q${currentIndex + 1}.</strong> ${q.text}</div>
-      <div style="margin-top:10px;">${choicesHtml}</div>
+  if(content.videoUrl){
+    videoHtml = `
+      <video controls style="width:100%; max-height:400px; margin-bottom:12px;">
+        <source src="${content.videoUrl}">
+      </video>
+    `;
+  }
+
+  wrap.className = '';
+  wrap.classList.add('teacher-preview');
+
+  wrap.innerHTML = `
+    <div class="preview-left teacher-preview-left-large">
+      <h3>${station.title}</h3>
+      <div>🎯 ${station.objective || ''}</div>
+      <div>⏱ ${station.time || ''}</div>
+      <div>📝 ${station.details || ''}</div>
+      ${imageHtml}
+      ${audioHtml}
+      ${videoHtml}
     </div>
 
-    <div class="btns teacher-q-nav" style="margin-top:12px;">
-      <button type="button" onclick="prevTeacherQuestion('${id}')">⬅️ Previous</button>
-      <button type="button" onclick="nextTeacherQuestion('${id}')">Next ➡️</button>
+    <div class="preview-right teacher-preview-right-small">
+      <h3>Questions</h3>
     </div>
-
-    <div class="small">Question ${currentIndex + 1} of ${content.questions.length}</div>
   `;
-} else {
-  questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
-}
-
-wrap.className = '';
-wrap.classList.add('teacher-preview');
-
-wrap.innerHTML = `
-  <div class="preview-left teacher-preview-left-large">
-
-    <h3 style="margin-top:0;">${station.title}</h3>
-
-    <!-- 🔥 Teacher Timer -->
-    <div id="teacherStationTimer" class="station-live-timer hidden"></div>
-
-    <div class="small" style="margin-bottom:8px;">🎯 ${station.objective}</div>
-    <div class="small" style="margin-bottom:8px;">⏱ ${station.time}</div>
-    <div class="small" style="margin-bottom:12px;">📝 ${station.details || ''}</div>
-
-    ${imageHtml}
-    ${audioHtml}
-    ${videoHtml}
-
-    <div class="small" style="margin-top:12px; padding:10px; background:#f8fbff; border:1px solid var(--line); border-radius:12px;">
-      Use <strong>Station Control</strong> below to display, unlock, or lock this station.
-    </div>
-
-  </div>
-
-    <div class="preview-right teacher-preview-right-small teacher-preview-questions">
-      <h3 style="margin-top:0;">Questions</h3>
-      ${teacherQuestionVisibility[station.id] === false
-        ? '<div class="teacher-preview-empty">Questions hidden</div>'
-        : questionsHtml}
-    </div>
-
 };
   
 window.toggleTeacherQuestions = function(id){
