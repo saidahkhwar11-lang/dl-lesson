@@ -198,6 +198,20 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
 
     <div id="teacherCreatorCard" class="card hidden">
+      <hr>
+
+<h3>📘 Lesson Info (for all stations)</h3>
+
+<label>Lesson Title</label>
+<input id="lessonTitleInput" type="text" placeholder="Enter lesson title">
+
+<label>Lesson Objectives</label>
+<textarea id="lessonObjectivesInput" placeholder="Enter lesson objectives"></textarea>
+
+<label>Keywords</label>
+<input id="lessonKeywordsInput" type="text" placeholder="Enter keywords (comma separated)">
+
+<hr>
       <h2>Lesson Creator</h2>
       <label>Select Station</label>
       <select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
@@ -389,6 +403,11 @@ let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, st
 let creatorDraftQuestions = [];
 let teacherQuestionVisibility = {};
 let teacherQuestionIndex = {};
+  let lessonMeta = {
+  lessonTitle: '',
+  lessonObjectives: '',
+  lessonKeywords: ''
+};
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -1573,6 +1592,11 @@ function createQuestion(id, type, text, answer, choices){ return {id:id, type:ty
 window.saveCreatorStation = async function(){
   if(!requireConnection()) return;
 
+  // 🔥 Save Lesson Info
+lessonMeta.lessonTitle = byId('lessonTitleInput')?.value.trim() || '';
+lessonMeta.lessonObjectives = byId('lessonObjectivesInput')?.value.trim() || '';
+lessonMeta.lessonKeywords = byId('lessonKeywordsInput')?.value.trim() || '';
+
   const id = byId('creatorStationSelect').value;
   const imageUrl = byId('creatorImageUrl').value.trim();
   const sourceText = byId('creatorSourceText').value.trim();
@@ -1615,6 +1639,7 @@ lessonStations = lessonStations.map(function(s){
 
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
+  await dbRef('lessons/' + lessonKey + '/lessonMeta').set(lessonMeta);
 
   creatorDraftQuestions = JSON.parse(JSON.stringify(lessonContent[id].questions || []));
   renderCreatorQuestionsList();
