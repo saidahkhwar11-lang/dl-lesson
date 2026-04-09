@@ -5,6 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Grade 9 English Lesson</title>
   <style>
+  .lesson-popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.45);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.lesson-popup.hidden{
+  display:none;
+}
+
+.lesson-popup-card{
+  width:min(680px, 92%);
+  max-height:85vh;
+  overflow:auto;
+  background:#fff;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 12px 30px rgba(0,0,0,0.18);
+}
+
+.lesson-popup-card h3{
+  margin-top:0;
+  margin-bottom:8px;
+}
+
+.lesson-popup-msg{
+  font-weight:600;
+  color:#c0392b;
+  margin-bottom:14px;
+}
 .lesson-info-box{
   margin:14px 0;
   padding:14px;
@@ -404,6 +438,53 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-storage-compat.js"></script>
 
 <script>
+
+  function buildLessonInfoBoxHtml(){
+  return (
+    '<div class="lesson-info-box">' +
+      '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
+
+      '<div class="lesson-section">' +
+        '<div class="lesson-label">🎯 Objectives</div>' +
+        '<ul class="lesson-list">' +
+          (lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(function(obj){ return obj.trim(); })
+            .map(function(obj){
+              return '<li>' + escapeHtml(obj) + '</li>';
+            }).join('') +
+        '</ul>' +
+      '</div>' +
+
+      '<div class="lesson-section">' +
+        '<div class="lesson-label">🔑 Keywords</div>' +
+        '<div class="lesson-tags">' +
+          (lessonMeta.lessonKeywords || '')
+            .split(',')
+            .filter(function(k){ return k.trim(); })
+            .map(function(k){
+              return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
+            }).join('') +
+        '</div>' +
+      '</div>' +
+    '</div>'
+  );
+}
+
+function showLessonInfoPopup(){
+  const popup = byId('lessonInfoPopup');
+  const content = byId('lessonPopupContent');
+  if(!popup || !content) return;
+
+  content.innerHTML = buildLessonInfoBoxHtml();
+  popup.classList.remove('hidden');
+}
+
+function closeLessonInfoPopup(){
+  const popup = byId('lessonInfoPopup');
+  if(!popup) return;
+  popup.classList.add('hidden');
+}
 function storageRef(path){
   return firebase.storage().ref(path);
 }
@@ -1004,12 +1085,19 @@ window.openStation = function(id){
   const st = getStationById(id);
   if(!st) return;
   if(!st.unlocked && id !== 'starter') return;
+  const previousStation = currentOpenStation;
   currentOpenStation = id;
   renderStudentNav();
 
   const ct = getStationContent(id);
   const stationMinutes = Number(st.time || 0);
   const submitted = isStationSubmitted(id);
+
+  if(id === 'st1' && currentOpenStation !== 'st1'){
+  setTimeout(function(){
+    showLessonInfoPopup();
+  }, 100);
+}
 
   const studentLessonBox =
     '<div class="lesson-info-box">' +
@@ -1084,6 +1172,10 @@ window.openStation = function(id){
     submittedNote +
     questionsHtml +
     actionBtns;
+
+  if(id === 'st1' && previousStation === 'starter'){
+  showLessonInfoPopup();
+}
 
   startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   updateStationTimerDisplay();
@@ -2034,5 +2126,18 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 }
   
 </script>
+    
+      <div id="lessonInfoPopup" class="lesson-popup hidden">
+  <div class="lesson-popup-card">
+    <h3>Before You Start Station 1</h3>
+    <p class="lesson-popup-msg">Read the objectives before starting Station 1.</p>
+
+    <div id="lessonPopupContent"></div>
+
+    <div class="btns" style="margin-top:14px;">
+      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
