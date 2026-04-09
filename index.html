@@ -643,13 +643,9 @@ window.openTeacherStationPreview = function(id){
 
   let questionsHtml = '';
   if(content.questions && content.questions.length){
-   questionsHtml = content.questions.map(function(q,i){
-  return `
-    <div class="teacher-question" style="margin-bottom:10px;">
-      <strong>${i+1}.</strong> ${q.question || q.text || 'No question text'}
-    </div>
-  `;
-}).join(''););
+  questionsHtml = content.questions.map(function(q,i){
+  return '<div class="teacher-question" style="margin-bottom:10px;"><strong>' + (i+1) + '.</strong> ' + escapeHtml(q.question || q.text || 'No question text') + '</div>';
+}).join('');
   } else {
     questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
   }
