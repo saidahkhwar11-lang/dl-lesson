@@ -287,8 +287,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
   </div>
   <div style="text-align:center; margin-top:14px;">
-  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
-</div>
+<button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
+  </div>
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
@@ -2255,13 +2255,15 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
 function downloadLessonPlan(){
   try{
-    const lessonMeta = window.liveLessonMeta || {};
-    const stationsSource = window.liveStations || window.defaultStations || [];
+    const lessonMeta = (typeof liveLessonMeta !== 'undefined' && liveLessonMeta) ||
+                   (typeof lessonMeta !== 'undefined' && lessonMeta) ||
+                   {};
 
-    if(!stationsSource.length){
-      alert('No lesson is loaded yet. Please load the lesson first.');
-      return;
-    }
+const stationsSource = (typeof liveStations !== 'undefined' && liveStations) ||
+                       (typeof stations !== 'undefined' && stations) ||
+                       (typeof defaultStations !== 'undefined' && defaultStations) ||
+                       [];
+
 
     const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
 
