@@ -642,13 +642,51 @@ window.openTeacherStationPreview = function(id){
   }
 
   let questionsHtml = '';
-  if(content.questions && content.questions.length){
-  questionsHtml = content.questions.map(function(q,i){
-  return '<div class="teacher-question" style="margin-bottom:10px;"><strong>' + (i+1) + '.</strong> ' + escapeHtml(q.question || q.text || 'No question text') + '</div>';
-}).join('');
-  } else {
-    questionsHtml = `<div class="teacher-preview-empty">No questions added yet.</div>`;
-  }
+
+if(content.questions && content.questions.length){
+  questionsHtml = content.questions.map(function(q, i){
+    const questionText = escapeHtml(q.question || q.text || 'No question text');
+    let extraHtml = '';
+
+    if(q.type === 'mcq'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        (q.choices || []).map(function(choice){
+          return '<div class="teacher-small-choice">• ' + escapeHtml(choice) + '</div>';
+        }).join('') +
+      '</div>';
+    }
+
+    else if(q.type === 'tf'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        '<div class="teacher-small-choice">• True</div>' +
+        '<div class="teacher-small-choice">• False</div>' +
+      '</div>';
+    }
+
+    else if(q.type === 'matching'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        (q.pairs || []).map(function(pair){
+          return '<div class="teacher-small-choice">• ' +
+            escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right) +
+          '</div>';
+        }).join('') +
+      '</div>';
+    }
+
+    else if(q.type === 'drag_gap'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        '<div class="teacher-small-choice">• Answer: ' + escapeHtml(q.answer || '') + '</div>' +
+      '</div>';
+    }
+
+    return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
+      '<strong>' + (i + 1) + '.</strong> ' + questionText +
+      extraHtml +
+    '</div>';
+  }).join('');
+} else {
+  questionsHtml = '<div class="teacher-preview-empty">No questions added yet.</div>';
+}
 
   wrap.className = '';
   wrap.classList.add('teacher-preview');
