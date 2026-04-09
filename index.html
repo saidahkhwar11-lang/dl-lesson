@@ -253,14 +253,18 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <label>Student ID</label>
       <input id="studentId" placeholder="Enter student ID" />
       <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+      <button type="button" onclick="downloadLessonPlan()">Download Lesson Plan</button>
       <div id="studentNotice" class="notice bad hidden"></div>
     </div>
     <div class="card">
       <h2>Teacher View</h2>
-      <label>Teacher Password</label>
-      <input id="teacherPassword" type="password" placeholder="Enter password" />
-      <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
-      <div id="teacherNotice" class="notice bad hidden"></div>
+<label>Teacher Password</label>
+<input id="teacherPassword" type="password" placeholder="Enter password" />
+<button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
+
+<button type="button" onclick="downloadLessonPlan()">Download Lesson Plan</button>
+
+<div id="teacherNotice" class="notice bad hidden"></div>
     </div>
   </div>
 
@@ -2224,6 +2228,10 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
   tick();
   stationTimerInterval = setInterval(tick, 1000);
+}
+
+  function downloadLessonPlan(){
+  alert("Lesson Plan button is working ✅");
 }
   
 </script>
