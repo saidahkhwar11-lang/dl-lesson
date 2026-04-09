@@ -41,11 +41,28 @@
 
 /* 📋 Objectives list */
 .lesson-list{
-  margin:6px 0 0 18px;
+  margin-top:8px;
   padding:0;
+  list-style:none;
 }
+
 .lesson-list li{
-  margin-bottom:4px;
+  background:#f9fbff;
+  border:1px solid #e3edff;
+  padding:6px 10px;
+  margin-bottom:6px;
+  border-radius:8px;
+  font-size:13px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+/* cute bullet icon */
+.lesson-list li::before{
+  content:"✔";
+  color:#2ecc71;
+  font-size:12px;
 }
 
 /* 🔑 Keywords */
@@ -1008,7 +1025,34 @@ window.openStation = function(id){
   const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
 
 byId('stationContent').innerHTML =
-  '<h2>' + escapeHtml(st.title) + '</h2>' +
+'<h2>' + escapeHtml(st.title) + '</h2>' +
+studentLessonBox +
+  const studentLessonBox =
+  '<div class="lesson-info-box">' +
+    '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
+
+    '<div class="lesson-section">' +
+      '<div class="lesson-label">🎯 Objectives</div>' +
+      '<ul class="lesson-list">' +
+        (lessonMeta.lessonObjectives || '')
+          .split('\n')
+          .map(function(obj){
+            return '<li>' + escapeHtml(obj) + '</li>';
+          }).join('') +
+      '</ul>' +
+    '</div>' +
+
+    '<div class="lesson-section">' +
+      '<div class="lesson-label">🔑 Keywords</div>' +
+      '<div class="lesson-tags">' +
+        (lessonMeta.lessonKeywords || '')
+          .split(',')
+          .map(function(k){
+            return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
+          }).join('') +
+      '</div>' +
+    '</div>' +
+  '</div>';
   '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
   '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
   '<p>' + escapeHtml(st.details || '') + '</p>' +
