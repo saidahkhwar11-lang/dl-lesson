@@ -243,6 +243,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </style>
 </head>
 <body>
+  
 <div class="wrap">
   <div class="hero">
     <h1>DL Online Live System</h1>
@@ -2255,11 +2256,6 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
 function downloadLessonPlan(){
   try{
-    
-    const currentLessonMeta =
-  (typeof liveLessonMeta !== 'undefined' && liveLessonMeta) ||
-  (typeof window.lessonMeta !== 'undefined' && window.lessonMeta) ||
-  {};
 
 const stationsSource =
   (typeof liveStations !== 'undefined' && liveStations) ||
@@ -2268,17 +2264,17 @@ const stationsSource =
   [];
 
 
-const lessonTitle = currentLessonMeta.lessonTitle || 'Untitled Lesson';
+const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
     
-const objectives = (currentLessonMeta.lessonObjectives || '')
+const objectives = (lessonMeta.lessonObjectives || '')
   .split('\n')
-      .map(function(s){ return s.trim(); })
-      .filter(function(s){ return s; });
+  .map(function(s){ return s.trim(); })
+  .filter(function(s){ return s; });
 
-    const keywords = (currentLessonMeta.lessonKeywords || '')
-      .split(',')
-      .map(function(s){ return s.trim(); })
-      .filter(function(s){ return s; });
+   const keywords = (lessonMeta.lessonKeywords || '')
+  .split(',')
+  .map(function(s){ return s.trim(); })
+  .filter(function(s){ return s; });
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', {
@@ -2431,7 +2427,7 @@ const topicText = objectives.length
 <div class="lp-header">
   <img src="logo.png" class="lp-logo">
   <div class="lp-header-text">
-    <div class="lp-school">Your School Name</div>
+    <div class="lp-school">Al Reyada School</div>
     <div class="lp-sub">English Department</div>
     <div class="lp-sub">Lesson Plan</div>
   </div>
@@ -2477,7 +2473,7 @@ const topicText = objectives.length
   </tr>
   <tr>
     <td class="section-title">Keywords/New Vocabulary<br>المفردات الجديدة</td>
-    <td>${escapeHtml(keywords.join(' – '))}</td>
+    <td>${escapeHtml(keywords.length ? keywords.join(' – ') : 'No keywords added yet')}</td>
   </tr>
 </table>
 
