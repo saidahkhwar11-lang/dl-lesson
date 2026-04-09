@@ -5,6 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Grade 9 English Lesson</title>
   <style>
+    .lesson-info-box{
+  margin:12px 0;
+  padding:12px 14px;
+  background:#f8fbff;
+  border:1px solid #d9e6f5;
+  border-radius:12px;
+  line-height:1.6;
+}
+.lesson-info-box div{
+  margin-bottom:6px;
+}
+.lesson-info-box div:last-child{
+  margin-bottom:0;
+}
 :root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
@@ -710,13 +724,27 @@ if(content.questions && content.questions.length){
   wrap.className = '';
   wrap.classList.add('teacher-preview');
 
+  const lessonInfoBox = `
+  <div class="lesson-info-box">
+    <div><strong>Lesson Title:</strong> ${escapeHtml(lessonMeta.lessonTitle || '')}</div>
+    <div><strong>Objectives:</strong> ${escapeHtml(lessonMeta.lessonObjectives || '')}</div>
+    <div><strong>Keywords:</strong> ${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
+  </div>
+`;
+  const lessonInfoBox = `
+  <div class="lesson-info-box">
+    <div><strong>Lesson Title:</strong> ${escapeHtml(lessonMeta.lessonTitle || '')}</div>
+    <div><strong>Objectives:</strong> ${escapeHtml(lessonMeta.lessonObjectives || '')}</div>
+    <div><strong>Keywords:</strong> ${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
+  </div>
+`;
+
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
       <h3>${station.title}</h3>
 
-      <!-- 🔥 Teacher Timer Box -->
-      <div id="teacherStationTimer" class="station-live-timer hidden"></div>
-
+      ${lessonInfoBox}
+      
       <div>🎯 ${station.objective || ''}</div>
       <div>⏱ ${station.time || ''}</div>
       <div>📝 ${station.details || ''}</div>
