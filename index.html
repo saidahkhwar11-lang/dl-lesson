@@ -654,6 +654,7 @@ function startLessonConfigListener(){
   if(lessonContentRef) lessonContentRef.off();
   lessonConfigRef = dbRef(configPath());
   lessonContentRef = dbRef(contentPath());
+  let lessonMetaRef = dbRef('lessons/' + lessonKey + '/lessonMeta');
   lessonConfigRef.on('value', function(snap){
     lessonStations = snap.val() || JSON.parse(JSON.stringify(defaultStations));
     renderStudentNav();
@@ -669,8 +670,23 @@ function startLessonConfigListener(){
     renderStudentNav();
     renderTeacherOverview();
     renderTeacherTracker();
+
     if(currentStudent && !byId('studentView').classList.contains('hidden')) openStation(currentOpenStation);
   });
+  
+  lessonMetaRef.on('value', function(snap){
+  const raw = snap.val() || {
+    lessonTitle: '',
+    lessonObjectives: '',
+    lessonKeywords: ''
+  };
+
+  lessonMeta = raw;
+
+  if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+  if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
+  if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+});
 }
 
 function tryAutoConnect(){
@@ -1543,6 +1559,7 @@ window.importLessonData = async function(event){
 
   if(parsed.stations) lessonStations = parsed.stations;
   if(parsed.content) lessonContent = parsed.content;
+  if(parsed.lessonMeta) lessonMeta = parsed.lessonMeta;
 
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
