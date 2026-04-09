@@ -731,13 +731,6 @@ if(content.questions && content.questions.length){
     <div><strong>Keywords:</strong> ${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
   </div>
 `;
-  const lessonInfoBox = `
-  <div class="lesson-info-box">
-    <div><strong>Lesson Title:</strong> ${escapeHtml(lessonMeta.lessonTitle || '')}</div>
-    <div><strong>Objectives:</strong> ${escapeHtml(lessonMeta.lessonObjectives || '')}</div>
-    <div><strong>Keywords:</strong> ${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
-  </div>
-`;
 
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
