@@ -17,14 +17,24 @@
     
 .lesson-plan-btn{
   background: linear-gradient(135deg, #ff8fb1, #ffb6c1);
-  color: white;
+  color: #fff;
   border: none;
   border-radius: 14px;
-  padding: 10px 16px;
+  padding: 10px 18px;
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
-  margin-bottom: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+  transition: 0.2s ease;
+}
+
+.lesson-plan-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.16);
+}
+
+.lesson-plan-btn:active{
+  transform: translateY(0);
 }
     
      <div class="btns" style="margin-top:14px;">
@@ -278,7 +288,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <div id="teacherNotice" class="notice bad hidden"></div>
     </div>
   </div>
-
+  <div style="text-align:center; margin-top:14px;">
+  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
+</div>
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
@@ -302,7 +314,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
   <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
   <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
+  
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -2243,11 +2255,305 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stationTimerInterval = setInterval(tick, 1000);
 }
 
- function downloadLessonPlan(){
+function downloadLessonPlan(){
   const lessonMeta = liveLessonMeta || {};
-  const lessonTitle = lessonMeta.lessonTitle || 'Current Lesson';
+  const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
 
-  alert('Preparing lesson plan for: ' + lessonTitle);
+  const objectives = (lessonMeta.lessonObjectives || '')
+    .split('\n')
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s; });
+
+  const keywords = (lessonMeta.lessonKeywords || '')
+    .split(',')
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s; });
+
+  const today = new Date();
+  const formattedDate = today.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
+
+  const stations = (liveStations || defaultStations || []).map(function(station){
+    const content = getStationContent(station.id) || {};
+    return {
+      id: station.id,
+      title: station.title || '',
+      time: station.time || '',
+      objective: station.objective || '',
+      details: station.details || '',
+      questions: content.questions || [],
+      hasImage: !!content.imageUrl,
+      hasAudio: !!content.audioUrl,
+      hasVideo: !!content.videoUrl
+    };
+  });
+
+  const starterStation = stations.find(function(s){
+    const t = (s.title || '').toLowerCase();
+    return t.includes('starter') || t.includes('warm');
+  });
+
+  const plenaryStation = stations.find(function(s){
+    const t = (s.title || '').toLowerCase();
+    return t.includes('exit') || t.includes('plenary');
+  });
+
+  const mainStations = stations.filter(function(s){
+    const t = (s.title || '').toLowerCase();
+    return !t.includes('starter') &&
+           !t.includes('warm') &&
+           !t.includes('exit') &&
+           !t.includes('plenary');
+  });
+
+  const totalMainTime = mainStations.map(function(s){
+    const n = parseInt(s.time, 10);
+    return isNaN(n) ? 0 : n;
+  }).reduce(function(a, b){
+    return a + b;
+  }, 0);
+
+  const successCriteria = objectives.length ? objectives : [
+    'Understand the lesson content.',
+    'Complete lesson tasks successfully.',
+    'Use key vocabulary correctly.'
+  ];
+
+  const topicText = lessonTitle;
+
+  const hotQuestion = objectives.length
+    ? 'How does this lesson help students understand the key ideas in ' + lessonTitle.toLowerCase() + '?'
+    : 'What is the main message of this lesson?';
+
+  let eTools = [];
+  stations.forEach(function(s){
+    if(s.hasImage) eTools.push('PPT slides / visuals');
+    if(s.hasAudio) eTools.push('Audio recording');
+    if(s.hasVideo) eTools.push('Video');
+  });
+  eTools.push('DL Online Lesson');
+  eTools = Array.from(new Set(eTools));
+
+  const mainActivitiesHtml = mainStations.map(function(s, index){
+    const mins = s.time || '';
+    return `
+      <div style="margin-bottom:12px;">
+        <strong>🔵 Main Activity ${index + 1} (${escapeHtml(mins)})</strong><br>
+        ${escapeHtml(s.title)}<br>
+        ${escapeHtml(s.details || 'Students complete the station task based on the lesson objective.')}<br>
+        <strong>Teacher Role:</strong> Monitor, guide, support, and check understanding.<br>
+        <strong>Student Role:</strong> Read, think, answer, discuss, and complete the task.<br>
+        <strong>AFL:</strong> Oral responses, task completion, direct checking, discussion.
+      </div>
+    `;
+  }).join('');
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Lesson Plan - ${escapeHtml(lessonTitle)}</title>
+<style>
+  body{
+    font-family: Arial, sans-serif;
+    padding: 22px;
+    color: #222;
+    line-height: 1.5;
+    background: #fff;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+  }
+  td, th{
+    border: 1px solid #999;
+    padding: 8px;
+    vertical-align: top;
+    font-size: 14px;
+  }
+  .section-title{
+    background: #f3f3f3;
+    font-weight: bold;
+  }
+  ul{
+    margin: 0;
+    padding-left: 18px;
+  }
+  .top-actions{
+    margin-bottom: 18px;
+    text-align: center;
+  }
+  .top-actions button{
+    background: #ff8fb1;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  @media print{
+    .top-actions{
+      display:none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="top-actions">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<table>
+  <tr>
+    <td><strong>التاريخ Date:</strong></td>
+    <td>${escapeHtml(formattedDate)}</td>
+    <td><strong>المادة الدراسية Subject:</strong></td>
+    <td>English Language</td>
+  </tr>
+  <tr>
+    <td><strong>Teacher(s) المعلم:</strong></td>
+    <td>Saidah Khwar</td>
+    <td><strong>Lesson# / عنوان الدرس:</strong></td>
+    <td>${escapeHtml(lessonTitle)}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" style="width:30%;">Key Learning Objective(s)<br>مخرجات التعلم</td>
+    <td>
+      <ul>
+        ${successCriteria.map(function(obj){
+          return '<li>' + escapeHtml(obj) + '</li>';
+        }).join('')}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td class="section-title">Lesson Topic<br>موضوع الدرس</td>
+    <td>${escapeHtml(topicText)}</td>
+  </tr>
+  <tr>
+    <td class="section-title">H.O.T. Question(s)<br>سؤال مهارات التفكير العليا</td>
+    <td>${escapeHtml(hotQuestion)}</td>
+  </tr>
+  <tr>
+    <td class="section-title">Keywords/New Vocabulary<br>المفردات الجديدة</td>
+    <td>${escapeHtml(keywords.join(' – '))}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" colspan="2">Lesson's Procedures سير الدرس</td>
+  </tr>
+  <tr>
+    <td style="width:18%;"><strong>Timing</strong></td>
+    <td><strong>Warm up/Starter</strong></td>
+  </tr>
+  <tr>
+    <td>${escapeHtml((starterStation && starterStation.time) || '5 mins')}</td>
+    <td>
+      ${escapeHtml((starterStation && starterStation.details) || 'Starter activity to activate prior knowledge and introduce the lesson.')}<br>
+      <strong>Teacher Role:</strong> Guide discussion and activate background knowledge.<br>
+      <strong>Student Role:</strong> Share ideas, predictions, and prior knowledge.<br>
+      <strong>AFL:</strong> Oral responses.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Success Criteria</strong></td>
+    <td>
+      <ul>
+        ${successCriteria.map(function(obj){
+          return '<li>' + escapeHtml(obj) + '</li>';
+        }).join('')}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>${totalMainTime ? escapeHtml(totalMainTime + ' mins') : '30 mins'}</td>
+    <td>
+      <strong>Main Activities linked to LO</strong><br><br>
+      ${mainActivitiesHtml}
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Differentiation</strong></td>
+    <td>
+      <strong>H</strong><br>
+      Complete tasks independently and explain answers with evidence.<br><br>
+      <strong>M</strong><br>
+      Complete tasks with guided support and partner discussion.<br><br>
+      <strong>L</strong><br>
+      Use sentence frames, key words, and teacher support.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>E-Implementation Tool</strong></td>
+    <td>
+      <ul>
+        ${eTools.map(function(tool){
+          return '<li>' + escapeHtml(tool) + '</li>';
+        }).join('')}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>${escapeHtml((plenaryStation && plenaryStation.time) || '5 mins')}</td>
+    <td>
+      <strong>Plenary / Closure</strong><br>
+      ${escapeHtml((plenaryStation && plenaryStation.details) || 'Students complete a short final task to show understanding of the lesson.')}
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" style="width:30%;">Learning Skills (please highlight)</td>
+    <td>
+      Independent Learners<br>
+      Critical Thinking<br>
+      Self-Learning<br>
+      Clear Communication<br>
+      Positive Interactions<br>
+      Research<br>
+      Collaboration<br>
+      Real World Connections<br>
+      Innovation
+    </td>
+  </tr>
+  <tr>
+    <td class="section-title">Cross Curricular (Links with other subjects)</td>
+    <td>Supports real-life understanding and connections with other subject knowledge.</td>
+  </tr>
+  <tr>
+    <td class="section-title">UAE Culture and Heritage (UAE Vision 2031)</td>
+    <td>Promotes responsible learning, awareness, positive values, and informed decision-making.</td>
+  </tr>
+</table>
+
+</body>
+</html>
+  `;
+
+  const win = window.open('', '_blank');
+
+  if(!win){
+    alert('Please allow popups to open the lesson plan.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
 }
   
 </script>
