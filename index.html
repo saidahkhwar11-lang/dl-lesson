@@ -649,9 +649,12 @@ window.openTeacherStationPreview = function(id){
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
       <h3>${station.title}</h3>
+<div id="teacherStationTimer" class="station-live-timer hidden"></div>
+
       <div>🎯 ${station.objective || ''}</div>
       <div>⏱ ${station.time || ''}</div>
       <div>📝 ${station.details || ''}</div>
+      
       ${imageHtml}
       ${audioHtml}
       ${videoHtml}
