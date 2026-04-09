@@ -15,6 +15,57 @@
   z-index:9999;
 }
 
+     <div class="btns" style="margin-top:14px;">
+      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
+    </div>
+  </div>
+  </div>
+    
+.image-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.image-modal.hidden{
+  display:none;
+}
+
+.image-modal-content{
+  position:relative;
+  max-width:92vw;
+  max-height:90vh;
+  padding:10px;
+  border-radius:14px;
+  background:#fff;
+}
+
+.image-modal-content img{
+  max-width:88vw;
+  max-height:82vh;
+  border-radius:10px;
+}
+
+.image-modal-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:#e74c3c;
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  width:34px;
+  height:34px;
+  cursor:pointer;
+}
+
+</body>
+</html>
+
 .lesson-popup.hidden{
   display:none;
 }
@@ -2190,47 +2241,8 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
     </div>
   </div>
   </div>
-.image-modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.75);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-}
-
-.image-modal.hidden{
-  display:none;
-}
-
-.image-modal-content{
-  position:relative;
-  max-width:92vw;
-  max-height:90vh;
-  padding:10px;
-  border-radius:14px;
-  background:#fff;
-}
-
-.image-modal-content img{
-  max-width:88vw;
-  max-height:82vh;
-  border-radius:10px;
-}
-
-.image-modal-close{
-  position:absolute;
-  top:8px;
-  right:8px;
-  background:#e74c3c;
-  color:#fff;
-  border:none;
-  border-radius:50%;
-  width:34px;
-  height:34px;
-  cursor:pointer;
-}
+    
+<div id="imageModal" class="image-modal hidden"></div>
 
 </body>
 </html>
