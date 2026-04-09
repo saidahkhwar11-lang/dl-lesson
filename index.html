@@ -886,6 +886,7 @@ window.openStation = function(id){
   renderStudentNav();
   
 const ct = getStationContent(id);
+const submitted = isStationSubmitted(id);
   
   const submitted = isStationSubmitted(id);
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
@@ -912,6 +913,9 @@ byId('stationContent').innerHTML =
   submittedNote +
   questionsHtml +
   actionBtns;
+
+startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
+updateStationTimerDisplay();
 
 if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
 
@@ -1798,6 +1802,13 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
 
   function tick(){
+    if(stationId === 'starter'){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
+      stopStationTimer();
+      return;
+    }
+
     if(!timerStartedAt){
       stationTimeLeft = totalSeconds;
       updateStationTimerDisplay();
