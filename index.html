@@ -602,8 +602,32 @@ function bindButtons(){
 function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
 window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
-window.maximizeImage = function(src){ if(!src) return; const modal = byId('imageModal'); modal.className = 'maximized'; modal.innerHTML = '<img src="' + src + '" alt="maximized image" onclick="event.stopPropagation()" />'; modal.onclick = function(){ modal.className = 'hidden'; modal.innerHTML = ''; }; };
+window.maximizeImage = function(src){
+  if(!src) return;
 
+  const modal = byId('imageModal');
+  if(!modal) return;
+
+  modal.classList.remove('hidden');
+
+  modal.innerHTML =
+    '<div class="image-modal-content" onclick="event.stopPropagation()">' +
+      '<button class="image-modal-close" onclick="closeImageModal()">✕</button>' +
+      '<img src="' + src + '" alt="maximized image" />' +
+    '</div>';
+
+  modal.onclick = function(){
+    closeImageModal();
+  };
+};
+
+window.closeImageModal = function(){
+  const modal = byId('imageModal');
+  if(!modal) return;
+
+  modal.classList.add('hidden');
+  modal.innerHTML = '';
+};
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
@@ -806,14 +830,22 @@ window.openTeacherStationPreview = function(id){
 
   if(!wrap || !station) return;
 
-  let imageHtml = '';
-  let audioHtml = '';
-  let videoHtml = '';
+
+let imageHtml = '';
 
   if(content.imageUrl){
-    imageHtml = `<img class="reading-img" src="${content.imageUrl}" alt="Station Image">`;
-  }
+  imageHtml = `
+    <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
+    <div class="image-actions">
+      <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">
+        🔍 Maximize Picture
+      </button>
+    </div>
+  `;
+}
 
+  let audioHtml = '';
+  
   if(content.audioUrl){
     audioHtml = `
       <audio controls style="width:100%; margin-bottom:12px;">
@@ -821,6 +853,8 @@ window.openTeacherStationPreview = function(id){
       </audio>
     `;
   }
+
+   let videoHtml = '';
 
   if(content.videoUrl){
     videoHtml = `
@@ -2155,6 +2189,48 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
       <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
     </div>
   </div>
-</div>
+  </div>
+.image-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:9999;
+}
+
+.image-modal.hidden{
+  display:none;
+}
+
+.image-modal-content{
+  position:relative;
+  max-width:92vw;
+  max-height:90vh;
+  padding:10px;
+  border-radius:14px;
+  background:#fff;
+}
+
+.image-modal-content img{
+  max-width:88vw;
+  max-height:82vh;
+  border-radius:10px;
+}
+
+.image-modal-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  background:#e74c3c;
+  color:#fff;
+  border:none;
+  border-radius:50%;
+  width:34px;
+  height:34px;
+  cursor:pointer;
+}
+
 </body>
 </html>
