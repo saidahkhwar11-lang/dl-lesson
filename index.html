@@ -5,19 +5,61 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Grade 9 English Lesson</title>
   <style>
-    .lesson-info-box{
-  margin:12px 0;
-  padding:12px 14px;
-  background:#f8fbff;
-  border:1px solid #d9e6f5;
-  border-radius:12px;
-  line-height:1.6;
+.lesson-info-box{
+  margin:14px 0;
+  padding:14px;
+  background:#fff;
+  border-radius:14px;
+  border:1px solid #eee;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
 }
-.lesson-info-box div{
+
+/* 🔴 Lesson Title */
+.lesson-title{
+  font-size:18px;
+  font-weight:bold;
+  color:#e74c3c;
+  margin-bottom:10px;
+}
+
+/* 📦 Sections */
+.lesson-section{
+  margin-top:10px;
+}
+
+/* 🟦 Label box */
+.lesson-label{
+  display:inline-block;
+  background:#eef5ff;
+  padding:4px 10px;
+  border-radius:8px;
+  font-size:13px;
+  font-weight:bold;
+  color:#2c3e50;
   margin-bottom:6px;
 }
-.lesson-info-box div:last-child{
-  margin-bottom:0;
+
+/* 📋 Objectives list */
+.lesson-list{
+  margin:6px 0 0 18px;
+  padding:0;
+}
+.lesson-list li{
+  margin-bottom:4px;
+}
+
+/* 🔑 Keywords */
+.lesson-tags{
+  margin-top:6px;
+}
+.lesson-tag{
+  display:inline-block;
+  background:#f1f8ff;
+  color:#3498db;
+  padding:4px 8px;
+  margin:3px;
+  border-radius:8px;
+  font-size:12px;
 }
 :root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
 *{box-sizing:border-box}
@@ -724,13 +766,36 @@ if(content.questions && content.questions.length){
   wrap.className = '';
   wrap.classList.add('teacher-preview');
 
-  const lessonInfoBox = `
-  <div class="lesson-info-box">
-    <div><strong>Lesson Title:</strong> ${escapeHtml(lessonMeta.lessonTitle || '')}</div>
-    <div><strong>Objectives:</strong> ${escapeHtml(lessonMeta.lessonObjectives || '')}</div>
-    <div><strong>Keywords:</strong> ${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
-  </div>
-`;
+ const lessonInfoBox =
+  '<div class="lesson-info-box">' +
+
+    '<div class="lesson-title">' +
+      (lessonMeta.lessonTitle || '') +
+    '</div>' +
+
+    '<div class="lesson-section">' +
+      '<div class="lesson-label">🎯 Objectives</div>' +
+      '<ul class="lesson-list">' +
+        (lessonMeta.lessonObjectives || '')
+          .split('\n')
+          .map(function(obj){
+            return '<li>' + escapeHtml(obj) + '</li>';
+          }).join('') +
+      '</ul>' +
+    '</div>' +
+
+    '<div class="lesson-section">' +
+      '<div class="lesson-label">🔑 Keywords</div>' +
+      '<div class="lesson-tags">' +
+        (lessonMeta.lessonKeywords || '')
+          .split(',')
+          .map(function(k){
+            return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
+          }).join('') +
+      '</div>' +
+    '</div>' +
+
+  '</div>';
 
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
