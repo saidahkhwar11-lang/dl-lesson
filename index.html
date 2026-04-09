@@ -1767,31 +1767,28 @@ function stopStationTimer(){
 }
 
 function updateStationTimerDisplay(){
-  const studentTimerBox = byId('studentStationTimer');
-  const teacherTimerBox = byId('teacherStationTimer');
+  const timerBox = byId('studentStationTimer');
+  if(!timerBox) return;
 
+  // hide for starter
   if(currentTimedStationId === 'starter'){
-    if(studentTimerBox) studentTimerBox.classList.add('hidden');
-    if(teacherTimerBox) teacherTimerBox.classList.add('hidden');
+    timerBox.classList.add('hidden');
     return;
   }
+
+  timerBox.classList.remove('hidden', 'time-low', 'time-up');
 
   const text = stationTimeLeft > 0
     ? '⏳ Time Left: ' + formatStationTime(stationTimeLeft)
     : '⛔ Time is up';
 
-  [studentTimerBox, teacherTimerBox].forEach(function(timerBox){
-    if(!timerBox) return;
+  timerBox.innerHTML = text;
 
-    timerBox.classList.remove('hidden', 'time-low', 'time-up');
-    timerBox.innerHTML = text;
-
-    if(stationTimeLeft <= 0){
-      timerBox.classList.add('time-up');
-    } else if(stationTimeLeft <= 60){
-      timerBox.classList.add('time-low');
-    }
-  });
+  if(stationTimeLeft <= 0){
+    timerBox.classList.add('time-up');
+  } else if(stationTimeLeft <= 60){
+    timerBox.classList.add('time-low');
+  }
 }
   
 function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
