@@ -671,8 +671,7 @@ window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.st
     closeImageModal();
 
   };
-
-
+   
 window.closeImageModal = function(){
   const modal = byId('imageModal');
   if(!modal) return;
@@ -681,13 +680,6 @@ window.closeImageModal = function(){
   modal.innerHTML = '';
 };
 
-window.closeImageModal = function(){
-  const modal = byId('imageModal');
-  if(!modal) return;
-
-  modal.classList.add('hidden');
-  modal.innerHTML = '';
-};
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
