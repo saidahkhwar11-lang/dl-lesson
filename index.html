@@ -14,7 +14,19 @@
   justify-content:center;
   z-index:9999;
 }
-
+    
+.lesson-plan-btn{
+  background: linear-gradient(135deg, #ff8fb1, #ffb6c1);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+    
      <div class="btns" style="margin-top:14px;">
       <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
     </div>
@@ -253,7 +265,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <label>Student ID</label>
       <input id="studentId" placeholder="Enter student ID" />
       <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
-      <button type="button" onclick="downloadLessonPlan()">Download Lesson Plan</button>
       <div id="studentNotice" class="notice bad hidden"></div>
     </div>
     <div class="card">
@@ -291,6 +302,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
   <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
   <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -330,6 +342,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div class="btns">
     <button class="warnbtn" onclick="clearTrackerData()">Clear Tracker</button>
     <button class="warnbtn" onclick="clearBonusData()">Clear Bonus</button>
+    <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
   </div>
 </div>
       <h2>Live Teacher Tracker</h2>
@@ -2230,8 +2243,11 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stationTimerInterval = setInterval(tick, 1000);
 }
 
-  function downloadLessonPlan(){
-  alert("Lesson Plan button is working ✅");
+ function downloadLessonPlan(){
+  const lessonMeta = liveLessonMeta || {};
+  const lessonTitle = lessonMeta.lessonTitle || 'Current Lesson';
+
+  alert('Preparing lesson plan for: ' + lessonTitle);
 }
   
 </script>
