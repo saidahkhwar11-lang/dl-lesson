@@ -2332,17 +2332,25 @@ const objectives = (currentLessonMeta.lessonObjectives || '')
       return a + b;
     }, 0);
 
-    const successCriteria = objectives.length ? objectives : [
-      'Understand the lesson content.',
-      'Complete lesson tasks successfully.',
-      'Use key vocabulary correctly.'
+    const successCriteria = objectives.length
+  ? objectives.map(function(obj){
+      return "By the end of this lesson, I will be able to " + obj.replace(/^to\s+/i, '');
+    })
+  : [
+      "By the end of this lesson, I will be able to understand the lesson.",
+      "By the end of this lesson, I will be able to complete the tasks.",
+      "By the end of this lesson, I will be able to use key vocabulary."
     ];
 
-    const topicText = lessonTitle;
-
+const topicText = objectives.length
+  ? "This lesson focuses on " + lessonTitle.toLowerCase() +
+    " to help students develop their understanding and reading skills through tasks such as identifying main ideas, using context clues, and engaging with the text."
+  : "This lesson focuses on developing students’ reading skills and understanding through interactive activities.";
     const hotQuestion = objectives.length
-      ? 'How does this lesson help students understand the key ideas in ' + lessonTitle.toLowerCase() + '?'
-      : 'What is the main message of this lesson?';
+  ? "To what extent can the ideas presented in " + lessonTitle.toLowerCase() +
+    " influence our real-life decisions? Explain your answer using evidence and examples from the lesson. " +
+    "Can you evaluate whether all situations discussed are equally valid, or are some more reliable than others? Why?"
+  : "How can the ideas in this lesson be applied in real-life situations, and how would you justify your opinion?";
 
     let eTools = [];
     stations.forEach(function(s){
@@ -2456,7 +2464,7 @@ const objectives = (currentLessonMeta.lessonObjectives || '')
   </tr>
   <tr>
     <td class="section-title">H.O.T. Question(s)<br>سؤال مهارات التفكير العليا</td>
-    <td>${escapeHtml(hotQuestion)}</td>
+    <td style="white-space: pre-line;">${escapeHtml(hotQuestion)}</td>
   </tr>
   <tr>
     <td class="section-title">Keywords/New Vocabulary<br>المفردات الجديدة</td>
