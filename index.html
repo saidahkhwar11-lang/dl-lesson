@@ -2255,24 +2255,27 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
 function downloadLessonPlan(){
   try{
-    const lessonMeta = (typeof liveLessonMeta !== 'undefined' && liveLessonMeta) ||
-                   (typeof lessonMeta !== 'undefined' && lessonMeta) ||
-                   {};
+    
+    const currentLessonMeta =
+  (typeof liveLessonMeta !== 'undefined' && liveLessonMeta) ||
+  (typeof window.lessonMeta !== 'undefined' && window.lessonMeta) ||
+  {};
 
-const stationsSource = (typeof liveStations !== 'undefined' && liveStations) ||
-                       (typeof stations !== 'undefined' && stations) ||
-                       (typeof defaultStations !== 'undefined' && defaultStations) ||
-                       [];
+const stationsSource =
+  (typeof liveStations !== 'undefined' && liveStations) ||
+  (typeof window.stations !== 'undefined' && window.stations) ||
+  (typeof defaultStations !== 'undefined' && defaultStations) ||
+  [];
 
 
-    const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
-
-    const objectives = (lessonMeta.lessonObjectives || '')
-      .split('\n')
+const lessonTitle = currentLessonMeta.lessonTitle || 'Untitled Lesson';
+    
+const objectives = (currentLessonMeta.lessonObjectives || '')
+  .split('\n')
       .map(function(s){ return s.trim(); })
       .filter(function(s){ return s; });
 
-    const keywords = (lessonMeta.lessonKeywords || '')
+    const keywords = (currentLessonMeta.lessonKeywords || '')
       .split(',')
       .map(function(s){ return s.trim(); })
       .filter(function(s){ return s; });
