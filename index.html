@@ -884,22 +884,23 @@ window.openStation = function(id){
   if(!st.unlocked && id !== 'starter') return;
   currentOpenStation = id;
   renderStudentNav();
-  
-const ct = getStationContent(id);
-const submitted = isStationSubmitted(id);
-  
+
+  const ct = getStationContent(id);
+  const stationMinutes = Number(st.time || 0);
   const submitted = isStationSubmitted(id);
+
   const questionsHtml = (ct.questions || []).map(function(q,i){ return renderQuestion(q,id,i); }).join('');
   const resultText = scoreTextForStudent(id);
-const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
+  const imageBlock = ct.imageUrl ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" /><div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>' : '';
 
-const audioBlock = ct.audioUrl ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>' : '';
+  const audioBlock = ct.audioUrl ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>' : '';
 
-const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>' : '';  const nextStationId = getNextUnlockedStationId(id);
+  const videoBlock = ct.videoUrl ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>' : '';
+  const nextStationId = getNextUnlockedStationId(id);
   const submitBtn = submitted ? '<button class="muted" disabled>Station Submitted</button>' : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
   const nextBtn = nextStationId ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>' : '';
   const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
-const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
+  const submittedNote = submitted ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>' : '';
 
 byId('stationContent').innerHTML =
   '<h2>' + escapeHtml(st.title) + '</h2>' +
