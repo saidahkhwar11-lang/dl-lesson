@@ -448,7 +448,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <option value="tf">True / False</option>
   <option value="matching">Matching</option>
   <option value="drag_gap">Drag Gap Fill</option>
-</select>
+  <option value="poll">Voting Poll</option>
+  </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
             <div id="builderMcqFields">
@@ -488,6 +489,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
   <label>Word Bank (comma separated)</label>
   <input id="builderGapWords" placeholder="body, share, quickly" />
+</div>
+
+  <div id="builderPollFields" class="hidden">
+  <label>Poll Options (at least 4, one per line)</label>
+  <textarea id="builderPollOptions" placeholder="Strongly Agree&#10;Agree&#10;Disagree&#10;Strongly Disagree"></textarea>
 </div>
             <div id="builderTfFields" class="hidden">
               <label>Correct Answer</label>
@@ -1810,6 +1816,7 @@ window.toggleBuilderFields = function(){
   byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
   byId('builderMatchingFields').classList.toggle('hidden', type !== 'matching');
   byId('builderGapFields').classList.toggle('hidden', type !== 'drag_gap');
+  byId('builderPollFields').classList.toggle('hidden', type !== 'poll');
 };
 
 window.clearQuestionBuilder = function(){
