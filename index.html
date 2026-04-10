@@ -1856,11 +1856,14 @@ window.renderCreatorQuestionsList = function(){
               '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
       
     } else if(q.type === 'matching'){
-      extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
-      
-    } else if(q.type === 'drag_gap'){
-      extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
-    }
+  extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+
+} else if(q.type === 'poll'){
+  extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+
+} else if(q.type === 'drag_gap'){
+  extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
+}
 
     return `
       <div class="card" style="padding:10px;margin-bottom:8px;">
@@ -1964,6 +1967,21 @@ window.addCreatorQuestion = function(){
         };
       })
       .filter(pair => pair.left && pair.right);
+
+    else if(type === 'poll'){
+  const options = byId('builderPollOptions').value
+    .split('\n')
+    .map(function(x){ return x.trim(); })
+    .filter(Boolean);
+
+  // 🔥 REQUIRE AT LEAST 2 OPTIONS
+  if(options.length < 2){
+    alert('Please add at least 2 poll options.');
+    return;
+  }
+
+  newQuestion.options = options;
+}
     
   } else if(type === 'drag_gap'){
     const parts = byId('builderGapParts').value.split('|').map(x => x.trim());
