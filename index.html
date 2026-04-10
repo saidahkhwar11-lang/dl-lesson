@@ -57,6 +57,53 @@
   z-index:9999;
 }
 
+.self-eval-box{
+  margin-top:14px;
+  margin-bottom:14px;
+  padding:14px;
+  border:1px solid #d9e2f2;
+  border-radius:14px;
+  background:#f8fbff;
+}
+
+.self-eval-title{
+  font-weight:bold;
+  margin-bottom:10px;
+  color:#2f5ea8;
+}
+
+.self-eval-options{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.self-eval-option{
+  flex:1 1 180px;
+  min-width:180px;
+  border:1px solid #cfd8e7;
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fff;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.self-eval-option input{
+  margin-right:8px;
+  width:auto;
+}
+
+.self-eval-option:hover{
+  background:#eef5ff;
+}
+
+.self-eval-note{
+  margin-top:8px;
+  font-size:12px;
+  color:#5f6f89;
+}    
+    
 .image-modal.hidden{
   display:none;
 }
@@ -678,10 +725,34 @@ function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']
 function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
 function getSnap(path){ return dbRef(path).once('value'); }
+  function getStationSelfEvalSummary(stationId){
+  const summary = {
+    happy: 0,
+    neutral: 0,
+    sad: 0
+  };
+
+  Object.values(liveStudents || {}).forEach(function(student){
+    const selfEval = student.stationSelfEval || {};
+    const value = selfEval[stationId] || '';
+
+    if(value === 'I understood it well'){
+      summary.happy++;
+    }
+    else if(value === 'I understood some of it'){
+      summary.neutral++;
+    }
+    else if(value === 'I need more help'){
+      summary.sad++;
+    }
+  });
+
+  return summary;
+}
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
 function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
-
+  
 function bindButtons(){
   const studentBtn = byId('studentStartBtn');
   const teacherBtn = byId('teacherOpenBtn');
@@ -706,6 +777,26 @@ window.maximizeImage = function(src){
     '</div>';
 
   modal.className = 'image-modal';
+};
+   function getSelfEvalValue(stationId){
+  const student = currentStudent && liveStudents[currentStudent.id];
+  const selfEval = (student && student.stationSelfEval) || {};
+  return selfEval[stationId] || '';
+}
+
+window.saveSelfEvaluation = async function(stationId, value){
+  if(!currentStudent || !stationId) return;
+
+  const student = liveStudents[currentStudent.id] || {};
+  const currentEval = Object.assign({}, student.stationSelfEval || {});
+  currentEval[stationId] = value;
+
+  await dbRef(studentPath(currentStudent.id)).update({
+    stationSelfEval: currentEval
+  });
+
+  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
+  liveStudents[currentStudent.id].stationSelfEval = currentEval;
 };
 
 window.closeImageModal = function(){
@@ -870,7 +961,18 @@ window.startStudentSession = async function(){
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
-    const initial = { name:name, id:id, scores:{}, total:0, startedAt:Date.now(), currentStation:'starter', stationResults:{}, stationAnswers:{}, submittedStations:{} };
+const initial = {
+  name:name,
+  id:id,
+  scores:{},
+  total:0,
+  startedAt:Date.now(),
+  currentStation:'starter',
+  stationResults:{},
+  stationAnswers:{},
+  submittedStations:{},
+  stationSelfEval:{}
+};
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
@@ -924,6 +1026,8 @@ window.openTeacherStationPreview = function(id){
   const content = getStationContent(id);
 
   if(!wrap || !station) return;
+
+  wrap.dataset.currentStationId = id;
 
   let imageHtml = '';
   if(content.imageUrl){
@@ -1017,6 +1121,29 @@ window.openTeacherStationPreview = function(id){
 
   wrap.className = '';
   wrap.classList.add('teacher-preview');
+  const selfEvalSummary = getStationSelfEvalSummary(id);
+
+const selfEvalHtml = `
+  <div class="lesson-info-box" style="margin-top:12px;">
+    <div class="lesson-label">Student Self-Evaluation</div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+      
+      <div style="background:#eafaf1; color:#1f8f5f; padding:8px 12px; border-radius:999px; font-weight:bold;">
+        😀 ${selfEvalSummary.happy}
+      </div>
+
+      <div style="background:#fff7df; color:#b47a00; padding:8px 12px; border-radius:999px; font-weight:bold;">
+        😐 ${selfEvalSummary.neutral}
+      </div>
+
+      <div style="background:#fdecec; color:#c63d3d; padding:8px 12px; border-radius:999px; font-weight:bold;">
+        😟 ${selfEvalSummary.sad}
+      </div>
+
+    </div>
+  </div>
+`;
 
   const lessonInfoBox =
     '<div class="lesson-info-box">' +
@@ -1056,8 +1183,9 @@ window.openTeacherStationPreview = function(id){
       <h3>${escapeHtml(station.title || '')}</h3>
 
       ${lessonInfoBox}
+${selfEvalHtml}
 
-      <div>🎯 ${escapeHtml(station.objective || '')}</div>
+<div>🎯 ${escapeHtml(station.objective || '')}</div>
       <div>⏱ ${escapeHtml(station.time || '')}</div>
       <div>📝 ${escapeHtml(station.details || '')}</div>
 
@@ -1326,6 +1454,38 @@ const linkBlock = ct.linkUrl
     ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>'
     : '';
 
+  const selfEvalValue = getSelfEvalValue(id);
+const selfEvalDisabled = submitted ? ' disabled' : '';
+
+const selfEvalHtml = `
+  <div class="self-eval-box">
+    <div class="self-eval-title">How did you feel about this station?</div>
+    <div class="self-eval-options">
+      <label class="self-eval-option">
+        <input type="radio" name="self_eval_${id}" value="I understood it well"
+          ${selfEvalValue === 'I understood it well' ? 'checked' : ''}${selfEvalDisabled}
+          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood it well')">
+        😀 I did very well
+      </label>
+
+      <label class="self-eval-option">
+        <input type="radio" name="self_eval_${id}" value="I understood some of it"
+          ${selfEvalValue === 'I understood some of it' ? 'checked' : ''}${selfEvalDisabled}
+          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood some of it')">
+        😐 I understood some
+      </label>
+
+      <label class="self-eval-option">
+        <input type="radio" name="self_eval_${id}" value="I need more help"
+          ${selfEvalValue === 'I need more help' ? 'checked' : ''}${selfEvalDisabled}
+          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I need more help')">
+        😟 It was difficult
+      </label>
+    </div>
+    <div class="self-eval-note">This is only for self-evaluation. It does not affect marks.</div>
+  </div>
+`;
+
   const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
@@ -1343,8 +1503,9 @@ const linkBlock = ct.linkUrl
     linkBlock +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
-    questionsHtml +
-    actionBtns;
+questionsHtml +
+selfEvalHtml +
+actionBtns;
 
   if(id === 'st1' && previousStation === 'starter'){
   showLessonInfoPopup();
@@ -1606,11 +1767,13 @@ function renderTeacherTracker(){
 '</div>' +
 '</td></tr>';
   }).join('');
-  wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
-renderTeacherOverview();
+  renderTeacherOverview();
 if(typeof renderTopStudents === 'function') renderTopStudents();
-}
 
+const previewWrap = byId('teacherStationPreview');
+if(previewWrap && previewWrap.dataset.currentStationId){
+  openTeacherStationPreview(previewWrap.dataset.currentStationId);
+}
   function getPollResults(stationId, questionIndex, options){
   const counts = {};
   (options || []).forEach(function(opt){
