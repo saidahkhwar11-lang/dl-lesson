@@ -1189,46 +1189,23 @@ function renderQuestion(q, stationId, index){
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
 
-  if(q.type === 'mcq'){
-    body = (q.choices || []).map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-    }).join('');
-  }
-  else if(q.type === 'tf'){
-    body = ['True','False'].map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
-    }).join('');
-  }
-  else if(q.type === 'matching'){
-    const rights = (q.pairs || []).map(function(pair){ return pair.right; });
-    const disabled = submitted ? ' disabled' : '';
+ if(q.type === 'mcq'){
+  extra = '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' +
+          '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
 
-    body = (q.pairs || []).map(function(pair, pairIndex){
-      const selectedValue = Array.isArray(savedAnswer) ? (savedAnswer[pairIndex] || '') : '';
-      return `
-<div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-<div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
-          <select data-match-index="${pairIndex}" ${disabled}>
-            <option value="">Select answer</option>
-            ${rights.map(function(right){
-              const selected = normalizeAnswer(selectedValue) === normalizeAnswer(right) ? ' selected' : '';
-              return '<option value="' + escapeHtml(right) + '"' + selected + '>' + escapeHtml(right) + '</option>';
-            }).join('')}
-          </select>
-        </div>
-      `;
-    }).join('');
-  }
-  else if(q.type === 'drag_gap'){
-    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-  }
-  else {
-    body = '<div class="small">Unsupported question type</div>';
-  }
+} else if(q.type === 'tf'){
+  extra = '<div class="small">Choices: True | False</div>' +
+          '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+
+} else if(q.type === 'matching'){
+  extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+
+} else if(q.type === 'poll'){
+  extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+
+} else if(q.type === 'drag_gap'){
+  extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
+}
 
   return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
