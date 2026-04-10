@@ -1777,7 +1777,8 @@ function startTeacherListeners(){
   teacherBonusRef.on('value', function(snap){
     liveBonus = snap.val() || {};
 
-  if(typeof renderBonusBox === 'function') renderBonusBox();    renderTeacherTracker();
+    if(typeof renderBonusBox === 'function') renderBonusBox();
+    renderTeacherTracker();
     renderStudentNav();
 
     if(typeof renderTopStudents === 'function'){
