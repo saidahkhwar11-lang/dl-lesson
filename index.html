@@ -1287,16 +1287,17 @@ window.openStation = function(id){
     : '';
 
   const audioBlock = ct.audioUrl
-    ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>'
-    : '';
+  ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>'
+  : '';
 
-  const videoBlock = ct.videoUrl
-    ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
-    : '';
-  const linkBlock = ct.linkUrl
+const videoBlock = ct.videoUrl
+  ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
+  : '';
+
+const linkBlock = ct.linkUrl
   ? '<div style="margin-bottom:12px;">' +
     '<button class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
-    escapeHtml(ct.linkTitle || 'Open Link') +
+    escapeHtml(ct.linkTitle || 'Open Activity') +
     '</button></div>'
   : '';
 
