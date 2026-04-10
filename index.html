@@ -932,7 +932,7 @@ let imageHtml = '';
   imageHtml = `
     <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
     <div class="image-actions">
-      <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')"🔍 Maximize Picture</button>
+      <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
     </div>
   `;
 }
@@ -1276,9 +1276,11 @@ window.openStation = function(id){
   const resultText = scoreTextForStudent(id);
 
   const imageBlock = ct.imageUrl
-    ? '<img class="reading-img" src="' + ct.imageUrl + '" alt="station image" />' +
-      '<div class="image-actions"><button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button></div>'
-    : '';
+  ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="station image" />' +
+    '<div class="image-actions">' +
+      '<button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button>' +
+    '</div>'
+  : '';
 
   const audioBlock = ct.audioUrl
   ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>'
