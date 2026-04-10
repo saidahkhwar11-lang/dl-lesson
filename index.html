@@ -702,22 +702,20 @@ window.maximizeImage = function(src){
   const modal = byId('imageModal');
   if(!modal) return;
 
-  modal.classList.remove('hidden');
   modal.innerHTML =
     '<div class="image-modal-content" onclick="event.stopPropagation()">' +
       '<button type="button" class="image-modal-close" onclick="closeImageModal()">✕</button>' +
-      '<img id="imageModalImg" src="' + escapeHtml(src) + '" alt="maximized image">' +
+      '<img src="' + escapeHtml(src) + '" alt="maximized image">' +
     '</div>';
 
-  modal.onclick = function(){
-    closeImageModal();
-  };
+  modal.className = 'image-modal';
 };
 
 window.closeImageModal = function(){
   const modal = byId('imageModal');
   if(!modal) return;
-  modal.classList.add('hidden');
+
+  modal.className = 'image-modal hidden';
   modal.innerHTML = '';
 };
 
