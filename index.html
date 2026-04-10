@@ -2288,25 +2288,24 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
 function downloadLessonPlan(){
   try{
+    const stationsSource =
+      (typeof lessonStations !== 'undefined' && lessonStations) ||
+      (typeof liveStations !== 'undefined' && liveStations) ||
+      (typeof window.stations !== 'undefined' && window.stations) ||
+      (typeof defaultStations !== 'undefined' && defaultStations) ||
+      [];
 
-const stationsSource =
-  (typeof liveStations !== 'undefined' && liveStations) ||
-  (typeof window.stations !== 'undefined' && window.stations) ||
-  (typeof defaultStations !== 'undefined' && defaultStations) ||
-  [];
+    const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
 
+    const objectives = (lessonMeta.lessonObjectives || '')
+      .split('\n')
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s; });
 
-const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
-    
-const objectives = (lessonMeta.lessonObjectives || '')
-  .split('\n')
-  .map(function(s){ return s.trim(); })
-  .filter(function(s){ return s; });
-
-   const keywords = (lessonMeta.lessonKeywords || '')
-  .split(',')
-  .map(function(s){ return s.trim(); })
-  .filter(function(s){ return s; });
+    const keywords = (lessonMeta.lessonKeywords || '')
+      .split(',')
+      .map(function(s){ return s.trim(); })
+      .filter(function(s){ return s; });
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', {
@@ -2328,10 +2327,12 @@ const objectives = (lessonMeta.lessonObjectives || '')
         time: station.time || '',
         objective: station.objective || '',
         details: station.details || '',
-        questions: content.questions || [],
+        sourceText: content.sourceText || '',
+        questions: Array.isArray(content.questions) ? content.questions : [],
         hasImage: !!content.imageUrl,
         hasAudio: !!content.audioUrl,
-        hasVideo: !!content.videoUrl
+        hasVideo: !!content.videoUrl,
+        hasLink: !!content.linkUrl
       };
     });
 
@@ -2360,104 +2361,123 @@ const objectives = (lessonMeta.lessonObjectives || '')
       return a + b;
     }, 0);
 
-    const successCriteria = objectives.length
-  ? objectives.map(function(obj){
-      return "By the end of this lesson, I will be able to " + obj.replace(/^to\s+/i, '');
-    })
-  : [
-      "By the end of this lesson, I will be able to understand the lesson.",
-      "By the end of this lesson, I will be able to complete the tasks.",
-      "By the end of this lesson, I will be able to use key vocabulary."
-    ];
+    function cleanText(text){
+      return String(text || '').replace(/\s+/g, ' ').trim();
+    }
 
-const topicText = objectives.length
-  ? "This lesson focuses on " + lessonTitle.toLowerCase() +
-    " to help students develop their understanding and reading skills through tasks such as identifying main ideas, using context clues, and engaging with the text."
-  : "This lesson focuses on developing students’ reading skills and understanding through interactive activities.";
+    function shortenText(text, max){
+      const clean = cleanText(text);
+      if(clean.length <= max) return clean;
+      return clean.slice(0, max).trim() + '...';
+    }
+
+    function getQuestionSamples(questions, maxCount){
+      return (questions || [])
+        .map(function(q){ return cleanText(q.text || ''); })
+        .filter(function(q){ return q; })
+        .slice(0, maxCount);
+    }
+
+    const successCriteria = objectives.length
+      ? objectives.map(function(obj){
+          return 'Students will be able to ' + obj.replace(/^to\s+/i, '').trim() + '.';
+        })
+      : [
+          'Students will be able to understand the lesson content.',
+          'Students will be able to complete the lesson tasks accurately.',
+          'Students will be able to use key vocabulary from the lesson.'
+        ];
+
+    const topicText = objectives.length
+      ? 'This lesson focuses on ' + lessonTitle.toLowerCase() + ' and helps students develop understanding through reading, discussion, vocabulary work, and text-based responses.'
+      : 'This lesson focuses on developing students’ understanding and reading skills through interactive activities.';
+
     const hotQuestion = objectives.length
-  ? "To what extent can the ideas presented in " + lessonTitle.toLowerCase() +
-    " influence our real-life decisions? Explain your answer using evidence and examples from the lesson. " +
-    "Can you evaluate whether all situations discussed are equally valid, or are some more reliable than others? Why?"
-  : "How can the ideas in this lesson be applied in real-life situations, and how would you justify your opinion?";
+      ? 'How can the ideas in ' + lessonTitle.toLowerCase() + ' connect to real life, and how can you justify your thinking using evidence from the lesson?'
+      : 'How can the ideas in this lesson be applied in real-life situations, and how would you justify your opinion?';
 
     let eTools = [];
     stations.forEach(function(s){
       if(s.hasImage) eTools.push('PPT slides / visuals');
       if(s.hasAudio) eTools.push('Audio recording');
       if(s.hasVideo) eTools.push('Video');
+      if(s.hasLink) eTools.push('Hybrid link / online resource');
     });
     eTools.push('DL Online Lesson');
     eTools = Array.from(new Set(eTools));
 
-function generateStationActivityText(station, index){
-  const title = station.title || ('Station ' + (index + 1));
-  const objective = station.objective || '';
-  const details = station.details || '';
-  const qCount = Array.isArray(station.questions) ? station.questions.length : 0;
+    function generateStationActivityText(station, index){
+      const title = cleanText(station.title || ('Station ' + (index + 1)));
+      const objective = cleanText(station.objective || '');
+      const details = cleanText(station.details || '');
+      const sourceText = cleanText(station.sourceText || '');
+      const qCount = Array.isArray(station.questions) ? station.questions.length : 0;
+      const questionSamples = getQuestionSamples(station.questions, 3);
 
-  const titleLower = title.toLowerCase();
-  const detailsLower = details.toLowerCase();
-  const objectiveLower = objective.toLowerCase();
+      const titleLower = title.toLowerCase();
+      const detailsLower = details.toLowerCase();
+      const objectiveLower = objective.toLowerCase();
 
-  let actionText = 'Students engage with the task and respond to the activity questions using the lesson content.';
-  
-  if(titleLower.includes('prediction') || detailsLower.includes('predict')){
-    actionText = 'Students activate prior knowledge by making predictions, discussing possible ideas, and justifying their responses before completing the task.';
-  }
-  else if(titleLower.includes('read') || detailsLower.includes('read') || objectiveLower.includes('main idea') || objectiveLower.includes('details')){
-    actionText = 'Students read carefully to identify key ideas, locate supporting details, and build a clearer understanding of the text through guided responses.';
-  }
-  else if(titleLower.includes('vocab') || detailsLower.includes('vocabulary') || objectiveLower.includes('context clue') || objectiveLower.includes('vocabulary')){
-    actionText = 'Students use context clues and close reading strategies to infer the meanings of unfamiliar words and explain their understanding in context.';
-  }
-  else if(detailsLower.includes('evidence') || objectiveLower.includes('evidence')){
-    actionText = 'Students return to the text to locate evidence, justify their answers, and explain how specific details support their thinking.';
-  }
-  else if(titleLower.includes('discussion') || detailsLower.includes('discuss')){
-    actionText = 'Students discuss their ideas with partners or groups, compare responses, and refine their answers through meaningful interaction.';
-  }
-  else if(titleLower.includes('exit') || titleLower.includes('plenary')){
-    actionText = 'Students reflect on the lesson, summarize their understanding, and respond to a final task that shows what they have learned.';
-  }
+      let activityText = '';
 
-  let supportText = '';
-  if(objective){
-    supportText = ' The activity focuses on helping students ' + objective.replace(/^[A-Z]/, function(m){ return m.toLowerCase(); }) + '.';
-  }
+      if(titleLower.includes('starter') || titleLower.includes('warm') || detailsLower.includes('predict')){
+        activityText = 'Students begin by using the visual/text prompt to predict the lesson topic and activate prior knowledge.';
+      } else if(titleLower.includes('exit') || titleLower.includes('plenary')){
+        activityText = 'Students complete the final reflection task to summarize learning and show overall understanding of the lesson.';
+      } else if(objectiveLower.includes('main idea') || objectiveLower.includes('details') || detailsLower.includes('read')){
+        activityText = 'Students read the station task carefully to identify main ideas, locate supporting details, and respond using evidence from the text.';
+      } else if(objectiveLower.includes('vocabulary') || objectiveLower.includes('context clue') || detailsLower.includes('vocabulary')){
+        activityText = 'Students focus on vocabulary in context and use clues from the task to work out meanings accurately.';
+      } else if(objectiveLower.includes('evidence') || detailsLower.includes('evidence')){
+        activityText = 'Students return to the text to locate evidence and justify their answers clearly.';
+      } else {
+        activityText = 'Students complete the station task carefully and respond to the activity questions using the lesson content.';
+      }
 
-  let questionText = '';
-  if(qCount > 0){
-    questionText = ' Students then complete ' + qCount + ' question' + (qCount === 1 ? '' : 's') + ' to check understanding and apply the skill.';
-  }
+      if(details){
+        activityText += ' The task instructions ask students to: ' + details + '.';
+      }
 
-  let mediaText = '';
-  const mediaParts = [];
-  if(station.hasImage) mediaParts.push('visual support');
-  if(station.hasAudio) mediaParts.push('audio');
-  if(station.hasVideo) mediaParts.push('video');
+      if(sourceText){
+        activityText += ' The station content is about "' + shortenText(sourceText, 150) + '".';
+      }
 
-  if(mediaParts.length){
-    mediaText = ' The task is supported by ' + mediaParts.join(', ') + ' to increase engagement and deepen understanding.';
-  }
+      if(qCount > 0){
+        activityText += ' Students then complete ' + qCount + ' question' + (qCount === 1 ? '' : 's') + ' to check understanding and apply the skill.';
+      }
 
-  return actionText + supportText + questionText + mediaText;
-}
+      if(questionSamples.length){
+        activityText += ' Question focus includes: ' + questionSamples.join(' | ') + '.';
+      }
 
-const mainActivitiesHtml = mainStations.map(function(s, index){
-  const mins = s.time || '';
-  const activityText = generateStationActivityText(s, index);
+      const mediaParts = [];
+      if(station.hasImage) mediaParts.push('visual support');
+      if(station.hasAudio) mediaParts.push('audio');
+      if(station.hasVideo) mediaParts.push('video');
+      if(station.hasLink) mediaParts.push('an online link');
 
-  return `
-    <div style="margin-bottom:12px;">
-      <strong>🔵 Main Activity ${index + 1} (${escapeHtml(mins)})</strong><br>
-      <strong>${escapeHtml(s.title)}</strong><br>
-      ${escapeHtml(activityText)}<br>
-      <strong>Teacher Role:</strong> Monitor progress, model where needed, guide students to the text, and support accurate responses.<br>
-      <strong>Student Role:</strong> Read, think critically, discuss ideas, and complete the task independently or with peers.<br>
-      <strong>AFL:</strong> Oral responses, teacher observation, task completion, peer discussion, and direct feedback.
-    </div>
-  `;
-}).join('');
+      if(mediaParts.length){
+        activityText += ' The task is supported by ' + mediaParts.join(', ') + ' to increase engagement and deepen understanding.';
+      }
+
+      return activityText;
+    }
+
+    const mainActivitiesHtml = mainStations.map(function(s, index){
+      const mins = s.time || '';
+      const activityText = generateStationActivityText(s, index);
+
+      return `
+        <div style="margin-bottom:12px;">
+          <strong>🔵 Main Activity ${index + 1} (${escapeHtml(mins)})</strong><br>
+          <strong>${escapeHtml(s.title)}</strong><br>
+          ${escapeHtml(activityText)}<br>
+          <strong>Teacher Role:</strong> Monitor progress, model where needed, guide students to the text or task, and support accurate responses.<br>
+          <strong>Student Role:</strong> Read, think critically, discuss ideas where needed, and complete the task independently or with peers.<br>
+          <strong>AFL:</strong> Oral responses, teacher observation, task completion, peer discussion, and direct feedback.
+        </div>
+      `;
+    }).join('');
 
     const html = `
 <!DOCTYPE html>
@@ -2485,9 +2505,9 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
     font-size: 14px;
   }
   .section-title{
-  background: #eeeeee;
-  font-weight: bold;
-}
+    background: #eeeeee;
+    font-weight: bold;
+  }
   ul{
     margin: 0;
     padding-left: 18px;
@@ -2497,18 +2517,34 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
     text-align: center;
   }
   .top-actions button{
-  background: #9e9e9e;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.top-actions button:hover{
-  background: #757575;
-}
+    background: #9e9e9e;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .top-actions button:hover{
+    background: #757575;
+  }
+  .lp-header{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .lp-logo{
+    width:68px;
+    height:auto;
+  }
+  .lp-school{
+    font-size:20px;
+    font-weight:bold;
+  }
+  .lp-sub{
+    font-size:16px;
+  }
   @media print{
     .top-actions{ display:none; }
   }
@@ -2549,9 +2585,11 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
     <td class="section-title" style="width:30%;">Key Learning Objective(s)<br>مخرجات التعلم</td>
     <td>
       <ul>
-        ${successCriteria.map(function(obj){
-          return '<li>' + escapeHtml(obj) + '</li>';
-        }).join('')}
+        ${objectives.length
+          ? objectives.map(function(obj){
+              return '<li>' + escapeHtml(obj) + '</li>';
+            }).join('')
+          : '<li>No objectives added yet.</li>'}
       </ul>
     </td>
   </tr>
@@ -2580,8 +2618,10 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
   <tr>
     <td>${escapeHtml((starterStation && starterStation.time) || '5 mins')}</td>
     <td>
-      ${escapeHtml(starterStation ? generateStationActivityText(starterStation, 0) : 'Students begin with a short starter activity that activates prior knowledge, introduces the topic, and prepares them for the lesson.')}
-      <strong>Teacher Role:</strong> Guide discussion and activate background knowledge.<br>
+      ${escapeHtml(starterStation
+        ? generateStationActivityText(starterStation, 0)
+        : 'Students begin with a short starter activity that activates prior knowledge, introduces the topic, and prepares them for the lesson.')}
+      <br><strong>Teacher Role:</strong> Guide discussion, model where needed, and activate background knowledge.<br>
       <strong>Student Role:</strong> Share ideas, predictions, and prior knowledge.<br>
       <strong>AFL:</strong> Oral responses.
     </td>
@@ -2628,7 +2668,9 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
     <td>${escapeHtml((plenaryStation && plenaryStation.time) || '5 mins')}</td>
     <td>
       <strong>Plenary / Closure</strong><br>
-      ${escapeHtml(plenaryStation ? generateStationActivityText(plenaryStation, 0) : 'Students complete a short closing task to reflect on the lesson and show their final understanding.')}
+      ${escapeHtml(plenaryStation
+        ? generateStationActivityText(plenaryStation, 0)
+        : 'Students complete a short closing task to reflect on the lesson and show their final understanding.')}
     </td>
   </tr>
 </table>
@@ -2658,7 +2700,9 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
   </tr>
 </table>
 
-    `;
+</body>
+</html>
+`;
 
     const win = window.open('', '_blank');
     if(!win){
