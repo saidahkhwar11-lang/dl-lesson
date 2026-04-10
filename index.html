@@ -746,6 +746,23 @@ function getSnap(path){ return dbRef(path).once('value'); }
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
 function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
+  function renderBonusBox(){
+  const box = byId('bonusLiveContent');
+  if(!box) return;
+
+  const entries = Object.values(liveBonus || {});
+  if(!entries.length){
+    box.innerHTML = 'No bonus yet.';
+    return;
+  }
+
+  box.innerHTML = entries.map(function(item){
+    return '<div class="choice teacher-small-choice">⭐ ' +
+      escapeHtml(item.name || item.id || 'Student') +
+      ' — ' + Number(item.points || 0) +
+      '</div>';
+  }).join('');
+}
   
 function bindButtons(){
   const studentBtn = byId('studentStartBtn');
@@ -1760,8 +1777,7 @@ function startTeacherListeners(){
   teacherBonusRef.on('value', function(snap){
     liveBonus = snap.val() || {};
 
-    renderBonusBox();
-    renderTeacherTracker();
+  if(typeof renderBonusBox === 'function') renderBonusBox();    renderTeacherTracker();
     renderStudentNav();
 
     if(typeof renderTopStudents === 'function'){
@@ -2442,7 +2458,7 @@ document.addEventListener('DOMContentLoaded', function(){
         renderTeacherTracker();
         showTeacherSection('teacherTrackerCard');
         startTeacherListeners();
-        renderBonusBox();
+        if(typeof renderBonusBox === 'function') renderBonusBox();
       }catch(e){
         console.warn('Teacher restore failed', e);
       }
