@@ -520,7 +520,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 </div>
 
-<div id="imageModal" class="hidden"></div>
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
@@ -934,7 +933,7 @@ let imageHtml = '';
   imageHtml = `
     <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
     <div class="image-actions">
-      <button type="button" class="secondary" onclick="maximizeImage('${content.imageUrl}')">🔍 Maximize Picture</button>
+      <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')"🔍 Maximize Picture</button>
     </div>
   `;
 }
