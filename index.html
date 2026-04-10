@@ -698,7 +698,7 @@ function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ b
 window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
- window.maximizeImage = function(src){
+window.maximizeImage = function(src){
   if(!src) return;
 
   const modal = byId('imageModal');
@@ -708,7 +708,7 @@ window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.st
   modal.innerHTML =
     '<div class="image-modal-content" onclick="event.stopPropagation()">' +
       '<button type="button" class="image-modal-close" onclick="closeImageModal()">✕</button>' +
-      '<img id="imageModalImg" src="' + src + '" alt="maximized image">' +
+      '<img id="imageModalImg" src="' + escapeHtml(src) + '" alt="maximized image">' +
     '</div>';
 
   modal.onclick = function(){
@@ -719,7 +719,6 @@ window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.st
 window.closeImageModal = function(){
   const modal = byId('imageModal');
   if(!modal) return;
-
   modal.classList.add('hidden');
   modal.innerHTML = '';
 };
