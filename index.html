@@ -925,146 +925,141 @@ window.openTeacherStationPreview = function(id){
 
   if(!wrap || !station) return;
 
-
-let imageHtml = '';
-
+  let imageHtml = '';
   if(content.imageUrl){
-  imageHtml = `
-    <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
-    <div class="image-actions">
-    <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
-    </div>
-  `;
-}
+    imageHtml = `
+      <img class="reading-img" src="${escapeHtml(content.imageUrl)}" alt="Station Image">
+      <div class="image-actions">
+        <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
+      </div>
+    `;
+  }
 
   let audioHtml = '';
-  
   if(content.audioUrl){
     audioHtml = `
       <audio controls style="width:100%; margin-bottom:12px;">
-        <source src="${content.audioUrl}">
+        <source src="${escapeHtml(content.audioUrl)}">
       </audio>
     `;
   }
 
-   let videoHtml = '';
-
+  let videoHtml = '';
   if(content.videoUrl){
     videoHtml = `
       <video controls style="width:100%; max-height:400px; margin-bottom:12px;">
-        <source src="${content.videoUrl}">
+        <source src="${escapeHtml(content.videoUrl)}">
       </video>
     `;
   }
 
   let questionsHtml = '';
 
-if(content.questions && content.questions.length){
-  questionsHtml = content.questions.map(function(q, i){
-    const questionText = escapeHtml(q.question || q.text || 'No question text');
-    let extraHtml = '';
+  if(content.questions && content.questions.length){
+    questionsHtml = content.questions.map(function(q, i){
+      const questionText = escapeHtml(q.question || q.text || 'No question text');
+      let extraHtml = '';
 
-    if(q.type === 'mcq'){
-      extraHtml = '<div style="margin-top:8px;">' +
-        (q.choices || []).map(function(choice){
-          return '<div class="teacher-small-choice">• ' + escapeHtml(choice) + '</div>';
-        }).join('') +
+      if(q.type === 'mcq'){
+        extraHtml = '<div style="margin-top:8px;">' +
+          (q.choices || []).map(function(choice){
+            return '<div class="teacher-small-choice">• ' + escapeHtml(choice) + '</div>';
+          }).join('') +
+        '</div>';
+      }
+
+      else if(q.type === 'tf'){
+        extraHtml = '<div style="margin-top:8px;">' +
+          '<div class="teacher-small-choice">• True</div>' +
+          '<div class="teacher-small-choice">• False</div>' +
+        '</div>';
+      }
+
+      else if(q.type === 'matching'){
+        extraHtml = '<div style="margin-top:8px;">' +
+          (q.pairs || []).map(function(pair){
+            return '<div class="teacher-small-choice">• ' +
+              escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right) +
+            '</div>';
+          }).join('') +
+        '</div>';
+      }
+
+      else if(q.type === 'drag_gap'){
+        extraHtml = '<div style="margin-top:8px;">' +
+          '<div class="teacher-small-choice">• Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>' +
+        '</div>';
+      }
+
+      else if(q.type === 'poll' && q.options){
+        const poll = getPollResults(id, i, q.options);
+
+        extraHtml = '<div style="margin-top:8px;">' +
+          (q.options || []).map(function(option){
+            return '<div class="teacher-small-choice">• ' +
+              escapeHtml(option) +
+              ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
+              ' (' + (poll.counts[option] || 0) + ')' +
+            '</div>';
+          }).join('') +
+          '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
+        '</div>';
+      }
+
+      return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
+        '<strong>' + (i + 1) + '.</strong> ' + questionText +
+        extraHtml +
       '</div>';
-    }
-
-    else if(q.type === 'tf'){
-      extraHtml = '<div style="margin-top:8px;">' +
-        '<div class="teacher-small-choice">• True</div>' +
-        '<div class="teacher-small-choice">• False</div>' +
-      '</div>';
-    }
-
-    else if(q.type === 'matching'){
-      extraHtml = '<div style="margin-top:8px;">' +
-        (q.pairs || []).map(function(pair){
-          return '<div class="teacher-small-choice">• ' +
-            escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right) +
-          '</div>';
-        }).join('') +
-      '</div>';
-    }
-
-    else if(q.type === 'drag_gap'){
-      extraHtml = '<div style="margin-top:8px;">' +
-        '<div class="teacher-small-choice">• Answer: ' + escapeHtml(q.answer || '') + '</div>' +
-      '</div>';
-    }
-
-    if(q.type === 'poll' && q.options){
-  const poll = getPollResults(id, currentIndex, q.options);
-
-  choicesHtml = q.options.map(function(option){
-    return `
-      <div class="choice teacher-small-choice">
-        ${escapeHtml(option)} — 
-        <strong>${poll.percentages[option] || 0}%</strong> 
-        (${poll.counts[option] || 0})
-      </div>
-    `;
-  }).join('') + `
-    <div class="small" style="margin-top:8px;">
-      Total votes: ${poll.total}
-    </div>
-  `;
-}
-
-    return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
-      '<strong>' + (i + 1) + '.</strong> ' + questionText +
-      extraHtml +
-    '</div>';
-  }).join('');
-} else {
-  questionsHtml = '<div class="teacher-preview-empty">No questions added yet.</div>';
-}
+    }).join('');
+  } else {
+    questionsHtml = '<div class="teacher-preview-empty">No questions added yet.</div>';
+  }
 
   wrap.className = '';
   wrap.classList.add('teacher-preview');
 
- const lessonInfoBox =
-  '<div class="lesson-info-box">' +
+  const lessonInfoBox =
+    '<div class="lesson-info-box">' +
 
-    '<div class="lesson-title">' +
-      (lessonMeta.lessonTitle || '') +
-    '</div>' +
-
-    '<div class="lesson-section">' +
-      '<div class="lesson-label">🎯 Objectives</div>' +
-      '<ul class="lesson-list">' +
-        (lessonMeta.lessonObjectives || '')
-          .split('\n')
-          .map(function(obj){
-            return '<li>' + escapeHtml(obj) + '</li>';
-          }).join('') +
-      '</ul>' +
-    '</div>' +
-
-    '<div class="lesson-section">' +
-      '<div class="lesson-label">🔑 Keywords</div>' +
-      '<div class="lesson-tags">' +
-        (lessonMeta.lessonKeywords || '')
-          .split(',')
-          .map(function(k){
-            return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
-          }).join('') +
+      '<div class="lesson-title">' +
+        escapeHtml(lessonMeta.lessonTitle || '') +
       '</div>' +
-    '</div>' +
 
-  '</div>';
+      '<div class="lesson-section">' +
+        '<div class="lesson-label">🎯 Objectives</div>' +
+        '<ul class="lesson-list">' +
+          (lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(function(obj){ return obj.trim(); })
+            .map(function(obj){
+              return '<li>' + escapeHtml(obj) + '</li>';
+            }).join('') +
+        '</ul>' +
+      '</div>' +
+
+      '<div class="lesson-section">' +
+        '<div class="lesson-label">🔑 Keywords</div>' +
+        '<div class="lesson-tags">' +
+          (lessonMeta.lessonKeywords || '')
+            .split(',')
+            .filter(function(k){ return k.trim(); })
+            .map(function(k){
+              return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
+            }).join('') +
+        '</div>' +
+      '</div>' +
+
+    '</div>';
 
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
-      <h3>${station.title}</h3>
+      <h3>${escapeHtml(station.title || '')}</h3>
 
       ${lessonInfoBox}
-      
-      <div>🎯 ${station.objective || ''}</div>
-      <div>⏱ ${station.time || ''}</div>
-      <div>📝 ${station.details || ''}</div>
+
+      <div>🎯 ${escapeHtml(station.objective || '')}</div>
+      <div>⏱ ${escapeHtml(station.time || '')}</div>
+      <div>📝 ${escapeHtml(station.details || '')}</div>
 
       ${imageHtml}
       ${audioHtml}
@@ -1077,12 +1072,12 @@ if(content.questions && content.questions.length){
     </div>
   `;
 };
-  
+
 window.toggleTeacherQuestions = function(id){
   teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
   openTeacherStationPreview(id);
 };
-
+  
   window.displayTeacherStation = async function(id){
   if(!requireConnection()) return;
 
