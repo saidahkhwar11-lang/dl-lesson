@@ -714,6 +714,13 @@ window.maximizeImage = function(src){
 window.closeImageModal = function(){
   const modal = byId('imageModal');
   if(!modal) return;
+  modal.className = 'image-modal hidden';
+  modal.innerHTML = '';
+};
+
+window.closeImageModal = function(){
+  const modal = byId('imageModal');
+  if(!modal) return;
 
   modal.className = 'image-modal hidden';
   modal.innerHTML = '';
@@ -928,7 +935,7 @@ let imageHtml = '';
   imageHtml = `
     <img class="reading-img" src="${content.imageUrl}" alt="Station Image">
     <div class="image-actions">
-      <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
+    <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
     </div>
   `;
 }
