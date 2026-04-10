@@ -783,6 +783,7 @@ window.maximizeImage = function(src){
     '</div>';
 
   modal.className = 'image-modal';
+modal.classList.remove('hidden');
 };
    function getSelfEvalValue(stationId){
   const student = currentStudent && liveStudents[currentStudent.id];
@@ -812,13 +813,6 @@ window.closeImageModal = function(){
   modal.innerHTML = '';
 };
 
-window.closeImageModal = function(){
-  const modal = byId('imageModal');
-  if(!modal) return;
-
-  modal.className = 'image-modal hidden';
-  modal.innerHTML = '';
-};
 
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
