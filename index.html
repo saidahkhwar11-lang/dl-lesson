@@ -995,6 +995,24 @@ if(content.questions && content.questions.length){
       '</div>';
     }
 
+    if(q.type === 'poll' && q.options){
+  const poll = getPollResults(id, currentIndex, q.options);
+
+  choicesHtml = q.options.map(function(option){
+    return `
+      <div class="choice teacher-small-choice">
+        ${escapeHtml(option)} — 
+        <strong>${poll.percentages[option] || 0}%</strong> 
+        (${poll.counts[option] || 0})
+      </div>
+    `;
+  }).join('') + `
+    <div class="small" style="margin-top:8px;">
+      Total votes: ${poll.total}
+    </div>
+  `;
+}
+
     return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
       '<strong>' + (i + 1) + '.</strong> ' + questionText +
       extraHtml +
@@ -1434,7 +1452,6 @@ window.submitCurrentStation = async function(stationId){
       lbl.style.borderColor = '';
     });
 
-    // MATCHING
     if(q.type === 'matching'){
       const selects = wrap.querySelectorAll('select[data-match-index]');
       const submittedMatchAnswers = [];
@@ -1498,14 +1515,24 @@ window.submitCurrentStation = async function(stationId){
       input.disabled = true;
     });
 
-    if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-      score++;
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
-    }
+   if(q.type === 'poll'){
+  if(answer){
+    score += 1;
+    wrap.classList.add('correct');
+    wrap.querySelector('.feedback').innerHTML = '🗳️ Vote recorded';
+  } else {
+    wrap.classList.add('wrong');
+    wrap.querySelector('.feedback').innerHTML = '❌ Please select an option';
+  }
+}
+else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+  score += 1;
+  wrap.classList.add('correct');
+  wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+} else {
+  wrap.classList.add('wrong');
+  wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
+}
   });
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
@@ -1587,6 +1614,32 @@ function renderTeacherTracker(){
   wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
 renderTeacherOverview();
 if(typeof renderTopStudents === 'function') renderTopStudents();
+}
+
+  function getPollResults(stationId, questionIndex, options){
+  const counts = {};
+  (options || []).forEach(function(opt){
+    counts[opt] = 0;
+  });
+
+  let total = 0;
+
+  Object.values(liveStudents || {}).forEach(function(student){
+    const answers = (student.stationAnswers && student.stationAnswers[stationId]) || {};
+    const ans = answers[questionIndex];
+
+    if(ans && counts.hasOwnProperty(ans)){
+      counts[ans]++;
+      total++;
+    }
+  });
+
+  const percentages = {};
+  Object.keys(counts).forEach(function(opt){
+    percentages[opt] = total ? Math.round((counts[opt] / total) * 100) : 0;
+  });
+
+  return { counts, percentages, total };
 }
 
 function renderTopStudents(){
