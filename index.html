@@ -998,7 +998,7 @@ window.openTeacherView = async function(){
       return;
     }
     hideNotice('teacherNotice');
-    localStorage.setItem('dl_role', 'teacher');
+    sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
     showOnly('teacherView');
     fillTeacherSelects();
