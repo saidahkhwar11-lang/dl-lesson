@@ -1745,10 +1745,40 @@ function listenStudentLive(){
 function startTeacherListeners(){
   if(teacherTrackerRef) teacherTrackerRef.off();
   if(teacherBonusRef) teacherBonusRef.off();
+
   teacherTrackerRef = dbRef(lessonBase() + '/students');
   teacherBonusRef = dbRef(bonusPath());
-  teacherTrackerRef.on('value', function(snap){ liveStudents = snap.val() || {}; renderTeacherTracker(); if(currentStudent) renderStudentNav(); });
-  teacherBonusRef.on('value', function(snap){ liveBonus = snap.val() || {}; renderBonusBox(); renderTeacherTracker(); });
+
+  teacherTrackerRef.on('value', function(snap){
+    liveStudents = snap.val() || {};
+    renderTeacherTracker();
+
+    if(currentStudent){
+      renderStudentNav();
+    }
+
+    const previewWrap = byId('teacherStationPreview');
+    if(previewWrap && previewWrap.dataset.currentStationId){
+      openTeacherStationPreview(previewWrap.dataset.currentStationId);
+    }
+  });
+
+  teacherBonusRef.on('value', function(snap){
+    liveBonus = snap.val() || {};
+
+    renderBonusBox();
+    renderTeacherTracker();
+    renderStudentNav();
+
+    if(typeof renderTopStudents === 'function'){
+      renderTopStudents();
+    }
+
+    const previewWrap = byId('teacherStationPreview');
+    if(previewWrap && previewWrap.dataset.currentStationId){
+      openTeacherStationPreview(previewWrap.dataset.currentStationId);
+    }
+  });
 }
 
 function renderTeacherTracker(){
