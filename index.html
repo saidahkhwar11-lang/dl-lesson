@@ -1809,6 +1809,7 @@ window.clearQuestionBuilder = function(){
   byId('builderGapParts').value = '';
   byId('builderGapAnswers').value = '';
   byId('builderGapWords').value = '';
+  byId('builderPollOptions').value = '';
   toggleBuilderFields();
 };
 
@@ -1922,57 +1923,75 @@ window.addCreatorQuestion = function(){
 
     newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
     newQuestion.answer = { A: choiceA, B: choiceB, C: choiceC, D: choiceD }[correct];
-    
+
   } else if(type === 'tf'){
     newQuestion.answer = byId('builderCorrectTf').value;
-    
+
   } else if(type === 'matching'){
     const raw = byId('builderMatchingPairs').value.trim();
+
     if(!raw){
       alert('Please add matching pairs.');
       return;
     }
 
-    newQuestion.pairs = raw.split('\n')
-      .map(line => line.trim())
+    const pairs = raw.split('\n')
+      .map(function(line){ return line.trim(); })
       .filter(Boolean)
-      .map(line => {
+      .map(function(line){
         const parts = line.split('|');
         return {
           left: (parts[0] || '').trim(),
           right: (parts[1] || '').trim()
         };
       })
-      .filter(pair => pair.left && pair.right);
+      .filter(function(pair){ return pair.left && pair.right; });
 
-    else if(type === 'poll'){
-  const options = byId('builderPollOptions').value
-    .split('\n')
-    .map(function(x){ return x.trim(); })
-    .filter(Boolean);
+    if(!pairs.length){
+      alert('Please write valid matching pairs like: word|meaning');
+      return;
+    }
 
-  // 🔥 REQUIRE AT LEAST 2 OPTIONS
-  if(options.length < 2){
-    alert('Please add at least 2 poll options.');
-    return;
-  }
+    newQuestion.pairs = pairs;
 
-  newQuestion.options = options;
-}
-    
+  } else if(type === 'poll'){
+    const options = byId('builderPollOptions').value
+      .split('\n')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+
+    if(options.length < 4){
+      alert('Please add at least 4 poll options.');
+      return;
+    }
+
+    newQuestion.options = options;
+
   } else if(type === 'drag_gap'){
-    const parts = byId('builderGapParts').value.split('|').map(x => x.trim());
-    const answers = byId('builderGapAnswers').value.split(',').map(x => x.trim()).filter(Boolean);
-    const words = byId('builderGapWords').value.split(',').map(x => x.trim()).filter(Boolean);
+    const parts = byId('builderGapParts').value
+      .split('|')
+      .map(function(x){ return x.trim(); });
+
+    const answers = byId('builderGapAnswers').value
+      .split(',')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+
+    const words = byId('builderGapWords').value
+      .split(',')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
 
     if(parts.length < 2){
       alert('Please write sentence parts using | to split the gaps.');
       return;
     }
+
     if(!answers.length){
       alert('Please add the correct answers.');
       return;
     }
+
     if(!words.length){
       alert('Please add the word bank.');
       return;
@@ -2730,10 +2749,6 @@ function downloadLessonPlan(){
     <p class="lesson-popup-msg">Read the objectives before starting Station 1.</p>
 
     <div id="lessonPopupContent"></div>
-
-    <div class="btns" style="margin-top:14px;">
-      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
-    </div>
   </div>
 </div>
 
