@@ -430,8 +430,17 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <label>Video URL</label>
 <input id="creatorVideoUrl" placeholder="Paste video URL" />
 
+<label>Video URL</label>
+<input id="creatorVideoUrl" placeholder="Paste video URL" />
+
 <label>Upload Video</label>
 <input id="creatorVideoFile" type="file" accept="video/*" onchange="handleCreatorVideo(event)" />
+
+<label>Hybrid Link URL</label>
+<input id="creatorLinkUrl" placeholder="Paste link (ALEF, website, PDF, Google Form...)" />
+
+<label>Button Text</label>
+<input id="creatorLinkTitle" placeholder="e.g. Open Activity" />
 
 <label>Source Text / Activity Notes</label>
 <textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
@@ -554,6 +563,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   );
 }
 
+window.openHybridLink = function(url){
+  if(!url) return;
+  window.open(url, '_blank');
+};
+
 function showLessonInfoPopup(){
   const popup = byId('lessonInfoPopup');
   const content = byId('lessonPopupContent');
@@ -619,11 +633,12 @@ const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
 ];
   
 const defaultContent = {
-  starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
-  st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
-  st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
-  st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]},
-  exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', questions:[]}
+  const defaultContent = {
+  starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
+  st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
+  st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
+  st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
+  exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}
 };
 
 let firebaseConfig = null;
@@ -664,6 +679,8 @@ function getStationContent(id){
     imageNotes:'',
     audioUrl:'',
     videoUrl:'',
+    linkUrl:'',
+    linkTitle:'',
     questions:[]
   };
 }
@@ -1276,6 +1293,12 @@ window.openStation = function(id){
   const videoBlock = ct.videoUrl
     ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
     : '';
+  const linkBlock = ct.linkUrl
+  ? '<div style="margin-bottom:12px;">' +
+    '<button class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
+    escapeHtml(ct.linkTitle || 'Open Link') +
+    '</button></div>'
+  : '';
 
   const nextStationId = getNextUnlockedStationId(id);
   const submitBtn = submitted
@@ -1300,6 +1323,7 @@ window.openStation = function(id){
     imageBlock +
     audioBlock +
     videoBlock +
+    linkBlock +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
     questionsHtml +
@@ -1771,6 +1795,8 @@ if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
 if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
 if(creatorVideoUrl) creatorVideoUrl.value = ct.videoUrl || '';
 if(creatorSourceText) creatorSourceText.value = ct.sourceText || '';
+if(byId('creatorLinkUrl')) byId('creatorLinkUrl').value = ct.linkUrl || '';
+if(byId('creatorLinkTitle')) byId('creatorLinkTitle').value = ct.linkTitle || '';
 if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
   creatorDraftQuestions = JSON.parse(JSON.stringify(ct.questions || []));
   renderCreatorQuestionsList();
@@ -2007,6 +2033,8 @@ lessonStations = lessonStations.map(function(s){
   lessonContent[id].imageNotes = byId('creatorImageNotes') ? byId('creatorImageNotes').value.trim() : '';
   lessonContent[id].audioUrl = byId('creatorAudioUrl') ? byId('creatorAudioUrl').value.trim() : '';
   lessonContent[id].videoUrl = byId('creatorVideoUrl') ? byId('creatorVideoUrl').value.trim() : '';
+  lessonContent[id].linkUrl = byId('creatorLinkUrl') ? byId('creatorLinkUrl').value.trim() : '';
+lessonContent[id].linkTitle = byId('creatorLinkTitle') ? byId('creatorLinkTitle').value.trim() : '';
   lessonContent[id].time = stationTime;
 
   lessonContent[id].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
@@ -2666,6 +2694,7 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
   </div>
     
 <div id="imageModal" class="image-modal hidden"></div>
+
 
 </body>
 </html>
