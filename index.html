@@ -2675,17 +2675,20 @@ const mainActivitiesHtml = mainStations.map(function(s, index){
   
 </script>
     
-      <div id="lessonInfoPopup" class="lesson-popup hidden">
+<div id="lessonInfoPopup" class="lesson-popup hidden">
   <div class="lesson-popup-card">
     <h3>Before You Start Station 1</h3>
     <p class="lesson-popup-msg">Read the objectives before starting Station 1.</p>
 
     <div id="lessonPopupContent"></div>
 
+    <div class="btns" style="margin-top:14px;">
+      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
+    </div>
   </div>
-    
-<div id="imageModal" class="image-modal hidden"></div>
+</div>
 
+<div id="imageModal" class="image-modal hidden"></div>
 
 </body>
 </html>
