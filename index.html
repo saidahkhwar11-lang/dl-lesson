@@ -452,23 +452,14 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
+
             <div id="builderMcqFields">
-              <label>Choice A</label>
-              <input id="builderChoiceA" />
-              <label>Choice B</label>
-              <input id="builderChoiceB" />
-              <label>Choice C</label>
-              <input id="builderChoiceC" />
-              <label>Choice D</label>
-              <input id="builderChoiceD" />
-              <label>Correct Answer</label>
-              <select id="builderCorrectMcq">
-                <option value="A">A</option>
-                <option value="B">B</option>
-                <option value="C">C</option>
-                <option value="D">D</option>
-              </select>
-            </div>
+  <label>MCQ Options (at least 2, one per line)</label>
+  <textarea id="builderChoiceOptions" placeholder="Option 1&#10;Option 2&#10;Option 3"></textarea>
+
+  <label>Correct Answer (write the exact option text)</label>
+  <input id="builderCorrectOptionText" placeholder="Type the correct option exactly as written above" />
+</div>
             <!-- MATCHING FIELDS -->
 <div id="builderMatchingFields" class="hidden">
   <label>Matching Pairs</label>
@@ -492,7 +483,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
 
   <div id="builderPollFields" class="hidden">
-  <label>Poll Options (at least 4, one per line)</label>
+  <label>Poll Options (at least 2, one per line)</label>
   <textarea id="builderPollOptions" placeholder="Strongly Agree&#10;Agree&#10;Disagree&#10;Strongly Disagree"></textarea>
 </div>
             <div id="builderTfFields" class="hidden">
@@ -1189,23 +1180,53 @@ function renderQuestion(q, stationId, index){
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
 
- if(q.type === 'mcq'){
-  extra = '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' +
-          '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+  if(q.type === 'mcq'){
+    body = (q.choices || []).map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
+    }).join('');
 
-} else if(q.type === 'tf'){
-  extra = '<div class="small">Choices: True | False</div>' +
-          '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+  } else if(q.type === 'tf'){
+    body = ['True','False'].map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
+    }).join('');
 
-} else if(q.type === 'matching'){
-  extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+  } else if(q.type === 'matching'){
+    const rights = (q.pairs || []).map(function(pair){ return pair.right; });
+    const disabled = submitted ? ' disabled' : '';
 
-} else if(q.type === 'poll'){
-  extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+    body = (q.pairs || []).map(function(pair, pairIndex){
+      const selectedValue = Array.isArray(savedAnswer) ? (savedAnswer[pairIndex] || '') : '';
+      return `
+        <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
+          <div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
+          <select data-match-index="${pairIndex}" ${disabled}>
+            <option value="">Select answer</option>
+            ${rights.map(function(right){
+              const selected = normalizeAnswer(selectedValue) === normalizeAnswer(right) ? ' selected' : '';
+              return '<option value="' + escapeHtml(right) + '"' + selected + '>' + escapeHtml(right) + '</option>';
+            }).join('')}
+          </select>
+        </div>
+      `;
+    }).join('');
 
-} else if(q.type === 'drag_gap'){
-  extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
-}
+  } else if(q.type === 'poll'){
+    body = (q.options || []).map(function(option){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(option) ? ' checked' : '';
+      const disabled = submitted ? ' disabled' : '';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(option) + '"' + checked + disabled + '> ' + escapeHtml(option) + '</label>';
+    }).join('');
+
+  } else if(q.type === 'drag_gap'){
+    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
+
+  } else {
+    body = '<div class="small">Unsupported question type</div>';
+  }
 
   return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
@@ -1799,11 +1820,8 @@ window.toggleBuilderFields = function(){
 window.clearQuestionBuilder = function(){
   byId('builderQuestionType').value = 'mcq';
   byId('builderQuestionText').value = '';
-  byId('builderChoiceA').value = '';
-  byId('builderChoiceB').value = '';
-  byId('builderChoiceC').value = '';
-  byId('builderChoiceD').value = '';
-  byId('builderCorrectMcq').value = 'A';
+  byId('builderChoiceOptions').value = '';
+  byId('builderCorrectOptionText').value = '';
   byId('builderCorrectTf').value = 'True';
   byId('builderMatchingPairs').value = '';
   byId('builderGapParts').value = '';
@@ -1826,22 +1844,22 @@ window.renderCreatorQuestionsList = function(){
     let extra = '';
 
     if(q.type === 'mcq'){
-      extra = '<div class="small">Choices: ' + (q.choices || []).map(escapeHtml).join(' | ') + '</div>' +
+      extra = '<div class="small">Choices: ' + escapeHtml((q.choices || []).join(' | ')) + '</div>' +
               '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
-      
+
     } else if(q.type === 'tf'){
       extra = '<div class="small">Choices: True | False</div>' +
               '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
-      
+
     } else if(q.type === 'matching'){
-  extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+      extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
 
-} else if(q.type === 'poll'){
-  extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+    } else if(q.type === 'poll'){
+      extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
 
-} else if(q.type === 'drag_gap'){
-  extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
-}
+    } else if(q.type === 'drag_gap'){
+      extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
+    }
 
     return `
       <div class="card" style="padding:10px;margin-bottom:8px;">
@@ -1866,23 +1884,20 @@ window.editCreatorQuestion = function(index){
   byId('builderQuestionText').value = q.text || '';
 
   if(q.type === 'mcq'){
-    byId('builderChoiceA').value = q.choices[0] || '';
-    byId('builderChoiceB').value = q.choices[1] || '';
-    byId('builderChoiceC').value = q.choices[2] || '';
-    byId('builderChoiceD').value = q.choices[3] || '';
-    const correctIndex = (q.choices || []).findIndex(function(c){
-      return normalizeAnswer(c) === normalizeAnswer(q.answer);
-    });
-    byId('builderCorrectMcq').value = ['A','B','C','D'][correctIndex] || 'A';
-    
+    byId('builderChoiceOptions').value = (q.choices || []).join('\n');
+    byId('builderCorrectOptionText').value = q.answer || '';
+
   } else if(q.type === 'tf'){
     byId('builderCorrectTf').value = q.answer || 'True';
-    
+
   } else if(q.type === 'matching'){
     byId('builderMatchingPairs').value = (q.pairs || []).map(function(pair){
       return (pair.left || '') + '|' + (pair.right || '');
     }).join('\n');
-    
+
+  } else if(q.type === 'poll'){
+    byId('builderPollOptions').value = (q.options || []).join('\n');
+
   } else if(q.type === 'drag_gap'){
     byId('builderGapParts').value = (q.parts || []).join(' | ');
     byId('builderGapAnswers').value = (q.answers || []).join(', ');
@@ -1890,9 +1905,9 @@ window.editCreatorQuestion = function(index){
   }
 
   toggleBuilderFields();
-  creatorDraftQuestions.splice(index,1);
+  creatorDraftQuestions.splice(index, 1);
   renderCreatorQuestionsList();
-  showNotice('creatorNotice','Edit the question and click Add Question to save changes.','warn');
+  showNotice('creatorNotice', 'Edit the question and click Add Question to save changes.', 'warn');
 };
   
 window.addCreatorQuestion = function(){
@@ -1910,19 +1925,36 @@ window.addCreatorQuestion = function(){
   };
 
   if(type === 'mcq'){
-    const choiceA = byId('builderChoiceA').value.trim();
-    const choiceB = byId('builderChoiceB').value.trim();
-    const choiceC = byId('builderChoiceC').value.trim();
-    const choiceD = byId('builderChoiceD').value.trim();
-    const correct = byId('builderCorrectMcq').value;
+    const options = byId('builderChoiceOptions').value
+      .split('\n')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
 
-    if(!choiceA || !choiceB || !choiceC || !choiceD){
-      alert('Please complete all MCQ choices.');
+    const correctText = byId('builderCorrectOptionText').value.trim();
+
+    if(options.length < 2){
+      alert('Please add at least 2 MCQ options.');
       return;
     }
 
-    newQuestion.choices = [choiceA, choiceB, choiceC, choiceD];
-    newQuestion.answer = { A: choiceA, B: choiceB, C: choiceC, D: choiceD }[correct];
+    if(!correctText){
+      alert('Please write the correct answer text.');
+      return;
+    }
+
+    const found = options.some(function(opt){
+      return normalizeAnswer(opt) === normalizeAnswer(correctText);
+    });
+
+    if(!found){
+      alert('The correct answer must match one of the options exactly.');
+      return;
+    }
+
+    newQuestion.choices = options;
+    newQuestion.answer = options.find(function(opt){
+      return normalizeAnswer(opt) === normalizeAnswer(correctText);
+    });
 
   } else if(type === 'tf'){
     newQuestion.answer = byId('builderCorrectTf').value;
@@ -1960,8 +1992,8 @@ window.addCreatorQuestion = function(){
       .map(function(x){ return x.trim(); })
       .filter(Boolean);
 
-    if(options.length < 4){
-      alert('Please add at least 4 poll options.');
+    if(options.length < 2){
+      alert('Please add at least 2 poll options.');
       return;
     }
 
