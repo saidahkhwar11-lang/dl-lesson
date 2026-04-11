@@ -635,15 +635,22 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
         <div>
           <label>Station Title</label>
           <input id="creatorTitle" />
+          
           <label>Mini Objective</label>
           <input id="creatorObjective" />
+          
+          <label>Success Criteria</label>
+<textarea id="creatorSuccessCriteria" placeholder="Write the success criteria for this station..."></textarea>
+
           <label>Details</label>
           <textarea id="creatorDetails"></textarea>
+          
           <label>Time</label>
           <input id="creatorTime" />
+          
           <label>Image URL</label>
 <input id="creatorImageUrl" placeholder="Paste image URL" />
-
+          
 <label>Upload Activity Picture</label>
 <input id="creatorImageFile" type="file" accept="image/*" onchange="handleCreatorImage(event)" />
 
@@ -2304,6 +2311,7 @@ window.loadCreatorStation = function(){
   if(!st) return;
 const creatorTitle = byId('creatorTitle');
 const creatorObjective = byId('creatorObjective');
+const creatorSuccessCriteria = byId('creatorSuccessCriteria');
 const creatorDetails = byId('creatorDetails');
 const creatorTime = byId('creatorTime');
 const creatorImageUrl = byId('creatorImageUrl');
@@ -2315,6 +2323,7 @@ const creatorImageNotes = byId('creatorImageNotes');
 if(creatorTitle) creatorTitle.value = st.title || '';
 if(creatorObjective) creatorObjective.value = st.objective || '';
 if(creatorDetails) creatorDetails.value = st.details || '';
+if(creatorsuccessCriteria) creatorsuccessCriteria.value = st.successCriteria || '';
 if(creatorTime) creatorTime.value = st.time || '';
 if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
 if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
