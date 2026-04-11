@@ -1373,64 +1373,64 @@ function renderQuestion(q, stationId, index){
       `;
     }).join('');
 
- else if(q.type === 'poll'){
-  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
-    const savedPollAnswers = Array.isArray(savedAnswer) ? savedAnswer : [];
-    const disabled = submitted ? ' disabled' : '';
+  } else if(q.type === 'poll'){
+    if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
+      const savedPollAnswers = Array.isArray(savedAnswer) ? savedAnswer : [];
+      const disabled = submitted ? ' disabled' : '';
 
-    body = `
-      <div class="poll-objectives-wrap">
-        <div style="font-weight:700; margin-bottom:12px; font-size:16px;">
-          ${escapeHtml(q.pollTitle || 'Now I Know How to...')}
-        </div>
+      body = `
+        <div class="poll-objectives-wrap">
+          <div style="font-weight:700; margin-bottom:12px; font-size:16px;">
+            ${escapeHtml(q.pollTitle || 'Now I Know How to...')}
+          </div>
 
-        ${(q.objectives || []).map(function(obj, objIndex){
-          const selected = savedPollAnswers[objIndex] || '';
+          ${(q.objectives || []).map(function(obj, objIndex){
+            const selected = savedPollAnswers[objIndex] || '';
 
-          return `
-            <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-              <div style="margin-bottom:8px;">
-                ${escapeHtml(obj)}
+            return `
+              <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
+                <div style="margin-bottom:8px;">
+                  ${escapeHtml(obj)}
+                </div>
+
+                <label style="margin-right:16px;">
+                  <input type="radio"
+                         name="${inputName}_${objIndex}"
+                         value="✅"
+                         ${selected === '✅' ? 'checked' : ''}
+                         ${disabled}>
+                  ✅
+                </label>
+
+                <label>
+                  <input type="radio"
+                         name="${inputName}_${objIndex}"
+                         value="❌"
+                         ${selected === '❌' ? 'checked' : ''}
+                         ${disabled}>
+                  ❌
+                </label>
               </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+    } else {
+      const disabled = submitted ? ' disabled' : '';
+      body = (q.options || []).map(function(choice){
+        const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+        return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
+      }).join('');
+    }
 
-              <label style="margin-right:16px;">
-                <input type="radio"
-                       name="${inputName}_${objIndex}"
-                       value="✅"
-                       ${selected === '✅' ? 'checked' : ''}
-                       ${disabled}>
-                ✅
-              </label>
+  } else if(q.type === 'drag_gap'){
+    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
 
-              <label>
-                <input type="radio"
-                       name="${inputName}_${objIndex}"
-                       value="❌"
-                       ${selected === '❌' ? 'checked' : ''}
-                       ${disabled}>
-                ❌
-              </label>
-            </div>
-          `;
-        }).join('')}
-      </div>
-    `;
   } else {
-    const disabled = submitted ? ' disabled' : '';
-    body = (q.options || []).map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-    }).join('');
+    body = '<div class="small">Unsupported question type</div>';
   }
 
-} else if(q.type === 'drag_gap'){
-  body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-
-} else {
-  body = '<div class="small">Unsupported question type</div>';
-}
-
-return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
+  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
   
 window.openStation = function(id){
@@ -2173,27 +2173,20 @@ window.renderCreatorQuestionsList = function(){
     let extra = '';
 
     if(q.type === 'mcq'){
-      extra = '<div class="small">Choices: ' + escapeHtml((q.choices || []).join(' | ')) + '</div>' +
-              '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+      extra = '<div class="small">Choices: ' + escapeHtml((q.choices || []).join(' | ')) + '</div>';
 
     } else if(q.type === 'tf'){
-      extra = '<div class="small">Choices: True | False</div>' +
-              '<div class="small">Correct Answer: ' + escapeHtml(q.answer || '') + '</div>';
+      extra = '<div class="small">Choices: True | False</div>';
 
     } else if(q.type === 'matching'){
-      extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
+      extra = '<div class="small">Matching pairs: ' + (q.pairs || []).length + '</div>';
 
-    else if(q.type === 'poll'){
-  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
-    answer = (q.objectives || []).map(function(_, objIndex){
-      const selected = document.querySelector('input[name="' + inputName + '_' + objIndex + '"]:checked');
-      return selected ? selected.value : '';
-    });
-  } else {
-    const selected = document.querySelector('input[name="' + inputName + '"]:checked');
-    answer = selected ? selected.value : '';
-  }
-}
+    } else if(q.type === 'poll'){
+      if(q.pollMode === 'objectives'){
+        extra = '<div class="small">Exit Ticket poll (Objectives)</div>';
+      } else {
+        extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+      }
 
     } else if(q.type === 'drag_gap'){
       extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
@@ -2202,18 +2195,12 @@ window.renderCreatorQuestionsList = function(){
     return `
       <div class="card" style="padding:10px;margin-bottom:8px;">
         <strong>Q${i + 1}.</strong> ${escapeHtml(q.text || '')}
-        <div class="small">Type: ${escapeHtml((q.type || '').toUpperCase())}</div>
         ${extra}
-        <div class="btns" style="margin-top:8px;">
-          <button type="button" onclick="editCreatorQuestion(${i})">Edit</button>
-          <button type="button" class="secondary" onclick="moveCreatorQuestion(${i})">Move</button>
-          <button type="button" class="warnbtn" onclick="removeCreatorQuestion(${i})">Delete</button>
-        </div>
       </div>
     `;
   }).join('');
 };
-
+  
 window.editCreatorQuestion = function(index){
   const q = creatorDraftQuestions[index];
   if(!q) return;
@@ -2324,39 +2311,39 @@ window.addCreatorQuestion = function(){
 
     newQuestion.pairs = pairs;
 
-  } else if(type === 'poll'){
-  const stationTitle = (creatorDraft.title || '').toLowerCase().trim();
-  const isExitTicket = stationTitle.includes('exit ticket');
+      } else if(type === 'poll'){
+    const stationTitle = (creatorDraft.title || '').toLowerCase().trim();
+    const isExitTicket = stationTitle.includes('exit ticket');
 
-  if(isExitTicket){
-    const objectives = (lessonData.objectives || [])
-      .map(function(x){ return x.trim(); })
-      .filter(Boolean);
+    if(isExitTicket){
+      const objectives = (lessonMeta.lessonObjectives || '')
+        .split('\n')
+        .map(function(x){ return x.trim(); })
+        .filter(Boolean);
 
-    if(!objectives.length){
-      alert('Please add lesson objectives first.');
-      return;
+      if(!objectives.length){
+        alert('Please add lesson objectives first.');
+        return;
+      }
+
+      newQuestion.pollMode = 'objectives';
+      newQuestion.pollTitle = 'Now I Know How to...';
+      newQuestion.objectives = objectives;
+      newQuestion.options = ['✅', '❌'];
+
+    } else {
+      const options = byId('builderPollOptions').value
+        .split('\n')
+        .map(function(x){ return x.trim(); })
+        .filter(Boolean);
+
+      if(options.length < 2){
+        alert('Please add at least 2 poll options.');
+        return;
+      }
+
+      newQuestion.options = options;
     }
-
-    newQuestion.pollMode = 'objectives';
-    newQuestion.pollTitle = 'Now I Know How to...';
-    newQuestion.objectives = objectives;
-    newQuestion.options = ['✅', '❌'];
-
-  } else {
-    const options = byId('builderPollOptions').value
-      .split('\n')
-      .map(function(x){ return x.trim(); })
-      .filter(Boolean);
-
-    if(options.length < 2){
-      alert('Please add at least 2 poll options.');
-      return;
-    }
-
-    newQuestion.options = options;
-  }
-}
 
   } else if(type === 'drag_gap'){
     const parts = byId('builderGapParts').value
