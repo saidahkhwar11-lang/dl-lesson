@@ -284,100 +284,102 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <div class="wrap">
   <div class="hero">
   <div style="
-  width:95%;
-  max-width:950px;
+  width:98%;
+  max-width:1100px;
   margin:0 auto;
   background:#ffffffcc;
   border:2px solid #e6dcff;
-  border-radius:20px;
-  padding:20px 24px;
+  border-radius:18px;
+  padding:14px 20px;
   backdrop-filter: blur(6px);
   font-family:Arial, sans-serif;
 ">
 
-  <!-- TITLE -->
-  <h2 style="
-    margin:0 0 6px 0;
-    color:#4a5fa8;
-    font-size:22px;
-  ">
-    Grade 9 English Interactive Lessons
-  </h2>
-
-  <!-- SUBTITLE -->
-  <div style="
-    font-size:13px;
-    color:#7a7f9a;
-    margin-bottom:12px;
-  ">
-    Alreyadah School – Created by <strong>Ms. Saidah Khwar</strong>
-  </div>
-
-  <!-- DESCRIPTION -->
-  <div style="
-    font-size:14px;
-    line-height:1.7;
-    color:#33415c;
-    margin-bottom:14px;
-  ">
-    A smart English learning platform designed to make lessons interactive, organized, and engaging through live tracking and student participation.
-  </div>
-
-  <!-- FEATURES -->
   <div style="
     display:flex;
     flex-wrap:wrap;
-    gap:10px 18px;
-    font-size:13px;
-    color:#33415c;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
   ">
-    <div>📄 Lesson Plan</div>
-    <div>🧩 Stations</div>
-    <div>📝 Worksheets</div>
-    <div>🎥 Videos & Audio</div>
-    <div>📊 Live Tracker</div>
-    <div>✅ Auto Checking</div>
-    <div>😊 Self Assessment</div>
-    <div>🎁 Bonus System</div>
-    <div>🏆 Top 5 Students</div>
-    <div>📈 Excel Grades</div>
-  </div>
 
-  <!-- ⭐ RATING -->
-  <div style="
-    margin-top:14px;
-    padding-top:10px;
-    border-top:1px solid #ece4ff;
-    text-align:center;
-  ">
+    <!-- LEFT SIDE -->
+    <div style="flex:1; min-width:260px;">
+
+      <h2 style="
+        margin:0;
+        color:#4a5fa8;
+        font-size:20px;
+      ">
+        Grade 9 English Interactive Lessons
+      </h2>
+
+      <div style="
+        font-size:12px;
+        color:#7a7f9a;
+        margin-top:4px;
+      ">
+        Alreyadah School – Created by <strong>Ms. Saidah Khwar</strong>
+      </div>
+
+    </div>
+
+    <!-- MIDDLE FEATURES -->
     <div style="
-      font-size:13px;
-      margin-bottom:6px;
-      color:#4a5fa8;
-      font-weight:600;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px 14px;
+      font-size:12.5px;
+      color:#33415c;
+      justify-content:center;
     ">
-      ⭐ Rate this platform
+      <span>📄 Lesson Plan</span>
+      <span>🧩 Stations</span>
+      <span>📝 Worksheets</span>
+      <span>🎥 Videos</span>
+      <span>📊 Tracker</span>
+      <span>✅ Auto</span>
+      <span>😊 Assessment</span>
+      <span>🎁 Bonus</span>
+      <span>🏆 Top 5</span>
+      <span>📈 Grades</span>
     </div>
 
-    <div id="starRating" style="
-      font-size:24px;
-      cursor:pointer;
-      letter-spacing:4px;
-      color:#4a5fa8;
-    ">
-      <span onclick="ratePlatform(1)">☆</span>
-      <span onclick="ratePlatform(2)">☆</span>
-      <span onclick="ratePlatform(3)">☆</span>
-      <span onclick="ratePlatform(4)">☆</span>
-      <span onclick="ratePlatform(5)">☆</span>
+    <!-- RIGHT SIDE RATING -->
+    <div style="text-align:center; min-width:180px;">
+
+      <div style="
+        font-size:12px;
+        margin-bottom:4px;
+        color:#4a5fa8;
+        font-weight:600;
+      ">
+        ⭐ Rate
+      </div>
+
+      <div id="starRating" style="
+        font-size:20px;
+        cursor:pointer;
+        letter-spacing:3px;
+        color:#4a5fa8;
+      ">
+        <span onclick="ratePlatform(1)">☆</span>
+        <span onclick="ratePlatform(2)">☆</span>
+        <span onclick="ratePlatform(3)">☆</span>
+        <span onclick="ratePlatform(4)">☆</span>
+        <span onclick="ratePlatform(5)">☆</span>
+      </div>
+
+      <div id="ratingMsg" style="
+        font-size:11px;
+        margin-top:3px;
+        color:#7a7f9a;
+      "></div>
+
     </div>
 
-    <div id="ratingMsg" style="
-      font-size:12px;
-      margin-top:6px;
-      color:#7a7f9a;
-    "></div>
   </div>
+</div>
 
 </div>
 </div>
