@@ -362,43 +362,43 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <span>📈 Grades</span>
     </div>
 
-    <!-- RIGHT -->
-    <div style="text-align:center; min-width:170px;">
+    <!-- RIGHT SIDE RATING -->
+<div style="
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-width:160px;
+">
 
-      <div style="
-        font-size:12px;
-        margin-bottom:4px;
-        color:#6b75b5;
-        font-weight:600;
-      ">
-        ⭐ Rate
-      </div>
-
-      <div id="starRating" style="
-        font-size:20px;
-        cursor:pointer;
-        letter-spacing:3px;
-        color:#6b75b5;
-      ">
-        <span onclick="ratePlatform(1)">☆</span>
-        <span onclick="ratePlatform(2)">☆</span>
-        <span onclick="ratePlatform(3)">☆</span>
-        <span onclick="ratePlatform(4)">☆</span>
-        <span onclick="ratePlatform(5)">☆</span>
-      </div>
-
-      <div id="ratingMsg" style="
-        font-size:11px;
-        margin-top:3px;
-        color:#9aa0b8;
-      "></div>
-
-    </div>
-
+  <div style="
+    font-size:12px;
+    color:#7a82b8;
+    margin-bottom:4px;
+    font-weight:600;
+  ">
+    ⭐ Rate
   </div>
+
+  <div id="starRating" style="
+    font-size:22px;
+    cursor:pointer;
+    letter-spacing:4px;
+  ">
+    <span onclick="ratePlatform(1)">☆</span>
+    <span onclick="ratePlatform(2)">☆</span>
+    <span onclick="ratePlatform(3)">☆</span>
+    <span onclick="ratePlatform(4)">☆</span>
+    <span onclick="ratePlatform(5)">☆</span>
+  </div>
+
+  <div id="ratingMsg" style="
+    font-size:11px;
+    margin-top:4px;
+    color:#9aa0b8;
+  "></div>
+
 </div>
-
-  </div>
 </div>
 
 </div>
@@ -432,9 +432,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     color:#5b6fb5;
     margin-bottom:6px;
   ">
-    📄 Lesson Plan
-  </div>
-
   <button class="lesson-plan-btn" onclick="downloadLessonPlan()">
     Download Lesson Plan
   </button>
