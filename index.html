@@ -1373,7 +1373,7 @@ function renderQuestion(q, stationId, index){
       `;
     }).join('');
 
-  else if(q.type === 'poll'){
+ else if(q.type === 'poll'){
   if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
     const savedPollAnswers = Array.isArray(savedAnswer) ? savedAnswer : [];
     const disabled = submitted ? ' disabled' : '';
@@ -1416,22 +1416,21 @@ function renderQuestion(q, stationId, index){
       </div>
     `;
   } else {
+    const disabled = submitted ? ' disabled' : '';
     body = (q.options || []).map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
   }
+
+} else if(q.type === 'drag_gap'){
+  body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
+
+} else {
+  body = '<div class="small">Unsupported question type</div>';
 }
 
-  } else if(q.type === 'drag_gap'){
-    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-
-  } else {
-    body = '<div class="small">Unsupported question type</div>';
-  }
-
-  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
+return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
   
 window.openStation = function(id){
