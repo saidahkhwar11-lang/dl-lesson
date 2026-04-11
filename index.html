@@ -1095,21 +1095,39 @@ window.openTeacherStationPreview = function(id){
         '</div>';
       }
 
-      else if(q.type === 'poll' && q.options){
-        const poll = getPollResults(id, i, q.options);
+    else if(q.type === 'poll'){
+  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
+    extraHtml = '<div style="margin-top:8px;">' +
+      '<div class="small" style="margin-bottom:8px;"><strong>' + escapeHtml(q.pollTitle || 'Now I Know How to...') + '</strong></div>' +
+      (q.objectives || []).map(function(obj, objIndex){
+        const yesKey = objIndex + '_✅';
+        const noKey = objIndex + '_❌';
+        const poll = getPollResults(id, i, [yesKey, noKey], function(answer){
+          return Array.isArray(answer) ? [objIndex + '_' + (answer[objIndex] || '')] : [];
+        });
 
-        extraHtml = '<div style="margin-top:8px;">' +
-          (q.options || []).map(function(option){
-            return '<div class="teacher-small-choice">• ' +
-              escapeHtml(option) +
-              ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
-              ' (' + (poll.counts[option] || 0) + ')' +
-            '</div>';
-          }).join('') +
-          '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
+        return '<div class="teacher-small-choice" style="margin-bottom:10px;">' +
+          '<div style="margin-bottom:4px;">• ' + escapeHtml(obj) + '</div>' +
+          '<div style="padding-left:12px;">✅ <strong>' + (poll.percentages[yesKey] || 0) + '%</strong> (' + (poll.counts[yesKey] || 0) + ')</div>' +
+          '<div style="padding-left:12px;">❌ <strong>' + (poll.percentages[noKey] || 0) + '%</strong> (' + (poll.counts[noKey] || 0) + ')</div>' +
         '</div>';
-      }
+      }).join('') +
+    '</div>';
+  } else if(q.options){
+    const poll = getPollResults(id, i, q.options);
 
+    extraHtml = '<div style="margin-top:8px;">' +
+      (q.options || []).map(function(option){
+        return '<div class="teacher-small-choice">• ' +
+          escapeHtml(option) +
+          ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
+          ' (' + (poll.counts[option] || 0) + ')' +
+        '</div>';
+      }).join('') +
+      '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
+    '</div>';
+  }
+}
       return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
         '<strong>' + (i + 1) + '.</strong> ' + questionText +
         extraHtml +
@@ -1355,12 +1373,56 @@ function renderQuestion(q, stationId, index){
       `;
     }).join('');
 
-  } else if(q.type === 'poll'){
-    body = (q.options || []).map(function(option){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(option) ? ' checked' : '';
+  else if(q.type === 'poll'){
+  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
+    const savedPollAnswers = Array.isArray(savedAnswer) ? savedAnswer : [];
+    const disabled = submitted ? ' disabled' : '';
+
+    body = `
+      <div class="poll-objectives-wrap">
+        <div style="font-weight:700; margin-bottom:12px; font-size:16px;">
+          ${escapeHtml(q.pollTitle || 'Now I Know How to...')}
+        </div>
+
+        ${(q.objectives || []).map(function(obj, objIndex){
+          const selected = savedPollAnswers[objIndex] || '';
+
+          return `
+            <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
+              <div style="margin-bottom:8px;">
+                ${escapeHtml(obj)}
+              </div>
+
+              <label style="margin-right:16px;">
+                <input type="radio"
+                       name="${inputName}_${objIndex}"
+                       value="✅"
+                       ${selected === '✅' ? 'checked' : ''}
+                       ${disabled}>
+                ✅
+              </label>
+
+              <label>
+                <input type="radio"
+                       name="${inputName}_${objIndex}"
+                       value="❌"
+                       ${selected === '❌' ? 'checked' : ''}
+                       ${disabled}>
+                ❌
+              </label>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  } else {
+    body = (q.options || []).map(function(choice){
+      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(option) + '"' + checked + disabled + '> ' + escapeHtml(option) + '</label>';
+      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
+  }
+}
 
   } else if(q.type === 'drag_gap'){
     body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
@@ -1816,7 +1878,7 @@ function renderTeacherTracker(){
   }
 }
 
-function getPollResults(stationId, questionIndex, options){
+function getPollResults(stationId, questionIndex, options, answerMapper){
   const counts = {};
   (options || []).forEach(function(opt){
     counts[opt] = 0;
@@ -1828,10 +1890,25 @@ function getPollResults(stationId, questionIndex, options){
     const answers = (student.stationAnswers && student.stationAnswers[stationId]) || {};
     const ans = answers[questionIndex];
 
-    if(ans && counts.hasOwnProperty(ans)){
-      counts[ans]++;
-      total++;
+    if(ans === undefined || ans === null || ans === '') return;
+
+    let mappedAnswers = [];
+
+    // ⭐ NEW PART (supports Exit Ticket objectives)
+    if(typeof answerMapper === 'function'){
+      mappedAnswers = answerMapper(ans) || [];
+    } else if(Array.isArray(ans)){
+      mappedAnswers = ans;
+    } else {
+      mappedAnswers = [ans];
     }
+
+    mappedAnswers.forEach(function(value){
+      if(counts.hasOwnProperty(value)){
+        counts[value]++;
+        total++;
+      }
+    });
   });
 
   const percentages = {};
@@ -1841,7 +1918,7 @@ function getPollResults(stationId, questionIndex, options){
 
   return { counts, percentages, total };
 }
-
+  
 function renderTopStudents(){
   const wrap = byId('topStudentsList');
   if(!wrap) return;
@@ -2107,8 +2184,17 @@ window.renderCreatorQuestionsList = function(){
     } else if(q.type === 'matching'){
       extra = '<div class="small">Matching pairs: ' + escapeHtml((q.pairs || []).length) + '</div>';
 
-    } else if(q.type === 'poll'){
-      extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
+    else if(q.type === 'poll'){
+  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
+    answer = (q.objectives || []).map(function(_, objIndex){
+      const selected = document.querySelector('input[name="' + inputName + '_' + objIndex + '"]:checked');
+      return selected ? selected.value : '';
+    });
+  } else {
+    const selected = document.querySelector('input[name="' + inputName + '"]:checked');
+    answer = selected ? selected.value : '';
+  }
+}
 
     } else if(q.type === 'drag_gap'){
       extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
@@ -2240,6 +2326,25 @@ window.addCreatorQuestion = function(){
     newQuestion.pairs = pairs;
 
   } else if(type === 'poll'){
+  const stationTitle = (creatorDraft.title || '').toLowerCase().trim();
+  const isExitTicket = stationTitle.includes('exit ticket');
+
+  if(isExitTicket){
+    const objectives = (lessonData.objectives || [])
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+
+    if(!objectives.length){
+      alert('Please add lesson objectives first.');
+      return;
+    }
+
+    newQuestion.pollMode = 'objectives';
+    newQuestion.pollTitle = 'Now I Know How to...';
+    newQuestion.objectives = objectives;
+    newQuestion.options = ['✅', '❌'];
+
+  } else {
     const options = byId('builderPollOptions').value
       .split('\n')
       .map(function(x){ return x.trim(); })
@@ -2251,6 +2356,8 @@ window.addCreatorQuestion = function(){
     }
 
     newQuestion.options = options;
+  }
+}
 
   } else if(type === 'drag_gap'){
     const parts = byId('builderGapParts').value
