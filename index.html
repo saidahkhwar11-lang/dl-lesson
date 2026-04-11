@@ -2424,7 +2424,7 @@ window.addCreatorQuestion = function(){
 
     newQuestion.pairs = pairs;
 
-  } else if(type === 'poll'){
+    } else if(type === 'poll'){
     const options = byId('builderPollOptions').value
       .split('\n')
       .map(function(x){ return x.trim(); })
@@ -2434,6 +2434,49 @@ window.addCreatorQuestion = function(){
       alert('Please add at least 2 poll options.');
       return;
     }
+
+    newQuestion.options = options;
+
+  } else if(type === 'drag_gap'){
+    const parts = byId('builderGapParts').value
+      .split('|')
+      .map(function(x){ return x.trim(); });
+
+    const answers = byId('builderGapAnswers').value
+      .split(',')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+
+    const words = byId('builderGapWords').value
+      .split(',')
+      .map(function(x){ return x.trim(); })
+      .filter(Boolean);
+
+    if(parts.length < 2){
+      alert('Please write sentence parts using | to split the gaps.');
+      return;
+    }
+
+    if(!answers.length){
+      alert('Please add the correct answers.');
+      return;
+    }
+
+    if(!words.length){
+      alert('Please add the word bank.');
+      return;
+    }
+
+    newQuestion.parts = parts;
+    newQuestion.answers = answers;
+    newQuestion.words = words;
+  }
+
+  creatorDraftQuestions.push(newQuestion);
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice', 'Question added successfully.', 'good');
+  clearQuestionBuilder();
+};
 
     newQuestion.options = options;
 
