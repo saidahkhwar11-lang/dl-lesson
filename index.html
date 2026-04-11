@@ -284,13 +284,14 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <div class="wrap">
   <div class="hero">
   <div style="
+  <div style="
   width:98%;
-  max-width:1100px;
+  max-width:1050px;
   margin:0 auto;
   background:#ffffffcc;
   border:2px solid #e6dcff;
-  border-radius:18px;
-  padding:14px 20px;
+  border-radius:16px;
+  padding:10px 16px;
   backdrop-filter: blur(6px);
   font-family:Arial, sans-serif;
 ">
@@ -404,6 +405,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <div class="row" id="homeRow" style="margin-top:16px;">
   <div class="card">
+    <div style="text-align:center; margin-top:10px;">
+  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">
+    📄 Download Lesson Plan
+  </button>
+</div>
     <h2>Student Login</h2>
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
@@ -422,9 +428,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 </div>
 
-<div style="text-align:center; margin-top:14px;">
-  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
-</div>
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
