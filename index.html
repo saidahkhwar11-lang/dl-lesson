@@ -412,10 +412,52 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
         <div>🎁 Bonus System</div>
         <div>🏆 Top 5 Students</div>
         <div>📈 Excel Grades</div>
-      </div>
-
     </div>
+
+    <!-- ⭐ PASTE RATING HERE -->
+<div style="font-size:14px; line-height:1.7; margin-bottom:14px;">
+  A smart English learning platform designed to make lessons interactive, organized, and engaging through live tracking and student participation.
+</div>
+
+<div style="
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  font-size:13px;
+">
+  <div>📄 Lesson Plan</div>
+  <div>🧩 Stations</div>
+  <div>📝 Worksheets</div>
+  <div>🎥 Videos & Audio</div>
+  <div>📊 Live Tracker</div>
+  <div>✅ Auto Checking</div>
+  <div>😊 Self Assessment</div>
+  <div>🎁 Bonus System</div>
+  <div>🏆 Top 5 Students</div>
+  <div>📈 Excel Grades</div>
+</div>
+
+<!-- ⭐ Guest Rating -->
+<div style="margin-top:18px; text-align:center;">
+
+  <div style="font-size:13px; margin-bottom:8px; color:#4a5fa8; font-weight:600;">
+    ⭐ Rate this platform
   </div>
+
+  <div id="starRating" style="font-size:26px; cursor:pointer; letter-spacing:4px;">
+    <span onclick="ratePlatform(1)">☆</span>
+    <span onclick="ratePlatform(2)">☆</span>
+    <span onclick="ratePlatform(3)">☆</span>
+    <span onclick="ratePlatform(4)">☆</span>
+    <span onclick="ratePlatform(5)">☆</span>
+  </div>
+
+  <div id="ratingMsg" style="font-size:12px; margin-top:6px; color:#7a7f9a;"></div>
+
+</div>
+
+</div>
+</div>
 
 </div>
   <div id="studentView" class="hidden">
@@ -3208,6 +3250,38 @@ function downloadLessonPlan(){
     alert('Lesson plan error: ' + err.message);
   }
 }
+
+function ratePlatform(stars){
+  const starContainer = document.getElementById('starRating');
+  if(!starContainer) return;
+
+  const starsEls = starContainer.querySelectorAll('span');
+
+  starsEls.forEach((s, i) => {
+    s.textContent = i < stars ? '★' : '☆';
+  });
+
+  localStorage.setItem('guestRating', stars);
+
+  const msg = document.getElementById('ratingMsg');
+
+  if(stars === 5){
+    msg.textContent = "Amazing! 🌟";
+  } else if(stars >= 4){
+    msg.textContent = "Thank you! 😊";
+  } else if(stars === 3){
+    msg.textContent = "Good 👍";
+  } else {
+    msg.textContent = "We’ll improve 💪";
+  }
+}
+
+window.addEventListener('load', function(){
+  const saved = localStorage.getItem('guestRating');
+  if(saved){
+    ratePlatform(parseInt(saved));
+  }
+});
   
 </script>
     
@@ -3225,6 +3299,7 @@ function downloadLessonPlan(){
 </div>
 
 <div id="imageModal" class="image-modal hidden"></div>
+
 
 </body>
 </html>
