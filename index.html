@@ -1095,39 +1095,39 @@ window.openTeacherStationPreview = function(id){
         '</div>';
       }
 
-    else if(q.type === 'poll'){
-  if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
-    extraHtml = '<div style="margin-top:8px;">' +
-      '<div class="small" style="margin-bottom:8px;"><strong>' + escapeHtml(q.pollTitle || 'Now I Know How to...') + '</strong></div>' +
-      (q.objectives || []).map(function(obj, objIndex){
-        const yesKey = objIndex + '_✅';
-        const noKey = objIndex + '_❌';
-        const poll = getPollResults(id, i, [yesKey, noKey], function(answer){
-          return Array.isArray(answer) ? [objIndex + '_' + (answer[objIndex] || '')] : [];
-        });
+      else if(q.type === 'poll'){
+        if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
+          extraHtml = '<div style="margin-top:8px;">' +
+            '<div class="small" style="margin-bottom:8px;"><strong>' + escapeHtml(q.pollTitle || 'Now I Know How to...') + '</strong></div>' +
+            (q.objectives || []).map(function(obj, objIndex){
+              const yesKey = objIndex + '_✅';
+              const noKey = objIndex + '_❌';
+              const poll = getPollResults(id, i, [yesKey, noKey], function(answer){
+                return Array.isArray(answer) ? [objIndex + '_' + (answer[objIndex] || '')] : [];
+              });
 
-        return '<div class="teacher-small-choice" style="margin-bottom:10px;">' +
-          '<div style="margin-bottom:4px;">• ' + escapeHtml(obj) + '</div>' +
-          '<div style="padding-left:12px;">✅ <strong>' + (poll.percentages[yesKey] || 0) + '%</strong> (' + (poll.counts[yesKey] || 0) + ')</div>' +
-          '<div style="padding-left:12px;">❌ <strong>' + (poll.percentages[noKey] || 0) + '%</strong> (' + (poll.counts[noKey] || 0) + ')</div>' +
-        '</div>';
-      }).join('') +
-    '</div>';
-  } else if(q.options){
-    const poll = getPollResults(id, i, q.options);
+              return '<div class="teacher-small-choice" style="margin-bottom:10px;">' +
+                '<div style="margin-bottom:4px;">• ' + escapeHtml(obj) + '</div>' +
+                '<div style="padding-left:12px;">✅ <strong>' + (poll.percentages[yesKey] || 0) + '%</strong> (' + (poll.counts[yesKey] || 0) + ')</div>' +
+                '<div style="padding-left:12px;">❌ <strong>' + (poll.percentages[noKey] || 0) + '%</strong> (' + (poll.counts[noKey] || 0) + ')</div>' +
+              '</div>';
+            }).join('') +
+          '</div>';
+        } else if(q.options){
+          const poll = getPollResults(id, i, q.options);
 
-    extraHtml = '<div style="margin-top:8px;">' +
-      (q.options || []).map(function(option){
-        return '<div class="teacher-small-choice">• ' +
-          escapeHtml(option) +
-          ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
-          ' (' + (poll.counts[option] || 0) + ')' +
-        '</div>';
-      }).join('') +
-      '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
-    '</div>';
-  }
-}
+          extraHtml = '<div style="margin-top:8px;">' +
+            (q.options || []).map(function(option){
+              return '<div class="teacher-small-choice">• ' +
+                escapeHtml(option) +
+                ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
+                ' (' + (poll.counts[option] || 0) + ')' +
+              '</div>';
+            }).join('') +
+            '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
+          '</div>';
+        }
+      }
       return '<div class="teacher-question" style="margin-bottom:14px; padding:10px; border:1px solid #ddd; border-radius:10px;">' +
         '<strong>' + (i + 1) + '.</strong> ' + questionText +
         extraHtml +
