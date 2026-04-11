@@ -2333,7 +2333,6 @@ window.loadCreatorStation = function(){
   if(!st) return;
 const creatorTitle = byId('creatorTitle');
 const creatorObjective = byId('creatorObjective');
-const creatorSuccessCriteria = byId('creatorSuccessCriteria');
 const creatorDetails = byId('creatorDetails');
 const creatorTime = byId('creatorTime');
 const creatorImageUrl = byId('creatorImageUrl');
@@ -2345,7 +2344,6 @@ const creatorImageNotes = byId('creatorImageNotes');
 if(creatorTitle) creatorTitle.value = st.title || '';
 if(creatorObjective) creatorObjective.value = st.objective || '';
 if(creatorDetails) creatorDetails.value = st.details || '';
-if(creatorsuccessCriteria) creatorsuccessCriteria.value = st.successCriteria || '';
 if(creatorTime) creatorTime.value = st.time || '';
 if(creatorImageUrl) creatorImageUrl.value = ct.imageUrl || '';
 if(creatorAudioUrl) creatorAudioUrl.value = ct.audioUrl || '';
