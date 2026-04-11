@@ -1173,7 +1173,7 @@ window.openTeacherView = async function(){
     showTeacherSection('teacherTrackerCard');
     startTeacherListeners();
     if(typeof renderBonusBox === 'function') renderBonusBox();
-    }catch(err){
+  }catch(err){
     console.error('Teacher view error:', err);
     showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
     byId('teacherView').classList.add('hidden');
