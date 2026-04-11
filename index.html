@@ -741,6 +741,87 @@ function getSnap(path){ return dbRef(path).once('value'); }
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
 function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
+  let studentQuestionIndex = {};
+
+function getStudentQuestionIndex(stationId, totalQuestions){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] < 0){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] > totalQuestions - 1){
+    studentQuestionIndex[stationId] = totalQuestions - 1;
+  }
+
+  return studentQuestionIndex[stationId];
+}
+
+window.nextStudentQuestion = function(stationId){
+  const ct = getStationContent(stationId);
+  const total = (ct.questions || []).length;
+
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  saveCurrentQuestionAnswer(stationId, studentQuestionIndex[stationId]);
+
+  if(studentQuestionIndex[stationId] < total - 1){
+    studentQuestionIndex[stationId]++;
+    openStation(stationId);
+  }
+};
+
+window.prevStudentQuestion = function(stationId){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  saveCurrentQuestionAnswer(stationId, studentQuestionIndex[stationId]);
+
+  if(studentQuestionIndex[stationId] > 0){
+    studentQuestionIndex[stationId]--;
+    openStation(stationId);
+  }
+};
+
+function saveCurrentQuestionAnswer(stationId, questionIndex){
+  if(!currentStudent) return;
+
+  const ct = getStationContent(stationId);
+  const q = (ct.questions || [])[questionIndex];
+  if(!q) return;
+
+  const student = liveStudents[currentStudent.id] || {};
+  const stationAnswers = Object.assign({}, (student.stationAnswers && student.stationAnswers[stationId]) || {});
+
+  if(q.type === 'matching'){
+    const wrap = byId('q_' + stationId + '_' + questionIndex);
+    if(!wrap) return;
+
+    const selects = wrap.querySelectorAll('select[data-match-index]');
+    const answers = [];
+
+    selects.forEach(function(sel, i){
+      answers[i] = sel.value || '';
+    });
+
+    stationAnswers[questionIndex] = answers;
+  } else {
+    const checked = document.querySelector('input[name="answer_' + stationId + '_' + questionIndex + '"]:checked');
+    stationAnswers[questionIndex] = checked ? checked.value : '';
+  }
+
+  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
+  if(!liveStudents[currentStudent.id].stationAnswers){
+    liveStudents[currentStudent.id].stationAnswers = {};
+  }
+
+  liveStudents[currentStudent.id].stationAnswers[stationId] = stationAnswers;
+}
   function renderBonusBox(){
   const box = byId('bonusLiveContent');
   if(!box) return;
@@ -1059,8 +1140,29 @@ window.openTeacherStationPreview = function(id){
 
   let questionsHtml = '';
 
-  if(content.questions && content.questions.length){
-    questionsHtml = content.questions.map(function(q, i){
+const totalQuestions = (content.questions || []).length;
+const currentQIndex = totalQuestions ? getStudentQuestionIndex(id, totalQuestions) : 0;
+
+const isLastQuestion = totalQuestions ? currentQIndex === totalQuestions - 1 : true;
+const isFirstQuestion = currentQIndex === 0;
+
+let questionsHtml = totalQuestions
+  ? renderQuestion(content.questions[currentQIndex], id, currentQIndex)
+  : '<div class="teacher-preview-empty">No questions added yet.</div>';
+
+const questionNavHtml = totalQuestions ? `
+  <div class="btns" style="margin-top:12px;">
+    <button class="muted" ${isFirstQuestion ? 'disabled' : ''} onclick="prevStudentQuestion('${escapeJs(id)}')">Previous Question</button>
+    <button class="secondary" ${isLastQuestion ? 'disabled' : ''} onclick="nextStudentQuestion('${escapeJs(id)}')">Next Question</button>
+  </div>
+  <div class="small" style="margin-top:8px;">
+    Question ${currentQIndex + 1} of ${totalQuestions}
+  </div>
+` : '';
+
+let questionsHtml = totalQuestions
+  ? renderQuestion(content.questions[currentQIndex], id, currentQIndex)
+  : '<div class="teacher-preview-empty">No questions added yet.</div>';
       const questionText = escapeHtml(q.question || q.text || 'No question text');
       let extraHtml = '';
 
@@ -1417,9 +1519,14 @@ window.openStation = function(id){
       '</div>' +
     '</div>';
 
-  const questionsHtml = (ct.questions || []).map(function(q,i){
-    return renderQuestion(q,id,i);
-  }).join('');
+  const totalQuestions = (ct.questions || []).length;
+const currentQIndex = totalQuestions ? getStudentQuestionIndex(id, totalQuestions) : 0;
+const isLastQuestion = totalQuestions ? currentQIndex === totalQuestions - 1 : true;
+const isFirstQuestion = currentQIndex === 0;
+
+const questionsHtml = totalQuestions
+  ? renderQuestion(ct.questions[currentQIndex], id, currentQIndex)
+  : '<div class="teacher-preview-empty">No questions added yet.</div>';
 
   const resultText = scoreTextForStudent(id);
 
