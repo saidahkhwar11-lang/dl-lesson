@@ -239,8 +239,22 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:
   color:#ffcc66;
   transform: scale(1.3) rotate(-8deg);
 }
-.hero{background:linear-gradient(135deg,var(--primary),var(--primary2));color:#fff;border-radius:24px;padding:22px;margin-bottom:16px}
-.hero h1{margin:0 0 8px}.hero p{margin:0;opacity:.95}
+.hero{
+  background:linear-gradient(135deg,#fdf7ff 0%, #f7f9ff 50%, #fffdf6 100%);
+  color:#4a5fa8;
+  border-radius:24px;
+  padding:22px;
+  margin-bottom:16px;
+  box-shadow: 0 10px 30px rgba(120,130,200,0.08);
+}
+.hero h1{
+  margin:0 0 8px;
+  color:#5b6fb5;
+}
+.hero p{
+  margin:0;
+  color:#6a6f85;
+}
 .row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
 .btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
 input,textarea,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid #cfd8e7;font-size:15px;background:#fff}
@@ -425,7 +439,13 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="setupNotice" class="notice warn">Not connected yet.</div>
 </div>
 
-<div class="row" id="homeRow" style="margin-top:16px;">
+<div class="row" id="homeRow" style="
+  margin-top:16px;
+  display:flex;
+  justify-content:center;
+  gap:20px;
+  flex-wrap:wrap;
+">
   <div class="card">
     <div style="text-align:center; margin-top:14px;">
 
