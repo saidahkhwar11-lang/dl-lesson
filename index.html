@@ -2621,7 +2621,6 @@ function renderTopStudents(){
     '</div>';
   }).join('');
 }
-bindButtons();
 
 document.addEventListener('DOMContentLoaded', function(){
   bindButtons();
@@ -2748,34 +2747,7 @@ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
 
   tick();
   stationTimerInterval = setInterval(tick, 1000);
-}
-  
-function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
-  stopStationTimer();
-
-  currentTimedStationId = stationId;
-
-  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
-
-  function tick(){
-    if(!timerStartedAt){
-      stationTimeLeft = totalSeconds;
-      updateStationTimerDisplay();
-      return;
-    }
-
-    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
-    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
-    updateStationTimerDisplay();
-
-    if(stationTimeLeft <= 0){
-      stopStationTimer();
-    }
-  }
-
-  tick();
-  stationTimerInterval = setInterval(tick, 1000);
-}
+ }
 
 function downloadLessonPlan(){
   try{
