@@ -839,6 +839,88 @@ function saveCurrentQuestionAnswer(stationId, questionIndex){
       '</div>';
   }).join('');
 }
+
+  let studentQuestionIndex = {};
+
+function getStudentQuestionIndex(stationId, totalQuestions){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] < 0){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] > totalQuestions - 1){
+    studentQuestionIndex[stationId] = totalQuestions - 1;
+  }
+
+  return studentQuestionIndex[stationId];
+}
+
+function saveCurrentQuestionAnswer(stationId, questionIndex){
+  if(!currentStudent) return;
+
+  const ct = getStationContent(stationId);
+  const q = (ct.questions || [])[questionIndex];
+  if(!q) return;
+
+  const student = liveStudents[currentStudent.id] || {};
+  const stationAnswers = Object.assign({}, (student.stationAnswers && student.stationAnswers[stationId]) || {});
+
+  if(q.type === 'matching'){
+    const wrap = byId('q_' + stationId + '_' + questionIndex);
+    if(!wrap) return;
+
+    const selects = wrap.querySelectorAll('select[data-match-index]');
+    const answers = [];
+
+    selects.forEach(function(sel, i){
+      answers[i] = sel.value || '';
+    });
+
+    stationAnswers[questionIndex] = answers;
+  } else {
+    const checked = document.querySelector('input[name="answer_' + stationId + '_' + questionIndex + '"]:checked');
+    stationAnswers[questionIndex] = checked ? checked.value : '';
+  }
+
+  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
+  if(!liveStudents[currentStudent.id].stationAnswers){
+    liveStudents[currentStudent.id].stationAnswers = {};
+  }
+
+  liveStudents[currentStudent.id].stationAnswers[stationId] = stationAnswers;
+}
+
+window.nextStudentQuestion = function(stationId){
+  const ct = getStationContent(stationId);
+  const total = (ct.questions || []).length;
+
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  saveCurrentQuestionAnswer(stationId, studentQuestionIndex[stationId]);
+
+  if(studentQuestionIndex[stationId] < total - 1){
+    studentQuestionIndex[stationId]++;
+    openStation(stationId);
+  }
+};
+
+window.prevStudentQuestion = function(stationId){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  saveCurrentQuestionAnswer(stationId, studentQuestionIndex[stationId]);
+
+  if(studentQuestionIndex[stationId] > 0){
+    studentQuestionIndex[stationId]--;
+    openStation(stationId);
+  }
+};
   
 function bindButtons(){
   const studentBtn = byId('studentStartBtn');
@@ -1140,29 +1222,8 @@ window.openTeacherStationPreview = function(id){
 
   let questionsHtml = '';
 
-const totalQuestions = (content.questions || []).length;
-const currentQIndex = totalQuestions ? getStudentQuestionIndex(id, totalQuestions) : 0;
-
-const isLastQuestion = totalQuestions ? currentQIndex === totalQuestions - 1 : true;
-const isFirstQuestion = currentQIndex === 0;
-
-let questionsHtml = totalQuestions
-  ? renderQuestion(content.questions[currentQIndex], id, currentQIndex)
-  : '<div class="teacher-preview-empty">No questions added yet.</div>';
-
-const questionNavHtml = totalQuestions ? `
-  <div class="btns" style="margin-top:12px;">
-    <button class="muted" ${isFirstQuestion ? 'disabled' : ''} onclick="prevStudentQuestion('${escapeJs(id)}')">Previous Question</button>
-    <button class="secondary" ${isLastQuestion ? 'disabled' : ''} onclick="nextStudentQuestion('${escapeJs(id)}')">Next Question</button>
-  </div>
-  <div class="small" style="margin-top:8px;">
-    Question ${currentQIndex + 1} of ${totalQuestions}
-  </div>
-` : '';
-
-let questionsHtml = totalQuestions
-  ? renderQuestion(content.questions[currentQIndex], id, currentQIndex)
-  : '<div class="teacher-preview-empty">No questions added yet.</div>';
+  if(content.questions && content.questions.length){
+    questionsHtml = content.questions.map(function(q, i){
       const questionText = escapeHtml(q.question || q.text || 'No question text');
       let extraHtml = '';
 
@@ -1223,29 +1284,27 @@ let questionsHtml = totalQuestions
 
   wrap.className = '';
   wrap.classList.add('teacher-preview');
+
   const selfEvalSummary = getStationSelfEvalSummary(id);
 
-const selfEvalHtml = `
-  <div class="lesson-info-box" style="margin-top:12px;">
-    <div class="lesson-label">Student Self-Evaluation</div>
+  const selfEvalHtml = `
+    <div class="lesson-info-box" style="margin-top:12px;">
+      <div class="lesson-label">Student Self-Evaluation</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+        <div style="background:#eafaf1; color:#1f8f5f; padding:8px 12px; border-radius:999px; font-weight:bold;">
+          😀 ${selfEvalSummary.happy}
+        </div>
 
-    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
-      
-      <div style="background:#eafaf1; color:#1f8f5f; padding:8px 12px; border-radius:999px; font-weight:bold;">
-        😀 ${selfEvalSummary.happy}
+        <div style="background:#fff7df; color:#b47a00; padding:8px 12px; border-radius:999px; font-weight:bold;">
+          😐 ${selfEvalSummary.neutral}
+        </div>
+
+        <div style="background:#fdecec; color:#c63d3d; padding:8px 12px; border-radius:999px; font-weight:bold;">
+          😟 ${selfEvalSummary.sad}
+        </div>
       </div>
-
-      <div style="background:#fff7df; color:#b47a00; padding:8px 12px; border-radius:999px; font-weight:bold;">
-        😐 ${selfEvalSummary.neutral}
-      </div>
-
-      <div style="background:#fdecec; color:#c63d3d; padding:8px 12px; border-radius:999px; font-weight:bold;">
-        😟 ${selfEvalSummary.sad}
-      </div>
-
     </div>
-  </div>
-`;
+  `;
 
   const lessonInfoBox =
     '<div class="lesson-info-box">' +
@@ -1285,9 +1344,9 @@ const selfEvalHtml = `
       <h3>${escapeHtml(station.title || '')}</h3>
 
       ${lessonInfoBox}
-${selfEvalHtml}
+      ${selfEvalHtml}
 
-<div>🎯 ${escapeHtml(station.objective || '')}</div>
+      <div>🎯 ${escapeHtml(station.objective || '')}</div>
       <div>⏱ ${escapeHtml(station.time || '')}</div>
       <div>📝 ${escapeHtml(station.details || '')}</div>
 
@@ -1478,6 +1537,7 @@ window.openStation = function(id){
   const st = getStationById(id);
   if(!st) return;
   if(!st.unlocked && id !== 'starter') return;
+
   const previousStation = currentOpenStation;
   currentOpenStation = id;
   renderStudentNav();
@@ -1487,10 +1547,10 @@ window.openStation = function(id){
   const submitted = isStationSubmitted(id);
 
   if(id === 'st1' && previousStation !== 'st1'){
-  setTimeout(function(){
-    showLessonInfoPopup();
-  }, 100);
-}
+    setTimeout(function(){
+      showLessonInfoPopup();
+    }, 100);
+  }
 
   const studentLessonBox =
     '<div class="lesson-info-box">' +
@@ -1501,6 +1561,7 @@ window.openStation = function(id){
         '<ul class="lesson-list">' +
           (lessonMeta.lessonObjectives || '')
             .split('\n')
+            .filter(function(obj){ return obj.trim(); })
             .map(function(obj){
               return '<li>' + escapeHtml(obj) + '</li>';
             }).join('') +
@@ -1512,6 +1573,7 @@ window.openStation = function(id){
         '<div class="lesson-tags">' +
           (lessonMeta.lessonKeywords || '')
             .split(',')
+            .filter(function(k){ return k.trim(); })
             .map(function(k){
               return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
             }).join('') +
@@ -1520,39 +1582,50 @@ window.openStation = function(id){
     '</div>';
 
   const totalQuestions = (ct.questions || []).length;
-const currentQIndex = totalQuestions ? getStudentQuestionIndex(id, totalQuestions) : 0;
-const isLastQuestion = totalQuestions ? currentQIndex === totalQuestions - 1 : true;
-const isFirstQuestion = currentQIndex === 0;
+  const currentQIndex = totalQuestions ? getStudentQuestionIndex(id, totalQuestions) : 0;
+  const isLastQuestion = totalQuestions ? currentQIndex === totalQuestions - 1 : true;
+  const isFirstQuestion = currentQIndex === 0;
 
-const questionsHtml = totalQuestions
-  ? renderQuestion(ct.questions[currentQIndex], id, currentQIndex)
-  : '<div class="teacher-preview-empty">No questions added yet.</div>';
+  const questionsHtml = totalQuestions
+    ? renderQuestion(ct.questions[currentQIndex], id, currentQIndex)
+    : '<div class="teacher-preview-empty">No questions added yet.</div>';
+
+  const questionNavHtml = totalQuestions ? `
+    <div class="btns" style="margin-top:12px;">
+      <button class="muted" ${isFirstQuestion ? 'disabled' : ''} onclick="prevStudentQuestion('${escapeJs(id)}')">Previous Question</button>
+      <button class="secondary" ${isLastQuestion ? 'disabled' : ''} onclick="nextStudentQuestion('${escapeJs(id)}')">Next Question</button>
+    </div>
+    <div class="small" style="margin-top:8px;">
+      Question ${currentQIndex + 1} of ${totalQuestions}
+    </div>
+  ` : '';
 
   const resultText = scoreTextForStudent(id);
 
   const imageBlock = ct.imageUrl
-  ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="station image" />' +
-    '<div class="image-actions">' +
-      '<button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button>' +
-    '</div>'
-  : '';
+    ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="station image" />' +
+      '<div class="image-actions">' +
+        '<button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button>' +
+      '</div>'
+    : '';
 
   const audioBlock = ct.audioUrl
-  ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>'
-  : '';
+    ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + escapeHtml(ct.audioUrl) + '"></audio>'
+    : '';
 
-const videoBlock = ct.videoUrl
-  ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
-  : '';
+  const videoBlock = ct.videoUrl
+    ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + escapeHtml(ct.videoUrl) + '"></video>'
+    : '';
 
-const linkBlock = ct.linkUrl
-  ? '<div style="margin-bottom:12px;">' +
-    '<button class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
-    escapeHtml(ct.linkTitle || 'Open Activity') +
-    '</button></div>'
-  : '';
+  const linkBlock = ct.linkUrl
+    ? '<div style="margin-bottom:12px;">' +
+      '<button class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
+      escapeHtml(ct.linkTitle || 'Open Activity') +
+      '</button></div>'
+    : '';
 
   const nextStationId = getNextUnlockedStationId(id);
+
   const submitBtn = submitted
     ? '<button class="muted" disabled>Station Submitted</button>'
     : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
@@ -1562,38 +1635,39 @@ const linkBlock = ct.linkUrl
     : '';
 
   const selfEvalValue = getSelfEvalValue(id);
-const selfEvalDisabled = submitted ? ' disabled' : '';
+  const selfEvalDisabled = submitted ? ' disabled' : '';
 
-const selfEvalHtml = `
-  <div class="self-eval-box">
-    <div class="self-eval-title">How did you feel about this station?</div>
-    <div class="self-eval-options">
-      <label class="self-eval-option">
-        <input type="radio" name="self_eval_${id}" value="I understood it well"
-          ${selfEvalValue === 'I understood it well' ? 'checked' : ''}${selfEvalDisabled}
-          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood it well')">
-        😀 I did very well
-      </label>
+  const selfEvalHtml = `
+    <div class="self-eval-box">
+      <div class="self-eval-title">How did you feel about this station?</div>
+      <div class="self-eval-options">
+        <label class="self-eval-option">
+          <input type="radio" name="self_eval_${id}" value="I understood it well"
+            ${selfEvalValue === 'I understood it well' ? 'checked' : ''}${selfEvalDisabled}
+            onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood it well')">
+          😀 I did very well
+        </label>
 
-      <label class="self-eval-option">
-        <input type="radio" name="self_eval_${id}" value="I understood some of it"
-          ${selfEvalValue === 'I understood some of it' ? 'checked' : ''}${selfEvalDisabled}
-          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood some of it')">
-        😐 I understood some
-      </label>
+        <label class="self-eval-option">
+          <input type="radio" name="self_eval_${id}" value="I understood some of it"
+            ${selfEvalValue === 'I understood some of it' ? 'checked' : ''}${selfEvalDisabled}
+            onchange="saveSelfEvaluation('${escapeJs(id)}', 'I understood some of it')">
+          😐 I understood some
+        </label>
 
-      <label class="self-eval-option">
-        <input type="radio" name="self_eval_${id}" value="I need more help"
-          ${selfEvalValue === 'I need more help' ? 'checked' : ''}${selfEvalDisabled}
-          onchange="saveSelfEvaluation('${escapeJs(id)}', 'I need more help')">
-        😟 It was difficult
-      </label>
+        <label class="self-eval-option">
+          <input type="radio" name="self_eval_${id}" value="I need more help"
+            ${selfEvalValue === 'I need more help' ? 'checked' : ''}${selfEvalDisabled}
+            onchange="saveSelfEvaluation('${escapeJs(id)}', 'I need more help')">
+          😟 It was difficult
+        </label>
+      </div>
+      <div class="self-eval-note">This is only for self-evaluation. It does not affect marks.</div>
     </div>
-    <div class="self-eval-note">This is only for self-evaluation. It does not affect marks.</div>
-  </div>
-`;
+  `;
 
   const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
@@ -1610,18 +1684,17 @@ const selfEvalHtml = `
     linkBlock +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
-questionsHtml +
-selfEvalHtml +
-actionBtns;
-
-  if(id === 'st1' && previousStation === 'starter'){
-  showLessonInfoPopup();
-}
+    questionsHtml +
+    questionNavHtml +
+    (isLastQuestion ? selfEvalHtml : '') +
+    (isLastQuestion ? actionBtns : '');
 
   startStationTimerFromUnlock(id, stationMinutes, st.timerStartedAt);
   updateStationTimerDisplay();
 
-  if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
+  if(currentStudent){
+    dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
+  }
 
   if(submitted){
     const student = liveStudents[currentStudent.id] || {};
@@ -1686,10 +1759,15 @@ actionBtns;
         }
       });
 
-      const wasCorrect = normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
+      const wasCorrect = q.type === 'poll'
+        ? !!savedAnswers[i]
+        : normalizeAnswer(savedAnswers[i] || '') === normalizeAnswer(q.answer);
+
       wrap.classList.add(wasCorrect ? 'correct' : 'wrong');
       wrap.querySelector('.feedback').innerHTML =
-        wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
+        q.type === 'poll'
+          ? (savedAnswers[i] ? '🗳️ Vote recorded' : '❌ Please select an option')
+          : (wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer));
     });
   }
 };
