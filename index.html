@@ -279,33 +279,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .top-bar{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:16px 0}
 .top-bar .item{background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px;text-align:center;cursor:pointer;transition:.2s}
 .top-bar .item.active{background:var(--primary2);color:#fff}.top-bar .item.locked{opacity:.55;cursor:not-allowed}
-    .student-layout{
-  display:grid;
-  grid-template-columns: 38% 62%;
-  gap:16px;
-  margin-top:16px;
-}
-
- .student-left{
- position:sticky;
- top:10px;
- align-self:start;
-}
-.info-box{
-  background:#f8fbff;
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:10px;
-  margin-top:10px;
-}
-    .keyword-chip{
-  display:inline-block;
-  background:#eaf2ff;
-  padding:6px 10px;
-  border-radius:10px;
-  margin:4px;
-  font-size:13px;
-}
+.student-layout{display:grid;grid-template-columns:330px 1fr;gap:16px;margin-top:16px}
 .sidebar,.main{background:#fff;border:1px solid var(--line);border-radius:16px}.sidebar{padding:12px}.main{padding:18px}
 .station-box{padding:10px;border-radius:14px;background:#eef3ff;margin-bottom:8px;cursor:pointer;transition:.2s;display:grid;grid-template-columns:60px 1fr;gap:8px;align-items:start}
 .station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
@@ -563,37 +537,13 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
     <div class="top-bar" id="topStations"></div>
     <div class="student-layout">
-
-  <!-- LEFT SIDE (NEW) -->
-  <div class="student-left">
-    <div id="studentLessonInfo" class="student-lesson-info">
-      <h2 id="studentLessonTitle"></h2>
-
-      <div class="info-box">
-        <h4>Objectives</h4>
-        <div id="studentObjectives"></div>
+      <div class="sidebar">
+        <h3 style="margin-top:0">Stations</h3>
+        <div id="stationList"></div>
       </div>
-
-      <div class="info-box">
-        <h4>Keywords</h4>
-        <div id="studentKeywords"></div>
-      </div>
+      <div class="main" id="stationContent"></div>
     </div>
   </div>
-
-  <!-- RIGHT SIDE (YOUR CONTENT) -->
-  <div class="student-right">
-    
-    <div class="sidebar">
-      <h3 style="margin-top:0">Stations</h3>
-      <div id="stationList"></div>
-    </div>
-
-    <div class="main" id="stationContent"></div>
-
-  </div>
-
-</div>
 
   <div id="teacherView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
@@ -1219,29 +1169,24 @@ window.startStudentSession = async function(){
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
-
-    const initial = {
-      name:name,
-      id:id,
-      scores:{},
-      total:0,
-      startedAt:Date.now(),
-      currentStation:'starter',
-      stationResults:{},
-      stationAnswers:{},
-      submittedStations:{},
-      stationSelfEval:{}
-    };
-
+const initial = {
+  name:name,
+  id:id,
+  scores:{},
+  total:0,
+  startedAt:Date.now(),
+  currentStation:'starter',
+  stationResults:{},
+  stationAnswers:{},
+  submittedStations:{},
+  stationSelfEval:{}
+};
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
-
     showOnly('studentView');
-    loadStudentLessonInfo();   // ADD THIS LINE HERE
     renderStudentNav();
     listenStudentLive();
-
     const displayedStation = (lessonStations.find(function(s){ return s.displayed && (s.unlocked || s.id === 'starter'); }) || {id:'starter'}).id;
     openStation(displayedStation);
   }catch(err){
