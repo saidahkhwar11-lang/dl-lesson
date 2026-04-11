@@ -245,7 +245,7 @@ body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:
   border-radius:24px;
   padding:22px;
   margin-bottom:16px;
-  box-shadow: 0 10px 30px rgba(120,130,200,0.08);
+box-shadow: 0 6px 20px rgba(120,130,200,0.06);
 }
 .hero h1{
   margin:0 0 8px;
@@ -446,20 +446,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   gap:20px;
   flex-wrap:wrap;
 ">
-  <div class="card">
-    <div style="text-align:center; margin-top:14px;">
 
-  <div style="
-    font-size:14px;
-    font-weight:600;
-    color:#5b6fb5;
-    margin-bottom:6px;
-  ">
-  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">
-    Download Lesson Plan
-  </button>
-
-</div>
+  <!-- Student Login -->
+  <div class="card" style="width:300px;">
     <h2>Student Login</h2>
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
@@ -469,15 +458,23 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
-  <div class="card">
+  <!-- Teacher Login -->
+  <div class="card" style="width:300px;">
     <h2>Teacher View</h2>
     <label>Teacher Password</label>
     <input id="teacherPassword" type="password" placeholder="Enter password" />
     <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
     <div id="teacherNotice" class="notice bad hidden"></div>
   </div>
+
 </div>
 
+<!-- 📄 Lesson Plan (OUTSIDE cards) -->
+<div style="text-align:center; margin-top:12px;">
+  <button class="lesson-plan-btn" onclick="downloadLessonPlan()">
+    📄 Download Lesson Plan
+  </button>
+</div>
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
