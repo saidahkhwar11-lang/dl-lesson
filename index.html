@@ -1384,7 +1384,7 @@ window.openStation = function(id){
   const stationMinutes = Number(st.time || 0);
   const submitted = isStationSubmitted(id);
 
-  if(id === 'st1' && currentOpenStation !== 'st1'){
+  if(id === 'st1' && previousStation !== 'st1'){
   setTimeout(function(){
     showLessonInfoPopup();
   }, 100);
@@ -1784,27 +1784,39 @@ function startTeacherListeners(){
 function renderTeacherTracker(){
   const wrap = byId('teacherTrackerWrap');
   if(!wrap) return;
-  const header = lessonStations.map(function(st){ return '<th>' + escapeHtml(st.title) + '<br><span class="small">/' + totalMarksForStation(st.id) + '</span></th>'; }).join('');
+
+  const header = lessonStations.map(function(st){
+    return '<th>' + escapeHtml(st.title) + '<br><span class="small">/' + totalMarksForStation(st.id) + '</span></th>';
+  }).join('');
+
   const rows = Object.values(liveStudents || {}).map(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
-    const scoreCells = lessonStations.map(function(st){ return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>'; }).join('');
-   return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td>' +
-'<div style="display:flex; align-items:center; gap:8px;">' +
-'<button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>' +
-'<div style="min-width:28px; text-align:center; font-weight:bold;">' + bonus + '</div>' +
-'<button class="warnbtn" onclick="takeBonus(\'' + escapeJs(s.id || '') + '\')" style="width:40px; padding:8px 0; font-size:20px;">−</button>' +
-'<button class="muted" onclick="removeStudent(\'' + escapeJs(s.id || '') + '\')" style="padding:6px 10px;">✖</button>' +
-'</div>' +
-'</td></tr>';
-  }).join('');
-  renderTeacherOverview();
-if(typeof renderTopStudents === 'function') renderTopStudents();
+    const scoreCells = lessonStations.map(function(st){
+      return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>';
+    }).join('');
 
-const previewWrap = byId('teacherStationPreview');
-if(previewWrap && previewWrap.dataset.currentStationId){
-  openTeacherStationPreview(previewWrap.dataset.currentStationId);
+    return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td>' +
+      '<div style="display:flex; align-items:center; gap:8px;">' +
+      '<button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>' +
+      '<div style="min-width:28px; text-align:center; font-weight:bold;">' + bonus + '</div>' +
+      '<button class="warnbtn" onclick="takeBonus(\'' + escapeJs(s.id || '') + '\')" style="width:40px; padding:8px 0; font-size:20px;">−</button>' +
+      '<button class="muted" onclick="removeStudent(\'' + escapeJs(s.id || '') + '\')" style="padding:6px 10px;">✖</button>' +
+      '</div>' +
+      '</td></tr>';
+  }).join('');
+
+  wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
+
+  renderTeacherOverview();
+  if(typeof renderTopStudents === 'function') renderTopStudents();
+
+  const previewWrap = byId('teacherStationPreview');
+  if(previewWrap && previewWrap.dataset.currentStationId){
+    openTeacherStationPreview(previewWrap.dataset.currentStationId);
+  }
 }
-  function getPollResults(stationId, questionIndex, options){
+
+function getPollResults(stationId, questionIndex, options){
   const counts = {};
   (options || []).forEach(function(opt){
     counts[opt] = 0;
