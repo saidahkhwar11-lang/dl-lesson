@@ -651,9 +651,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
           <label>Mini Objective</label>
           <input id="creatorObjective" />
           
-          <label>Success Criteria</label>
-<textarea id="creatorSuccessCriteria" placeholder="Write the success criteria for this station..."></textarea>
-
           <label>Details</label>
           <textarea id="creatorDetails"></textarea>
           
@@ -1726,22 +1723,13 @@ const linkBlock = ct.linkUrl
     ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>'
     : '';
 
-  const selfEvalValue = getSelfEvalValue(id);
+ const selfEvalValue = getSelfEvalValue(id);
 const selfEvalDisabled = submitted ? ' disabled' : '';
-let successCriteriaLine = '';
-if(content.details){
-  successCriteriaLine = `
-    <div class="success-criteria-inline">
-      <strong>Students will be able to:</strong> ${escapeHtml(content.details)}
-    </div>
-  `;
-}
+
 const selfEvalHtml = `
   <div class="self-eval-box">
-  <div class="self-eval-title">How did you feel about this station?</div>
+    <div class="self-eval-title">How did you feel about this station?</div>
 
-  ${successCriteriaLine}
-  
     <div class="self-eval-options">
       <label class="self-eval-option">
         <input type="radio" name="self_eval_${id}" value="I understood it well"
@@ -1764,7 +1752,10 @@ const selfEvalHtml = `
         😟 It was difficult
       </label>
     </div>
-    <div class="self-eval-note">This is only for self-evaluation. It does not affect marks.</div>
+
+    <div class="self-eval-note">
+      This is only for self-evaluation. It does not affect marks.
+    </div>
   </div>
 `;
 
