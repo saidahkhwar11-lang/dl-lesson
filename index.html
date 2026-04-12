@@ -1439,9 +1439,12 @@ const selfEvalHtml = `
 
   wrap.innerHTML = `
     <div class="preview-left teacher-preview-left-large">
-      <h3>${escapeHtml(station.title || '')}</h3>
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">
+    <h3 style="margin:0; flex:1;">${escapeHtml(station.title || '')}</h3>
+    <div id="teacherStationTimer" class="station-live-timer hidden"></div>
+  </div>
 
-      ${lessonInfoBox}
+  ${lessonInfoBox}
 ${selfEvalHtml}
 
 <div>🎯 ${escapeHtml(station.objective || '')}</div>
@@ -2867,29 +2870,35 @@ function stopStationTimer(){
 }
 
 function updateStationTimerDisplay(){
-  const timerBox = byId('studentStationTimer');
+  const studentTimer = byId('studentStationTimer');
+const teacherTimer = byId('teacherStationTimer');
+
+// hide for starter
+if(currentTimedStationId === 'starter'){
+  if(studentTimer) studentTimer.classList.add('hidden');
+  if(teacherTimer) teacherTimer.classList.add('hidden');
+  return;
+}
+
+const text = stationTimeLeft > 0
+  ? formatStationTime(stationTimeLeft)
+  : '00:00';
+
+// update BOTH timers
+[studentTimer, teacherTimer].forEach(function(timerBox){
   if(!timerBox) return;
 
-  // hide for starter
-  if(currentTimedStationId === 'starter'){
-    timerBox.classList.add('hidden');
-    return;
-  }
-
-  timerBox.classList.remove('hidden', 'time-low', 'time-up');
-
-  const text = stationTimeLeft > 0
-    ? '⏳ Time Left: ' + formatStationTime(stationTimeLeft)
-    : '⛔ Time is up';
-
-  timerBox.innerHTML = text;
+  timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
+  timerBox.textContent = text;
 
   if(stationTimeLeft <= 0){
-    timerBox.classList.add('time-up');
+    timerBox.classList.add('timer-danger');
   } else if(stationTimeLeft <= 60){
-    timerBox.classList.add('time-low');
+    timerBox.classList.add('timer-danger');
+  } else if(stationTimeLeft <= 180){
+    timerBox.classList.add('timer-warning');
   }
-}
+});
   
 function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
