@@ -105,6 +105,16 @@
   cursor: pointer;
 }
 
+ .activity-popup{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+    
 #activityFrame{
   width: 100%;
   height: 100%;
@@ -853,10 +863,21 @@ window.openHybridLink = function(url){
   const popup = document.getElementById('activityPopup');
   const frame = document.getElementById('activityFrame');
 
-  if(!popup || !frame) return;
+  if(!popup || !frame){
+    window.open(url, '_blank', 'noopener,noreferrer');
+    return;
+  }
 
   frame.src = url;
   popup.classList.remove('hidden');
+};
+
+window.closeActivityPopup = function(){
+  const popup = document.getElementById('activityPopup');
+  const frame = document.getElementById('activityFrame');
+
+  if(frame) frame.src = '';
+  if(popup) popup.classList.add('hidden');
 };
 
 window.closeActivityPopup = function(){
@@ -3439,13 +3460,12 @@ window.addEventListener('load', function(){
 
 <div id="imageModal" class="image-modal hidden"></div>
 
-    <div id="activityPopup" class="activity-popup hidden">
+   <div id="activityPopup" class="activity-popup hidden">
   <div class="activity-popup-box">
     <div class="activity-popup-header">
       <span>Activity Preview</span>
       <button type="button" class="close-popup-btn" onclick="closeActivityPopup()">✕</button>
     </div>
-
     <iframe id="activityFrame" src="" allowfullscreen></iframe>
   </div>
 </div>
