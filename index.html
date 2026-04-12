@@ -1741,38 +1741,41 @@ window.openStation = function(id){
   }, 100);
 }
 
- const studentLessonBox =
+  const studentLessonBox =
   '<div class="lesson-info-box">' +
     '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
 
     '<div class="lesson-top-grid">' +
 
-      // 🎯 OBJECTIVES (left - bigger)
       '<div class="lesson-section lesson-objectives-box">' +
         '<div class="lesson-label">🎯 Lesson Objectives: Students will be able to ...</div>' +
         '<ul class="lesson-list">' +
           (lessonMeta.lessonObjectives || '')
             .split('\n')
+            .map(function(obj){ return obj.trim(); })
+            .filter(Boolean)
             .map(function(obj){
               return '<li>' + escapeHtml(obj) + '</li>';
             }).join('') +
         '</ul>' +
       '</div>' +
 
-      // 🔑 KEYWORDS (right - smaller)
       '<div class="lesson-section lesson-keywords-box">' +
         '<div class="lesson-label">🔑 Keywords</div>' +
         '<div class="lesson-tags">' +
           (lessonMeta.lessonKeywords || '')
             .split(',')
+            .map(function(k){ return k.trim(); })
+            .filter(Boolean)
             .map(function(k){
-              return '<span class="lesson-tag">' + escapeHtml(k.trim()) + '</span>';
+              return '<span class="lesson-tag">' + escapeHtml(k) + '</span>';
             }).join('') +
         '</div>' +
       '</div>' +
 
     '</div>' +
   '</div>';
+  
   const questionsHtml = (ct.questions || []).map(function(q,i){
     return renderQuestion(q,id,i);
   }).join('');
@@ -3284,36 +3287,42 @@ function downloadLessonPlan(){
     background: #eeeeee;
     font-weight: bold;
   }
-  .lesson-top-grid{
-  display:grid;
-  grid-template-columns: 2fr 1fr;
+ .lesson-top-grid{
+  display:flex;
   gap:14px;
   margin-top:10px;
+  align-items:flex-start;
 }
-
-/* Mobile friendly */
-@media(max-width:900px){
-  .lesson-top-grid{
-    grid-template-columns: 1fr;
-  }
-}
-
 .lesson-objectives-box{
+  flex:2;
+  min-width:0;
   background:#ffffff;
   border:1px solid var(--line);
   border-radius:16px;
   padding:10px;
 }
-
 .lesson-keywords-box{
+  flex:1;
+  min-width:260px;
   background:linear-gradient(135deg,#f8fbff,#ffffff);
   border:1px solid var(--line);
   border-radius:16px;
   padding:10px;
 }
-  ul{
-    margin: 0;
-    padding-left: 18px;
+.lesson-keywords-box .lesson-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+@media(max-width:900px){
+  .lesson-top-grid{
+    flex-direction:column;
+  }
+  .lesson-keywords-box{
+    min-width:0;
+    width:100%;
+  }
+padding-left: 18px;
   }
   .top-actions{
     margin-bottom: 18px;
