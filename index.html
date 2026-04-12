@@ -800,7 +800,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 window.openHybridLink = function(url){
   if(!url) return;
-  window.open(url, '_blank');
+  window.open(url, '_blank', 'noopener,noreferrer');
 };
 
 function showLessonInfoPopup(){
@@ -1709,7 +1709,7 @@ const videoBlock = ct.videoUrl
 
 const linkBlock = ct.linkUrl
   ? '<div style="margin-bottom:12px;">' +
-    '<button class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
+    '<button type="button" class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
     escapeHtml(ct.linkTitle || 'Open Activity') +
     '</button></div>'
   : '';
@@ -3159,6 +3159,10 @@ function downloadLessonPlan(){
   @media print{
     .top-actions{ display:none; }
   }
+  #teacherView .rating-box,
+#studentView .rating-box {
+  display: none;
+}
 </style>
 </head>
 <body>
