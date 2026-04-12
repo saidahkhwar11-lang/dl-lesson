@@ -898,7 +898,10 @@ function closeLessonInfoPopup(){
   popup.classList.add('hidden');
 }
 function storageRef(path){
-  return firebase.storage().ref(path);
+  if(!storage){
+    throw new Error('Firebase Storage is not initialized.');
+  }
+  return storage.ref(path);
 }
 
 window.handleCreatorAudio = async function(event){
@@ -911,6 +914,7 @@ window.handleCreatorAudio = async function(event){
     const stationId = byId('creatorStationSelect').value;
     const fileName = Date.now() + '_' + file.name;
     const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
+    const ref = storageRef('lesson_media/' + stationId + '/video/' + fileName);
 
     await ref.put(file);
     const url = await ref.getDownloadURL();
@@ -1137,13 +1141,8 @@ function initFirebaseFromInputs(){
     appInstance = firebase.initializeApp(firebaseConfig);
   }
 
-  db = firebase.database();
-}
-async function ensureLessonDefaults(){
-  const configSnap = await getSnap(configPath());
-  if(!configSnap.exists()) await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
-  const contentSnap = await getSnap(contentPath());
-  if(!contentSnap.exists()) await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
+  db = firebase.database(appInstance);
+  storage = firebase.storage(appInstance);
 }
 
 function isLegacyBadQuestion(q){
