@@ -1125,9 +1125,9 @@ function initFirebaseFromInputs(){
     if(!configsEqual(currentConfig, firebaseConfig)) throw new Error('Firebase config changed. Refresh the page, then save again.');
     appInstance = existing;
   } else {
-    appInstance = firebase.initializeApp(firebaseConfig, APP_NAME);
+  appInstance = firebase.initializeApp(firebaseConfig);
   }
-  db = firebase.database(appInstance);
+db = firebase.database();
 }
 
 async function ensureLessonDefaults(){
