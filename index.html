@@ -1116,6 +1116,9 @@ function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
 
+  console.log('RAW CONFIG TEXT:', byId('firebaseConfigText').value);
+console.log('PARSED CONFIG:', firebaseConfig);
+  
   if(!firebaseConfig.storageBucket){
     throw new Error('Missing storageBucket in Firebase config.');
   }
