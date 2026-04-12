@@ -2871,34 +2871,37 @@ function stopStationTimer(){
 
 function updateStationTimerDisplay(){
   const studentTimer = byId('studentStationTimer');
-const teacherTimer = byId('teacherStationTimer');
+  const teacherTimer = byId('teacherStationTimer');
 
-// hide for starter
-if(currentTimedStationId === 'starter'){
-  if(studentTimer) studentTimer.classList.add('hidden');
-  if(teacherTimer) teacherTimer.classList.add('hidden');
-  return;
-}
-
-const text = stationTimeLeft > 0
-  ? formatStationTime(stationTimeLeft)
-  : '00:00';
-
-// update BOTH timers
-[studentTimer, teacherTimer].forEach(function(timerBox){
-  if(!timerBox) return;
-
-  timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
-  timerBox.textContent = text;
-
-  if(stationTimeLeft <= 0){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 60){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 180){
-    timerBox.classList.add('timer-warning');
+  if(typeof currentTimedStationId === 'undefined' || typeof stationTimeLeft === 'undefined'){
+    if(studentTimer) studentTimer.classList.add('hidden');
+    if(teacherTimer) teacherTimer.classList.add('hidden');
+    return;
   }
-});
+
+  // hide for starter
+  if(currentTimedStationId === 'starter'){
+    if(studentTimer) studentTimer.classList.add('hidden');
+    if(teacherTimer) teacherTimer.classList.add('hidden');
+    return;
+  }
+
+  const text = stationTimeLeft > 0
+    ? formatStationTime(stationTimeLeft)
+    : '00:00';
+
+  [studentTimer, teacherTimer].forEach(function(timerBox){
+    if(!timerBox) return;
+
+    timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
+    timerBox.textContent = text;
+
+    if(stationTimeLeft <= 60){
+      timerBox.classList.add('timer-danger');
+    } else if(stationTimeLeft <= 180){
+      timerBox.classList.add('timer-warning');
+    }
+  });
 }
   
 function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
