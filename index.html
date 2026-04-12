@@ -615,7 +615,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div id="teacherTrackerCard" class="card">
 <div class="btns">
   <button onclick="refreshTeacherNow()">🔄 Refresh</button>
-
+  
   <button class="secondary" onclick="exportTrackerCsv()">📊 Export</button>
 
   <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
@@ -623,6 +623,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
 </div>
 
+   <div id="rankingBoard" class="ranking-box">
+  <div class="ranking-title">🏆 Top 5 Students</div>
+  <div id="rankingList"></div>
+</div>
+      
 <div class="card" style="margin-top:10px; padding:10px; background:#fff5f5;">
   <div class="small" style="margin-bottom:6px;">⚠️ Reset Options</div>
   <div class="btns">
@@ -833,6 +838,35 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       '</div>' +
     '</div>'
   );
+}
+
+  function updateRankingBoard(){
+  const list = byId('rankingList');
+  if(!list || !liveStudents) return;
+
+  const studentsArr = Object.values(liveStudents);
+
+  // sort by score (highest first)
+  studentsArr.sort(function(a,b){
+    return (b.total || 0) - (a.total || 0);
+  });
+
+  const top5 = studentsArr.slice(0,5);
+
+  list.innerHTML = top5.map(function(st, index){
+    const medals = ['🥇','🥈','🥉','⭐','⭐'];
+
+    return `
+      <div class="ranking-item rank-${index+1}">
+        <div class="ranking-name">
+          ${medals[index]} ${escapeHtml(st.name || 'Student')}
+        </div>
+        <div class="ranking-score">
+          ${st.total || 0} pts
+        </div>
+      </div>
+    `;
+  }).join('');
 }
 
 window.openHybridLink = function(url){
@@ -2055,6 +2089,7 @@ function listenStudentLive(){
   studentSelfRef = dbRef(studentPath(currentStudent.id));
   studentBonusRef.on('value', function(snap){ liveBonus = snap.val() || {}; });
   studentSelfRef.on('value', function(snap){ if(!snap.exists()) return; liveStudents[currentStudent.id] = snap.val(); renderStudentNav(); });
+  updateRankingBoard();
 }
 
 function startTeacherListeners(){
