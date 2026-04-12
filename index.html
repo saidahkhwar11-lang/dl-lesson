@@ -817,6 +817,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <script>
 
+  let storage = null;
+
   function buildLessonInfoBoxHtml(){
   return (
     '<div class="lesson-info-box">' +
@@ -1113,38 +1115,24 @@ window.closeImageModal = function(){
   modal.innerHTML = '';
 };
 
-
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
 
-  const existing = firebase.apps.find(function(app){
-    return app.name === APP_NAME || app.name === '[DEFAULT]';
-  });
-
-  if(existing){
-    const currentConfig = {
-      apiKey: existing.options.apiKey,
-      authDomain: existing.options.authDomain,
-      databaseURL: existing.options.databaseURL,
-      projectId: existing.options.projectId,
-      storageBucket: existing.options.storageBucket,
-      appId: existing.options.appId
-    };
-
-    if(!configsEqual(currentConfig, firebaseConfig)){
-      throw new Error('Firebase config changed. Refresh the page, then save again.');
-    }
-
-    appInstance = existing;
-  } else {
-    appInstance = firebase.initializeApp(firebaseConfig);
+  if(!firebaseConfig.storageBucket){
+    throw new Error('Missing storageBucket in Firebase config.');
   }
 
-  db = firebase.database(appInstance);
-  storage = firebase.storage(appInstance);
-}
+  if(firebase.apps.length){
+    appInstance = firebase.app(); // use default app
+  } else {
+    appInstance = firebase.initializeApp(firebaseConfig); // create default app
+  }
 
+  db = firebase.database();
+  storage = firebase.storage();
+}
+  
 function isLegacyBadQuestion(q){
   const text = String((q && q.text) || '').toLowerCase();
   const answer = String((q && q.answer) || '').toLowerCase();
