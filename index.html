@@ -2592,17 +2592,33 @@ window.addCreatorQuestion = function(){
     newQuestion.words = words;
   }
 
+ if(typeof window.editingQuestionIndex === 'number'){
+  creatorDraftQuestions[window.editingQuestionIndex] = newQuestion;
+  window.editingQuestionIndex = null;
+  showNotice('creatorNotice', 'Question updated successfully.', 'good');
+} else {
   creatorDraftQuestions.push(newQuestion);
-  renderCreatorQuestionsList();
   showNotice('creatorNotice', 'Question added successfully.', 'good');
-  clearQuestionBuilder();
+}
+
+renderCreatorQuestionsList();
+clearQuestionBuilder();
 };
 
-window.removeCreatorQuestion = function(index){ creatorDraftQuestions.splice(index,1); renderCreatorQuestionsList(); };
-window.clearAllCreatorQuestions = function(){ creatorDraftQuestions = []; renderCreatorQuestionsList(); showNotice('creatorNotice','All questions cleared.','warn'); };
+window.removeCreatorQuestion = function(index){
+  creatorDraftQuestions.splice(index,1);
+  renderCreatorQuestionsList();
+};
 
-function createQuestion(id, type, text, answer, choices){ return {id:id, type:type, text:text, answer:answer, choices:choices || []}; }
+window.clearAllCreatorQuestions = function(){
+  creatorDraftQuestions = [];
+  renderCreatorQuestionsList();
+  showNotice('creatorNotice','All questions cleared.','warn');
+};
 
+function createQuestion(id, type, text, answer, choices){
+  return {id:id, type:type, text:text, answer:answer, choices:choices || []};
+}
 window.saveCreatorStation = async function(){
   if(!requireConnection()) return;
 
