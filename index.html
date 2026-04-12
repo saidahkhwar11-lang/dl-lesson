@@ -1741,11 +1741,14 @@ window.openStation = function(id){
   }, 100);
 }
 
-  const studentLessonBox =
-    '<div class="lesson-info-box">' +
-      '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
+ const studentLessonBox =
+  '<div class="lesson-info-box">' +
+    '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
 
-      '<div class="lesson-section">' +
+    '<div class="lesson-top-grid">' +
+
+      // 🎯 OBJECTIVES (left - bigger)
+      '<div class="lesson-section lesson-objectives-box">' +
         '<div class="lesson-label">🎯 Lesson Objectives: Students will be able to ...</div>' +
         '<ul class="lesson-list">' +
           (lessonMeta.lessonObjectives || '')
@@ -1756,7 +1759,8 @@ window.openStation = function(id){
         '</ul>' +
       '</div>' +
 
-      '<div class="lesson-section">' +
+      // 🔑 KEYWORDS (right - smaller)
+      '<div class="lesson-section lesson-keywords-box">' +
         '<div class="lesson-label">🔑 Keywords</div>' +
         '<div class="lesson-tags">' +
           (lessonMeta.lessonKeywords || '')
@@ -1766,8 +1770,9 @@ window.openStation = function(id){
             }).join('') +
         '</div>' +
       '</div>' +
-    '</div>';
 
+    '</div>' +
+  '</div>';
   const questionsHtml = (ct.questions || []).map(function(q,i){
     return renderQuestion(q,id,i);
   }).join('');
@@ -3279,6 +3284,33 @@ function downloadLessonPlan(){
     background: #eeeeee;
     font-weight: bold;
   }
+  .lesson-top-grid{
+  display:grid;
+  grid-template-columns: 2fr 1fr;
+  gap:14px;
+  margin-top:10px;
+}
+
+/* Mobile friendly */
+@media(max-width:900px){
+  .lesson-top-grid{
+    grid-template-columns: 1fr;
+  }
+}
+
+.lesson-objectives-box{
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px;
+}
+
+.lesson-keywords-box{
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px;
+}
   ul{
     margin: 0;
     padding-left: 18px;
