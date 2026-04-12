@@ -15,6 +15,46 @@
   z-index:9999;
 }
 
+  .station-details-box{
+  margin:12px 0 14px;
+  padding:14px;
+  background:linear-gradient(135deg,#fff9fd 0%, #f9fbff 100%);
+  border:1px solid #e9e4ff;
+  border-radius:16px;
+  box-shadow:0 4px 12px rgba(120,130,200,0.06);
+}
+
+.station-details-title{
+  font-size:14px;
+  font-weight:700;
+  color:#6b75b5;
+  margin-bottom:10px;
+}
+
+.station-main-question{
+  margin-bottom:10px;
+  padding:10px 12px;
+  background:#fff7ec;
+  border:1px solid #f3ddb2;
+  border-left:5px solid #efc56e;
+  border-radius:12px;
+  font-size:13px;
+  line-height:1.6;
+  color:#6a5418;
+}
+
+.station-details-list{
+  margin:0;
+  padding-left:18px;
+  color:#4b536a;
+  font-size:13px;
+  line-height:1.7;
+}
+
+.station-details-list li{
+  margin-bottom:6px;
+}
+
   .success-criteria-inline{
   margin:10px 0 12px;
   padding:10px 12px;
@@ -966,6 +1006,52 @@ function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b 
       '</div>';
   }).join('');
 }
+
+  function renderStationDetailsBox(detailsText){
+  const raw = (detailsText || '').trim();
+  if(!raw){
+    return '';
+  }
+
+  const lines = raw
+    .split('\n')
+    .map(function(line){ return line.trim(); })
+    .filter(Boolean);
+
+  let mainQuestion = '';
+  const bulletPoints = [];
+
+  lines.forEach(function(line){
+    const lower = line.toLowerCase();
+    if(lower.startsWith('main question:')){
+      mainQuestion = line.substring('main question:'.length).trim();
+    } else if(line.startsWith('-')){
+      bulletPoints.push(line.substring(1).trim());
+    } else {
+      bulletPoints.push(line);
+    }
+  });
+
+  return `
+    <div class="station-details-box">
+      <div class="station-details-title">Instructions</div>
+
+      ${mainQuestion ? `
+        <div class="station-main-question">
+          <strong>Main Question:</strong> ${escapeHtml(mainQuestion)}
+        </div>
+      ` : ''}
+
+      ${bulletPoints.length ? `
+        <ul class="station-details-list">
+          ${bulletPoints.map(function(point){
+            return `<li>${escapeHtml(point)}</li>`;
+          }).join('')}
+        </ul>
+      ` : ''}
+    </div>
+  `;
+}
   
 function bindButtons(){
   const studentBtn = byId('studentStartBtn');
@@ -1232,6 +1318,7 @@ window.openTeacherStationPreview = function(id){
   const wrap = byId('teacherStationPreview');
   const station = getStationById(id);
   const content = getStationContent(id);
+  const detailsBlock = renderStationDetailsBox(content.details || '');
 
   if(!wrap || !station) return;
 
@@ -1413,7 +1500,8 @@ ${selfEvalHtml}
 
 <div>🎯 ${escapeHtml(station.objective || '')}</div>
       <div>⏱ ${escapeHtml(station.time || '')}</div>
-      <div>📝 ${escapeHtml(station.details || '')}</div>
+      
+ ${detailsBlock}
 
       ${imageHtml}
       ${audioHtml}
@@ -1691,6 +1779,8 @@ window.openStation = function(id){
   }).join('');
 
   const resultText = scoreTextForStudent(id);
+
+  const detailsBlock = renderStationDetailsBox(ct.details || '');
 
   const imageBlock = ct.imageUrl
   ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="station image" />' +
