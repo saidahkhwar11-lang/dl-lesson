@@ -1745,9 +1745,9 @@ window.openStation = function(id){
   '<div class="lesson-info-box">' +
     '<div class="lesson-title">' + escapeHtml(lessonMeta.lessonTitle || '') + '</div>' +
 
-    '<div class="lesson-top-grid">' +
+    '<div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; margin-top:10px;">' +
 
-      '<div class="lesson-section lesson-objectives-box">' +
+      '<div class="lesson-section lesson-objectives-box" style="flex:2; min-width:320px;">' +
         '<div class="lesson-label">🎯 Lesson Objectives: Students will be able to ...</div>' +
         '<ul class="lesson-list">' +
           (lessonMeta.lessonObjectives || '')
@@ -1760,9 +1760,9 @@ window.openStation = function(id){
         '</ul>' +
       '</div>' +
 
-      '<div class="lesson-section lesson-keywords-box">' +
+      '<div class="lesson-section lesson-keywords-box" style="flex:1; min-width:260px;">' +
         '<div class="lesson-label">🔑 Keywords</div>' +
-        '<div class="lesson-tags">' +
+        '<div class="lesson-tags" style="display:flex; flex-wrap:wrap; gap:6px;">' +
           (lessonMeta.lessonKeywords || '')
             .split(',')
             .map(function(k){ return k.trim(); })
