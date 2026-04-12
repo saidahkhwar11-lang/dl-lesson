@@ -484,8 +484,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   "authDomain": "online-english-lesson-grade-9.firebaseapp.com",
   "databaseURL": "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
   "projectId": "online-english-lesson-grade-9",
+  "storageBucket": "online-english-lesson-grade-9.appspot.com",
   "appId": "1:542666648554:web:5190c68ea73b3536dae093"
-  "storageBucket": "YOUR_BUCKET_NAME"
 }</textarea>
   <div class="btns">
     <button onclick="saveConfig()">Save Config</button>
@@ -1113,23 +1113,32 @@ window.closeImageModal = function(){
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
-  const existing = firebase.apps.find(function(app){ return app.name === APP_NAME; });
+
+  const existing = firebase.apps.find(function(app){
+    return app.name === APP_NAME || app.name === '[DEFAULT]';
+  });
+
   if(existing){
     const currentConfig = {
       apiKey: existing.options.apiKey,
       authDomain: existing.options.authDomain,
       databaseURL: existing.options.databaseURL,
       projectId: existing.options.projectId,
+      storageBucket: existing.options.storageBucket,
       appId: existing.options.appId
     };
-    if(!configsEqual(currentConfig, firebaseConfig)) throw new Error('Firebase config changed. Refresh the page, then save again.');
+
+    if(!configsEqual(currentConfig, firebaseConfig)){
+      throw new Error('Firebase config changed. Refresh the page, then save again.');
+    }
+
     appInstance = existing;
   } else {
-  appInstance = firebase.initializeApp(firebaseConfig);
+    appInstance = firebase.initializeApp(firebaseConfig);
   }
-db = firebase.database();
-}
 
+  db = firebase.database();
+}
 async function ensureLessonDefaults(){
   const configSnap = await getSnap(configPath());
   if(!configSnap.exists()) await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
