@@ -485,6 +485,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   "databaseURL": "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
   "projectId": "online-english-lesson-grade-9",
   "appId": "1:542666648554:web:5190c68ea73b3536dae093"
+  "storageBucket": "YOUR_BUCKET_NAME"
 }</textarea>
   <div class="btns">
     <button onclick="saveConfig()">Save Config</button>
@@ -904,19 +905,27 @@ window.handleCreatorAudio = async function(event){
   const file = event.target.files[0];
   if(!file) return;
 
-  showNotice('creatorNotice','Uploading audio...','warn');
+  try{
+    showNotice('creatorNotice', 'Uploading audio...', 'warn');
 
-  const stationId = byId('creatorStationSelect').value;
-  const fileName = Date.now() + '_' + file.name;
-  const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
+    const stationId = byId('creatorStationSelect').value;
+    const fileName = Date.now() + '_' + file.name;
+    const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
 
-  await ref.put(file);
-  const url = await ref.getDownloadURL();
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
 
-  byId('creatorAudioUrl').value = url;
-  showNotice('creatorNotice','Audio uploaded successfully','good');
+    byId('creatorAudioUrl').value = url;
+    showNotice('creatorNotice', 'Audio uploaded successfully', 'good');
+  } catch(err){
+    console.error('Audio upload failed:', err);
+    showNotice(
+      'creatorNotice',
+      'Audio upload failed: ' + (err && err.message ? err.message : err),
+      'bad'
+    );
+  }
 };
-
 window.handleCreatorVideo = async function(event){
   const file = event.target.files[0];
   if(!file) return;
@@ -1327,13 +1336,14 @@ window.openTeacherStationPreview = function(id){
   }
 
   let audioHtml = '';
-  if(content.audioUrl){
-    audioHtml = `
-      <audio controls style="width:100%; margin-bottom:12px;">
-        <source src="${escapeHtml(content.audioUrl)}">
-      </audio>
-    `;
-  }
+if(content.audioUrl){
+  audioHtml = `
+    <audio controls style="width:100%; margin-bottom:12px;">
+      <source src="${escapeHtml(content.audioUrl)}" type="audio/mpeg">
+      Your browser does not support audio.
+    </audio>
+  `;
+}
 
   let videoHtml = '';
   if(content.videoUrl){
@@ -1790,7 +1800,10 @@ window.openStation = function(id){
   : '';
 
   const audioBlock = ct.audioUrl
-  ? '<audio controls style="width:100%; margin-bottom:12px;"><source src="' + ct.audioUrl + '"></audio>'
+  ? '<audio controls style="width:100%; margin-bottom:12px;">' +
+      '<source src="' + escapeHtml(ct.audioUrl) + '" type="audio/mpeg">' +
+      'Your browser does not support audio.' +
+    '</audio>'
   : '';
 
 const videoBlock = ct.videoUrl
