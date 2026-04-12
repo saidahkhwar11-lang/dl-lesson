@@ -1798,9 +1798,11 @@ const selfEvalHtml = `
     : '';
 
   byId('stationContent').innerHTML =
-    '<h2>' + escapeHtml(st.title) + '</h2>' +
-    studentLessonBox +
-    '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
+   '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">' +
+  '<h2 style="margin:0; flex:1;">' + escapeHtml(st.title) + '</h2>' +
+  '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
+'</div>' +
+studentLessonBox +
     '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
     '<p>' + escapeHtml(st.details || '') + '</p>' +
     imageBlock +
