@@ -55,6 +55,13 @@
   margin-bottom:6px;
 }
 
+.station-details-paragraph{
+  font-size:13px;
+  color:#4b536a;
+  line-height:1.7;
+  margin-bottom:8px;
+}
+
   .success-criteria-inline{
   margin:10px 0 12px;
   padding:10px 12px;
@@ -1020,6 +1027,7 @@ function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b 
 
   let mainQuestion = '';
   const bulletPoints = [];
+  const plainLines = [];
 
   lines.forEach(function(line){
     const lower = line.toLowerCase();
@@ -1028,7 +1036,7 @@ function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b 
     } else if(line.startsWith('-')){
       bulletPoints.push(line.substring(1).trim());
     } else {
-      bulletPoints.push(line);
+      plainLines.push(line);
     }
   });
 
@@ -1039,6 +1047,14 @@ function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b 
       ${mainQuestion ? `
         <div class="station-main-question">
           <strong>Main Question:</strong> ${escapeHtml(mainQuestion)}
+        </div>
+      ` : ''}
+
+      ${plainLines.length ? `
+        <div class="station-details-paragraph">
+          ${plainLines.map(function(line){
+            return `<div>${escapeHtml(line)}</div>`;
+          }).join('')}
         </div>
       ` : ''}
 
@@ -1501,8 +1517,7 @@ ${selfEvalHtml}
 <div>🎯 ${escapeHtml(station.objective || '')}</div>
       <div>⏱ ${escapeHtml(station.time || '')}</div>
       
- ${detailsBlock}
-
+      ${detailsBlock}
       ${imageHtml}
       ${audioHtml}
       ${videoHtml}
