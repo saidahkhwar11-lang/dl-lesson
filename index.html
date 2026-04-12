@@ -1120,7 +1120,7 @@ function initFirebaseFromInputs(){
 console.log('PARSED CONFIG:', firebaseConfig);
   
   if(!firebaseConfig.storageBucket){
-    throw new Error('Missing storageBucket in Firebase config.');
+  firebaseConfig.storageBucket = "online-english-lesson-grade-9.appspot.com";
   }
 
   if(firebase.apps.length){
