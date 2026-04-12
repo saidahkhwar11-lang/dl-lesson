@@ -2376,38 +2376,41 @@ window.renderCreatorQuestionsList = function(){
   const wrap = byId('creatorQuestionsList');
   if(!wrap) return;
 
-  if(!creatorDraftQuestions || !creatorDraftQuestions.length){
-    wrap.innerHTML = '<div class="small">No questions added yet.</div>';
+  if(!creatorDraftQuestions.length){
+    wrap.innerHTML = '<div class="muted">No questions added yet.</div>';
     return;
   }
 
   wrap.innerHTML = creatorDraftQuestions.map(function(q, i){
-    let extra = '';
+    const questionText = escapeHtml(q.question || q.text || 'No question text');
+    let details = '';
 
     if(q.type === 'mcq'){
-      extra = '<div class="small">Choices: ' + escapeHtml((q.choices || []).join(' | ')) + '</div>';
-
+      details = 'Choices: ' + escapeHtml((q.choices || []).join(' | '));
     } else if(q.type === 'tf'){
-      extra = '<div class="small">Choices: True | False</div>';
-
+      details = 'Choices: True | False';
     } else if(q.type === 'matching'){
-      extra = '<div class="small">Matching pairs: ' + (q.pairs || []).length + '</div>';
-
-    } else if(q.type === 'poll'){
-      if(q.pollMode === 'objectives'){
-        extra = '<div class="small">Exit Ticket poll (Objectives)</div>';
-      } else {
-        extra = '<div class="small">Poll options: ' + escapeHtml((q.options || []).join(' | ')) + '</div>';
-      }
-
+      details = (q.pairs || []).map(function(pair){
+        return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
+      }).join(' | ');
     } else if(q.type === 'drag_gap'){
-      extra = '<div class="small">Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>';
+      details = 'Words: ' + escapeHtml((q.words || []).join(', '));
     }
 
     return `
-      <div class="card" style="padding:10px;margin-bottom:8px;">
-        <strong>Q${i + 1}.</strong> ${escapeHtml(q.text || '')}
-        ${extra}
+      <div style="margin-bottom:12px; padding:14px; border:1px solid #d9dfef; border-radius:18px; background:#fff;">
+        <div style="font-weight:700; color:#3d5fa8; margin-bottom:6px;">
+          Q${i + 1}. ${questionText}
+        </div>
+
+        <div style="color:#6b7280; margin-bottom:10px;">
+          ${details}
+        </div>
+
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" onclick="editCreatorQuestion(${i})">Edit</button>
+          <button type="button" class="secondary" onclick="removeCreatorQuestion(${i})">Delete</button>
+        </div>
       </div>
     `;
   }).join('');
