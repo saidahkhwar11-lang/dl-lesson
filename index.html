@@ -915,8 +915,8 @@ window.handleCreatorAudio = async function(event){
 
     const stationId = byId('creatorStationSelect').value;
     const fileName = Date.now() + '_' + file.name;
+
     const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
-    const ref = storageRef('lesson_media/' + stationId + '/video/' + fileName);
 
     await ref.put(file);
     const url = await ref.getDownloadURL();
@@ -925,13 +925,10 @@ window.handleCreatorAudio = async function(event){
     showNotice('creatorNotice', 'Audio uploaded successfully', 'good');
   } catch(err){
     console.error('Audio upload failed:', err);
-    showNotice(
-      'creatorNotice',
-      'Audio upload failed: ' + (err && err.message ? err.message : err),
-      'bad'
-    );
+    showNotice('creatorNotice','Audio upload failed: ' + err.message,'bad');
   }
 };
+  
 window.handleCreatorVideo = async function(event){
   const file = event.target.files[0];
   if(!file) return;
