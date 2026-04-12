@@ -676,6 +676,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <h2>Lesson Creator</h2>
       <label>Select Station</label>
       <select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
+      <div class="btns" style="margin-top:8px;">
+  <button type="button" onclick="addNewStation()">➕ Add Station</button>
+  <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
+</div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
           <label>Station Title</label>
@@ -2656,6 +2660,55 @@ window.clearAllCreatorQuestions = function(){
   renderCreatorQuestionsList();
   showNotice('creatorNotice','All questions cleared.','warn');
 };
+
+  function addNewStation(){
+  const newNumber = lessonStations.length + 1;
+  const newId = 'station_' + Date.now();
+
+  const newStation = {
+    id: newId,
+    title: 'New Station ' + newNumber,
+    objective: '',
+    details: '',
+    time: '',
+    displayed: false,
+    locked: true
+  };
+
+  lessonStations.push(newStation);
+
+  if(typeof lessonContent !== 'object' || !lessonContent){
+    lessonContent = {};
+  }
+
+  lessonContent[newId] = {
+    imageUrl: '',
+    audioUrl: '',
+    videoUrl: '',
+    linkUrl: '',
+    linkTitle: '',
+    questions: []
+  };
+
+  renderCreatorStationOptions();
+
+  const select = byId('creatorStationSelect');
+  if(select){
+    select.value = newId;
+  }
+
+  loadCreatorStation();
+  showNotice('creatorNotice', 'New station added successfully.', 'good');
+}
+
+  function renderCreatorStationOptions(){
+  const select = byId('creatorStationSelect');
+  if(!select) return;
+
+  select.innerHTML = lessonStations.map(function(st){
+    return '<option value="' + escapeHtml(st.id) + '">' + escapeHtml(st.title || st.id) + '</option>';
+  }).join('');
+}
 
 function createQuestion(id, type, text, answer, choices){
   return {id:id, type:type, text:text, answer:answer, choices:choices || []};
