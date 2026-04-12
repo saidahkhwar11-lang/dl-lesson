@@ -726,11 +726,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <label>Upload Video</label>
 <input id="creatorVideoFile" type="file" accept="video/*" onchange="handleCreatorVideo(event)" />
 
-<label>Hybrid Link URL</label>
-<input id="creatorLinkUrl" placeholder="Paste link (ALEF, website, PDF, Google Form...)" />
-
-<label>Button Text</label>
-<input id="creatorLinkTitle" placeholder="e.g. Open Activity" />
+<label>Activity Links (one per line)</label>
+<textarea id="creatorLinks" rows="4" placeholder="Example:
+https://youtube.com/... | Watch Video
+https://quizizz.com/... | Practice Quiz"></textarea>
 
 <label>Source Text / Activity Notes</label>
 <textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
@@ -1821,11 +1820,14 @@ const videoBlock = ct.videoUrl
   ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
   : '';
 
-const linkBlock = ct.linkUrl
+const linkBlock = (ct.links && ct.links.length)
   ? '<div style="margin-bottom:12px;">' +
-    '<button type="button" class="secondary" onclick="openHybridLink(\'' + escapeJs(ct.linkUrl) + '\')">' +
-    escapeHtml(ct.linkTitle || 'Open Activity') +
-    '</button></div>'
+      ct.links.map(function(link){
+        return '<button type="button" class="secondary" style="margin:4px;" onclick="openHybridLink(\'' + escapeJs(link.url) + '\')">' +
+          escapeHtml(link.title) +
+        '</button>';
+      }).join('') +
+    '</div>'
   : '';
 
   const nextStationId = getNextUnlockedStationId(id);
@@ -2463,6 +2465,11 @@ if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
   creatorDraftQuestions = JSON.parse(JSON.stringify(ct.questions || []));
   renderCreatorQuestionsList();
   clearQuestionBuilder();
+  if(byId('creatorLinks')){
+  byId('creatorLinks').value = (ct.links || []).map(function(link){
+    return (link.url || '') + ' | ' + (link.title || 'Open Link');
+  }).join('\n');
+}
 };
 
 window.toggleBuilderFields = function(){
@@ -2829,8 +2836,20 @@ lessonStations = lessonStations.map(function(s){
   lessonContent[id].imageNotes = byId('creatorImageNotes') ? byId('creatorImageNotes').value.trim() : '';
   lessonContent[id].audioUrl = byId('creatorAudioUrl') ? byId('creatorAudioUrl').value.trim() : '';
   lessonContent[id].videoUrl = byId('creatorVideoUrl') ? byId('creatorVideoUrl').value.trim() : '';
-  lessonContent[id].linkUrl = byId('creatorLinkUrl') ? byId('creatorLinkUrl').value.trim() : '';
-lessonContent[id].linkTitle = byId('creatorLinkTitle') ? byId('creatorLinkTitle').value.trim() : '';
+  const linksRaw = byId('creatorLinks').value || '';
+
+lessonContent[id].links = linksRaw
+  .split('\n')
+  .map(function(line){
+    const parts = line.split('|');
+    return {
+      url: (parts[0] || '').trim(),
+      title: (parts[1] || 'Open Link').trim()
+    };
+  })
+  .filter(function(link){
+    return link.url;
+  });
   lessonContent[id].time = stationTime;
 
   lessonContent[id].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
