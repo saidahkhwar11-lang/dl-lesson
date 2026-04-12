@@ -1132,6 +1132,18 @@ console.log('PARSED CONFIG:', firebaseConfig);
   db = firebase.database();
   storage = firebase.storage();
 }
+
+  async function ensureLessonDefaults(){
+  const configSnap = await getSnap(configPath());
+  if(!configSnap.exists()){
+    await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
+  }
+
+  const contentSnap = await getSnap(contentPath());
+  if(!contentSnap.exists()){
+    await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
+  }
+}
   
 function isLegacyBadQuestion(q){
   const text = String((q && q.text) || '').toLowerCase();
