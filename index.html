@@ -327,7 +327,15 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
 .tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
 .bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{width:100%;max-height:400px;object-fit:cover;border-radius:14px;border:1px solid var(--line);margin-bottom:12px;background:#fff}
+.reading-img{
+  width:100%;
+  max-height:420px;
+  object-fit:contain;
+  border-radius:14px;
+  border:1px solid var(--line);
+  margin-bottom:12px;
+  background:#fff;
+}
 .image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
 .maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
 .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
@@ -1767,9 +1775,9 @@ window.openStation = function(id){
   const resultText = scoreTextForStudent(id);
 
   const imageBlock = ct.imageUrl
-  ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="station image" />' +
+  ? '<img class="reading-img" src="' + escapeHtml(ct.imageUrl) + '" alt="Station Image" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')" style="cursor:zoom-in;">' +
     '<div class="image-actions">' +
-      '<button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">Maximize Picture</button>' +
+      '<button type="button" class="secondary" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')">🔍 Maximize Picture</button>' +
     '</div>'
   : '';
 
@@ -3518,9 +3526,9 @@ window.addEventListener('load', function(){
     ratePlatform(parseInt(saved));
   }
 });
-  
+
 </script>
-    
+
 <div id="lessonInfoPopup" class="lesson-popup hidden">
   <div class="lesson-popup-card">
     <h3>Before You Start Station 1</h3>
@@ -3535,7 +3543,6 @@ window.addEventListener('load', function(){
 </div>
 
 <div id="imageModal" class="image-modal hidden"></div>
-
 
 </body>
 </html>
