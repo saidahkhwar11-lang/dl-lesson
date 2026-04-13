@@ -1667,11 +1667,24 @@ function renderStudentNav(){
   ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
   (liveBonus[currentStudent.id]?.points || 0) +
   '</span>';
-  side.innerHTML = lessonStations.map(function(s){
-    const ct = getStationContent(s.id);
-    const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
-    return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
-  }).join('');
+const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
+const currentContent = currentStation.id ? getStationContent(currentStation.id) : {};
+
+side.innerHTML = `
+  <div class="lesson-info-box">
+    <div class="lesson-title">${escapeHtml(currentStation.title || 'Station')}</div>
+
+    <div class="meta"><strong>⏱ Time:</strong> ${escapeHtml(currentStation.time || '')}</div>
+    <div class="meta"><strong>⏳ Timer:</strong> ${formatStationTime(stationTimeLeft || 0)}</div>
+
+    <div class="meta" style="margin-top:12px;"><strong>📘 Lesson Title:</strong><br>${escapeHtml(lessonMeta.lessonTitle || '')}</div>
+
+    <div class="meta" style="margin-top:12px;"><strong>🎯 Objectives:</strong><br>${escapeHtml(lessonMeta.lessonObjectives || '').replace(/\n/g,'<br>')}</div>
+
+    <div class="meta" style="margin-top:12px;"><strong>🔑 Keywords:</strong><br>${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
+  </div>
+`;
+  
  top.innerHTML = lessonStations.map(function(s){
   const ct = getStationContent(s.id);
   const thumb = ct.imageUrl
@@ -3623,6 +3636,23 @@ padding-left: 18px;
 
 #topStations .station-box{
   margin-bottom:0;
+}
+#stationList .lesson-info-box{
+  margin:0;
+  padding:16px;
+}
+
+#stationList .lesson-title{
+  font-size:20px;
+  font-weight:bold;
+  color:#e74c3c;
+  margin-bottom:12px;
+}
+
+#stationList .meta{
+  margin-bottom:10px;
+  line-height:1.6;
+  font-size:13px;
 }
 </style>
 </head>
