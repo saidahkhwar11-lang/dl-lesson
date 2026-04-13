@@ -18,7 +18,7 @@
   z-index:9999;
 }
 
-    .goodbtn{
+  .goodbtn{
   background:#eaf0ff !important;
   color:#5f74b8 !important;
   border:1px solid #dce5ff !important;
@@ -29,7 +29,7 @@
   box-shadow:none !important;
 }
 
-    .lesson-side-section{
+  .lesson-side-section{
   background:#fbfcff;
   border:1px solid #edf1fb;
   padding:10px;
@@ -45,9 +45,38 @@
 }
 
 .station-side-meta{
+  display:inline-block;
   font-size:11px;
-  color:#a0a6c2;
-  margin-bottom:4px;
+  color:#7f88a8;
+  margin-bottom:6px;
+  background:#f7f9ff;
+  border:1px solid #e4ebff;
+  padding:5px 10px;
+  border-radius:999px;
+}
+
+.station-side-timer{
+  display:inline-block;
+  background:linear-gradient(135deg,#eef3ff,#f8fbff);
+  color:#5f74b8;
+  font-weight:700;
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid #dfe7ff;
+  box-shadow:0 3px 8px rgba(120,130,200,0.10);
+}
+
+.station-side-timer.timer-warning{
+  background:linear-gradient(135deg,#fff4e5,#fffaf1);
+  color:#e67e22;
+  border-color:#f3d3a5;
+}
+
+.station-side-timer.timer-danger{
+  background:linear-gradient(135deg,#fdecea,#fff6f6);
+  color:#e74c3c;
+  border-color:#f2c3bd;
 }
 
 .lesson-info-box .meta{
@@ -3750,6 +3779,25 @@ function downloadLessonPlan(){
 #stationContent > *{
   max-width:600px;   /* 👈 THIS is the main fix */
   width:100%;
+}
+
+#stationContent > *{
+  max-width:460px;
+  width:100%;
+}
+
+.activity-info-box{
+  max-width:460px;
+  padding:10px 12px;
+  border-radius:14px;
+  background:#ffffff;
+  border:1px solid #e8eefb;
+  margin-bottom:10px;
+}
+
+.question-step-box{
+  max-width:460px;
+  padding:12px;
 }
   .lesson-title-red{
   color:#e74c3c;
