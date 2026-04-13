@@ -1673,16 +1673,28 @@ const currentContent = currentStation.id ? getStationContent(currentStation.id) 
 
 side.innerHTML = `
   <div class="lesson-info-box">
-    <div class="lesson-title">${escapeHtml(currentStation.title || 'Station')}</div>
 
-    <div class="meta"><strong>⏱ Time:</strong> ${escapeHtml(currentStation.time || '')}</div>
-    <div class="meta"><strong>⏳ Timer:</strong> ${formatStationTime(stationTimeLeft || 0)}</div>
+    <div class="station-side-head">
+      <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+      <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
+      <div class="station-side-timer">⏳ ${formatStationTime(stationTimeLeft || 0)}</div>
+    </div>
 
-    <div class="meta" style="margin-top:12px;"><strong>📘 Lesson Title:</strong><br>${escapeHtml(lessonMeta.lessonTitle || '')}</div>
+    <div class="lesson-side-section">
+      <div class="lesson-label">📘 Lesson Title</div>
+      <div class="meta">${escapeHtml(lessonMeta.lessonTitle || '')}</div>
+    </div>
 
-    <div class="meta" style="margin-top:12px;"><strong>🎯 Objectives:</strong><br>${escapeHtml(lessonMeta.lessonObjectives || '').replace(/\n/g,'<br>')}</div>
+    <div class="lesson-side-section">
+      <div class="lesson-label">🎯 Lesson Objectives</div>
+      <div class="meta">${escapeHtml(lessonMeta.lessonObjectives || '').replace(/\n/g,'<br>')}</div>
+    </div>
 
-    <div class="meta" style="margin-top:12px;"><strong>🔑 Keywords:</strong><br>${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
+    <div class="lesson-side-section">
+      <div class="lesson-label">🔑 Keywords</div>
+      <div class="meta">${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
+    </div>
+
   </div>
 `;
   
@@ -3292,6 +3304,14 @@ const text = stationTimeLeft > 0
 
   timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
   timerBox.textContent = text;
+  timerBox.classList.remove('timer-warning','timer-danger');
+
+if(stationTimeLeft <= 60){
+  timerBox.classList.add('timer-danger');
+}
+else if(stationTimeLeft <= 180){
+  timerBox.classList.add('timer-warning');
+}
 
   if(stationTimeLeft <= 0){
     timerBox.classList.add('timer-danger');
@@ -3609,6 +3629,15 @@ function downloadLessonPlan(){
     border-collapse: collapse;
     margin-bottom: 18px;
   }
+  .station-side-timer.timer-warning{
+  background:#fff4e5;
+  color:#e67e22;
+}
+
+.station-side-timer.timer-danger{
+  background:#fdecea;
+  color:#e74c3c;
+}
   td, th{
     border: 1px solid #999;
     padding: 8px;
