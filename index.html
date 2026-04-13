@@ -2015,20 +2015,20 @@ window.submitCurrentStation = async function(stationId){
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
-  // 1) stop submit if time is up or station is locked
+  // 1) block submit if time is up or station is locked
   if(stationTimeLeft <= 0 || (station && !station.unlocked)){
     alert('⏰ Time is up. This station is locked and cannot be submitted.');
     return;
   }
 
-  // 2) stop submit if self-evaluation is missing
+  // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
   if(!selfEval){
     alert('📝 Please complete the self-evaluation before submitting.');
     return;
   }
 
-  // 3) stop submit if any question is unanswered
+  // 3) block submit if any question is unanswered
   let unanswered = false;
 
   questions.forEach(function(q, i){
@@ -2036,7 +2036,10 @@ window.submitCurrentStation = async function(stationId){
 
     if(q.type === 'matching'){
       const wrap = byId('q_' + stationId + '_' + i);
-      if(!wrap){ unanswered = true; return; }
+      if(!wrap){
+        unanswered = true;
+        return;
+      }
 
       const selects = wrap.querySelectorAll('select[data-match-index]');
       for(let j = 0; j < selects.length; j++){
@@ -2115,7 +2118,6 @@ window.submitCurrentStation = async function(stationId){
       return;
     }
 
-    // MCQ / TF / Poll
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
@@ -2141,8 +2143,7 @@ window.submitCurrentStation = async function(stationId){
       score += 1;
       wrap.classList.add('correct');
       wrap.querySelector('.feedback').innerHTML = '🗳️ Vote recorded';
-    }
-    else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+    } else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
       score += 1;
       wrap.classList.add('correct');
       wrap.querySelector('.feedback').innerHTML = '✅ Correct';
