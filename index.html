@@ -1917,7 +1917,7 @@ const linkBlock = (ct.links && ct.links.length)
  const selfEvalValue = getSelfEvalValue(id);
 const selfEvalDisabled = submitted ? ' disabled' : '';
 
-const selfEvalHtml = `
+const selfEvalHtml = currentQuestionIndex === totalQuestions - 1 ? `
   <div class="self-eval-box">
     <div class="self-eval-title">How did you feel about this station?</div>
 
@@ -1948,7 +1948,7 @@ const selfEvalHtml = `
       This is only for self-evaluation. It does not affect marks.
     </div>
   </div>
-`;
+` : '';
 
 const prevBtn = currentQuestionIndex > 0
   ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">Previous</button>'
@@ -1975,12 +1975,25 @@ const actionBtns = '<div class="btns" style="margin-top:12px;">' +
   '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
 '</div>' +
 studentLessonBox +
-    '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
-    '<p>' + escapeHtml(st.details || '') + '</p>' +
-    imageBlock +
-    audioBlock +
-    videoBlock +
-    linkBlock +
+    '<div class="activity-info-box">' +
+
+  (ct.imageUrl
+    ? '<img class="activity-main-img" src="' + escapeHtml(ct.imageUrl) + '" alt="Activity Image" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')" style="cursor:zoom-in;">'
+    : '') +
+
+  '<div class="activity-main-question">' +
+    '❓ ' + escapeHtml(st.objective || '') +
+  '</div>' +
+
+  (st.details
+    ? '<div class="activity-main-details">' + escapeHtml(st.details || '').replace(/\n/g,'<br>') + '</div>'
+    : '') +
+
+  audioBlock +
+  videoBlock +
+  linkBlock +
+
+'</div>' +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
 questionsHtml +
@@ -3600,6 +3613,46 @@ function downloadLessonPlan(){
     background: #eeeeee;
     font-weight: bold;
   }
+
+  .activity-info-box{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+}
+
+.activity-main-img{
+  width:100%;
+  max-height:260px;
+  object-fit:contain;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:#fff;
+  margin-bottom:12px;
+}
+
+.activity-main-question{
+  display:inline-block;
+  background:#eef5ff;
+  padding:8px 12px;
+  border-radius:10px;
+  font-size:16px;
+  font-weight:bold;
+  color:#2f5ea8;
+  margin-bottom:10px;
+}
+
+.activity-main-details{
+  font-size:15px;
+  line-height:1.7;
+  color:#4a5fa8;
+  background:#f9fbff;
+  border:1px solid #e3edff;
+  padding:12px;
+  border-radius:12px;
+}
  .lesson-top-grid{
   display:flex;
   gap:14px;
