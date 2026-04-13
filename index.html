@@ -873,6 +873,10 @@ window.saveSelfEvaluation = async function(stationId, value){
   liveStudents[currentStudent.id].selfEvaluations = nextSelf;
 
   renderStudentNav();
+
+  if(typeof renderTeacherTracker === 'function'){
+    renderTeacherTracker();
+  }
 };
 
   function updateRankingBoard(){
