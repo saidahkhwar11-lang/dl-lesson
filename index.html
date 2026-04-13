@@ -3721,6 +3721,21 @@ function downloadLessonPlan(){
     background: #fff;
   }
 
+  #stationContent{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+}
+
+  #stationContent > *{
+  max-width:520px;   /* 👈 smaller = cuter */
+  width:100%;
+}
+
+#stationContent > *{
+  max-width:600px;   /* 👈 THIS is the main fix */
+  width:100%;
+}
   .lesson-title-red{
   color:#e74c3c;
   font-weight:700;
@@ -3838,12 +3853,12 @@ button[onclick*="submit"]{
   border-radius:16px;
 }
   .activity-info-box{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:16px;
-  margin-bottom:14px;
-  box-shadow:0 4px 12px rgba(0,0,0,0.05);
+  max-width:600px;
+  padding:12px;
+  border-radius:14px;
+  background:#ffffff;
+  border:1px solid #e8eefb;
+  margin-bottom:10px;
 }
 
 .activity-main-img{
@@ -4003,8 +4018,10 @@ padding-left: 18px;
   flex-direction:column;
   align-items:flex-start; /* keeps left alignment */
 }
+  
 .question-step-box{
-  max-width:650px;
+  max-width:600px;
+  padding:12px;
 }
 
 .activity-info-box{
