@@ -3212,8 +3212,7 @@ const text = stationTimeLeft > 0
     if(stationTimeLeft <= 0){
       stopStationTimer();
 
-      const isTeacherSession = sessionStorage.getItem('dl_role') === 'teacher';
-      if(isTeacherSession && !autoLocked){
+      if(!autoLocked){
         autoLocked = true;
         autoLockStationByTimer(stationId);
       }
@@ -3228,15 +3227,19 @@ const text = stationTimeLeft > 0
   if(!requireConnection()) return;
   if(!stationId || stationId === 'starter') return;
 
-  const station = getStationById(stationId);
-  if(!station || !station.unlocked) return;
-
   lessonStations = lessonStations.map(function(s){
     if(s.id === stationId){
-      return Object.assign({}, s, { unlocked: false });
+      return Object.assign({}, s, {
+        unlocked: false,
+        displayed: false,
+        timerStartedAt: null
+      });
     }
     return s;
   });
+
+  currentTimedStationId = null;
+  stationTimeLeft = 0;
 
   await dbRef(configPath()).set(lessonStations);
 
