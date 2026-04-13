@@ -1872,7 +1872,10 @@ const currentQuestionIndex = studentQuestionIndex[id];
 const totalQuestions = (ct.questions || []).length;
 
 const questionsHtml = totalQuestions
-  ? renderQuestion(ct.questions[currentQuestionIndex], id, currentQuestionIndex)
+  ? '<div class="question-step-box">' +
+      '<div class="question-step-title">Question ' + (currentQuestionIndex + 1) + ' of ' + totalQuestions + '</div>' +
+      renderQuestion(ct.questions[currentQuestionIndex], id, currentQuestionIndex) +
+    '</div>'
   : '<div class="small">No questions in this station.</div>';
 
   const resultText = scoreTextForStudent(id);
@@ -1951,19 +1954,22 @@ const selfEvalHtml = currentQuestionIndex === totalQuestions - 1 ? `
 ` : '';
 
 const prevBtn = currentQuestionIndex > 0
-  ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">Previous</button>'
+  ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">⬅ Previous</button>'
   : '';
 
 const nextQuestionBtn = currentQuestionIndex < totalQuestions - 1
-  ? '<button class="secondary" onclick="goToNextQuestion(\'' + escapeJs(id) + '\')">Next</button>'
+  ? '<button class="secondary" onclick="goToNextQuestion(\'' + escapeJs(id) + '\')">Next ➡</button>'
   : '';
 
 const finalBtns = currentQuestionIndex === totalQuestions - 1
   ? submitBtn + nextBtn
   : '';
 
-const actionBtns = '<div class="btns" style="margin-top:12px;">' +
-  prevBtn + nextQuestionBtn + finalBtns +
+const actionBtns =
+  '<div class="question-nav-box">' +
+    prevBtn +
+    nextQuestionBtn +
+    finalBtns +
   '</div>';
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
@@ -3614,6 +3620,30 @@ function downloadLessonPlan(){
     font-weight: bold;
   }
 
+.question-step-box{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:16px;
+  margin-top:12px;
+}
+
+.question-step-title{
+  display:inline-block;
+  background:#eef5ff;
+  color:#2f5ea8;
+  font-weight:bold;
+  padding:8px 12px;
+  border-radius:10px;
+  margin-bottom:12px;
+}
+
+.question-nav-box{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
   .activity-info-box{
   background:#fff;
   border:1px solid var(--line);
