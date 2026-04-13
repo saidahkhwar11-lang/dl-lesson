@@ -2228,8 +2228,7 @@ function renderTeacherTracker(){
 
     const scoreCells = lessonStations.map(function(st){
       const score = ((((s.stationResults || {})[st.id] || {}).score) || 0);
-      const selfEval = (((s.selfEvaluations || {})[st.id]) || '');
-
+      const selfEval = (((s.stationSelfEval || {})[st.id]) || '');
       return `
         <td>
           <div><strong>${score}/${totalMarksForStation(st.id)}</strong></div>
