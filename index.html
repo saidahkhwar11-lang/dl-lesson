@@ -415,12 +415,12 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   font-weight:700;
   font-size:15px;
 }
-.question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
+
 .choice{
   display:flex;
   align-items:center;
-  justify-content:flex-start; /* 👈 IMPORTANT */
-  gap:8px;
+  justify-content:flex-start;
+  gap:10px;
   border:1px solid #e3e9f5;
   border-radius:16px;
   padding:8px 12px;
@@ -430,17 +430,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   font-size:13px;
   color:#6b78a6;
   transition:all 0.2s ease;
-  width:100%;          /* keep inside box */
-  max-width:500px;     /* 👈 prevents stretching */
-}
-
-.choice input{
-  margin:0;
-}
-
-.choice span,
-.choice label{
-  flex:unset;          /* 👈 prevent pushing text away */
+  width:100%;
+  max-width:420px;
 }
 
 .choice:hover{
@@ -448,26 +439,75 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   border-color:#cfdcff;
 }
 
-.choice:hover{background:#f0f7ff}
-.choice input{margin-right:8px}
-.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
-.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
-.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{
-  width:100%;
-  max-height:420px;
-  object-fit:contain;
-  border-radius:14px;
-  border:1px solid var(--line);
-  margin-bottom:12px;
+.choice input{
+  margin:0;
+  flex:0 0 auto;
+}
+
+.choice-text{
+  display:inline-block;
+  text-align:left;
+}
+
+.image-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.image-actions button{
+  width:auto;
+  padding:6px 10px;
+  border-radius:12px;
+  font-size:12px;
+}
+
+.maximized{
+  position:fixed;
+  inset:0;
+  background:rgba(10,20,40,.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:24px;
+}
+
+.maximized img{
+  max-width:95vw;
+  max-height:92vh;
+  border-radius:16px;
   background:#fff;
 }
-.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
-.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
-.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
-.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
-.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#fff3df;
+  color:#9a6100;
+  font-weight:bold;
+  font-size:12px;
+}
+
+.section-tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.section-tabs button{
+  width:auto;
+}
+
+.creator-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+    
 .teacher-station-card{cursor:pointer;text-align:left!important}
 .teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
 .teacher-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -1874,20 +1914,26 @@ function renderQuestion(q, stationId, index){
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
 
-  if(q.type === 'mcq'){
-    body = (q.choices || []).map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-    }).join('');
-
-  } else if(q.type === 'tf'){
-    body = ['True','False'].map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
-    }).join('');
-
+ if(q.type === 'mcq'){
+  body = (q.choices || []).map(function(choice){
+    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+    const disabled = submitted ? ' disabled' : '';
+    return '<label class="choice">' +
+      '<input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '>' +
+      '<span class="choice-text">' + escapeHtml(choice) + '</span>' +
+    '</label>';
+  }).join('');
+}
+  else if(q.type === 'tf'){
+  body = ['True','False'].map(function(choice){
+    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+    const disabled = submitted ? ' disabled' : '';
+    return '<label class="choice">' +
+      '<input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '>' +
+      '<span class="choice-text">' + choice + '</span>' +
+    '</label>';
+  }).join('');
+}
   } else if(q.type === 'matching'){
     const rights = (q.pairs || []).map(function(pair){ return pair.right; });
     const disabled = submitted ? ' disabled' : '';
