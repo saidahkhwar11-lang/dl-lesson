@@ -1672,8 +1672,25 @@ function renderStudentNav(){
     const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
     return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
   }).join('');
-  top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
-}
+ top.innerHTML = lessonStations.map(function(s){
+  const ct = getStationContent(s.id);
+  const thumb = ct.imageUrl
+    ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />'
+    : '<div class="station-thumb"></div>';
+
+  return '<div class="station-box ' +
+    (currentOpenStation===s.id ? 'active' : '') + ' ' +
+    (s.unlocked ? '' : 'locked') +
+    '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' +
+      thumb +
+      '<div><strong>' + escapeHtml(s.title) + '</strong>' +
+      '<div class="meta">🎯 ' + escapeHtml(s.objective) +
+      '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked ? '🔓' : '🔒') +
+      '<br>⭐ ' + scoreTextForStudent(s.id) +
+      '</div></div></div>';
+}).join('');
+
+  }
 
 function renderQuestion(q, stationId, index){
   const inputName = 'answer_' + stationId + '_' + index;
@@ -3596,6 +3613,16 @@ padding-left: 18px;
   #teacherView .rating-box,
 #studentView .rating-box {
   display: none;
+}
+#topStations{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:10px;
+  margin-bottom:16px;
+}
+
+#topStations .station-box{
+  margin-bottom:0;
 }
 </style>
 </head>
