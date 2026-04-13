@@ -2011,8 +2011,54 @@ window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
   if(isStationSubmitted(stationId)) return openStation(stationId);
 
+  const station = getStationById(stationId);
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
+
+  // 1) stop submit if time is up or station is locked
+  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
+    alert('⏰ Time is up. This station is locked and cannot be submitted.');
+    return;
+  }
+
+  // 2) stop submit if self-evaluation is missing
+  const selfEval = getSelfEvalValue(stationId);
+  if(!selfEval){
+    alert('📝 Please complete the self-evaluation before submitting.');
+    return;
+  }
+
+  // 3) stop submit if any question is unanswered
+  let unanswered = false;
+
+  questions.forEach(function(q, i){
+    if(unanswered) return;
+
+    if(q.type === 'matching'){
+      const wrap = byId('q_' + stationId + '_' + i);
+      if(!wrap){ unanswered = true; return; }
+
+      const selects = wrap.querySelectorAll('select[data-match-index]');
+      for(let j = 0; j < selects.length; j++){
+        if(!(selects[j].value || '').trim()){
+          unanswered = true;
+          break;
+        }
+      }
+      return;
+    }
+
+    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
+    if(!checked){
+      unanswered = true;
+    }
+  });
+
+  if(unanswered){
+    alert('⚠️ Please answer all questions before submitting.');
+    return;
+  }
+
   let score = 0;
   const submittedAnswers = {};
 
@@ -2069,7 +2115,7 @@ window.submitCurrentStation = async function(stationId){
       return;
     }
 
-    // MCQ / TF
+    // MCQ / TF / Poll
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
@@ -2078,12 +2124,12 @@ window.submitCurrentStation = async function(stationId){
       const input = lbl.querySelector('input');
       if(!input) return;
 
-      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+      if(q.type !== 'poll' && normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
         lbl.style.background = '#eafaf1';
         lbl.style.borderColor = '#2ecc71';
       }
 
-      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+      if(checked && input === checked && q.type !== 'poll' && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
         lbl.style.background = '#fdecea';
         lbl.style.borderColor = '#e74c3c';
       }
@@ -2091,24 +2137,19 @@ window.submitCurrentStation = async function(stationId){
       input.disabled = true;
     });
 
-   if(q.type === 'poll'){
-  if(answer){
-    score += 1;
-    wrap.classList.add('correct');
-    wrap.querySelector('.feedback').innerHTML = '🗳️ Vote recorded';
-  } else {
-    wrap.classList.add('wrong');
-    wrap.querySelector('.feedback').innerHTML = '❌ Please select an option';
-  }
-}
-else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
-  score += 1;
-  wrap.classList.add('correct');
-  wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-} else {
-  wrap.classList.add('wrong');
-  wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
-}
+    if(q.type === 'poll'){
+      score += 1;
+      wrap.classList.add('correct');
+      wrap.querySelector('.feedback').innerHTML = '🗳️ Vote recorded';
+    }
+    else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+      score += 1;
+      wrap.classList.add('correct');
+      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+    } else {
+      wrap.classList.add('wrong');
+      wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
+    }
   });
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
