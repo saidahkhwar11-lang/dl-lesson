@@ -19,23 +19,34 @@
 }
 
   .station-side-title{
-  font-size:16px;
+  font-size:15px;
   font-weight:700;
-  color:#5b6fb5;
-  margin-bottom:6px;
+  color:#6c7bb8;
+  margin-bottom:4px;
 }
 
 .station-side-meta{
-  font-size:12px;
-  color:#8a8fa8;
+  font-size:11px;
+  color:#9aa0b8;
   margin-bottom:4px;
 }
 
 .lesson-info-box .meta{
-  margin-bottom:8px;
-  line-height:1.5;
-  font-size:12px;
-  color:#6a6f85;
+  margin-bottom:6px;
+  line-height:1.45;
+  font-size:11px;
+  color:#7d86a5;
+}
+
+.lesson-label{
+  display:inline-block;
+  background:#eef3ff;
+  padding:4px 10px;
+  border-radius:10px;
+  font-size:11px;
+  font-weight:700;
+  color:#5f74b8;
+  margin-bottom:6px;
 }
     
  .station-live-timer{
@@ -341,9 +352,45 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
 .station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}
 .station-box .meta{font-size:12px;opacity:.95;line-height:1.5}
-.question{padding:10px;margin-bottom:12px;background:#fff;border-radius:14px;border:1px solid #e0e0e0}
+.question{
+  padding:14px;
+  margin-bottom:12px;
+  background:#ffffff;
+  border-radius:16px;
+  border:1px solid #e6edf8;
+  box-shadow:0 4px 10px rgba(120,130,200,0.06);
+}
+
+.question strong{
+  display:inline-block;
+  color:#4f6fc7;
+  font-weight:700;
+  font-size:15px;
+}
 .question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
-.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer;background:#fff}
+.choice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border:1px solid #dfe7f5;
+  border-radius:14px;
+  padding:10px 14px;
+  margin:8px 0;
+  cursor:pointer;
+  background:#fbfcff;
+  font-size:14px;
+  color:#5f6f9a;
+  transition:all 0.2s ease;
+}
+
+.choice:hover{
+  background:#f3f7ff;
+  border-color:#cfdcff;
+}
+
+.choice input{
+  margin:0;
+}
 .choice:hover{background:#f0f7ff}
 .choice input{margin-right:8px}
 .feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
