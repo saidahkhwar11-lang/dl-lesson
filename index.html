@@ -1932,8 +1932,8 @@ const linkBlock = (ct.links && ct.links.length)
  const selfEvalValue = getSelfEvalValue(id);
 const selfEvalDisabled = submitted ? ' disabled' : '';
 
-const selfEvalHtml = currentQuestionIndex === totalQuestions - 1 ? `
-  <div class="self-eval-box">
+const selfEvalHtml = (totalQuestions === 0 || currentQuestionIndex === totalQuestions - 1) ? `
+<div class="self-eval-box">
     <div class="self-eval-title">How did you feel about this station?</div>
 
     <div class="self-eval-options">
@@ -1969,11 +1969,11 @@ const prevBtn = currentQuestionIndex > 0
   ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">⬅ Previous</button>'
   : '';
 
-const nextQuestionBtn = currentQuestionIndex < totalQuestions - 1
+const nextQuestionBtn = (totalQuestions > 0 && currentQuestionIndex < totalQuestions - 1)
   ? '<button class="secondary" onclick="goToNextQuestion(\'' + escapeJs(id) + '\')">Next ➡</button>'
   : '';
 
-const finalBtns = currentQuestionIndex === totalQuestions - 1
+const finalBtns = (totalQuestions === 0 || currentQuestionIndex === totalQuestions - 1)
   ? submitBtn + nextBtn
   : '';
 
@@ -1992,7 +1992,7 @@ const actionBtns =
   '<h2 style="margin:0; flex:1;">' + escapeHtml(st.title) + '</h2>' +
   '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
 '</div>' +
-studentLessonBox +
+
     '<div class="activity-info-box">' +
 
   (ct.imageUrl
