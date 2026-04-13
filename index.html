@@ -3304,21 +3304,13 @@ const text = stationTimeLeft > 0
 
   timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
   timerBox.textContent = text;
-  timerBox.classList.remove('timer-warning','timer-danger');
 
 if(stationTimeLeft <= 60){
   timerBox.classList.add('timer-danger');
 }
 else if(stationTimeLeft <= 180){
   timerBox.classList.add('timer-warning');
-}
 
-  if(stationTimeLeft <= 0){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 60){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 180){
-    timerBox.classList.add('timer-warning');
   }
 });
 }
