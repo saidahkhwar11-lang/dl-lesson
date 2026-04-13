@@ -3802,6 +3802,20 @@ button[onclick*="submit"]{
   margin:6px 0 12px;
 }
 
+button[onclick*="submit"]{
+  background:#eaf0ff;
+  color:#5f74b8;
+  border:1px solid #dce5ff;
+  border-radius:14px;
+  padding:8px 14px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+  width:auto;
+  min-width:120px;
+  box-shadow:none;
+}
+
 .activity-main-question{
   display:inline-block;
   background:#eef5ff;
@@ -3925,6 +3939,19 @@ padding-left: 18px;
   margin-bottom:10px;
   line-height:1.6;
   font-size:13px;
+}
+
+#stationContent{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start; /* keeps left alignment */
+}
+.question-step-box{
+  max-width:650px;
+}
+
+.activity-info-box{
+  max-width:650px;   /* 👈 THIS is the key */
 }
 </style>
 </head>
