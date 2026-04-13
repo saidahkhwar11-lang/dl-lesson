@@ -1757,70 +1757,85 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
-  currentStudent.name +
-  ' | ID: ' + currentStudent.id +
-  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-  (liveBonus[currentStudent.id]?.points || 0) +
-  '</span>';
-const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
-const currentContent = currentStation.id ? getStationContent(currentStation.id) : {};
 
-side.innerHTML = `
-  <div class="lesson-info-box">
-
-    <div class="station-side-head">
-      <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
-      <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
-      <div class="station-side-timer">⏳ ${formatStationTime(stationTimeLeft || 0)}</div>
-    </div>
-
-   <div class="lesson-side-section">
-  <div class="lesson-label">📘 Lesson Title</div>
-  <div class="meta lesson-title-red">
-    ${escapeHtml(lessonMeta.lessonTitle || '')}
-  </div>
-</div>
-
-<div class="lesson-side-section">
-  <div class="lesson-label">🎯 Lesson Objectives</div>
-  <div class="meta">
-    ${(lessonMeta.lessonObjectives || '')
-      .split('\n')
-      .map(obj => '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>')
-      .join('')}
-  </div>
-</div>
-
-<div class="lesson-side-section">
-  <div class="lesson-label">🔑 Keywords</div>
-  <div class="meta">
-    ${(lessonMeta.lessonKeywords || '')
-      .split(',')
-      .map(k => '<span class="student-tag">' + escapeHtml(k.trim()) + '</span>')
-      .join('')}
-  </div>
-</div>
-  
- top.innerHTML = lessonStations.map(function(s){
-  const ct = getStationContent(s.id);
-  const thumb = ct.imageUrl
-    ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />'
-    : '<div class="station-thumb"></div>';
-
-  return '<div class="station-box ' +
-    (currentOpenStation===s.id ? 'active' : '') + ' ' +
-    (s.unlocked ? '' : 'locked') +
-    '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' +
-      thumb +
-      '<div><strong>' + escapeHtml(s.title) + '</strong>' +
-      '<div class="meta">🎯 ' + escapeHtml(s.objective) +
-      '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked ? '🔓' : '🔒') +
-      '<br>⭐ ' + scoreTextForStudent(s.id) +
-      '</div></div></div>';
-}).join('');
-
+  if(currentStudent && byId('studentHeaderInfo')){
+    byId('studentHeaderInfo').innerHTML =
+      currentStudent.name +
+      ' | ID: ' + currentStudent.id +
+      ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+      (liveBonus[currentStudent.id]?.points || 0) +
+      '</span>';
   }
+
+  const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
+
+  side.innerHTML = `
+    <div class="lesson-info-box">
+
+      <div class="station-side-head">
+        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+        <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
+        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">📘 Lesson Title</div>
+        <div class="meta lesson-title-red">
+          ${escapeHtml(lessonMeta.lessonTitle || '')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🎯 Lesson Objectives</div>
+        <div class="meta">
+          ${(lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(Boolean)
+            .map(function(obj){
+              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🔑 Keywords</div>
+        <div class="meta">
+          ${(lessonMeta.lessonKeywords || '')
+            .split(',')
+            .map(function(k){ return k.trim(); })
+            .filter(Boolean)
+            .map(function(k){
+              return '<span class="student-tag">' + escapeHtml(k) + '</span>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  top.innerHTML = lessonStations.map(function(s){
+    const ct = getStationContent(s.id);
+    const thumb = ct.imageUrl
+      ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />'
+      : '<div class="station-thumb"></div>';
+
+    return '<div class="station-box ' +
+      (currentOpenStation===s.id ? 'active' : '') + ' ' +
+      (s.unlocked ? '' : 'locked') +
+      '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' +
+        '<div class="station-thumb-wrap">' + thumb + '</div>' +
+        '<div class="station-info">' +
+          '<strong>' + escapeHtml(s.title) + '</strong>' +
+          '<div class="meta">🎯 ' + escapeHtml(s.objective) +
+          '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked ? '🔓' : '🔒') +
+          '<br>⭐ ' + scoreTextForStudent(s.id) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }).join('');
+}
 
 function renderQuestion(q, stationId, index){
   const inputName = 'answer_' + stationId + '_' + index;
