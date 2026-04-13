@@ -850,6 +850,31 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   );
 }
 
+  function getSelfEvalValue(stationId){
+  if(!currentStudent || !liveStudents[currentStudent.id]) return '';
+  const student = liveStudents[currentStudent.id] || {};
+  const selfEvaluations = student.selfEvaluations || {};
+  return selfEvaluations[stationId] || '';
+}
+
+window.saveSelfEvaluation = async function(stationId, value){
+  if(!requireConnection() || !currentStudent) return;
+
+  const student = liveStudents[currentStudent.id] || {};
+  const nextSelf = Object.assign({}, student.selfEvaluations || {}, {
+    [stationId]: value
+  });
+
+  // save in Firebase
+  await dbRef(studentPath(currentStudent.id) + '/selfEvaluations').set(nextSelf);
+
+  // update local live copy
+  if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
+  liveStudents[currentStudent.id].selfEvaluations = nextSelf;
+
+  renderStudentNav();
+};
+
   function updateRankingBoard(){
   const list = byId('rankingList');
   if(!list || !liveStudents) return;
@@ -2178,26 +2203,73 @@ function renderTeacherTracker(){
   if(!wrap) return;
 
   const header = lessonStations.map(function(st){
-    return '<th>' + escapeHtml(st.title) + '<br><span class="small">/' + totalMarksForStation(st.id) + '</span></th>';
+    return `
+      <th>
+        ${escapeHtml(st.title)}<br>
+        <span class="small">/${totalMarksForStation(st.id)}</span><br>
+        <span class="small">Self-Eval</span>
+      </th>
+    `;
   }).join('');
+
+  function shortSelfEval(value){
+    if(value === 'I understood it well') return '😀 Very well';
+    if(value === 'I understood some of it') return '😐 Some';
+    if(value === 'I need more help') return '😟 Help';
+    return '-';
+  }
 
   const rows = Object.values(liveStudents || {}).map(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+
     const scoreCells = lessonStations.map(function(st){
-      return '<td>' + ((((s.stationResults || {})[st.id] || {}).score) || 0) + '/' + totalMarksForStation(st.id) + '</td>';
+      const score = ((((s.stationResults || {})[st.id] || {}).score) || 0);
+      const selfEval = (((s.selfEvaluations || {})[st.id]) || '');
+
+      return `
+        <td>
+          <div><strong>${score}/${totalMarksForStation(st.id)}</strong></div>
+          <div class="small" style="margin-top:4px;">${escapeHtml(shortSelfEval(selfEval))}</div>
+        </td>
+      `;
     }).join('');
 
-    return '<tr><td class="name-col">' + escapeHtml(s.name || '') + '</td><td class="id-col">' + escapeHtml(s.id || '') + '</td><td>' + escapeHtml(s.currentStation || '-') + '</td>' + scoreCells + '<td>' + ((s.total || 0) + bonus) + '</td><td>' +
-      '<div style="display:flex; align-items:center; gap:8px;">' +
-      '<button onclick="giveBonus(\'' + escapeJs(s.name || '') + '\',\'' + escapeJs(s.id || '') + '\',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>' +
-      '<div style="min-width:28px; text-align:center; font-weight:bold;">' + bonus + '</div>' +
-      '<button class="warnbtn" onclick="takeBonus(\'' + escapeJs(s.id || '') + '\')" style="width:40px; padding:8px 0; font-size:20px;">−</button>' +
-      '<button class="muted" onclick="removeStudent(\'' + escapeJs(s.id || '') + '\')" style="padding:6px 10px;">✖</button>' +
-      '</div>' +
-      '</td></tr>';
+    return `
+      <tr>
+        <td class="name-col">${escapeHtml(s.name || '')}</td>
+        <td class="id-col">${escapeHtml(s.id || '')}</td>
+        <td>${escapeHtml(s.currentStation || '-')}</td>
+        ${scoreCells}
+        <td>${(s.total || 0) + bonus}</td>
+        <td>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
+            <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
+            <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
+            <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
+          </div>
+        </td>
+      </tr>
+    `;
   }).join('');
 
-  wrap.innerHTML = '<table class="tracker-table"><thead><tr><th class="name-col">Name</th><th class="id-col">ID</th><th>Current</th>' + header + '<th>Total</th><th>Bonus</th></tr></thead><tbody>' + (rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>') + '</tbody></table>';
+  wrap.innerHTML = `
+    <table class="tracker-table">
+      <thead>
+        <tr>
+          <th class="name-col">Name</th>
+          <th class="id-col">ID</th>
+          <th>Current</th>
+          ${header}
+          <th>Total</th>
+          <th>Bonus</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>'}
+      </tbody>
+    </table>
+  `;
 
   renderTeacherOverview();
   if(typeof renderTopStudents === 'function') renderTopStudents();
@@ -2331,12 +2403,47 @@ window.clearTrackerData = async function(){ if(!requireConnection()) return; awa
 window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
 
 window.exportTrackerCsv = function(){
-  const rows = [['Name','ID','Current'].concat(lessonStations.map(function(s){ return s.title; })).concat(['Bonus','Total'])];
+  const stationHeaders = [];
+  lessonStations.forEach(function(s){
+    stationHeaders.push(s.title + ' Score');
+    stationHeaders.push(s.title + ' Self-Eval');
+  });
+
+  const rows = [['Name','ID','Current'].concat(stationHeaders).concat(['Bonus','Total'])];
+
+  function shortSelfEval(value){
+    if(value === 'I understood it well') return 'Very well';
+    if(value === 'I understood some of it') return 'Some';
+    if(value === 'I need more help') return 'Need help';
+    return '';
+  }
+
   Object.values(liveStudents || {}).forEach(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
-    rows.push([s.name,s.id,s.currentStation || ''].concat(lessonStations.map(function(st){ return ((((s.stationResults || {})[st.id] || {}).score) || 0); })).concat([bonus,(s.total || 0) + bonus]));
+
+    const stationData = [];
+    lessonStations.forEach(function(st){
+      const score = ((((s.stationResults || {})[st.id] || {}).score) || 0);
+      const selfEval = (((s.selfEvaluations || {})[st.id]) || '');
+      stationData.push(score);
+      stationData.push(shortSelfEval(selfEval));
+    });
+
+    rows.push([
+      s.name,
+      s.id,
+      s.currentStation || ''
+    ].concat(stationData).concat([
+      bonus,
+      (s.total || 0) + bonus
+    ]));
   });
-  const csv = rows.map(function(r){ return r.map(function(v){ return '"' + String(v).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+
+  const csv = rows.map(function(r){
+    return r.map(function(v){
+      return '"' + String(v).replace(/"/g,'""') + '"';
+    }).join(',');
+  }).join('\n');
 
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const link = document.createElement('a');
@@ -2344,7 +2451,6 @@ window.exportTrackerCsv = function(){
   link.download = 'dl_tracker_' + lessonKey + '.csv';
   link.click();
 };
-
 window.exportLessonData = function(){
   const payload = { stations:lessonStations, content:lessonContent, exportedAt:new Date().toISOString() };
   const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json;charset=utf-8;'});
