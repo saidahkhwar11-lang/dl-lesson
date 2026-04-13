@@ -1004,6 +1004,7 @@ let lessonKey = '';
 let appInstance = null;
 let db = null;
 let currentStudent = null;
+let studentQuestionIndex = {};
 let liveStudents = {};
 let liveBonus = {};
 let lessonStations = JSON.parse(JSON.stringify(defaultStations));
@@ -1860,9 +1861,19 @@ window.openStation = function(id){
     '</div>' +
   '</div>';
   
-  const questionsHtml = (ct.questions || []).map(function(q,i){
-    return renderQuestion(q,id,i);
-  }).join('');
+  if(typeof studentQuestionIndex === 'undefined'){
+  window.studentQuestionIndex = {};
+}
+if(typeof studentQuestionIndex[id] !== 'number'){
+  studentQuestionIndex[id] = 0;
+}
+
+const currentQuestionIndex = studentQuestionIndex[id];
+const totalQuestions = (ct.questions || []).length;
+
+const questionsHtml = totalQuestions
+  ? renderQuestion(ct.questions[currentQuestionIndex], id, currentQuestionIndex)
+  : '<div class="small">No questions in this station.</div>';
 
   const resultText = scoreTextForStudent(id);
 
@@ -1939,7 +1950,21 @@ const selfEvalHtml = `
   </div>
 `;
 
-  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+const prevBtn = currentQuestionIndex > 0
+  ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">Previous</button>'
+  : '';
+
+const nextQuestionBtn = currentQuestionIndex < totalQuestions - 1
+  ? '<button class="secondary" onclick="goToNextQuestion(\'' + escapeJs(id) + '\')">Next</button>'
+  : '';
+
+const finalBtns = currentQuestionIndex === totalQuestions - 1
+  ? submitBtn + nextBtn
+  : '';
+
+const actionBtns = '<div class="btns" style="margin-top:12px;">' +
+  prevBtn + nextQuestionBtn + finalBtns +
+  '</div>';
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
@@ -2039,6 +2064,31 @@ actionBtns;
       wrap.querySelector('.feedback').innerHTML =
         wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
     });
+  }
+};
+
+  window.goToNextQuestion = function(stationId){
+  const ct = getStationContent(stationId);
+  const totalQuestions = (ct.questions || []).length;
+
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] < totalQuestions - 1){
+    studentQuestionIndex[stationId]++;
+    openStation(stationId);
+  }
+};
+
+window.goToPrevQuestion = function(stationId){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] > 0){
+    studentQuestionIndex[stationId]--;
+    openStation(stationId);
   }
 };
   
