@@ -3157,6 +3157,33 @@ const text = stationTimeLeft > 0
 });
 }
 
+  async function autoLockStationByTimer(stationId){
+  if(!requireConnection()) return;
+  if(!stationId || stationId === 'starter') return;
+
+  const station = getStationById(stationId);
+  if(!station || !station.unlocked) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === stationId){
+      return Object.assign({}, s, {
+        unlocked: false,
+        displayed: false
+      });
+    }
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+
+  renderControlStatus();
+  renderTeacherOverview();
+  renderStudentNav();
+  renderStationContent();
+
+  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
+}
+  
   function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
