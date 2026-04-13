@@ -3157,6 +3157,46 @@ const text = stationTimeLeft > 0
 });
 }
 
+  function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
+  stopStationTimer();
+  currentTimedStationId = stationId;
+
+  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
+  let autoLocked = false;
+
+  function tick(){
+    if(stationId === 'starter'){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
+      stopStationTimer();
+      return;
+    }
+
+    if(!timerStartedAt){
+      stationTimeLeft = totalSeconds;
+      updateStationTimerDisplay();
+      return;
+    }
+
+    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
+    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
+    updateStationTimerDisplay();
+
+    if(stationTimeLeft <= 0){
+      stopStationTimer();
+
+      const isTeacherSession = sessionStorage.getItem('dl_role') === 'teacher';
+      if(isTeacherSession && !autoLocked){
+        autoLocked = true;
+        autoLockStationByTimer(stationId);
+      }
+    }
+  }
+
+  tick();
+  stationTimerInterval = setInterval(tick, 1000);
+}
+
   async function autoLockStationByTimer(stationId){
   if(!requireConnection()) return;
   if(!stationId || stationId === 'starter') return;
