@@ -1775,23 +1775,32 @@ side.innerHTML = `
       <div class="station-side-timer">⏳ ${formatStationTime(stationTimeLeft || 0)}</div>
     </div>
 
-    <div class="lesson-side-section">
-      <div class="lesson-label">📘 Lesson Title</div>
-      <div class="meta">${escapeHtml(lessonMeta.lessonTitle || '')}</div>
-    </div>
-
-    <div class="lesson-side-section">
-      <div class="lesson-label">🎯 Lesson Objectives</div>
-      <div class="meta">${escapeHtml(lessonMeta.lessonObjectives || '').replace(/\n/g,'<br>')}</div>
-    </div>
-
-    <div class="lesson-side-section">
-      <div class="lesson-label">🔑 Keywords</div>
-      <div class="meta">${escapeHtml(lessonMeta.lessonKeywords || '')}</div>
-    </div>
-
+   <div class="lesson-side-section">
+  <div class="lesson-label">📘 Lesson Title</div>
+  <div class="meta lesson-title-red">
+    ${escapeHtml(lessonMeta.lessonTitle || '')}
   </div>
-`;
+</div>
+
+<div class="lesson-side-section">
+  <div class="lesson-label">🎯 Lesson Objectives</div>
+  <div class="meta">
+    ${(lessonMeta.lessonObjectives || '')
+      .split('\n')
+      .map(obj => '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>')
+      .join('')}
+  </div>
+</div>
+
+<div class="lesson-side-section">
+  <div class="lesson-label">🔑 Keywords</div>
+  <div class="meta">
+    ${(lessonMeta.lessonKeywords || '')
+      .split(',')
+      .map(k => '<span class="student-tag">' + escapeHtml(k.trim()) + '</span>')
+      .join('')}
+  </div>
+</div>
   
  top.innerHTML = lessonStations.map(function(s){
   const ct = getStationContent(s.id);
@@ -3711,11 +3720,48 @@ function downloadLessonPlan(){
     line-height: 1.5;
     background: #fff;
   }
+
+  .lesson-title-red{
+  color:#e74c3c;
+  font-weight:700;
+  font-size:13px;
+}
+
+  .station-side-timer.timer-warning{
+  background:#fff4e5;
+  color:#e67e22;
+}
+
+.station-side-timer.timer-danger{
+  background:#fdecea;
+  color:#e74c3c;
+}
+
+  .student-obj{
+  background:#f4f8ff;
+  border:1px solid #e3ecff;
+  border-radius:12px;
+  padding:6px 10px;
+  margin:5px 0;
+  font-size:12px;
+  color:#5f74b8;
+}
   table{
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 18px;
   }
+
+  .station-side-timer{
+  display:inline-block;
+  background:linear-gradient(135deg,#eef3ff,#f8fbff);
+  color:#5f74b8;
+  font-weight:700;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid #dfe7ff;
+}
   .station-side-timer.timer-warning{
   background:#fff4e5;
   color:#e67e22;
