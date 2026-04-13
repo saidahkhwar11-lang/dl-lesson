@@ -3156,67 +3156,31 @@ const text = stationTimeLeft > 0
   }
 });
 }
-  
-function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
-  stopStationTimer();
-  currentTimedStationId = stationId;
 
-  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
+  async function autoLockStationByTimer(stationId){
+  if(!requireConnection()) return;
+  if(!stationId || stationId === 'starter') return;
 
-  function tick(){
-    if(stationId === 'starter'){
-      stationTimeLeft = 0;
-      updateStationTimerDisplay();
-      stopStationTimer();
-      return;
+  const station = getStationById(stationId);
+  if(!station || !station.unlocked) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === stationId){
+      return Object.assign({}, s, { unlocked: false });
     }
+    return s;
+  });
 
-    if(!timerStartedAt){
-      stationTimeLeft = totalSeconds;
-      updateStationTimerDisplay();
-      return;
-    }
+  await dbRef(configPath()).set(lessonStations);
 
-    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
-    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
-    updateStationTimerDisplay();
+  renderControlStatus();
+  renderTeacherOverview();
+  renderStudentNav();
+  renderStationContent();
 
-    if(stationTimeLeft <= 0){
-      stopStationTimer();
-    }
-  }
-
-  tick();
-  stationTimerInterval = setInterval(tick, 1000);
+  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
 }
   
-function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
-  stopStationTimer();
-
-  currentTimedStationId = stationId;
-
-  const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
-
-  function tick(){
-    if(!timerStartedAt){
-      stationTimeLeft = totalSeconds;
-      updateStationTimerDisplay();
-      return;
-    }
-
-    const elapsed = Math.floor((Date.now() - Number(timerStartedAt)) / 1000);
-    stationTimeLeft = Math.max(0, totalSeconds - elapsed);
-    updateStationTimerDisplay();
-
-    if(stationTimeLeft <= 0){
-      stopStationTimer();
-    }
-  }
-
-  tick();
-  stationTimerInterval = setInterval(tick, 1000);
-}
-
 function downloadLessonPlan(){
   try{
     const stationsSource =
