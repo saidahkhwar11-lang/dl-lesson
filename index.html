@@ -2020,11 +2020,11 @@ window.submitCurrentStation = async function(stationId){
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
-  // 1) block submit if time is up or station is locked
-  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
-    alert('⏰ Time is up. This station is locked and cannot be submitted.');
-    return;
-  }
+ // 1) block submit ONLY if station is locked
+if(station && !station.unlocked){
+  alert('🚫 This station is locked.');
+  return;
+}
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
