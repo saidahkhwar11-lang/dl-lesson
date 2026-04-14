@@ -273,6 +273,110 @@
   gap:6px;
 }
 
+    .student-layout{
+  display:grid;
+  grid-template-columns:330px 1fr;
+  gap:16px;
+  margin-top:16px;
+}
+
+.sidebar{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:12px;
+}
+
+.station-side-head{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.station-side-title{
+  font-size:18px;
+  font-weight:800;
+  color:#5b6fb5;
+  line-height:1.4;
+}
+
+.station-side-meta{
+  display:inline-block;
+  width:fit-content;
+  font-size:12px;
+  color:#7f88a8;
+  background:#f7f9ff;
+  border:1px solid #e4ebff;
+  padding:6px 12px;
+  border-radius:999px;
+}
+
+.station-side-timer{
+  display:inline-block;
+  width:fit-content;
+  background:linear-gradient(135deg,#eef3ff,#f8fbff);
+  color:#5f74b8;
+  font-weight:800;
+  padding:8px 14px;
+  border-radius:999px;
+  font-size:15px;
+  border:1px solid #dfe7ff;
+  box-shadow:0 3px 8px rgba(120,130,200,0.10);
+}
+
+.lesson-side-section{
+  background:#fbfcff;
+  border:1px solid #edf1fb;
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:10px;
+}
+
+.lesson-label{
+  display:inline-block;
+  background:#eef5ff;
+  padding:5px 10px;
+  border-radius:10px;
+  font-size:12px;
+  font-weight:700;
+  color:#4f6fc7;
+  margin-bottom:8px;
+}
+
+.lesson-title-red{
+  color:#e74c3c;
+  font-weight:700;
+  font-size:15px;
+  line-height:1.5;
+}
+
+.student-obj{
+  background:#f4f8ff;
+  border:1px solid #e3ecff;
+  border-radius:12px;
+  padding:7px 10px;
+  margin:6px 0;
+  font-size:13px;
+  color:#4f6fc7;
+  line-height:1.5;
+}
+
+.student-tag{
+  display:inline-block;
+  background:#eef3ff;
+  color:#5f74b8;
+  padding:5px 10px;
+  border-radius:999px;
+  font-size:12px;
+  margin:4px 4px 0 0;
+}
+
+@media (max-width:980px){
+  .student-layout{
+    grid-template-columns:1fr;
+  }
+  
 .lesson-list li::before{
   content:"✔";
   color:#2ecc71;
@@ -604,7 +708,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
-    <div class="top-bar" id="topStations"></div>
     <div class="student-layout">
       <div class="sidebar">
         <h3 style="margin-top:0">Stations</h3>
@@ -1728,18 +1831,74 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
-  currentStudent.name +
-  ' | ID: ' + currentStudent.id +
-  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-  (liveBonus[currentStudent.id]?.points || 0) +
-  '</span>';
-  side.innerHTML = lessonStations.map(function(s){
-    const ct = getStationContent(s.id);
-    const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
-    return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
+
+  if(currentStudent && byId('studentHeaderInfo')){
+    byId('studentHeaderInfo').innerHTML =
+      currentStudent.name +
+      ' | ID: ' + currentStudent.id +
+      ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+      ((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0) +
+      '</span>';
+  }
+
+  const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
+
+  top.innerHTML = lessonStations.map(function(s){
+    const active = s.id === currentOpenStation ? 'active' : '';
+    const locked = (s.unlocked || s.id === 'starter') ? '' : 'locked';
+
+    return `
+      <div class="item ${active} ${locked}" onclick="${(s.unlocked || s.id === 'starter') ? "openStation('" + escapeJs(s.id) + "')" : ''}">
+        ${escapeHtml(s.title || s.id)}
+      </div>
+    `;
   }).join('');
-  top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
+
+  side.innerHTML = `
+    <div class="lesson-info-box">
+
+      <div class="station-side-head">
+        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+        <div class="station-side-meta">⏱ ${escapeHtml(String(currentStation.time || ''))}</div>
+        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">📘 Lesson Title</div>
+        <div class="meta lesson-title-red">
+          ${escapeHtml(lessonMeta.lessonTitle || '')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🎯 Lesson Objectives</div>
+        <div class="meta">
+          ${(lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(Boolean)
+            .map(function(obj){
+              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🔑 Keywords</div>
+        <div class="meta">
+          ${(lessonMeta.lessonKeywords || '')
+            .split(',')
+            .map(function(k){ return k.trim(); })
+            .filter(Boolean)
+            .map(function(k){
+              return '<span class="student-tag">' + escapeHtml(k) + '</span>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
 }
 
 function renderQuestion(q, stationId, index){
@@ -3720,6 +3879,38 @@ padding-left: 18px;
     <div class="lp-school">Al Reyada School</div>
     <div class="lp-sub">English Department</div>
     <div class="lp-sub">Lesson Plan</div>
+  </div>
+</div>
+
+<div id="studentView" class="hidden">
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h2 style="margin:0 0 8px 0;">Student View</h2>
+    <div class="small" id="studentHeaderInfo">Student session</div>
+  </div>
+
+  <div class="top-bar" id="topStations"></div>
+
+  <div id="studentView" class="hidden">
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h2 style="margin:0 0 8px 0;">Student View</h2>
+    <div class="small" id="studentHeaderInfo">Student session</div>
+  </div>
+
+  <div class="top-bar" id="topStations"></div>
+
+  <div class="student-layout">
+    <div class="sidebar">
+      <div id="stationList"></div>
+    </div>
+    <div class="main" id="stationContent"></div>
   </div>
 </div>
 
