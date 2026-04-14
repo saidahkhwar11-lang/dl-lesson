@@ -1832,7 +1832,7 @@ function renderStudentNav(){
       currentStudent.name +
       ' | ID: ' + currentStudent.id +
       ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-      ((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0) +
+((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0)
       '</span>';
   }
 
@@ -3275,9 +3275,13 @@ window.saveCreatorStation = async function(){
   if(!requireConnection()) return;
 
   // 🔥 Save Lesson Info
-lessonMeta.lessonTitle = byId('lessonTitleInput')?.value.trim() || '';
-lessonMeta.lessonObjectives = byId('lessonObjectivesInput')?.value.trim() || '';
-lessonMeta.lessonKeywords = byId('lessonKeywordsInput')?.value.trim() || '';
+const titleEl = byId('lessonTitleInput');
+const objEl = byId('lessonObjectivesInput');
+const keyEl = byId('lessonKeywordsInput');
+
+lessonMeta.lessonTitle = (titleEl && titleEl.value.trim()) || '';
+lessonMeta.lessonObjectives = (objEl && objEl.value.trim()) || '';
+lessonMeta.lessonKeywords = (keyEl && keyEl.value.trim()) || '';
 
   const id = byId('creatorStationSelect').value;
   const imageUrl = byId('creatorImageUrl').value.trim();
@@ -3469,10 +3473,6 @@ document.addEventListener('DOMContentLoaded', function(){
       }, 600);
     }
   }
-});
-  
-window.addEventListener('load', function(){
-  loadSavedConfig();
 });
 
   let stationTimerInterval = null;
