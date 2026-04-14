@@ -3314,9 +3314,7 @@ const text = stationTimeLeft > 0
  async function autoLockStationByTimer(stationId){
   currentTimedStationId = null;
   stationTimeLeft = 0;
-
   updateStationTimerDisplay();
-
   showNotice('controlNotice', 'Time finished. Station remains open.', 'warn');
 }
   
