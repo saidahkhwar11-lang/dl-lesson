@@ -1884,6 +1884,37 @@ side.innerHTML = `
   </div>
 `;
 
+    const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
+
+  side.innerHTML = `
+    <div class="lesson-info-box">
+
+      <div class="station-side-head">
+        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+        <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
+        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">📘 Lesson Title</div>
+        <div class="meta lesson-title-red">
+          ${escapeHtml(lessonMeta.lessonTitle || '')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🎯 Lesson Objectives</div>
+        <div class="meta">
+          ${(lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(Boolean)
+            .map(function(obj){
+              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
+            })
+            .join('')}
+        </div>
+      </div>
+
       <div class="lesson-side-section">
         <div class="lesson-label">🔑 Keywords</div>
         <div class="meta">
@@ -1900,6 +1931,8 @@ side.innerHTML = `
 
     </div>
   `;
+
+  top.innerHTML = lessonStations.map(function(s){
 
   top.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
