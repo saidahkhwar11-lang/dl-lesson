@@ -900,7 +900,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
 <label>Source Text / Activity Notes</label>
 <textarea id="creatorSourceText" placeholder="Paste reading text, activity notes, or word bank here"></textarea>
-        <div>
+</div>
           <label>Question Builder</label>
           <div class="card" style="padding:12px;background:#f8fbff;">
             <label>Question Type</label>
@@ -1022,24 +1022,24 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   function getSelfEvalValue(stationId){
   if(!currentStudent || !liveStudents[currentStudent.id]) return '';
   const student = liveStudents[currentStudent.id] || {};
-  const selfEvaluations = student.selfEvaluations || {};
-  return selfEvaluations[stationId] || '';
+ const selfEval = student.stationSelfEval || {};
+return selfEval[stationId] || '';
 }
 
 window.saveSelfEvaluation = async function(stationId, value){
   if(!requireConnection() || !currentStudent) return;
 
   const student = liveStudents[currentStudent.id] || {};
-  const nextSelf = Object.assign({}, student.selfEvaluations || {}, {
+  const nextSelf = Object.assign({}, student.stationSelfEval || {}, {
     [stationId]: value
   });
 
-  // save in Firebase
-  await dbRef(studentPath(currentStudent.id) + '/selfEvaluations').set(nextSelf);
+  await dbRef(studentPath(currentStudent.id)).update({
+    stationSelfEval: nextSelf
+  });
 
-  // update local live copy
   if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
-  liveStudents[currentStudent.id].selfEvaluations = nextSelf;
+  liveStudents[currentStudent.id].stationSelfEval = nextSelf;
 
   renderStudentNav();
 
@@ -1235,6 +1235,7 @@ function getSnap(path){ return dbRef(path).once('value'); }
 
   return summary;
 }
+  
 function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
 function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
@@ -1262,10 +1263,34 @@ function bindButtons(){
   if(studentBtn) studentBtn.onclick = window.startStudentSession;
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
+  
+function showOnly(viewId){
+  ['studentView','teacherView'].forEach(function(id){
+    byId(id).classList.add('hidden');
+  });
+  byId(viewId).classList.remove('hidden');
+  byId('homeRow').classList.add('hidden');
+  window.scrollTo(0,0);
+}
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
-window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
+window.backToHome = function(){
+  sessionStorage.removeItem('dl_role');
+  sessionStorage.removeItem('dl_student_name');
+  sessionStorage.removeItem('dl_student_id');
+  byId('studentView').classList.add('hidden');
+  byId('teacherView').classList.add('hidden');
+  byId('homeRow').classList.remove('hidden');
+  byId('teacherTrackerCard').classList.remove('hidden');
+  byId('teacherControlCard').classList.add('hidden');
+  byId('teacherCreatorCard').classList.add('hidden');
+  window.scrollTo(0,0);
+};
+
+window.toggleBonusPopup = function(){
+  const popup = byId('bonusPopup');
+  if(!popup) return;
+  popup.style.display = popup.style.display === 'block' ? 'none' : 'block';
+};
 
 window.maximizeImage = function(src){
   if(!src) return;
@@ -1283,24 +1308,32 @@ window.maximizeImage = function(src){
 modal.classList.remove('hidden');
 };
    function getSelfEvalValue(stationId){
-  const student = currentStudent && liveStudents[currentStudent.id];
-  const selfEval = (student && student.stationSelfEval) || {};
+  if(!currentStudent || !liveStudents[currentStudent.id]) return '';
+  const student = liveStudents[currentStudent.id] || {};
+  const selfEval = student.stationSelfEval || {};
   return selfEval[stationId] || '';
 }
 
 window.saveSelfEvaluation = async function(stationId, value){
-  if(!currentStudent || !stationId) return;
+  if(!requireConnection() || !currentStudent) return;
 
   const student = liveStudents[currentStudent.id] || {};
-  const currentEval = Object.assign({}, student.stationSelfEval || {});
-  currentEval[stationId] = value;
+  const nextSelf = Object.assign({}, student.stationSelfEval || {}, {
+    [stationId]: value
+  });
 
   await dbRef(studentPath(currentStudent.id)).update({
-    stationSelfEval: currentEval
+    stationSelfEval: nextSelf
   });
 
   if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
-  liveStudents[currentStudent.id].stationSelfEval = currentEval;
+  liveStudents[currentStudent.id].stationSelfEval = nextSelf;
+
+  renderStudentNav();
+
+  if(typeof renderTeacherTracker === 'function'){
+    renderTeacherTracker();
+  }
 };
 
 window.closeImageModal = function(){
@@ -2275,9 +2308,9 @@ actionBtns;
           wrap.querySelector('.feedback').innerHTML =
             '❌ Correct answers:<br>' +
             (q.pairs || []).map(function(pair){
-              return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-            }).join('<br>');
-        }
+             return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
+  }).join(' | ');
+}
 
         return;
       }
