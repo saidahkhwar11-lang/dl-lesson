@@ -1832,8 +1832,12 @@ function renderStudentNav(){
       currentStudent.name +
       ' | ID: ' + currentStudent.id +
       ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0)
-      '</span>';
+byId('studentHeaderInfo').innerHTML =
+  currentStudent.name +
+  ' | ID: ' + currentStudent.id +
+  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+  ((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0) +
+  '</span>';
   }
 
   const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
@@ -1897,9 +1901,6 @@ function renderStudentNav(){
   }).join('');
 }
 
-  top.innerHTML = lessonStations.map(function(s){
-
-  top.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
     const thumb = ct.imageUrl
       ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />'
@@ -1939,7 +1940,7 @@ function renderQuestion(q, stationId, index){
     '</label>';
   }).join('');
 }
-  else if(q.type === 'tf'){
+ else if(q.type === 'tf'){
   body = ['True','False'].map(function(choice){
     const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
     const disabled = submitted ? ' disabled' : '';
@@ -1949,7 +1950,7 @@ function renderQuestion(q, stationId, index){
     '</label>';
   }).join('');
 }
-  } else if(q.type === 'matching'){
+else if(q.type === 'matching'){
     const rights = (q.pairs || []).map(function(pair){ return pair.right; });
     const disabled = submitted ? ' disabled' : '';
 
@@ -2744,7 +2745,8 @@ window.giveBonus = async function(name,id,delta){
   });
 };
   window.takeBonus = function(id){
-  const currentData = liveBonus[id] || {};
+  if(!requireConnection()) return;
+    const currentData = liveBonus[id] || {};
   const current = Number(currentData.points || 0);
   const newPoints = current - 1 < 0 ? 0 : current - 1;
 
@@ -3425,7 +3427,6 @@ function renderTopStudents(){
     '</div>';
   }).join('');
 }
-bindButtons();
 
 document.addEventListener('DOMContentLoaded', function(){
   bindButtons();
@@ -3456,23 +3457,23 @@ document.addEventListener('DOMContentLoaded', function(){
     }, 600);
   }
 
-  if(savedRole === 'student'){
-    const savedName = sessionStorage.getItem('dl_student_name');
-    const savedId = sessionStorage.getItem('dl_student_id');
+ if(savedRole === 'student'){
+  const savedName = sessionStorage.getItem('dl_student_name');
+  const savedId = sessionStorage.getItem('dl_student_id');
 
-    if(savedName && savedId){
-      byId('studentName').value = savedName;
-      byId('studentId').value = savedId;
+  if(savedName && savedId){
+    byId('studentName').value = savedName;
+    byId('studentId').value = savedId;
 
-      setTimeout(function(){
-        try{
-          startStudentSession();
-        }catch(e){
-          console.warn('Student restore failed', e);
-        }
-      }, 600);
-    }
+    setTimeout(function(){
+      try{
+        startStudentSession();
+      }catch(e){
+        console.warn('Student restore failed', e);
+      }
+    }, 600);
   }
+}
 });
 
   let stationTimerInterval = null;
