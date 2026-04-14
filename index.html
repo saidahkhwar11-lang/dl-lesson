@@ -18,6 +18,85 @@
   z-index:9999;
 }
 
+  .goodbtn{
+  background:#eaf0ff !important;
+  color:#5f74b8 !important;
+  border:1px solid #dce5ff !important;
+  border-radius:14px !important;
+  padding:8px 14px !important;
+  font-size:13px !important;
+  font-weight:600 !important;
+  box-shadow:none !important;
+}
+
+  .lesson-side-section{
+  background:#fbfcff;
+  border:1px solid #edf1fb;
+  padding:10px;
+  border-radius:14px;
+  margin-bottom:8px;
+}
+
+ .station-side-title{
+  font-size:15px;
+  font-weight:700;
+  color:#6c7bb8;
+  margin-bottom:4px;
+}
+
+.station-side-meta{
+  display:inline-block;
+  font-size:11px;
+  color:#7f88a8;
+  margin-bottom:6px;
+  background:#f7f9ff;
+  border:1px solid #e4ebff;
+  padding:5px 10px;
+  border-radius:999px;
+}
+
+.station-side-timer{
+  display:inline-block;
+  background:linear-gradient(135deg,#eef3ff,#f8fbff);
+  color:#5f74b8;
+  font-weight:700;
+  padding:7px 14px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid #dfe7ff;
+  box-shadow:0 3px 8px rgba(120,130,200,0.10);
+}
+
+.station-side-timer.timer-warning{
+  background:linear-gradient(135deg,#fff4e5,#fffaf1);
+  color:#e67e22;
+  border-color:#f3d3a5;
+}
+
+.station-side-timer.timer-danger{
+  background:linear-gradient(135deg,#fdecea,#fff6f6);
+  color:#e74c3c;
+  border-color:#f2c3bd;
+}
+
+.lesson-info-box .meta{
+  margin-bottom:6px;
+  line-height:1.5;
+  font-size:11px;
+  color:#7d86a5;
+}
+
+.lesson-label{
+  display:inline-block;
+  background:#f2f6ff;
+  padding:3px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  color:#6c7bb8;
+  margin-bottom:6px;
+}
+    
  .station-live-timer{
   display:inline-flex;
   align-items:center;
@@ -321,29 +400,114 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .station-box.active{background:var(--primary2);color:#fff}.station-box.locked{opacity:.55;cursor:not-allowed}
 .station-thumb{width:60px;height:60px;border-radius:12px;object-fit:cover;border:1px solid var(--line);background:#f3f6fb}
 .station-box .meta{font-size:12px;opacity:.95;line-height:1.5}
-.question{padding:10px;margin-bottom:12px;background:#fff;border-radius:14px;border:1px solid #e0e0e0}
-.question strong{display:inline-block;color:#1e88e5;font-weight:bold;font-size:16px}
-.choice{display:block;border:1px solid #dbe4f0;border-radius:10px;padding:9px;margin:8px 0;cursor:pointer;background:#fff}
-.choice:hover{background:#f0f7ff}
-.choice input{margin-right:8px}
-.feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
-.station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
-.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{
-  width:100%;
-  max-height:420px;
-  object-fit:contain;
-  border-radius:14px;
-  border:1px solid var(--line);
+.question{
+  padding:14px;
   margin-bottom:12px;
+  background:#ffffff;
+  border-radius:16px;
+  border:1px solid #e6edf8;
+  box-shadow:0 4px 10px rgba(120,130,200,0.06);
+}
+
+.question strong{
+  display:inline-block;
+  color:#4f6fc7;
+  font-weight:700;
+  font-size:15px;
+}
+
+.choice{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:10px;
+  border:1px solid #e3e9f5;
+  border-radius:16px;
+  padding:8px 12px;
+  margin:6px 0;
+  cursor:pointer;
+  background:#fdfefe;
+  font-size:13px;
+  color:#6b78a6;
+  transition:all 0.2s ease;
+  width:100%;
+  max-width:420px;
+}
+
+.choice:hover{
+  background:#f3f7ff;
+  border-color:#cfdcff;
+}
+
+.choice input{
+  margin:0;
+  flex:0 0 auto;
+}
+
+.choice-text{
+  display:inline-block;
+  text-align:left;
+}
+
+.image-actions{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+
+.image-actions button{
+  width:auto;
+  padding:6px 10px;
+  border-radius:12px;
+  font-size:12px;
+}
+
+.maximized{
+  position:fixed;
+  inset:0;
+  background:rgba(10,20,40,.8);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:99999;
+  padding:24px;
+}
+
+.maximized img{
+  max-width:95vw;
+  max-height:92vh;
+  border-radius:16px;
   background:#fff;
 }
-.image-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.image-actions button{width:auto}
-.maximized{position:fixed;inset:0;background:rgba(10,20,40,.8);display:flex;align-items:center;justify-content:center;z-index:99999;padding:24px}.maximized img{max-width:95vw;max-height:92vh;border-radius:16px;background:#fff}
-.pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
-.section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
-.creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+.pill{
+  display:inline-block;
+  padding:4px 10px;
+  border-radius:999px;
+  background:#fff3df;
+  color:#9a6100;
+  font-weight:bold;
+  font-size:12px;
+}
+
+.section-tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+
+.section-tabs button{
+  width:auto;
+}
+
+.creator-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px;
+}
+    
 .teacher-station-card{cursor:pointer;text-align:left!important}
 .teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
 .teacher-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
@@ -516,7 +680,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <input id="studentName" placeholder="Enter student name" />
     <label>Student ID</label>
     <input id="studentId" placeholder="Enter student ID" />
-    <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+    <button id="studentStartBtn" onclick="window.startStudentSession()">Start Student Session</button>
     <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
@@ -565,7 +729,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <h2>Teacher View</h2>
     <label>Teacher Password</label>
     <input id="teacherPassword" type="password" placeholder="Enter password" />
-    <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
+    <button id="teacherOpenBtn" onclick="window.openTeacherView()">Open Teacher View</button>
     <div id="teacherNotice" class="notice bad hidden"></div>
   </div>
 
@@ -1004,6 +1168,7 @@ let lessonKey = '';
 let appInstance = null;
 let db = null;
 let currentStudent = null;
+let studentQuestionIndex = {};
 let liveStudents = {};
 let liveBonus = {};
 let lessonStations = JSON.parse(JSON.stringify(defaultStations));
@@ -1661,18 +1826,99 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
-  currentStudent.name +
-  ' | ID: ' + currentStudent.id +
-  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-  (liveBonus[currentStudent.id]?.points || 0) +
-  '</span>';
-  side.innerHTML = lessonStations.map(function(s){
-    const ct = getStationContent(s.id);
-    const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
-    return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
+
+  if(currentStudent && byId('studentHeaderInfo')){
+    byId('studentHeaderInfo').innerHTML =
+      currentStudent.name +
+      ' | ID: ' + currentStudent.id +
+      ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+      ((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0) +
+      '</span>';
+  }
+
+  const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
+
+  side.innerHTML = `
+    <div class="lesson-info-box">
+
+      <div class="station-side-head">
+        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+        <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
+        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">📘 Lesson Title</div>
+        <div class="meta lesson-title-red">
+          ${escapeHtml(lessonMeta.lessonTitle || '')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🎯 Lesson Objectives</div>
+        <div class="meta">
+          ${(lessonMeta.lessonObjectives || '')
+            .split('\n')
+            .filter(Boolean)
+            .map(function(obj){
+              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+      <div class="lesson-side-section">
+        <div class="lesson-label">🔑 Keywords</div>
+        <div class="meta">
+          ${(lessonMeta.lessonKeywords || '')
+            .split(',')
+            .map(function(k){ return k.trim(); })
+            .filter(Boolean)
+            .map(function(k){
+              return '<span class="student-tag">' + escapeHtml(k) + '</span>';
+            })
+            .join('')}
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  top.innerHTML = lessonStations.map(function(st){
+    const active = st.id === currentOpenStation ? 'active' : '';
+    const locked = st.unlocked ? '' : 'locked';
+    const clickAction = st.unlocked ? "openStation('" + escapeJs(st.id) + "')" : "";
+
+    return `
+      <div class="item ${active} ${locked}" onclick="${clickAction}">
+        ${escapeHtml(st.title || st.id)}
+      </div>
+    `;
   }).join('');
-  top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
+}
+
+  top.innerHTML = lessonStations.map(function(s){
+
+  top.innerHTML = lessonStations.map(function(s){
+    const ct = getStationContent(s.id);
+    const thumb = ct.imageUrl
+      ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />'
+      : '<div class="station-thumb"></div>';
+
+    return '<div class="station-box ' +
+      (currentOpenStation===s.id ? 'active' : '') + ' ' +
+      (s.unlocked ? '' : 'locked') +
+      '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' +
+        '<div class="station-thumb-wrap">' + thumb + '</div>' +
+        '<div class="station-info">' +
+          '<strong>' + escapeHtml(s.title) + '</strong>' +
+          '<div class="meta">🎯 ' + escapeHtml(s.objective) +
+          '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked ? '🔓' : '🔒') +
+          '<br>⭐ ' + scoreTextForStudent(s.id) +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }).join('');
 }
 
 function renderQuestion(q, stationId, index){
@@ -1683,20 +1929,26 @@ function renderQuestion(q, stationId, index){
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
 
-  if(q.type === 'mcq'){
-    body = (q.choices || []).map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-    }).join('');
-
-  } else if(q.type === 'tf'){
-    body = ['True','False'].map(function(choice){
-      const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-      const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
-    }).join('');
-
+ if(q.type === 'mcq'){
+  body = (q.choices || []).map(function(choice){
+    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+    const disabled = submitted ? ' disabled' : '';
+    return '<label class="choice">' +
+      '<input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '>' +
+      '<span class="choice-text">' + escapeHtml(choice) + '</span>' +
+    '</label>';
+  }).join('');
+}
+  else if(q.type === 'tf'){
+  body = ['True','False'].map(function(choice){
+    const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
+    const disabled = submitted ? ' disabled' : '';
+    return '<label class="choice">' +
+      '<input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '>' +
+      '<span class="choice-text">' + choice + '</span>' +
+    '</label>';
+  }).join('');
+}
   } else if(q.type === 'matching'){
     const rights = (q.pairs || []).map(function(pair){ return pair.right; });
     const disabled = submitted ? ' disabled' : '';
@@ -1830,9 +2082,22 @@ window.openStation = function(id){
     '</div>' +
   '</div>';
   
-  const questionsHtml = (ct.questions || []).map(function(q,i){
-    return renderQuestion(q,id,i);
-  }).join('');
+  if(typeof studentQuestionIndex === 'undefined'){
+  window.studentQuestionIndex = {};
+}
+if(typeof studentQuestionIndex[id] !== 'number'){
+  studentQuestionIndex[id] = 0;
+}
+
+const currentQuestionIndex = studentQuestionIndex[id];
+const totalQuestions = (ct.questions || []).length;
+
+const questionsHtml = totalQuestions
+  ? '<div class="question-step-box">' +
+      '<div class="question-step-title">Question ' + (currentQuestionIndex + 1) + ' of ' + totalQuestions + '</div>' +
+      renderQuestion(ct.questions[currentQuestionIndex], id, currentQuestionIndex) +
+    '</div>'
+  : '<div class="small">No questions in this station.</div>';
 
   const resultText = scoreTextForStudent(id);
 
@@ -1876,8 +2141,8 @@ const linkBlock = (ct.links && ct.links.length)
  const selfEvalValue = getSelfEvalValue(id);
 const selfEvalDisabled = submitted ? ' disabled' : '';
 
-const selfEvalHtml = `
-  <div class="self-eval-box">
+const selfEvalHtml = (totalQuestions === 0 || currentQuestionIndex === totalQuestions - 1) ? `
+<div class="self-eval-box">
     <div class="self-eval-title">How did you feel about this station?</div>
 
     <div class="self-eval-options">
@@ -1907,9 +2172,26 @@ const selfEvalHtml = `
       This is only for self-evaluation. It does not affect marks.
     </div>
   </div>
-`;
+` : '';
 
-  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+const prevBtn = currentQuestionIndex > 0
+  ? '<button class="muted" onclick="goToPrevQuestion(\'' + escapeJs(id) + '\')">⬅ Previous</button>'
+  : '';
+
+const nextQuestionBtn = (totalQuestions > 0 && currentQuestionIndex < totalQuestions - 1)
+  ? '<button class="secondary" onclick="goToNextQuestion(\'' + escapeJs(id) + '\')">Next ➡</button>'
+  : '';
+
+const finalBtns = (totalQuestions === 0 || currentQuestionIndex === totalQuestions - 1)
+  ? submitBtn + nextBtn
+  : '';
+
+const actionBtns =
+  '<div class="question-nav-box">' +
+    prevBtn +
+    nextQuestionBtn +
+    finalBtns +
+  '</div>';
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
@@ -1919,13 +2201,26 @@ const selfEvalHtml = `
   '<h2 style="margin:0; flex:1;">' + escapeHtml(st.title) + '</h2>' +
   '<div id="studentStationTimer" class="station-live-timer hidden"></div>' +
 '</div>' +
-studentLessonBox +
-    '<p><strong>Mini Objective:</strong> ' + escapeHtml(st.objective) + '</p>' +
-    '<p>' + escapeHtml(st.details || '') + '</p>' +
-    imageBlock +
-    audioBlock +
-    videoBlock +
-    linkBlock +
+
+    '<div class="activity-info-box">' +
+
+  (ct.imageUrl
+    ? '<img class="activity-main-img" src="' + escapeHtml(ct.imageUrl) + '" alt="Activity Image" onclick="maximizeImage(\'' + escapeJs(ct.imageUrl) + '\')" style="cursor:zoom-in;">'
+    : '') +
+
+  '<div class="activity-main-question">' +
+    '❓ ' + escapeHtml(st.objective || '') +
+  '</div>' +
+
+  (st.details
+    ? '<div class="activity-main-details">' + escapeHtml(st.details || '').replace(/\n/g,'<br>') + '</div>'
+    : '') +
+
+  audioBlock +
+  videoBlock +
+  linkBlock +
+
+'</div>' +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
 questionsHtml +
@@ -2011,6 +2306,31 @@ actionBtns;
     });
   }
 };
+
+  window.goToNextQuestion = function(stationId){
+  const ct = getStationContent(stationId);
+  const totalQuestions = (ct.questions || []).length;
+
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] < totalQuestions - 1){
+    studentQuestionIndex[stationId]++;
+    openStation(stationId);
+  }
+};
+
+window.goToPrevQuestion = function(stationId){
+  if(typeof studentQuestionIndex[stationId] !== 'number'){
+    studentQuestionIndex[stationId] = 0;
+  }
+
+  if(studentQuestionIndex[stationId] > 0){
+    studentQuestionIndex[stationId]--;
+    openStation(stationId);
+  }
+};
   
 window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
@@ -2020,11 +2340,11 @@ window.submitCurrentStation = async function(stationId){
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
- // 1) block submit ONLY if station is locked
-if(station && !station.unlocked){
-  alert('🚫 This station is locked.');
-  return;
-}
+  // 1) block submit if time is up or station is locked
+  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
+    alert('⏰ Time is up. This station is locked and cannot be submitted.');
+    return;
+  }
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
@@ -3194,12 +3514,12 @@ const text = stationTimeLeft > 0
   timerBox.classList.remove('hidden', 'timer-warning', 'timer-danger');
   timerBox.textContent = text;
 
-  if(stationTimeLeft <= 0){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 60){
-    timerBox.classList.add('timer-danger');
-  } else if(stationTimeLeft <= 180){
-    timerBox.classList.add('timer-warning');
+if(stationTimeLeft <= 60){
+  timerBox.classList.add('timer-danger');
+}
+else if(stationTimeLeft <= 180){
+  timerBox.classList.add('timer-warning');
+
   }
 });
 }
@@ -3505,98 +3825,380 @@ function downloadLessonPlan(){
     line-height: 1.5;
     background: #fff;
   }
+
   table{
     width: 100%;
     border-collapse: collapse;
     margin-bottom: 18px;
   }
+
   td, th{
     border: 1px solid #999;
     padding: 8px;
     vertical-align: top;
     font-size: 14px;
   }
+
   .section-title{
     background: #eeeeee;
     font-weight: bold;
   }
- .lesson-top-grid{
-  display:flex;
-  gap:14px;
-  margin-top:10px;
-  align-items:flex-start;
-}
-.lesson-objectives-box{
-  flex:2;
-  min-width:0;
-  background:#ffffff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px;
-}
-.lesson-keywords-box{
-  flex:1;
-  min-width:260px;
-  background:linear-gradient(135deg,#f8fbff,#ffffff);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px;
-}
-.lesson-keywords-box .lesson-tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-@media(max-width:900px){
-  .lesson-top-grid{
+
+  #stationContent{
+    display:flex;
     flex-direction:column;
+    align-items:flex-start;
   }
-  .lesson-keywords-box{
-    min-width:0;
+
+  #stationContent > *{
+    max-width:420px;
     width:100%;
   }
-padding-left: 18px;
+
+  .activity-info-box{
+    max-width:420px;
+    padding:10px 12px;
+    border-radius:14px;
+    background:#ffffff;
+    border:1px solid #e8eefb;
+    margin-bottom:10px;
   }
-  .top-actions{
-    margin-bottom: 18px;
-    text-align: center;
+
+  .activity-main-img{
+    display:block;
+    width:auto;
+    max-width:260px;
+    max-height:110px;
+    object-fit:contain;
+    border-radius:10px;
+    border:1px solid #e6ecf7;
+    background:#fafcff;
+    padding:4px;
+    margin:6px 0 12px;
   }
-  .top-actions button{
-    background: #9e9e9e;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-weight: bold;
-    cursor: pointer;
+
+  .activity-main-question{
+    display:inline-block;
+    background:#eef5ff;
+    padding:8px 12px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    color:#5f74b8;
+    margin-bottom:10px;
   }
-  .top-actions button:hover{
-    background: #757575;
+
+  .activity-main-details{
+    font-size:14px;
+    line-height:1.6;
+    color:#6f7c9d;
+    background:#f9fbff;
+    border:1px solid #e3edff;
+    padding:12px;
+    border-radius:12px;
   }
-  .lp-header{
+
+  .lesson-title-red{
+    color:#e74c3c;
+    font-weight:700;
+    font-size:13px;
+  }
+
+  .station-side-title{
+    font-size:15px;
+    font-weight:700;
+    color:#6c7bb8;
+    margin-bottom:4px;
+  }
+
+  .station-side-meta{
+    display:inline-block;
+    font-size:11px;
+    color:#7f88a8;
+    margin-bottom:6px;
+    background:#f7f9ff;
+    border:1px solid #e4ebff;
+    padding:5px 10px;
+    border-radius:999px;
+  }
+
+  .station-side-timer{
+    display:inline-block;
+    background:linear-gradient(135deg,#eef3ff,#f8fbff);
+    color:#5f74b8;
+    font-weight:700;
+    padding:7px 14px;
+    border-radius:999px;
+    font-size:12px;
+    border:1px solid #dfe7ff;
+    box-shadow:0 3px 8px rgba(120,130,200,0.10);
+  }
+
+  .station-side-timer.timer-warning{
+    background:linear-gradient(135deg,#fff4e5,#fffaf1);
+    color:#e67e22;
+    border-color:#f3d3a5;
+  }
+
+  .station-side-timer.timer-danger{
+    background:linear-gradient(135deg,#fdecea,#fff6f6);
+    color:#e74c3c;
+    border-color:#f2c3bd;
+  }
+
+  .student-obj{
+    background:#f4f8ff;
+    border:1px solid #e3ecff;
+    border-radius:12px;
+    padding:6px 10px;
+    margin:5px 0;
+    font-size:12px;
+    color:#5f74b8;
+  }
+
+  .student-tag{
+    display:inline-block;
+    background:#eef3ff;
+    color:#5f74b8;
+    padding:4px 10px;
+    border-radius:999px;
+    font-size:11px;
+    margin:3px;
+  }
+
+  .lesson-side-section{
+    background:#fbfcff;
+    border:1px solid #edf1fb;
+    padding:10px;
+    border-radius:14px;
+    margin-bottom:8px;
+  }
+
+  .lesson-info-box .meta{
+    margin-bottom:6px;
+    line-height:1.45;
+    font-size:11px;
+    color:#7d86a5;
+  }
+
+  .lesson-label{
+    display:inline-block;
+    background:#f2f6ff;
+    padding:3px 10px;
+    border-radius:999px;
+    font-size:10px;
+    font-weight:700;
+    color:#6c7bb8;
+    margin-bottom:6px;
+  }
+
+  .question-step-box{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:12px;
+    margin-top:12px;
+    max-width:420px;
+  }
+
+  .question-step-title{
+    display:inline-block;
+    background:#eef5ff;
+    color:#2f5ea8;
+    font-weight:bold;
+    padding:8px 12px;
+    border-radius:10px;
+    margin-bottom:12px;
+  }
+
+  .question{
+    padding:14px;
+    margin-bottom:12px;
+    background:#ffffff;
+    border-radius:16px;
+    border:1px solid #e6edf8;
+    box-shadow:0 4px 10px rgba(120,130,200,0.06);
+  }
+
+  .question strong{
+    display:inline-block;
+    color:#4f6fc7;
+    font-weight:700;
+    font-size:15px;
+  }
+
+  .choice{
     display:flex;
-    align-items:flex-start;
-    gap:14px;
-    margin-bottom:14px;
+    align-items:center;
+    justify-content:flex-start;
+    gap:10px;
+    border:1px solid #e3e9f5;
+    border-radius:16px;
+    padding:8px 12px;
+    margin:6px 0;
+    cursor:pointer;
+    background:#fdfefe;
+    font-size:13px;
+    color:#6b78a6;
+    transition:all 0.2s ease;
+    width:100%;
+    max-width:420px;
   }
-  .lp-logo{
-    width:68px;
-    height:auto;
+
+  .choice:hover{
+    background:#f3f7ff;
+    border-color:#cfdcff;
   }
-  .lp-school{
-    font-size:20px;
+
+  .choice input{
+    margin:0;
+    flex:0 0 auto;
+  }
+
+  .choice-text{
+    display:inline-block;
+    text-align:left;
+  }
+
+  .feedback{
+    margin-top:8px;
     font-weight:bold;
   }
-  .lp-sub{
-    font-size:16px;
+
+  .correct{
+    border:2px solid #2ecc71;
+    background:#eafaf1;
   }
+
+  .wrong{
+    border:2px solid #e74c3c;
+    background:#fdecea;
+  }
+
+  .question-nav-box{
+    display:flex;
+    gap:8px;
+    justify-content:flex-start;
+    margin-top:12px;
+  }
+
+  .question-nav-box button{
+    background:#f3f6ff;
+    color:#5f74b8;
+    border:1px solid #dce5ff;
+    border-radius:14px;
+    padding:6px 12px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    width:auto !important;
+    min-width:90px;
+  }
+
+  .question-nav-box button:hover{
+    background:#e8eeff;
+  }
+
+  button.secondary{
+    background:#eaf0ff;
+  }
+
+  button[onclick*="submit"]{
+    background:#eaf0ff;
+    color:#5f74b8;
+    border:1px solid #dce5ff;
+    border-radius:14px;
+    padding:6px 14px;
+    font-size:12px;
+    font-weight:600;
+    cursor:pointer;
+    width:auto !important;
+    min-width:100px;
+    box-shadow:none;
+  }
+
+  .image-actions{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  }
+
+  .image-actions button{
+    width:auto;
+    padding:6px 10px;
+    border-radius:12px;
+    font-size:12px;
+  }
+
+  #topStations{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:10px;
+    margin-bottom:16px;
+  }
+
+  #topStations .station-box{
+    margin-bottom:0;
+  }
+
+  .lesson-top-grid{
+    display:flex;
+    gap:14px;
+    margin-top:10px;
+    align-items:flex-start;
+  }
+
+  .lesson-objectives-box{
+    flex:2;
+    min-width:0;
+    background:#ffffff;
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px;
+  }
+
+  .lesson-keywords-box{
+    flex:1;
+    min-width:260px;
+    background:linear-gradient(135deg,#f8fbff,#ffffff);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:10px;
+  }
+
+  .lesson-keywords-box .lesson-tags{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+  }
+
+  @media(max-width:900px){
+    .lesson-top-grid{
+      flex-direction:column;
+    }
+
+    .lesson-keywords-box{
+      min-width:0;
+      width:100%;
+    }
+
+    .top-actions{
+      margin-bottom:18px;
+      text-align:center;
+    }
+  }
+
   @media print{
-    .top-actions{ display:none; }
+    .top-actions{
+      display:none;
+    }
   }
+
   #teacherView .rating-box,
-#studentView .rating-box {
-  display: none;
-}
+  #studentView .rating-box{
+    display:none;
+  }
 </style>
 </head>
 <body>
@@ -3820,4 +4422,3 @@ window.addEventListener('load', function(){
 
 </body>
 </html>
-
