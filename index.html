@@ -884,6 +884,47 @@ window.saveSelfEvaluation = async function(stationId, value){
   }
 };
 
+  window.removeCurrentStation = async function(){
+  const select = byId('creatorStationSelect');
+  if(!select) return;
+
+  const id = select.value;
+  if(!id) return;
+
+  if(id === 'starter'){
+    showNotice('creatorNotice', 'Starter station cannot be removed.', 'warn');
+    return;
+  }
+
+  const station = getStationById(id);
+  const stationTitle = station ? station.title : id;
+
+  if(!confirm('Remove this station: ' + stationTitle + '?')) return;
+
+  lessonStations = lessonStations.filter(function(s){
+    return s.id !== id;
+  });
+
+  if(lessonContent && lessonContent[id]){
+    delete lessonContent[id];
+  }
+
+  await dbRef(configPath()).set(lessonStations);
+  await dbRef(contentPath()).set(lessonContent);
+
+  fillTeacherSelects();
+
+  const nextId = (lessonStations[0] && lessonStations[0].id) || 'starter';
+  if(select) select.value = nextId;
+
+  loadCreatorStation();
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+
+  showNotice('creatorNotice', 'Station removed successfully.', 'good');
+};
+
   function updateRankingBoard(){
   const list = byId('rankingList');
   if(!list || !liveStudents) return;
