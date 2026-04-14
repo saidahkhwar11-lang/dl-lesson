@@ -1838,34 +1838,51 @@ function renderStudentNav(){
 
   const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
 
-  side.innerHTML = `
-    <div class="lesson-info-box">
+side.innerHTML = `
+  <div class="lesson-info-box">
 
-      <div class="station-side-head">
-        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
-        <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
-        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
-      </div>
+    <div class="station-side-head">
+      <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
+      <div class="station-side-meta">⏱ ${escapeHtml(currentStation.time || '')}</div>
+      <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
+    </div>
 
-      <div class="lesson-side-section">
-        <div class="lesson-label">📘 Lesson Title</div>
-        <div class="meta lesson-title-red">
-          ${escapeHtml(lessonMeta.lessonTitle || '')}
-        </div>
+    <div class="lesson-side-section">
+      <div class="lesson-label">📘 Lesson Title</div>
+      <div class="meta lesson-title-red">
+        ${escapeHtml(lessonMeta.lessonTitle || '')}
       </div>
+    </div>
 
-      <div class="lesson-side-section">
-        <div class="lesson-label">🎯 Lesson Objectives</div>
-        <div class="meta">
-          ${(lessonMeta.lessonObjectives || '')
-            .split('\n')
-            .filter(Boolean)
-            .map(function(obj){
-              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
-            })
-            .join('')}
-        </div>
+    <div class="lesson-side-section">
+      <div class="lesson-label">🎯 Lesson Objectives</div>
+      <div class="meta">
+        ${(lessonMeta.lessonObjectives || '')
+          .split('\n')
+          .filter(Boolean)
+          .map(function(obj){
+            return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
+          })
+          .join('')}
       </div>
+    </div>
+
+    <div class="lesson-side-section">
+      <div class="lesson-label">🔑 Keywords</div>
+      <div class="meta">
+        ${(lessonMeta.lessonKeywords || '')
+          .split(',')
+          .map(function(k){ return k.trim(); })
+          .filter(Boolean)
+          .map(function(k){
+            return '<span class="student-tag">' + escapeHtml(k) + '</span>';
+          })
+          .join('')}
+      </div>
+    </div>
+
+  </div>
+`;
 
       <div class="lesson-side-section">
         <div class="lesson-label">🔑 Keywords</div>
