@@ -2064,10 +2064,10 @@ window.submitCurrentStation = async function(stationId){
   const questions = ct.questions || [];
 
   // 1) block submit if time is up or station is locked
-  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
-    alert('⏰ Time is up. This station is locked and cannot be submitted.');
-    return;
-  }
+  if(station && !station.unlocked){
+  alert('This station is locked and cannot be submitted.');
+  return;
+}
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
@@ -3311,39 +3311,21 @@ const text = stationTimeLeft > 0
 });
 }
 
-  async function autoLockStationByTimer(stationId){
-  if(!requireConnection()) return;
-  if(!stationId || stationId === 'starter') return;
+ async function autoLockStationByTimer(stationId){
+  currentTimedStationId = null;
+  stationTimeLeft = 0;
 
-  const station = getStationById(stationId);
-  if(!station || !station.unlocked) return;
+  updateStationTimerDisplay();
 
-  lessonStations = lessonStations.map(function(s){
-    if(s.id === stationId){
-      return Object.assign({}, s, {
-        unlocked: false,
-        displayed: false
-      });
-    }
-    return s;
-  });
-
-  await dbRef(configPath()).set(lessonStations);
-
-  renderControlStatus();
-  renderTeacherOverview();
-  renderStudentNav();
-  renderStationContent();
-
-  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
+  showNotice('controlNotice', 'Time finished. Station remains open.', 'warn');
 }
   
-  function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
+ function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
 
   const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
-  let autoLocked = false;
+  let finishedShown = false;
 
   function tick(){
     if(stationId === 'starter'){
@@ -3364,10 +3346,12 @@ const text = stationTimeLeft > 0
     updateStationTimerDisplay();
 
     if(stationTimeLeft <= 0){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
       stopStationTimer();
 
-      if(!autoLocked){
-        autoLocked = true;
+      if(!finishedShown){
+        finishedShown = true;
         autoLockStationByTimer(stationId);
       }
     }
