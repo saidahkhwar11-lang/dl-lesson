@@ -680,7 +680,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <input id="studentName" placeholder="Enter student name" />
     <label>Student ID</label>
     <input id="studentId" placeholder="Enter student ID" />
-    <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+    <button id="studentStartBtn" onclick="window.startStudentSession()">Start Student Session</button>
     <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
@@ -729,7 +729,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <h2>Teacher View</h2>
     <label>Teacher Password</label>
     <input id="teacherPassword" type="password" placeholder="Enter password" />
-    <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
+    <button id="teacherOpenBtn" onclick="window.openTeacherView()">Open Teacher View</button>
     <div id="teacherNotice" class="notice bad hidden"></div>
   </div>
 
