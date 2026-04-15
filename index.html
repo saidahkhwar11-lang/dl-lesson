@@ -1,4 +1,335 @@
 <!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Lesson Plan - ${escapeHtml(lessonTitle)}</title>
+<style>
+  body{
+    font-family: Arial, sans-serif;
+    padding: 22px;
+    color: #222;
+    line-height: 1.5;
+    background: #fff;
+  }
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 18px;
+  }
+  td, th{
+    border: 1px solid #999;
+    padding: 8px;
+    vertical-align: top;
+    font-size: 14px;
+  }
+  .section-title{
+    background: #eeeeee;
+    font-weight: bold;
+  }
+ .lesson-top-grid{
+  display:flex;
+  gap:14px;
+  margin-top:10px;
+  align-items:flex-start;
+}
+.lesson-objectives-box{
+  flex:2;
+  min-width:0;
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px;
+}
+.lesson-keywords-box{
+  flex:1;
+  min-width:260px;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid var(--line);
+  border-radius:16px;
+  padding:10px;
+}
+.lesson-keywords-box .lesson-tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+@media(max-width:900px){
+  .lesson-top-grid{
+    flex-direction:column;
+  }
+  .lesson-keywords-box{
+    min-width:0;
+    width:100%;
+  }
+padding-left: 18px;
+  }
+  .top-actions{
+    margin-bottom: 18px;
+    text-align: center;
+  }
+  .top-actions button{
+    background: #9e9e9e;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .top-actions button:hover{
+    background: #757575;
+  }
+  .lp-header{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    margin-bottom:14px;
+  }
+  .lp-logo{
+    width:68px;
+    height:auto;
+  }
+  .lp-school{
+    font-size:20px;
+    font-weight:bold;
+  }
+  .lp-sub{
+    font-size:16px;
+  }
+  @media print{
+    .top-actions{ display:none; }
+  }
+  #teacherView .rating-box,
+#studentView .rating-box {
+  display: none;
+}
+</style>
+</head>
+<body>
+
+<div class="lp-header">
+  <img src="logo.png" class="lp-logo">
+  <div class="lp-header-text">
+    <div class="lp-school">Al Reyada School</div>
+    <div class="lp-sub">English Department</div>
+    <div class="lp-sub">Lesson Plan</div>
+  </div>
+</div>
+
+<div class="top-actions">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<table>
+  <tr>
+    <td><strong>التاريخ Date:</strong></td>
+    <td>${escapeHtml(formattedDate)}</td>
+    <td><strong>المادة الدراسية Subject:</strong></td>
+    <td>English Language</td>
+  </tr>
+  <tr>
+    <td><strong>Teacher(s) المعلم:</strong></td>
+    <td>Saidah Khwar</td>
+    <td><strong>Lesson# / عنوان الدرس:</strong></td>
+    <td>${escapeHtml(lessonTitle)}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" style="width:30%;">Key Learning Objective(s)<br>مخرجات التعلم</td>
+    <td>
+      <ul>
+        ${objectives.length
+          ? objectives.map(function(obj){
+              return '<li>' + escapeHtml(obj) + '</li>';
+            }).join('')
+          : '<li>No objectives added yet.</li>'}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td class="section-title">Lesson Topic<br>موضوع الدرس</td>
+    <td>${escapeHtml(topicText)}</td>
+  </tr>
+  <tr>
+    <td class="section-title">H.O.T. Question(s)<br>سؤال مهارات التفكير العليا</td>
+    <td style="white-space: pre-line;">${escapeHtml(hotQuestion)}</td>
+  </tr>
+  <tr>
+    <td class="section-title">Keywords/New Vocabulary<br>المفردات الجديدة</td>
+    <td>${escapeHtml(keywords.length ? keywords.join(' – ') : 'No keywords added yet')}</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" colspan="2">Lesson's Procedures سير الدرس</td>
+  </tr>
+  <tr>
+    <td style="width:18%;"><strong>Timing</strong></td>
+    <td><strong>Warm up/Starter</strong></td>
+  </tr>
+  <tr>
+    <td>${escapeHtml((starterStation && starterStation.time) || '5 mins')}</td>
+    <td>
+      ${escapeHtml(starterStation
+        ? generateStationActivityText(starterStation, 0)
+        : 'Students begin with a short starter activity that activates prior knowledge, introduces the topic, and prepares them for the lesson.')}
+      <br><strong>Teacher Role:</strong> Guide discussion, model where needed, and activate background knowledge.<br>
+      <strong>Student Role:</strong> Share ideas, predictions, and prior knowledge.<br>
+      <strong>AFL:</strong> Oral responses.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Success Criteria</strong></td>
+    <td>
+      <ul>
+        ${successCriteria.map(function(obj){
+          return '<li>' + escapeHtml(obj) + '</li>';
+        }).join('')}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>${totalMainTime ? escapeHtml(totalMainTime + ' mins') : '30 mins'}</td>
+    <td>
+      <strong>Main Activities linked to LO</strong><br><br>
+      ${mainActivitiesHtml}
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Differentiation</strong></td>
+    <td>
+      <strong>H</strong><br>
+      Complete tasks independently and explain answers with evidence.<br><br>
+      <strong>M</strong><br>
+      Complete tasks with guided support and partner discussion.<br><br>
+      <strong>L</strong><br>
+      Use sentence frames, key words, and teacher support.
+    </td>
+  </tr>
+  <tr>
+    <td><strong>E-Implementation Tool</strong></td>
+    <td>
+      <ul>
+        ${eTools.map(function(tool){
+          return '<li>' + escapeHtml(tool) + '</li>';
+        }).join('')}
+      </ul>
+    </td>
+  </tr>
+  <tr>
+    <td>${escapeHtml((plenaryStation && plenaryStation.time) || '5 mins')}</td>
+    <td>
+      <strong>Plenary / Closure</strong><br>
+      ${escapeHtml(plenaryStation
+        ? generateStationActivityText(plenaryStation, 0)
+        : 'Students complete a short closing task to reflect on the lesson and show their final understanding.')}
+    </td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td class="section-title" style="width:30%;">Learning Skills (please highlight)</td>
+    <td>
+      Independent Learners<br>
+      Critical Thinking<br>
+      Self-Learning<br>
+      Clear Communication<br>
+      Positive Interactions<br>
+      Research<br>
+      Collaboration<br>
+      Real World Connections<br>
+      Innovation
+    </td>
+  </tr>
+  <tr>
+    <td class="section-title">Cross Curricular (Links with other subjects)</td>
+    <td>Supports real-life understanding and connections with other subject knowledge.</td>
+  </tr>
+  <tr>
+    <td class="section-title">UAE Culture and Heritage (UAE Vision 2031)</td>
+    <td>Promotes responsible learning, awareness, positive values, and informed decision-making.</td>
+  </tr>
+</table>
+
+</body>
+</html>
+`;
+
+    const win = window.open('', '_blank');
+    if(!win){
+      alert('Popup blocked. Please allow popups for this page.');
+      return;
+    }
+
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+
+  } catch(err){
+    console.error('Lesson plan error:', err);
+    alert('Lesson plan error: ' + err.message);
+  }
+}
+
+function ratePlatform(stars){
+  const starContainer = document.getElementById('starRating');
+  if(!starContainer) return;
+
+  const starsEls = starContainer.querySelectorAll('span');
+
+  starsEls.forEach((s, i) => {
+    s.textContent = i < stars ? '★' : '☆';
+  });
+
+  localStorage.setItem('guestRating', stars);
+
+  const msg = document.getElementById('ratingMsg');
+
+  if(stars === 5){
+    msg.textContent = "Amazing! 🌟";
+  } else if(stars >= 4){
+    msg.textContent = "Thank you! 😊";
+  } else if(stars === 3){
+    msg.textContent = "Good 👍";
+  } else {
+    msg.textContent = "We’ll improve 💪";
+  }
+}
+
+window.addEventListener('load', function(){
+  const saved = localStorage.getItem('guestRating');
+  if(saved){
+    ratePlatform(parseInt(saved));
+  }
+});
+
+</script>
+
+<div id="lessonInfoPopup" class="lesson-popup hidden">
+  <div class="lesson-popup-card">
+    <h3>Before You Start Station 1</h3>
+    <p class="lesson-popup-msg">Read the objectives before starting Station 1.</p>
+
+    <div id="lessonPopupContent"></div>
+
+    <div class="btns" style="margin-top:14px;">
+      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="imageModal" class="image-modal hidden"></div>
+
+</body>
+</html>
+
+
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -8,7 +339,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Grade 9 English Lesson</title>
   <style>
-    
   .lesson-popup{
   position:fixed;
   inset:0;
@@ -268,114 +598,42 @@
   border-radius:8px;
   font-size:12px;
 }
-:root{
-  --bg:#f5f7fb;
-  --card:#fff;
-  --line:#d9e2f2;
-  --text:#23324a;
-  --muted:#5f6f89;
-  --primary:#2f5ea8;
-  --primary2:#3f76c7;
-  --accent:#f39a2d;
-  --good:#1f8f5f;
-  --bad:#c63d3d;
-  --warn:#b47a00;
+:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.hidden{display:none!important}
+.wrap{max-width:1440px;margin:0 auto;padding:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
+
+ #starRating span {
+  display: inline-block;
+  transition: color 0.2s ease, transform 0.15s ease;
 }
 
-*{
-  box-sizing:border-box;
+#starRating span:hover {
+  color: #ffcc66;
+  transform: scale(1.15) rotate(-6deg);
 }
 
-body{
-  margin:0;
-  font-family:Arial,Helvetica,sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
-
-/* ✅ keep ONLY ONE hidden */
-.hidden{
-  display:none !important;
-}
-
-/* BONUS POPUP */
-.bonus-popup{
-  position:fixed;
-  top:18px;
-  right:18px;
-  width:320px;
-  max-height:80vh;
-  overflow:auto;
-  padding:14px;
-  background:#fff;
-  border:2px solid var(--accent);
-  border-radius:16px;
-  box-shadow:0 8px 24px rgba(30,60,120,.18);
-  z-index:9999;
-  display:none;
-}
-
-/* SPINNER POPUP */
-.spinner-popup{
-  position:fixed;
-  top:18px;
-  right:18px;
-  width:320px;
-  max-height:80vh;
-  overflow:auto;
-  padding:14px;
-  background:#fff;
-  border:2px solid var(--accent);
-  border-radius:16px;
-  box-shadow:0 8px 24px rgba(30,60,120,.18);
-  z-index:9999;
-}
-
-.wrap{
-  max-width:1440px;
-  margin:0 auto;
-  padding:18px;
-}
-
-.card{
-  background:var(--card);
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:18px;
-  box-shadow:0 8px 24px rgba(30,60,120,.08);
-}
-
-/* ⭐ rating */
-#starRating span{
-  display:inline-block;
-  transition:color 0.2s ease, transform 0.15s ease;
-}
-
-#starRating span:hover{
-  color:#ffcc66;
-  transform:scale(1.15) rotate(-6deg);
-}
-
-/* HERO */
 .hero{
-  background:linear-gradient(180deg,#ffffff 0%, #fbfbff 100%);
-  color:#4a5fa8;
-  border-radius:24px;
-  padding:10px 16px;
-  margin-bottom:10px;
-  box-shadow:0 6px 20px rgba(120,130,200,0.06);
-  line-height:1.4;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+  color: #4a5fa8;
+  border-radius: 24px;
+  padding: 10px 16px;
+  margin-bottom: 10px;
+  box-shadow: 0 6px 20px rgba(120,130,200,0.06);
+  line-height: 1.4;
 }
 
 .hero h1{
-  margin:0 0 4px;
-  color:#5b6fb5;
-  font-size:18px;
+  margin: 0 0 4px;
+  color: #5b6fb5;
+  font-size: 18px;
 }
 
 .hero p{
-  margin:2px 0 0;
-  color:#6a6f85;
+  margin: 2px 0 0;
+  color: #6a6f85;
 }
 .row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
 .btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
@@ -402,8 +660,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
 .station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
 .tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-}
-  .reading-img{
+.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
+.reading-img{
   width:100%;
   max-height:420px;
   object-fit:contain;
@@ -664,60 +922,31 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 
   <div id="teacherView" class="hidden">
-  <div class="btns" style="margin:0 0 12px 0;">
-    <button class="muted" onclick="backToHome()">Back Home</button>
-  </div>
-
-  <div class="card" style="margin-bottom:12px;">
-    <h2 style="margin:0 0 8px 0;">Teacher View</h2>
-    <div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div>
-  </div>
-
-  <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
-    <div class="btns" style="justify-content:space-between;align-items:center;">
-      <h2 style="margin:0;">Lesson Stations</h2>
-      <div class="btns">
-        <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-        <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-        <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-        <button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
+    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
+    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
+    <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+      <div class="btns" style="justify-content:space-between;align-items:center;">
+        <h2 style="margin:0;">Lesson Stations</h2>
+        <div class="btns">
+  <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
+  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+  
+</div>
       </div>
-    </div>
-
-<div id="spinnerPopup" class="spinner-popup hidden">
-  <div class="bonus-popup-header">
-        <span>🎡 Spinner</span>
-        <button type="button" class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">✖</button>
-      </div>
-
-      <div class="bonus-popup-body" style="text-align:center;">
-        <div id="spinnerSelectedName" style="font-size:28px; font-weight:800; margin:16px 0; color:#355fa8;">
-          ---
-        </div>
-
-        <div class="btns" style="justify-content:center; gap:10px;">
-          <button type="button" onclick="spinStudent()">🎡 Spin Again</button>
-          <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
-        </div>
-      </div>
-    </div>
-
-    <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
-    <div id="teacherOverviewStations" class="top-bar"></div>
-
-    <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
-      <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
-      <div id="topStudentsList" class="small">No data yet.</div>
-    </div>
+      <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+      <div id="teacherOverviewStations" class="top-bar"></div>
+<div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
+  <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
+  <div id="topStudentsList" class="small">No data yet.</div>
+</div>
+      <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
+  <h2 style="margin-top:0;">Station Presentation</h2>
+  <div id="teacherStationPreview" class="teacher-preview-empty">
+    Click any station box above to open its picture, objective, time, questions, and controls.
   </div>
+</div>
 
-  <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
-    <h2 style="margin-top:0;">Station Presentation</h2>
-    <div id="teacherStationPreview" class="teacher-preview-empty">
-      Click any station box above to open its picture, objective, time, questions, and controls.
-    </div>
-  </div>
-    
     <div class="section-tabs">
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
   <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
@@ -923,10 +1152,13 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
 <script>
 
+  localStorage.clear();
+sessionStorage.clear();
+
   console.log('NEW VERSION LOADED 🚀'); 
   
   let storage = null;
-  
+
   function buildLessonInfoBoxHtml(){
   return (
     '<div class="lesson-info-box">' +
@@ -965,81 +1197,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   alert('Old lesson cleared. Reload now.');
 };
 
-  let selectedSpinnerStudentId = '';
-let selectedSpinnerStudentName = '';
-
-window.toggleSpinnerPopup = function(){
-  const box = byId('spinnerPopup');
-  if(!box) return;
-  box.classList.toggle('hidden');
-};
-
-window.spinStudent = function(){
-  try{
-    if(!liveStudents || Object.keys(liveStudents).length === 0){
-      alert('No students available');
-      return;
-    }
-
-    const students = Object.entries(liveStudents)
-      .map(function(entry){
-        return {
-          id: entry[0],
-          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
-        };
-      })
-      .filter(function(s){
-        return s.name && s.name.trim();
-      });
-
-    if(!students.length){
-      alert('No students available');
-      return;
-    }
-
-    const randomIndex = Math.floor(Math.random() * students.length);
-    const selected = students[randomIndex];
-
-    selectedSpinnerStudentId = selected.id;
-    selectedSpinnerStudentName = selected.name;
-
-    const popup = byId('spinnerPopup');
-    const nameEl = byId('spinnerSelectedName');
-
-    if(popup) popup.classList.remove('hidden');
-    if(nameEl) nameEl.textContent = selected.name;
-
-  }catch(err){
-    console.error('spinStudent error:', err);
-    alert('Error selecting student');
-  }
-};
-
-window.addSpinnerBonus = async function(){
-  try{
-    if(!selectedSpinnerStudentId){
-      alert('Please spin first.');
-      return;
-    }
-
-    const student = liveStudents[selectedSpinnerStudentId] || {};
-    const oldBonus = Number(student.bonus || 0);
-
-    await dbRef(studentPath(selectedSpinnerStudentId)).update({
-      bonus: oldBonus + 1
-    });
-
-    if(!liveStudents[selectedSpinnerStudentId]){
-      liveStudents[selectedSpinnerStudentId] = {};
-    }
-    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
-
-    alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
-  }catch(err){
-    console.error('addSpinnerBonus error:', err);
-    alert('Could not add bonus.');
-  }
-};
   window.moveCurrentStationUp = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -1079,46 +1236,6 @@ window.addSpinnerBonus = async function(){
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
 };
 
- window.spinStudent = function(){
-  try{
-    if(!liveStudents || Object.keys(liveStudents).length === 0){
-      alert('No students available');
-      return;
-    }
-
-    const students = Object.entries(liveStudents)
-      .map(function(entry){
-        return {
-          id: entry[0],
-          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
-        };
-      })
-      .filter(function(s){
-        return s.name && s.name.trim();
-      });
-
-    if(!students.length){
-      alert('No students available');
-      return;
-    }
-
-    const randomIndex = Math.floor(Math.random() * students.length);
-    const selected = students[randomIndex];
-
-    selectedSpinnerStudentId = selected.id;
-    selectedSpinnerStudentName = selected.name;
-
-    const popup = byId('spinnerPopup');
-    const nameEl = byId('spinnerSelectedName');
-
-    if(popup) popup.style.display = 'block';
-    if(nameEl) nameEl.textContent = selected.name;
-
-  }catch(err){
-    console.error('spinStudent error:', err);
-    alert('Error selecting student');
-  }
-};
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -1354,15 +1471,11 @@ let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, st
 let creatorDraftQuestions = [];
 let teacherQuestionVisibility = {};
 let teacherQuestionIndex = {};
-
-let selectedSpinnerStudentId = '';
-let selectedSpinnerStudentName = '';
   let lessonMeta = {
   lessonTitle: '',
   lessonObjectives: '',
   lessonKeywords: ''
 };
-  
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -1374,12 +1487,7 @@ function bonusPath(){ return lessonBase() + '/bonus'; }
 function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
-
-
-function getStationById(id){
-  return lessonStations.find(function(s){ return s.id === id; });
-}
-
+function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
 function getStationContent(id){
   return lessonContent[id] || {
     imageUrl:'',
@@ -1392,26 +1500,6 @@ function getStationContent(id){
     questions:[]
   };
 }
-
-window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!currentStudent || !currentStudent.id){
-      showNotice('studentNotice', 'Please log in again.', 'bad');
-      return;
-    }
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-
-    await dbRef(path).remove();
-
-    showNotice('studentNotice', 'Your request was removed.', 'warn');
-
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not remove your request.', 'bad');
-  }
-};
-
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
@@ -1695,40 +1783,6 @@ const initial = {
   }
 };
 
-  window.raiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!db || !currentStudent || !currentStudent.id) return;
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-
-    await db.ref(path).set({
-      studentId: currentStudent.id,
-      studentName: currentStudent.name || 'Student',
-      clickedAt: Date.now(),
-      status: 'waiting'
-    });
-
-    showNotice('studentNotice', 'You asked to answer this question.', 'good');
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not save your request.', 'bad');
-  }
-};
-
-window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!db || !currentStudent || !currentStudent.id) return;
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-    await db.ref(path).remove();
-
-    showNotice('studentNotice', 'Your request was removed.', 'warn');
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not remove your request.', 'bad');
-  }
-};
-
 window.openTeacherView = async function(){
    try{
     initFirebaseFromInputs();
@@ -1761,7 +1815,6 @@ window.openTeacherView = async function(){
     byId('homeRow').classList.remove('hidden');
   }
 };
-
 
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
   
@@ -2000,7 +2053,7 @@ window.unlockTeacherStation = async function(id){
   renderControlStatus();
   openTeacherStationPreview(id);
 };
-  
+
 window.lockTeacherStation = async function(id){
   if(!requireConnection()) return;
 
@@ -2078,19 +2131,6 @@ function renderStudentNav(){
     return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
   }).join('');
   top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
-}
-
-  function renderStudentQuestionRaiseButtons(stationId, questionIndex){
-  return `
-    <div class="question-hand-actions">
-      <button type="button" onclick="raiseHandForQuestion('${stationId}', ${questionIndex})">
-        🙋 I want to answer
-      </button>
-      <button type="button" class="ghostbtn" onclick="cancelRaiseHandForQuestion('${stationId}', ${questionIndex})">
-        Cancel
-      </button>
-    </div>
-  `;
 }
 
 function renderQuestion(q, stationId, index){
@@ -2192,11 +2232,7 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
-    '<div style="margin-top:10px;">' + body + '</div>' +
-    '<div class="feedback"></div>' +
-  '</div>';
+  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
 }
   
 window.openStation = function(id){
@@ -2442,13 +2478,11 @@ window.submitCurrentStation = async function(stationId){
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
-// ⛔ Timer/lock disabled for testing
-/*
-if(stationTimeLeft <= 0 || (station && !station.unlocked)){
-  alert('⏰ Time is up. This station is locked and cannot be submitted.');
-  return;
-}
-*/
+  // 1) block submit if time is up or station is locked
+  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
+    alert('⏰ Time is up. This station is locked and cannot be submitted.');
+    return;
+  }
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
@@ -3006,20 +3040,8 @@ window.unlockSelectedStation = async function(){
     : 'Station unlocked and timer started.', 'good');
 };
   
-window.lockSelectedStation = async function(){
-  if(!requireConnection()) return;
-  const id = byId('controlStationSelect').value;
-  if(id === 'starter'){
-    showNotice('controlNotice','Starter stays open by default.','warn');
-    return;
-  }
-  lessonStations = lessonStations.map(function(s){
-    return s.id === id ? Object.assign({}, s, {unlocked:false}) : s;
-  });
-  await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Station locked.','warn');
-};
-  
+window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
+
 window.handleCreatorImage = function(event){
   const file = event.target.files && event.target.files[0];
   if(!file) return;
@@ -3339,16 +3361,15 @@ window.clearAllCreatorQuestions = function(){
   const newNumber = lessonStations.length + 1;
   const newId = 'station_' + Date.now();
 
- const newStation = {
-  id: newId,
-  title: 'New Station ' + newNumber,
-  objective: '',
-  details: '',
-  time: '',
-  displayed: false,
-  unlocked: false,
-  timerStartedAt: null
-};
+  const newStation = {
+    id: newId,
+    title: 'New Station ' + newNumber,
+    objective: '',
+    details: '',
+    time: '',
+    displayed: false,
+    locked: true
+  };
 
   lessonStations.push(newStation);
 
@@ -3641,12 +3662,39 @@ const text = stationTimeLeft > 0
 });
 }
 
+  async function autoLockStationByTimer(stationId){
+  if(!requireConnection()) return;
+  if(!stationId || stationId === 'starter') return;
+
+  const station = getStationById(stationId);
+  if(!station || !station.unlocked) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === stationId){
+      return Object.assign({}, s, {
+        unlocked: false,
+        displayed: false
+      });
+    }
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+
+  renderControlStatus();
+  renderTeacherOverview();
+  renderStudentNav();
+  renderStationContent();
+
+  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
+}
   
   function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
 
   const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
+  let autoLocked = false;
 
   function tick(){
     if(stationId === 'starter'){
@@ -3667,16 +3715,47 @@ const text = stationTimeLeft > 0
     updateStationTimerDisplay();
 
     if(stationTimeLeft <= 0){
-      stationTimeLeft = 0;
-      updateStationTimerDisplay();
       stopStationTimer();
-      return;
+
+      if(!autoLocked){
+        autoLocked = true;
+        autoLockStationByTimer(stationId);
+      }
     }
   }
 
   tick();
   stationTimerInterval = setInterval(tick, 1000);
 }
+
+  async function autoLockStationByTimer(stationId){
+  if(!requireConnection()) return;
+  if(!stationId || stationId === 'starter') return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === stationId){
+      return Object.assign({}, s, {
+        unlocked: false,
+        displayed: false,
+        timerStartedAt: null
+      });
+    }
+    return s;
+  });
+
+  currentTimedStationId = null;
+  stationTimeLeft = 0;
+
+  await dbRef(configPath()).set(lessonStations);
+
+  renderControlStatus();
+  renderTeacherOverview();
+  renderStudentNav();
+  renderStationContent();
+
+  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
+}
+  
 function downloadLessonPlan(){
   try{
     const stationsSource =
@@ -3877,17 +3956,13 @@ function downloadLessonPlan(){
 <meta charset="UTF-8">
 <title>Lesson Plan - ${escapeHtml(lessonTitle)}</title>
 <style>
- body{
-  font-family: Arial, sans-serif;
-  padding: 22px;
-  color: #222;
-  line-height: 1.5;
-  background: #fff;
-}
-
-.hidden{
-  display:none;
-}
+  body{
+    font-family: Arial, sans-serif;
+    padding: 22px;
+    color: #222;
+    line-height: 1.5;
+    background: #fff;
+  }
   table{
     width: 100%;
     border-collapse: collapse;
@@ -3899,21 +3974,6 @@ function downloadLessonPlan(){
     vertical-align: top;
     font-size: 14px;
   }
-
-  .spinner-popup{
-  position:fixed;
-  top:18px;
-  right:18px;
-  width:320px;
-  max-height:80vh;
-  overflow:auto;
-  padding:14px;
-  background:#fff;
-  border:2px solid var(--accent);
-  border-radius:16px;
-  box-shadow:0 8px 24px rgba(30,60,120,.18);
-  z-index:9999;
-}
   .section-title{
     background: #eeeeee;
     font-weight: bold;
@@ -3981,19 +4041,6 @@ padding-left: 18px;
     width:68px;
     height:auto;
   }
-
-.hidden{
-  display:none !important;
-}
- 
-.bonus-btn{
-  background:#f59e0b;
-}
-
-@keyframes fadeIn{
-  from{opacity:0; transform:translateY(-10px);}
-  to{opacity:1; transform:translateY(0);}
-}
   .lp-school{
     font-size:20px;
     font-weight:bold;
@@ -4231,4 +4278,3 @@ window.addEventListener('load', function(){
 
 </body>
 </html>
-
