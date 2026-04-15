@@ -1162,15 +1162,16 @@ function getQuestionRaisePath(stationId, questionIndex){
 }
 
 window.raiseHandForQuestion = async function(stationId, questionIndex){
-  alert('clicked'); // test
-
   try{
+    alert('FUNCTION STARTED');
+
     if(!currentStudent || !currentStudent.id){
-      showNotice('studentNotice', 'Please log in again.', 'bad');
+      alert('No current student session');
       return;
     }
 
     const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+    alert('Saving to: ' + path);
 
     await dbRef(path).set({
       studentId: currentStudent.id,
@@ -1179,10 +1180,12 @@ window.raiseHandForQuestion = async function(stationId, questionIndex){
       status: 'waiting'
     });
 
+    alert('Saved successfully');
     showNotice('studentNotice', 'You asked to answer this question.', 'good');
 
   }catch(err){
-    console.error(err);
+    console.error('raiseHandForQuestion error:', err);
+    alert('ERROR: ' + err.message);
     showNotice('studentNotice', 'Could not save your request.', 'bad');
   }
 };
