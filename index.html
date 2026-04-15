@@ -632,11 +632,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
   <div id="teacherOverviewStations" class="top-bar"></div>
 
-    <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
-      <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
-      <div id="topStudentsList" class="small">No data yet.</div>
-    </div>
+  <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
+    <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
+    <div id="topStudentsList" class="small">No data yet.</div>
   </div>
+</div>
 
   <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
     <h2 style="margin-top:0;">Station Presentation</h2>
@@ -727,7 +727,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
   <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
   <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
-  <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -893,7 +892,10 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   alert('Old lesson cleared. Reload now.');
 };
 
-  window.toggleSpinnerPopup = function(){
+  let selectedSpinnerStudentId = '';
+let selectedSpinnerStudentName = '';
+
+window.toggleSpinnerPopup = function(){
   const box = byId('spinnerPopup');
   if(!box) return;
   box.classList.toggle('hidden');
@@ -901,6 +903,8 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
 window.spinStudent = function(){
   try{
+    console.log('spinStudent clicked');
+
     if(!liveStudents || Object.keys(liveStudents).length === 0){
       alert('No students available');
       return;
@@ -935,7 +939,7 @@ window.spinStudent = function(){
     if(nameEl) nameEl.textContent = selected.name;
 
   }catch(err){
-    console.error(err);
+    console.error('spinStudent error:', err);
     alert('Error selecting student');
   }
 };
@@ -960,9 +964,8 @@ window.addSpinnerBonus = async function(){
     liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
 
     alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
-
   }catch(err){
-    console.error(err);
+    console.error('addSpinnerBonus error:', err);
     alert('Could not add bonus.');
   }
 };
