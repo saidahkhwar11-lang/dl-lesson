@@ -698,7 +698,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
   <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
   <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
-  <button type="button" onclick="spinStudent()">🎡 Pick Random Student</button>    
+  <button type="button" onclick="spinStudent()">🎡 Pick Random Student</button> 
+  <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -910,19 +911,56 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       return;
     }
 
-    const students = Object.values(liveStudents);
+    const students = Object.entries(liveStudents)
+      .map(function(entry){
+        return {
+          id: entry[0],
+          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+        };
+      });
+
+    if(!students.length){
+      alert('No students available');
+      return;
+    }
 
     const randomIndex = Math.floor(Math.random() * students.length);
     const selected = students[randomIndex];
 
-    alert('🎉 Selected Student: ' + (selected.name || 'Student'));
+    selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
 
+    alert('🎉 Selected Student: ' + selected.name);
   }catch(err){
     console.error(err);
     alert('Error selecting student');
   }
 };
+  window.addSpinnerBonus = async function(){
+  try{
+    if(!selectedSpinnerStudentId){
+      alert('Please pick a student first.');
+      return;
+    }
 
+    const student = liveStudents[selectedSpinnerStudentId] || {};
+    const oldBonus = Number(student.bonus || 0);
+
+    await dbRef(studentPath(selectedSpinnerStudentId)).update({
+      bonus: oldBonus + 1
+    });
+
+    if(!liveStudents[selectedSpinnerStudentId]){
+      liveStudents[selectedSpinnerStudentId] = {};
+    }
+    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
+
+    alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
+  }catch(err){
+    console.error(err);
+    alert('Could not add bonus.');
+  }
+};
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -1163,6 +1201,8 @@ let teacherQuestionIndex = {};
   lessonObjectives: '',
   lessonKeywords: ''
 };
+  let selectedSpinnerStudentId = '';
+let selectedSpinnerStudentName = '';
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
