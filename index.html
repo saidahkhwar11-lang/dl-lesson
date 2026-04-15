@@ -698,6 +698,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
   <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
   <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
+  <button type="button" onclick="spinStudent()">🎡 Pick Random Student</button>    
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -900,6 +901,26 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   renderStudentNav();
 
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
+};
+
+  window.spinStudent = function(){
+  try{
+    if(!liveStudents || Object.keys(liveStudents).length === 0){
+      alert('No students available');
+      return;
+    }
+
+    const students = Object.values(liveStudents);
+
+    const randomIndex = Math.floor(Math.random() * students.length);
+    const selected = students[randomIndex];
+
+    alert('🎉 Selected Student: ' + (selected.name || 'Student'));
+
+  }catch(err){
+    console.error(err);
+    alert('Error selecting student');
+  }
 };
 
   window.moveCurrentStationDown = async function(){
