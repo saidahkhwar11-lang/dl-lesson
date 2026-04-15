@@ -600,43 +600,43 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div>
   </div>
 
-<div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
-  <div class="btns" style="justify-content:space-between;align-items:center;">
-    <h2 style="margin:0;">Lesson Stations</h2>
-    <div class="btns">
-      <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-      <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-      <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-      <button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
-    </div>
-  </div>
-
-  <div id="spinnerPopup" class="bonus-popup hidden">
-    <div class="bonus-popup-header">
-      <span>🎡 Spinner</span>
-      <button type="button" class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">✖</button>
-    </div>
-
-    <div class="bonus-popup-body" style="text-align:center;">
-      <div id="spinnerSelectedName" style="font-size:28px; font-weight:800; margin:16px 0; color:#355fa8;">
-        ---
-      </div>
-
-      <div class="btns" style="justify-content:center; gap:10px;">
-        <button type="button" onclick="spinStudent()">🎡 Spin Again</button>
-        <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
+  <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+    <div class="btns" style="justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;">Lesson Stations</h2>
+      <div class="btns">
+        <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
+        <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+        <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+        <button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
       </div>
     </div>
-  </div>
 
-  <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
-  <div id="teacherOverviewStations" class="top-bar"></div>
+    <div id="spinnerPopup" class="bonus-popup hidden">
+      <div class="bonus-popup-header">
+        <span>🎡 Spinner</span>
+        <button type="button" class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">✖</button>
+      </div>
 
-  <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
-    <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
-    <div id="topStudentsList" class="small">No data yet.</div>
+      <div class="bonus-popup-body" style="text-align:center;">
+        <div id="spinnerSelectedName" style="font-size:28px; font-weight:800; margin:16px 0; color:#355fa8;">
+          ---
+        </div>
+
+        <div class="btns" style="justify-content:center; gap:10px;">
+          <button type="button" onclick="spinStudent()">🎡 Spin Again</button>
+          <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
+        </div>
+      </div>
+    </div>
+
+    <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+    <div id="teacherOverviewStations" class="top-bar"></div>
+
+    <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
+      <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
+      <div id="topStudentsList" class="small">No data yet.</div>
+    </div>
   </div>
-</div>
 
   <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
     <h2 style="margin-top:0;">Station Presentation</h2>
@@ -645,6 +645,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
   </div>
 </div>
+    
     <div class="section-tabs">
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
   <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
