@@ -1159,6 +1159,32 @@ function attendancePath(studentId){ return lessonBase() + '/attendance/' + stude
 function getQuestionRaisePath(stationId, questionIndex){
   return `lessons/${lessonKey}/raises/${stationId}/q_${questionIndex}`;
 }
+
+window.raiseHandForQuestion = async function(stationId, questionIndex){
+  alert('clicked'); // test
+
+  try{
+    if(!currentStudent || !currentStudent.id){
+      showNotice('studentNotice', 'Please log in again.', 'bad');
+      return;
+    }
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+
+    await dbRef(path).set({
+      studentId: currentStudent.id,
+      studentName: currentStudent.name || 'Student',
+      clickedAt: Date.now(),
+      status: 'waiting'
+    });
+
+    showNotice('studentNotice', 'You asked to answer this question.', 'good');
+
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not save your request.', 'bad');
+  }
+};
 function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
 function getStationContent(id){
   return lessonContent[id] || {
@@ -1171,7 +1197,25 @@ function getStationContent(id){
     linkTitle:'',
     questions:[]
   };
-}
+
+window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!currentStudent || !currentStudent.id){
+      showNotice('studentNotice', 'Please log in again.', 'bad');
+      return;
+    }
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+
+    await dbRef(path).remove();
+
+    showNotice('studentNotice', 'Your request was removed.', 'warn');
+
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not remove your request.', 'bad');
+  }
+};
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
