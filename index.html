@@ -1,335 +1,4 @@
 <!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Lesson Plan - ${escapeHtml(lessonTitle)}</title>
-<style>
-  body{
-    font-family: Arial, sans-serif;
-    padding: 22px;
-    color: #222;
-    line-height: 1.5;
-    background: #fff;
-  }
-  table{
-    width: 100%;
-    border-collapse: collapse;
-    margin-bottom: 18px;
-  }
-  td, th{
-    border: 1px solid #999;
-    padding: 8px;
-    vertical-align: top;
-    font-size: 14px;
-  }
-  .section-title{
-    background: #eeeeee;
-    font-weight: bold;
-  }
- .lesson-top-grid{
-  display:flex;
-  gap:14px;
-  margin-top:10px;
-  align-items:flex-start;
-}
-.lesson-objectives-box{
-  flex:2;
-  min-width:0;
-  background:#ffffff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px;
-}
-.lesson-keywords-box{
-  flex:1;
-  min-width:260px;
-  background:linear-gradient(135deg,#f8fbff,#ffffff);
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:10px;
-}
-.lesson-keywords-box .lesson-tags{
-  display:flex;
-  flex-wrap:wrap;
-  gap:6px;
-}
-@media(max-width:900px){
-  .lesson-top-grid{
-    flex-direction:column;
-  }
-  .lesson-keywords-box{
-    min-width:0;
-    width:100%;
-  }
-padding-left: 18px;
-  }
-  .top-actions{
-    margin-bottom: 18px;
-    text-align: center;
-  }
-  .top-actions button{
-    background: #9e9e9e;
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 10px 16px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .top-actions button:hover{
-    background: #757575;
-  }
-  .lp-header{
-    display:flex;
-    align-items:flex-start;
-    gap:14px;
-    margin-bottom:14px;
-  }
-  .lp-logo{
-    width:68px;
-    height:auto;
-  }
-  .lp-school{
-    font-size:20px;
-    font-weight:bold;
-  }
-  .lp-sub{
-    font-size:16px;
-  }
-  @media print{
-    .top-actions{ display:none; }
-  }
-  #teacherView .rating-box,
-#studentView .rating-box {
-  display: none;
-}
-</style>
-</head>
-<body>
-
-<div class="lp-header">
-  <img src="logo.png" class="lp-logo">
-  <div class="lp-header-text">
-    <div class="lp-school">Al Reyada School</div>
-    <div class="lp-sub">English Department</div>
-    <div class="lp-sub">Lesson Plan</div>
-  </div>
-</div>
-
-<div class="top-actions">
-  <button onclick="window.print()">Print / Save as PDF</button>
-</div>
-
-<table>
-  <tr>
-    <td><strong>التاريخ Date:</strong></td>
-    <td>${escapeHtml(formattedDate)}</td>
-    <td><strong>المادة الدراسية Subject:</strong></td>
-    <td>English Language</td>
-  </tr>
-  <tr>
-    <td><strong>Teacher(s) المعلم:</strong></td>
-    <td>Saidah Khwar</td>
-    <td><strong>Lesson# / عنوان الدرس:</strong></td>
-    <td>${escapeHtml(lessonTitle)}</td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td class="section-title" style="width:30%;">Key Learning Objective(s)<br>مخرجات التعلم</td>
-    <td>
-      <ul>
-        ${objectives.length
-          ? objectives.map(function(obj){
-              return '<li>' + escapeHtml(obj) + '</li>';
-            }).join('')
-          : '<li>No objectives added yet.</li>'}
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td class="section-title">Lesson Topic<br>موضوع الدرس</td>
-    <td>${escapeHtml(topicText)}</td>
-  </tr>
-  <tr>
-    <td class="section-title">H.O.T. Question(s)<br>سؤال مهارات التفكير العليا</td>
-    <td style="white-space: pre-line;">${escapeHtml(hotQuestion)}</td>
-  </tr>
-  <tr>
-    <td class="section-title">Keywords/New Vocabulary<br>المفردات الجديدة</td>
-    <td>${escapeHtml(keywords.length ? keywords.join(' – ') : 'No keywords added yet')}</td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td class="section-title" colspan="2">Lesson's Procedures سير الدرس</td>
-  </tr>
-  <tr>
-    <td style="width:18%;"><strong>Timing</strong></td>
-    <td><strong>Warm up/Starter</strong></td>
-  </tr>
-  <tr>
-    <td>${escapeHtml((starterStation && starterStation.time) || '5 mins')}</td>
-    <td>
-      ${escapeHtml(starterStation
-        ? generateStationActivityText(starterStation, 0)
-        : 'Students begin with a short starter activity that activates prior knowledge, introduces the topic, and prepares them for the lesson.')}
-      <br><strong>Teacher Role:</strong> Guide discussion, model where needed, and activate background knowledge.<br>
-      <strong>Student Role:</strong> Share ideas, predictions, and prior knowledge.<br>
-      <strong>AFL:</strong> Oral responses.
-    </td>
-  </tr>
-  <tr>
-    <td><strong>Success Criteria</strong></td>
-    <td>
-      <ul>
-        ${successCriteria.map(function(obj){
-          return '<li>' + escapeHtml(obj) + '</li>';
-        }).join('')}
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td>${totalMainTime ? escapeHtml(totalMainTime + ' mins') : '30 mins'}</td>
-    <td>
-      <strong>Main Activities linked to LO</strong><br><br>
-      ${mainActivitiesHtml}
-    </td>
-  </tr>
-  <tr>
-    <td><strong>Differentiation</strong></td>
-    <td>
-      <strong>H</strong><br>
-      Complete tasks independently and explain answers with evidence.<br><br>
-      <strong>M</strong><br>
-      Complete tasks with guided support and partner discussion.<br><br>
-      <strong>L</strong><br>
-      Use sentence frames, key words, and teacher support.
-    </td>
-  </tr>
-  <tr>
-    <td><strong>E-Implementation Tool</strong></td>
-    <td>
-      <ul>
-        ${eTools.map(function(tool){
-          return '<li>' + escapeHtml(tool) + '</li>';
-        }).join('')}
-      </ul>
-    </td>
-  </tr>
-  <tr>
-    <td>${escapeHtml((plenaryStation && plenaryStation.time) || '5 mins')}</td>
-    <td>
-      <strong>Plenary / Closure</strong><br>
-      ${escapeHtml(plenaryStation
-        ? generateStationActivityText(plenaryStation, 0)
-        : 'Students complete a short closing task to reflect on the lesson and show their final understanding.')}
-    </td>
-  </tr>
-</table>
-
-<table>
-  <tr>
-    <td class="section-title" style="width:30%;">Learning Skills (please highlight)</td>
-    <td>
-      Independent Learners<br>
-      Critical Thinking<br>
-      Self-Learning<br>
-      Clear Communication<br>
-      Positive Interactions<br>
-      Research<br>
-      Collaboration<br>
-      Real World Connections<br>
-      Innovation
-    </td>
-  </tr>
-  <tr>
-    <td class="section-title">Cross Curricular (Links with other subjects)</td>
-    <td>Supports real-life understanding and connections with other subject knowledge.</td>
-  </tr>
-  <tr>
-    <td class="section-title">UAE Culture and Heritage (UAE Vision 2031)</td>
-    <td>Promotes responsible learning, awareness, positive values, and informed decision-making.</td>
-  </tr>
-</table>
-
-</body>
-</html>
-`;
-
-    const win = window.open('', '_blank');
-    if(!win){
-      alert('Popup blocked. Please allow popups for this page.');
-      return;
-    }
-
-    win.document.open();
-    win.document.write(html);
-    win.document.close();
-
-  } catch(err){
-    console.error('Lesson plan error:', err);
-    alert('Lesson plan error: ' + err.message);
-  }
-}
-
-function ratePlatform(stars){
-  const starContainer = document.getElementById('starRating');
-  if(!starContainer) return;
-
-  const starsEls = starContainer.querySelectorAll('span');
-
-  starsEls.forEach((s, i) => {
-    s.textContent = i < stars ? '★' : '☆';
-  });
-
-  localStorage.setItem('guestRating', stars);
-
-  const msg = document.getElementById('ratingMsg');
-
-  if(stars === 5){
-    msg.textContent = "Amazing! 🌟";
-  } else if(stars >= 4){
-    msg.textContent = "Thank you! 😊";
-  } else if(stars === 3){
-    msg.textContent = "Good 👍";
-  } else {
-    msg.textContent = "We’ll improve 💪";
-  }
-}
-
-window.addEventListener('load', function(){
-  const saved = localStorage.getItem('guestRating');
-  if(saved){
-    ratePlatform(parseInt(saved));
-  }
-});
-
-</script>
-
-<div id="lessonInfoPopup" class="lesson-popup hidden">
-  <div class="lesson-popup-card">
-    <h3>Before You Start Station 1</h3>
-    <p class="lesson-popup-msg">Read the objectives before starting Station 1.</p>
-
-    <div id="lessonPopupContent"></div>
-
-    <div class="btns" style="margin-top:14px;">
-      <button type="button" onclick="closeLessonInfoPopup()">Start Now</button>
-    </div>
-  </div>
-</div>
-
-<div id="imageModal" class="image-modal hidden"></div>
-
-</body>
-</html>
-
-
-
-<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
@@ -925,13 +594,39 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+    <div class="btns" style="margin-bottom:10px;">
+  <button class="secondary" onclick="spinStudent()">🎡 Spinner</button>
+</div>
+      <div id="spinnerBox" style="
+  display:none;
+  margin-top:10px;
+  padding:20px;
+  border-radius:16px;
+  background:#f5f7ff;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
+  text-align:center;
+">
+
+  <div style="font-weight:700;">🎡 Random Student</div>
+
+  <div id="spinnerName" style="font-size:26px; margin:15px 0;">
+    ---
+  </div>
+
+  <div style="display:flex; justify-content:center; gap:10px;">
+    <button onclick="addSpinnerBonus()">⭐ Add Bonus</button>
+    <button onclick="spinStudent()">🎡 Spin Again</button>
+  </div>
+
+</div>
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
         <div class="btns">
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
   <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
   <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-  
+  <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
+
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -1029,6 +724,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
   <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
   <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
+  <button type="button" onclick="spinStudent()">🎡 Pick Random Student</button> 
+  <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -1152,13 +849,10 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
 <script>
 
-  localStorage.clear();
-sessionStorage.clear();
-
   console.log('NEW VERSION LOADED 🚀'); 
   
   let storage = null;
-
+  
   function buildLessonInfoBoxHtml(){
   return (
     '<div class="lesson-info-box">' +
@@ -1236,6 +930,63 @@ sessionStorage.clear();
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
 };
 
+  window.spinStudent = function(){
+  try{
+    if(!liveStudents || Object.keys(liveStudents).length === 0){
+      alert('No students available');
+      return;
+    }
+
+    const students = Object.entries(liveStudents)
+      .map(function(entry){
+        return {
+          id: entry[0],
+          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+        };
+      });
+
+    if(!students.length){
+      alert('No students available');
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * students.length);
+    const selected = students[randomIndex];
+
+    selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
+
+    alert('🎉 Selected Student: ' + selected.name);
+  }catch(err){
+    console.error(err);
+    alert('Error selecting student');
+  }
+};
+  window.addSpinnerBonus = async function(){
+  try{
+    if(!selectedSpinnerStudentId){
+      alert('Please pick a student first.');
+      return;
+    }
+
+    const student = liveStudents[selectedSpinnerStudentId] || {};
+    const oldBonus = Number(student.bonus || 0);
+
+    await dbRef(studentPath(selectedSpinnerStudentId)).update({
+      bonus: oldBonus + 1
+    });
+
+    if(!liveStudents[selectedSpinnerStudentId]){
+      liveStudents[selectedSpinnerStudentId] = {};
+    }
+    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
+
+    alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
+  }catch(err){
+    console.error(err);
+    alert('Could not add bonus.');
+  }
+};
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -1476,6 +1227,8 @@ let teacherQuestionIndex = {};
   lessonObjectives: '',
   lessonKeywords: ''
 };
+  let selectedSpinnerStudentId = '';
+let selectedSpinnerStudentName = '';
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -1487,7 +1240,12 @@ function bonusPath(){ return lessonBase() + '/bonus'; }
 function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
-function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
+
+
+function getStationById(id){
+  return lessonStations.find(function(s){ return s.id === id; });
+}
+
 function getStationContent(id){
   return lessonContent[id] || {
     imageUrl:'',
@@ -1500,6 +1258,26 @@ function getStationContent(id){
     questions:[]
   };
 }
+
+window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!currentStudent || !currentStudent.id){
+      showNotice('studentNotice', 'Please log in again.', 'bad');
+      return;
+    }
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+
+    await dbRef(path).remove();
+
+    showNotice('studentNotice', 'Your request was removed.', 'warn');
+
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not remove your request.', 'bad');
+  }
+};
+
 function escapeHtml(str){ return String(str == null ? '' : str).replace(/[&<>"']/g, function(m){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 function escapeJs(str){ return String(str == null ? '' : str).replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 function dbRef(path){ return firebase.database(appInstance).ref(path); }
@@ -1783,6 +1561,40 @@ const initial = {
   }
 };
 
+  window.raiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+
+    await db.ref(path).set({
+      studentId: currentStudent.id,
+      studentName: currentStudent.name || 'Student',
+      clickedAt: Date.now(),
+      status: 'waiting'
+    });
+
+    showNotice('studentNotice', 'You asked to answer this question.', 'good');
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not save your request.', 'bad');
+  }
+};
+
+window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+    await db.ref(path).remove();
+
+    showNotice('studentNotice', 'Your request was removed.', 'warn');
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not remove your request.', 'bad');
+  }
+};
+
 window.openTeacherView = async function(){
    try{
     initFirebaseFromInputs();
@@ -2053,7 +1865,42 @@ window.unlockTeacherStation = async function(id){
   renderControlStatus();
   openTeacherStationPreview(id);
 };
+  
+window.spinStudent = function(){
+  try{
+    if(!liveStudents || Object.keys(liveStudents).length === 0){
+      alert('No students available');
+      return;
+    }
 
+    const students = Object.entries(liveStudents).map(function(entry){
+      return {
+        id: entry[0],
+        name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+      };
+    });
+
+    const randomIndex = Math.floor(Math.random() * students.length);
+    const selected = students[randomIndex];
+
+    selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
+
+    // Show box
+    const box = document.getElementById('spinnerBox');
+    const nameEl = document.getElementById('spinnerName');
+
+    if(box && nameEl){
+      box.style.display = 'block';
+      nameEl.textContent = selected.name;
+    }
+
+  }catch(err){
+    console.error(err);
+    alert('Error selecting student');
+  }
+};
+  
 window.lockTeacherStation = async function(id){
   if(!requireConnection()) return;
 
@@ -2131,6 +1978,19 @@ function renderStudentNav(){
     return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
   }).join('');
   top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
+}
+
+  function renderStudentQuestionRaiseButtons(stationId, questionIndex){
+  return `
+    <div class="question-hand-actions">
+      <button type="button" onclick="raiseHandForQuestion('${stationId}', ${questionIndex})">
+        🙋 I want to answer
+      </button>
+      <button type="button" class="ghostbtn" onclick="cancelRaiseHandForQuestion('${stationId}', ${questionIndex})">
+        Cancel
+      </button>
+    </div>
+  `;
 }
 
 function renderQuestion(q, stationId, index){
@@ -2232,7 +2092,11 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
+  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
+    '<div style="margin-top:10px;">' + body + '</div>' +
+    '<div class="feedback"></div>' +
+  '</div>';
 }
   
 window.openStation = function(id){
@@ -2478,11 +2342,13 @@ window.submitCurrentStation = async function(stationId){
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
-  // 1) block submit if time is up or station is locked
-  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
-    alert('⏰ Time is up. This station is locked and cannot be submitted.');
-    return;
-  }
+// ⛔ Timer/lock disabled for testing
+/*
+if(stationTimeLeft <= 0 || (station && !station.unlocked)){
+  alert('⏰ Time is up. This station is locked and cannot be submitted.');
+  return;
+}
+*/
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
@@ -3040,8 +2906,20 @@ window.unlockSelectedStation = async function(){
     : 'Station unlocked and timer started.', 'good');
 };
   
-window.lockSelectedStation = async function(){ if(!requireConnection()) return; const id = byId('controlStationSelect').value; if(id === 'starter'){ showNotice('controlNotice','Starter stays open by default.','warn'); return; } lessonStations = lessonStations.map(function(s){ return s.id === id ? Object.assign({}, s, {unlocked:false}) : s; }); await dbRef(configPath()).set(lessonStations); showNotice('controlNotice','Station locked.','warn'); };
-
+window.lockSelectedStation = async function(){
+  if(!requireConnection()) return;
+  const id = byId('controlStationSelect').value;
+  if(id === 'starter'){
+    showNotice('controlNotice','Starter stays open by default.','warn');
+    return;
+  }
+  lessonStations = lessonStations.map(function(s){
+    return s.id === id ? Object.assign({}, s, {unlocked:false}) : s;
+  });
+  await dbRef(configPath()).set(lessonStations);
+  showNotice('controlNotice','Station locked.','warn');
+};
+  
 window.handleCreatorImage = function(event){
   const file = event.target.files && event.target.files[0];
   if(!file) return;
@@ -3361,15 +3239,16 @@ window.clearAllCreatorQuestions = function(){
   const newNumber = lessonStations.length + 1;
   const newId = 'station_' + Date.now();
 
-  const newStation = {
-    id: newId,
-    title: 'New Station ' + newNumber,
-    objective: '',
-    details: '',
-    time: '',
-    displayed: false,
-    locked: true
-  };
+ const newStation = {
+  id: newId,
+  title: 'New Station ' + newNumber,
+  objective: '',
+  details: '',
+  time: '',
+  displayed: false,
+  unlocked: false,
+  timerStartedAt: null
+};
 
   lessonStations.push(newStation);
 
@@ -3662,39 +3541,12 @@ const text = stationTimeLeft > 0
 });
 }
 
-  async function autoLockStationByTimer(stationId){
-  if(!requireConnection()) return;
-  if(!stationId || stationId === 'starter') return;
-
-  const station = getStationById(stationId);
-  if(!station || !station.unlocked) return;
-
-  lessonStations = lessonStations.map(function(s){
-    if(s.id === stationId){
-      return Object.assign({}, s, {
-        unlocked: false,
-        displayed: false
-      });
-    }
-    return s;
-  });
-
-  await dbRef(configPath()).set(lessonStations);
-
-  renderControlStatus();
-  renderTeacherOverview();
-  renderStudentNav();
-  renderStationContent();
-
-  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
-}
   
   function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
 
   const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
-  let autoLocked = false;
 
   function tick(){
     if(stationId === 'starter'){
@@ -3715,47 +3567,16 @@ const text = stationTimeLeft > 0
     updateStationTimerDisplay();
 
     if(stationTimeLeft <= 0){
+      stationTimeLeft = 0;
+      updateStationTimerDisplay();
       stopStationTimer();
-
-      if(!autoLocked){
-        autoLocked = true;
-        autoLockStationByTimer(stationId);
-      }
+      return;
     }
   }
 
   tick();
   stationTimerInterval = setInterval(tick, 1000);
 }
-
-  async function autoLockStationByTimer(stationId){
-  if(!requireConnection()) return;
-  if(!stationId || stationId === 'starter') return;
-
-  lessonStations = lessonStations.map(function(s){
-    if(s.id === stationId){
-      return Object.assign({}, s, {
-        unlocked: false,
-        displayed: false,
-        timerStartedAt: null
-      });
-    }
-    return s;
-  });
-
-  currentTimedStationId = null;
-  stationTimeLeft = 0;
-
-  await dbRef(configPath()).set(lessonStations);
-
-  renderControlStatus();
-  renderTeacherOverview();
-  renderStudentNav();
-  renderStationContent();
-
-  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
-}
-  
 function downloadLessonPlan(){
   try{
     const stationsSource =
