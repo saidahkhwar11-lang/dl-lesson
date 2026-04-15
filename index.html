@@ -8,6 +8,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Grade 9 English Lesson</title>
   <style>
+    
   .lesson-popup{
   position:fixed;
   inset:0;
@@ -329,8 +330,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
 .station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
 .tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
-.reading-img{
+  .bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999}
+  .hidden{display:none!important}
+  .reading-img{
   width:100%;
   max-height:420px;
   object-fit:contain;
@@ -611,8 +613,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       </div>
     </div>
 
-    <div id="spinnerPopup" class="bonus-popup hidden">
-      <div class="bonus-popup-header">
+  <div id="spinnerPopup" class="bonus-popup">
+  <div class="bonus-popup-header">
         <span>🎡 Spinner</span>
         <button type="button" class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">✖</button>
       </div>
@@ -899,7 +901,12 @@ let selectedSpinnerStudentName = '';
 window.toggleSpinnerPopup = function(){
   const box = byId('spinnerPopup');
   if(!box) return;
-  box.classList.toggle('hidden');
+
+  if(box.style.display === 'block'){
+    box.style.display = 'none';
+  } else {
+    box.style.display = 'block';
+  }
 };
 
 window.spinStudent = function(){
@@ -936,7 +943,7 @@ window.spinStudent = function(){
     const popup = byId('spinnerPopup');
     const nameEl = byId('spinnerSelectedName');
 
-    if(popup) popup.classList.remove('hidden');
+    if(popup) popup.style.display = 'block';
     if(nameEl) nameEl.textContent = selected.name;
 
   }catch(err){
@@ -1009,7 +1016,7 @@ window.addSpinnerBonus = async function(){
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
 };
 
-  window.spinStudent = function(){
+ window.spinStudent = function(){
   try{
     if(!liveStudents || Object.keys(liveStudents).length === 0){
       alert('No students available');
@@ -1022,6 +1029,9 @@ window.addSpinnerBonus = async function(){
           id: entry[0],
           name: entry[1] && entry[1].name ? entry[1].name : 'Student'
         };
+      })
+      .filter(function(s){
+        return s.name && s.name.trim();
       });
 
     if(!students.length){
@@ -1035,13 +1045,17 @@ window.addSpinnerBonus = async function(){
     selectedSpinnerStudentId = selected.id;
     selectedSpinnerStudentName = selected.name;
 
-    alert('🎉 Selected Student: ' + selected.name);
+    const popup = byId('spinnerPopup');
+    const nameEl = byId('spinnerSelectedName');
+
+    if(popup) popup.style.display = 'block';
+    if(nameEl) nameEl.textContent = selected.name;
+
   }catch(err){
-    console.error(err);
+    console.error('spinStudent error:', err);
     alert('Error selecting student');
   }
 };
-
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
