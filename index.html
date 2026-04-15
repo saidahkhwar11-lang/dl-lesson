@@ -591,57 +591,61 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 
   <div id="teacherView" class="hidden">
-    <div id="spinnerPopup" class="spinner-popup hidden">
-  <div class="spinner-header">
-    <span>🎡 Lucky Student</span>
-    <button type="button" class="spinner-close" onclick="toggleSpinnerPopup()">✕</button>
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
   </div>
 
-  <div class="spinner-body">
-    <div id="spinnerName" class="spinner-name">---</div>
-
-    <div class="spinner-actions">
-      <button type="button" class="spinner-btn" onclick="spinStudent()">🎡 Spin</button>
-      <button type="button" class="spinner-btn bonus-btn" onclick="addSpinnerBonus()">⭐ Bonus</button>
-    </div>
-  </div>
-</div>
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
-    <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
-    <div class="btns" style="margin-bottom:10px;">
-<button class="secondary" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
-    </div>
-
-  <div style="display:flex; justify-content:center; gap:10px;">
-    <button onclick="addSpinnerBonus()">⭐ Add Bonus</button>
-    <button onclick="spinStudent()">🎡 Spin Again</button>
-    <button onclick="toggleSpinnerPopup()">🎡 Spinner</button>
+  <div class="card" style="margin-bottom:12px;">
+    <h2 style="margin:0 0 8px 0;">Teacher View</h2>
+    <div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div>
   </div>
 
-</div>
-      <div class="btns" style="justify-content:space-between;align-items:center;">
-        <h2 style="margin:0;">Lesson Stations</h2>
-        <div class="btns">
-  <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-<button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-<button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-<button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
-</div>
+  <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+    <div class="btns" style="justify-content:space-between;align-items:center;">
+      <h2 style="margin:0;">Lesson Stations</h2>
+      <div class="btns">
+        <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
+        <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+        <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+        <button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
       </div>
-      <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
-      <div id="teacherOverviewStations" class="top-bar"></div>
-<div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
-  <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
-  <div id="topStudentsList" class="small">No data yet.</div>
-</div>
-      <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
-  <h2 style="margin-top:0;">Station Presentation</h2>
-  <div id="teacherStationPreview" class="teacher-preview-empty">
-    Click any station box above to open its picture, objective, time, questions, and controls.
+    </div>
+
+    <div id="spinnerPopup" class="bonus-popup hidden">
+      <div class="bonus-popup-header">
+        <span>🎡 Spinner</span>
+        <button type="button" class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">✖</button>
+      </div>
+
+      <div class="bonus-popup-body" style="text-align:center;">
+        <div id="spinnerSelectedName" style="font-size:28px; font-weight:800; margin:16px 0; color:#355fa8;">
+          ---
+        </div>
+
+        <div class="btns" style="justify-content:center; gap:10px;">
+          <button type="button" onclick="spinStudent()">🎡 Spin Again</button>
+          <button type="button" onclick="addSpinnerBonus()">⭐ Add Bonus</button>
+        </div>
+      </div>
+    </div>
+
+    <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+
+    <div id="teacherOverviewStations" class="top-bar"></div>
+
+    <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
+      <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
+      <div id="topStudentsList" class="small">No data yet.</div>
+    </div>
+  </div>
+
+  <div id="teacherStationPreviewCard" class="card" style="margin-top:12px;">
+    <h2 style="margin-top:0;">Station Presentation</h2>
+    <div id="teacherStationPreview" class="teacher-preview-empty">
+      Click any station box above to open its picture, objective, time, questions, and controls.
+    </div>
   </div>
 </div>
-
     <div class="section-tabs">
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
   <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
@@ -891,6 +895,79 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   alert('Old lesson cleared. Reload now.');
 };
 
+  window.toggleSpinnerPopup = function(){
+  const box = byId('spinnerPopup');
+  if(!box) return;
+  box.classList.toggle('hidden');
+};
+
+window.spinStudent = function(){
+  try{
+    if(!liveStudents || Object.keys(liveStudents).length === 0){
+      alert('No students available');
+      return;
+    }
+
+    const students = Object.entries(liveStudents)
+      .map(function(entry){
+        return {
+          id: entry[0],
+          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+        };
+      })
+      .filter(function(s){
+        return s.name && s.name.trim();
+      });
+
+    if(!students.length){
+      alert('No students available');
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * students.length);
+    const selected = students[randomIndex];
+
+    selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
+
+    const nameEl = byId('spinnerSelectedName');
+    if(nameEl){
+      nameEl.textContent = selected.name;
+    }
+
+  }catch(err){
+    console.error(err);
+    alert('Error selecting student');
+  }
+};
+
+window.addSpinnerBonus = async function(){
+  try{
+    if(!selectedSpinnerStudentId){
+      alert('Please spin first.');
+      return;
+    }
+
+    const student = liveStudents[selectedSpinnerStudentId] || {};
+    const oldBonus = Number(student.bonus || 0);
+
+    await dbRef(studentPath(selectedSpinnerStudentId)).update({
+      bonus: oldBonus + 1
+    });
+
+    if(!liveStudents[selectedSpinnerStudentId]){
+      liveStudents[selectedSpinnerStudentId] = {};
+    }
+    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
+
+    alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
+
+  }catch(err){
+    console.error(err);
+    alert('Could not add bonus.');
+  }
+};
+
   window.moveCurrentStationUp = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -962,31 +1039,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     alert('Error selecting student');
   }
 };
-  window.addSpinnerBonus = async function(){
-  try{
-    if(!selectedSpinnerStudentId){
-      alert('Please pick a student first.');
-      return;
-    }
 
-    const student = liveStudents[selectedSpinnerStudentId] || {};
-    const oldBonus = Number(student.bonus || 0);
-
-    await dbRef(studentPath(selectedSpinnerStudentId)).update({
-      bonus: oldBonus + 1
-    });
-
-    if(!liveStudents[selectedSpinnerStudentId]){
-      liveStudents[selectedSpinnerStudentId] = {};
-    }
-    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
-
-    alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
-  }catch(err){
-    console.error(err);
-    alert('Could not add bonus.');
-  }
-};
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -1222,13 +1275,15 @@ let teacherTrackerRef = null, teacherBonusRef = null, studentBonusRef = null, st
 let creatorDraftQuestions = [];
 let teacherQuestionVisibility = {};
 let teacherQuestionIndex = {};
+
+let selectedSpinnerStudentId = '';
+let selectedSpinnerStudentName = '';
   let lessonMeta = {
   lessonTitle: '',
   lessonObjectives: '',
   lessonKeywords: ''
 };
-  let selectedSpinnerStudentId = '';
-let selectedSpinnerStudentName = '';
+  
 
 function byId(id){ return document.getElementById(id); }
 function showNotice(id,msg,type){ const el = byId(id); if(!el) return; el.className = 'notice ' + (type || 'good'); el.textContent = msg; el.classList.remove('hidden'); }
@@ -1628,11 +1683,6 @@ window.openTeacherView = async function(){
   }
 };
 
-  window.toggleSpinnerPopup = function(){
-  const box = document.getElementById('spinnerPopup');
-  if(!box) return;
-  box.classList.toggle('hidden');
-};
 
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
   
@@ -1870,41 +1920,6 @@ window.unlockTeacherStation = async function(id){
   renderTeacherOverview();
   renderControlStatus();
   openTeacherStationPreview(id);
-};
-  
-window.spinStudent = function(){
-  try{
-    if(!liveStudents || Object.keys(liveStudents).length === 0){
-      alert('No students available');
-      return;
-    }
-
-    const students = Object.entries(liveStudents).map(function(entry){
-      return {
-        id: entry[0],
-        name: entry[1] && entry[1].name ? entry[1].name : 'Student'
-      };
-    });
-
-    const randomIndex = Math.floor(Math.random() * students.length);
-    const selected = students[randomIndex];
-
-    selectedSpinnerStudentId = selected.id;
-    selectedSpinnerStudentName = selected.name;
-
-    // Show box
-    const box = document.getElementById('spinnerBox');
-    const nameEl = document.getElementById('spinnerName');
-
-    if(box && nameEl){
-      box.style.display = 'block';
-      nameEl.textContent = selected.name;
-    }
-
-  }catch(err){
-    console.error(err);
-    alert('Error selecting student');
-  }
 };
   
 window.lockTeacherStation = async function(id){
@@ -3868,83 +3883,6 @@ padding-left: 18px;
     width:68px;
     height:auto;
   }
-  .spinner-popup{
-  position: fixed;
-  top: 100px;
-  right: 20px;
-  width: 320px;
-  background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.18);
-  z-index: 9999;
-  overflow: hidden;
-  border: 1px solid #e8ecf7;
-}
-
-.spinner-header{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #eef3ff, #e6edff);
-  font-weight: 700;
-  color: #355fa8;
-}
-
-.spinner-close{
-  width: auto !important;
-  min-width: 36px;
-  padding: 4px 10px;
-  border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: #355fa8;
-  font-size: 18px;
-  cursor: pointer;
-  box-shadow: none;
-}
-
-.spinner-body{
-  padding: 18px 16px 16px;
-  text-align: center;
-}
-
-.spinner-name{
-  font-size: 28px;
-  font-weight: 800;
-  color: #4b63c6;
-  margin: 10px 0 18px;
-  min-height: 40px;
-}
-
-.spinner-actions{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.spinner-btn{
-  width: auto !important;
-  min-width: 110px;
-  padding: 10px 16px;
-  border: none;
-  border-radius: 12px;
-  background: #4b63c6;
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(75,99,198,0.22);
-}
-
-.spinner-btn:hover{
-  transform: translateY(-1px);
-}
-
-.bonus-btn{
-  background: #f3b233;
-  box-shadow: 0 8px 18px rgba(243,178,51,0.22);
-}
 
 .hidden{
   display:none !important;
