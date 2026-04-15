@@ -662,7 +662,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       Click any station box above to open its picture, objective, time, questions, and controls.
     </div>
   </div>
-</div>
     
     <div class="section-tabs">
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
@@ -3823,13 +3822,17 @@ function downloadLessonPlan(){
 <meta charset="UTF-8">
 <title>Lesson Plan - ${escapeHtml(lessonTitle)}</title>
 <style>
-  body{
-    font-family: Arial, sans-serif;
-    padding: 22px;
-    color: #222;
-    line-height: 1.5;
-    background: #fff;
-  }
+ body{
+  font-family: Arial, sans-serif;
+  padding: 22px;
+  color: #222;
+  line-height: 1.5;
+  background: #fff;
+}
+
+.hidden{
+  display:none;
+}
   table{
     width: 100%;
     border-collapse: collapse;
@@ -3841,6 +3844,7 @@ function downloadLessonPlan(){
     vertical-align: top;
     font-size: 14px;
   }
+
   .spinner-popup{
   position:fixed;
   top:18px;
@@ -3926,69 +3930,7 @@ padding-left: 18px;
 .hidden{
   display:none !important;
 }
-  .spinner-popup{
-  position: fixed;
-  top: 120px;
-  right: 20px;
-  width: 300px;
-  border-radius: 20px;
-  background: linear-gradient(135deg, #f8f9ff, #eef2ff);
-  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
-  z-index: 9999;
-  overflow: hidden;
-  animation: fadeIn 0.3s ease;
-}
-
-.spinner-header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:12px 16px;
-  font-weight:700;
-  background:#e0e7ff;
-}
-
-.spinner-header button{
-  border:none;
-  background:transparent;
-  font-size:18px;
-  cursor:pointer;
-}
-
-.spinner-body{
-  padding:20px;
-  text-align:center;
-}
-
-.spinner-name{
-  font-size:28px;
-  font-weight:800;
-  margin:15px 0;
-  color:#4f46e5;
-  transition: all 0.3s ease;
-}
-
-.spinner-actions{
-  display:flex;
-  justify-content:center;
-  gap:10px;
-}
-
-.spinner-actions button{
-  padding:8px 14px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background:#6366f1;
-  color:white;
-  font-weight:600;
-  transition:0.2s;
-}
-
-.spinner-actions button:hover{
-  transform:scale(1.05);
-}
-
+ 
 .bonus-btn{
   background:#f59e0b;
 }
