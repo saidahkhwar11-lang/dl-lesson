@@ -821,9 +821,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
 <script>
 
-  localStorage.clear();
-sessionStorage.clear();
-
   console.log('NEW VERSION LOADED 🚀'); 
   
   let storage = null;
@@ -1157,13 +1154,7 @@ function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
 
-function getQuestionRaisePath(stationId, questionIndex){
-  return `lessons/${lessonKey}/raises/${stationId}/q_${questionIndex}`;
-}
 
-window.raiseHandForQuestion = async function(stationId, questionIndex){
-  alert('FUNCTION STARTED NEW VERSION');
-};
 function getStationById(id){
   return lessonStations.find(function(s){ return s.id === id; });
 }
@@ -1982,12 +1973,6 @@ function renderQuestion(q, stationId, index){
   return '<div class="question" id="q_' + stationId + '_' + index + '">' +
     '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
     '<div style="margin-top:10px;">' + body + '</div>' +
-
-    '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
-    '<button type="button" onclick="alert(\'RAISE BUTTON CLICKED\'); alert(typeof window.raiseHandForQuestion); window.raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
-'<button type="button" onclick="alert(\'CANCEL BUTTON CLICKED\'); alert(typeof window.cancelRaiseHandForQuestion); window.cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
-    '</div>' +
-
     '<div class="feedback"></div>' +
   '</div>';
 }
