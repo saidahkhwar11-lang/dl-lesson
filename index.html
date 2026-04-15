@@ -634,12 +634,25 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   flex-wrap:wrap;
 ">
 
-  <!-- Student Login -->
-  <div class="card" style="
-  width:300px;
-  position:relative;
-  overflow:hidden;
-">
+  <div class="card" style="width:300px; position:relative; overflow:hidden;">
+    <h2>Student Login</h2>
+    <label>Student Name</label>
+    <input id="studentName" placeholder="Enter student name" />
+    <label>Student ID</label>
+    <input id="studentId" placeholder="Enter student ID" />
+    <button id="studentStartBtn" onclick="window.startStudentSession()">Start Student Session</button>
+    <div id="studentNotice" class="notice bad hidden"></div>
+  </div>
+
+  <div class="card" style="width:300px; position:relative; overflow:hidden;">
+    <h2>Teacher View</h2>
+    <label>Teacher Password</label>
+    <input id="teacherPassword" type="password" placeholder="Enter password" />
+    <button id="teacherOpenBtn" onclick="window.openTeacherView()">Open Teacher View</button>
+    <div id="teacherNotice" class="notice bad hidden"></div>
+  </div>
+
+</div>
     <h2>Student Login</h2>
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
@@ -708,6 +721,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
 
   <div id="teacherView" class="hidden">
+    <div id="teacherTrackerCard" class="card"></div>
+<div id="teacherControlCard" class="card hidden"></div>
+<div id="teacherCreatorCard" class="card hidden"></div>
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
@@ -1258,9 +1274,43 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
-window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
+function showOnly(viewId){
+  ['studentView','teacherView'].forEach(function(id){
+    const el = byId(id);
+    if(el) el.classList.add('hidden');
+  });
+
+  const target = byId(viewId);
+  if(target) target.classList.remove('hidden');
+
+  const home = byId('homeRow');
+  if(home) home.classList.add('hidden');
+
+  window.scrollTo(0,0);
+}
+
+  window.backToHome = function(){
+  sessionStorage.removeItem('dl_role');
+  sessionStorage.removeItem('dl_student_name');
+  sessionStorage.removeItem('dl_student_id');
+
+  const studentView = byId('studentView');
+  const teacherView = byId('teacherView');
+  const homeRow = byId('homeRow');
+  const trackerCard = byId('teacherTrackerCard');
+  const controlCard = byId('teacherControlCard');
+  const creatorCard = byId('teacherCreatorCard');
+
+  if(studentView) studentView.classList.add('hidden');
+  if(teacherView) teacherView.classList.add('hidden');
+  if(homeRow) homeRow.classList.remove('hidden');
+  if(trackerCard) trackerCard.classList.remove('hidden');
+  if(controlCard) controlCard.classList.add('hidden');
+  if(creatorCard) creatorCard.classList.add('hidden');
+
+  window.scrollTo(0,0);
+};
+  window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
   if(!src) return;
