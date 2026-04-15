@@ -693,9 +693,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <h2>Lesson Creator</h2>
       <label>Select Station</label>
       <select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
-      <div class="btns" style="margin-top:8px;">
+     <div class="btns" style="margin-top:8px;">
   <button type="button" onclick="addNewStation()">➕ Add Station</button>
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
+  <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
+  <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -854,6 +856,45 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     '</div>'
   );
 }
+
+  window.removeCurrentStation = async function(){
+  const select = byId('creatorStationSelect');
+  if(!select) return;
+
+  const stationId = select.value;
+  if(!stationId) return;
+
+  if(stationId === 'starter'){
+    alert('Starter station cannot be deleted.');
+    return;
+  }
+
+  if(!confirm('Are you sure you want to delete this station?')) return;
+
+  lessonStations = lessonStations.filter(function(s){
+    return s.id !== stationId;
+  });
+
+  if(lessonContent && lessonContent[stationId]){
+    delete lessonContent[stationId];
+  }
+
+  await dbRef(configPath()).set(lessonStations);
+  await dbRef(contentPath()).set(lessonContent);
+
+  fillTeacherSelects();
+
+  const nextId = (lessonStations[0] && lessonStations[0].id) || 'starter';
+  byId('creatorStationSelect').value = nextId;
+
+  loadCreatorStation();
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+  renderStudentNav();
+
+  showNotice('creatorNotice', 'Station removed successfully.', 'good');
+};
 
   function getSelfEvalValue(stationId){
   if(!currentStudent || !liveStudents[currentStudent.id]) return '';
