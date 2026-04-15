@@ -268,42 +268,114 @@
   border-radius:8px;
   font-size:12px;
 }
-:root{--bg:#f5f7fb;--card:#fff;--line:#d9e2f2;--text:#23324a;--muted:#5f6f89;--primary:#2f5ea8;--primary2:#3f76c7;--accent:#f39a2d;--good:#1f8f5f;--bad:#c63d3d;--warn:#b47a00}
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
-.hidden{display:none!important}
-.wrap{max-width:1440px;margin:0 auto;padding:18px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
-
- #starRating span {
-  display: inline-block;
-  transition: color 0.2s ease, transform 0.15s ease;
+:root{
+  --bg:#f5f7fb;
+  --card:#fff;
+  --line:#d9e2f2;
+  --text:#23324a;
+  --muted:#5f6f89;
+  --primary:#2f5ea8;
+  --primary2:#3f76c7;
+  --accent:#f39a2d;
+  --good:#1f8f5f;
+  --bad:#c63d3d;
+  --warn:#b47a00;
 }
 
-#starRating span:hover {
-  color: #ffcc66;
-  transform: scale(1.15) rotate(-6deg);
+*{
+  box-sizing:border-box;
 }
 
+body{
+  margin:0;
+  font-family:Arial,Helvetica,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* ✅ keep ONLY ONE hidden */
+.hidden{
+  display:none !important;
+}
+
+/* BONUS POPUP */
+.bonus-popup{
+  position:fixed;
+  top:18px;
+  right:18px;
+  width:320px;
+  max-height:80vh;
+  overflow:auto;
+  padding:14px;
+  background:#fff;
+  border:2px solid var(--accent);
+  border-radius:16px;
+  box-shadow:0 8px 24px rgba(30,60,120,.18);
+  z-index:9999;
+  display:none;
+}
+
+/* SPINNER POPUP */
+.spinner-popup{
+  position:fixed;
+  top:18px;
+  right:18px;
+  width:320px;
+  max-height:80vh;
+  overflow:auto;
+  padding:14px;
+  background:#fff;
+  border:2px solid var(--accent);
+  border-radius:16px;
+  box-shadow:0 8px 24px rgba(30,60,120,.18);
+  z-index:9999;
+}
+
+.wrap{
+  max-width:1440px;
+  margin:0 auto;
+  padding:18px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 8px 24px rgba(30,60,120,.08);
+}
+
+/* ⭐ rating */
+#starRating span{
+  display:inline-block;
+  transition:color 0.2s ease, transform 0.15s ease;
+}
+
+#starRating span:hover{
+  color:#ffcc66;
+  transform:scale(1.15) rotate(-6deg);
+}
+
+/* HERO */
 .hero{
-  background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
-  color: #4a5fa8;
-  border-radius: 24px;
-  padding: 10px 16px;
-  margin-bottom: 10px;
-  box-shadow: 0 6px 20px rgba(120,130,200,0.06);
-  line-height: 1.4;
+  background:linear-gradient(180deg,#ffffff 0%, #fbfbff 100%);
+  color:#4a5fa8;
+  border-radius:24px;
+  padding:10px 16px;
+  margin-bottom:10px;
+  box-shadow:0 6px 20px rgba(120,130,200,0.06);
+  line-height:1.4;
 }
 
 .hero h1{
-  margin: 0 0 4px;
-  color: #5b6fb5;
-  font-size: 18px;
+  margin:0 0 4px;
+  color:#5b6fb5;
+  font-size:18px;
 }
 
 .hero p{
-  margin: 2px 0 0;
-  color: #6a6f85;
+  margin:2px 0 0;
+  color:#6a6f85;
 }
 .row{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
 .btns{display:flex;gap:10px;flex-wrap:wrap}.btns button{width:auto}
@@ -330,23 +402,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
 .station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
 .tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:6px;text-align:left;font-size:13px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
-.bonus-popup{
-  position:fixed;
-  top:18px;
-  right:18px;
-  width:320px;
-  max-height:80vh;
-  overflow:auto;
-  padding:14px;
-  background:#fff;
-  border:2px solid var(--accent);
-  border-radius:16px;
-  box-shadow:0 8px 24px rgba(30,60,120,.18);
-  z-index:9999;
-  display:none;
-}
-  .hidden{
-  display:none !important;
 }
   .reading-img{
   width:100%;
