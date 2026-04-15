@@ -857,6 +857,12 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   );
 }
 
+  window.clearOldLesson = function(){
+  localStorage.removeItem('DL_lesson_key');
+  sessionStorage.clear();
+  alert('Old lesson cleared. Reload now.');
+};
+
   window.moveCurrentStationUp = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
