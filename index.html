@@ -591,31 +591,34 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </div>
 
   <div id="teacherView" class="hidden">
+    <div id="spinnerPopup" class="spinner-popup hidden">
+  <div class="spinner-header">
+    🎡 Lucky Student
+    <button type="button" onclick="toggleSpinnerPopup()">✖</button>
+  </div>
+
+  <div class="spinner-body">
+    <div id="spinnerName" class="spinner-name">
+      ---
+    </div>
+
+    <div class="spinner-actions">
+      <button type="button" onclick="spinStudent()">🎡 Spin</button>
+      <button type="button" class="bonus-btn" onclick="addSpinnerBonus()">⭐ Bonus</button>
+    </div>
+  </div>
+</div>
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
     <div class="btns" style="margin-bottom:10px;">
-  <button class="secondary" onclick="spinStudent()">🎡 Spinner</button>
-</div>
-      <div id="spinnerBox" style="
-  display:none;
-  margin-top:10px;
-  padding:20px;
-  border-radius:16px;
-  background:#f5f7ff;
-  box-shadow:0 10px 25px rgba(0,0,0,0.1);
-  text-align:center;
-">
-
-  <div style="font-weight:700;">🎡 Random Student</div>
-
-  <div id="spinnerName" style="font-size:26px; margin:15px 0;">
-    ---
-  </div>
+<button class="secondary" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
+    </div>
 
   <div style="display:flex; justify-content:center; gap:10px;">
     <button onclick="addSpinnerBonus()">⭐ Add Bonus</button>
     <button onclick="spinStudent()">🎡 Spin Again</button>
+    <button onclick="toggleSpinnerPopup()">🎡 Spinner</button>
   </div>
 
 </div>
@@ -623,10 +626,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
         <h2 style="margin:0;">Lesson Stations</h2>
         <div class="btns">
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-  <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
-
+<button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+<button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+<button class="secondary" style="width:auto" onclick="toggleSpinnerPopup()">🎡 Spinner</button>
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -1626,6 +1628,12 @@ window.openTeacherView = async function(){
     byId('teacherView').classList.add('hidden');
     byId('homeRow').classList.remove('hidden');
   }
+};
+
+  window.toggleSpinnerPopup = function(){
+  const box = document.getElementById('spinnerPopup');
+  if(!box) return;
+  box.classList.toggle('hidden');
 };
 
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
@@ -3862,6 +3870,77 @@ padding-left: 18px;
     width:68px;
     height:auto;
   }
+  .spinner-popup{
+  position: fixed;
+  top: 120px;
+  right: 20px;
+  width: 300px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f8f9ff, #eef2ff);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+  z-index: 9999;
+  overflow: hidden;
+  animation: fadeIn 0.3s ease;
+}
+
+.spinner-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 16px;
+  font-weight:700;
+  background:#e0e7ff;
+}
+
+.spinner-header button{
+  border:none;
+  background:transparent;
+  font-size:18px;
+  cursor:pointer;
+}
+
+.spinner-body{
+  padding:20px;
+  text-align:center;
+}
+
+.spinner-name{
+  font-size:28px;
+  font-weight:800;
+  margin:15px 0;
+  color:#4f46e5;
+  transition: all 0.3s ease;
+}
+
+.spinner-actions{
+  display:flex;
+  justify-content:center;
+  gap:10px;
+}
+
+.spinner-actions button{
+  padding:8px 14px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+  background:#6366f1;
+  color:white;
+  font-weight:600;
+  transition:0.2s;
+}
+
+.spinner-actions button:hover{
+  transform:scale(1.05);
+}
+
+.bonus-btn{
+  background:#f59e0b;
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:translateY(-10px);}
+  to{opacity:1; transform:translateY(0);}
+}
   .lp-school{
     font-size:20px;
     font-weight:bold;
