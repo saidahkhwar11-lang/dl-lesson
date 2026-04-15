@@ -18,19 +18,6 @@
   z-index:9999;
 }
 
-  .activity-main-img{
-  display:block;
-  width:auto;
-  max-width:180px;   /* 👈 smaller size */
-  max-height:90px;
-  object-fit:contain;
-  border-radius:10px;
-  border:1px solid #e6ecf7;
-  background:#fafcff;
-  padding:4px;
-  margin:6px 0 12px;
-}
-
  .station-live-timer{
   display:inline-flex;
   align-items:center;
@@ -94,18 +81,7 @@
   transform: translateY(-1px);
   box-shadow: 0 6px 14px rgba(0,0,0,0.16);
 }
-.reading-img{
-  display:block;
-  width:auto;
-  max-width:180px;   /* 👈 control size here */
-  max-height:100px;
-  object-fit:contain;
-  border-radius:10px;
-  border:1px solid #e6ecf7;
-  background:#fafcff;
-  padding:4px;
-  margin:6px 0 12px;
-}
+
 .lesson-plan-btn:active{
   transform: translateY(0);
 }
@@ -273,111 +249,6 @@
   gap:6px;
 }
 
-    .student-layout{
-  display:grid;
-  grid-template-columns:330px 1fr;
-  gap:16px;
-  margin-top:16px;
-}
-
-.sidebar{
-  background:#fff;
-  border:1px solid var(--line);
-  border-radius:16px;
-  padding:12px;
-}
-
-.station-side-head{
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-  margin-bottom:12px;
-}
-
-.station-side-title{
-  font-size:18px;
-  font-weight:800;
-  color:#5b6fb5;
-  line-height:1.4;
-}
-
-.station-side-meta{
-  display:inline-block;
-  width:fit-content;
-  font-size:12px;
-  color:#7f88a8;
-  background:#f7f9ff;
-  border:1px solid #e4ebff;
-  padding:6px 12px;
-  border-radius:999px;
-}
-
-.station-side-timer{
-  display:inline-block;
-  width:fit-content;
-  background:linear-gradient(135deg,#eef3ff,#f8fbff);
-  color:#5f74b8;
-  font-weight:800;
-  padding:8px 14px;
-  border-radius:999px;
-  font-size:15px;
-  border:1px solid #dfe7ff;
-  box-shadow:0 3px 8px rgba(120,130,200,0.10);
-}
-
-.lesson-side-section{
-  background:#fbfcff;
-  border:1px solid #edf1fb;
-  padding:12px;
-  border-radius:14px;
-  margin-bottom:10px;
-}
-
-.lesson-label{
-  display:inline-block;
-  background:#eef5ff;
-  padding:5px 10px;
-  border-radius:10px;
-  font-size:12px;
-  font-weight:700;
-  color:#4f6fc7;
-  margin-bottom:8px;
-}
-
-.lesson-title-red{
-  color:#e74c3c;
-  font-weight:700;
-  font-size:15px;
-  line-height:1.5;
-}
-
-.student-obj{
-  background:#f4f8ff;
-  border:1px solid #e3ecff;
-  border-radius:12px;
-  padding:7px 10px;
-  margin:6px 0;
-  font-size:13px;
-  color:#4f6fc7;
-  line-height:1.5;
-}
-
-.student-tag{
-  display:inline-block;
-  background:#eef3ff;
-  color:#5f74b8;
-  padding:5px 10px;
-  border-radius:999px;
-  font-size:12px;
-  margin:4px 4px 0 0;
-}
-
-@media (max-width:980px){
-  .student-layout{
-    grid-template-columns:1fr;
-  }
-}
-  
 .lesson-list li::before{
   content:"✔";
   color:#2ecc71;
@@ -634,25 +505,12 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   flex-wrap:wrap;
 ">
 
-  <div class="card" style="width:300px; position:relative; overflow:hidden;">
-    <h2>Student Login</h2>
-    <label>Student Name</label>
-    <input id="studentName" placeholder="Enter student name" />
-    <label>Student ID</label>
-    <input id="studentId" placeholder="Enter student ID" />
-    <button id="studentStartBtn" onclick="window.startStudentSession()">Start Student Session</button>
-    <div id="studentNotice" class="notice bad hidden"></div>
-  </div>
-
-  <div class="card" style="width:300px; position:relative; overflow:hidden;">
-    <h2>Teacher View</h2>
-    <label>Teacher Password</label>
-    <input id="teacherPassword" type="password" placeholder="Enter password" />
-    <button id="teacherOpenBtn" onclick="window.openTeacherView()">Open Teacher View</button>
-    <div id="teacherNotice" class="notice bad hidden"></div>
-  </div>
-
-</div>
+  <!-- Student Login -->
+  <div class="card" style="
+  width:300px;
+  position:relative;
+  overflow:hidden;
+">
     <h2>Student Login</h2>
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
@@ -719,11 +577,20 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     📄 Download Lesson Plan
   </button>
 </div>
+  <div id="studentView" class="hidden">
+    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
+    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
+    <div class="top-bar" id="topStations"></div>
+    <div class="student-layout">
+      <div class="sidebar">
+        <h3 style="margin-top:0">Stations</h3>
+        <div id="stationList"></div>
+      </div>
+      <div class="main" id="stationContent"></div>
+    </div>
+  </div>
 
   <div id="teacherView" class="hidden">
-    <div id="teacherTrackerCard" class="card"></div>
-<div id="teacherControlCard" class="card hidden"></div>
-<div id="teacherCreatorCard" class="card hidden"></div>
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
@@ -824,13 +691,11 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
 <hr>
       <h2>Lesson Creator</h2>
-<label>Select Station</label>
-<select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
-<div class="btns" style="margin-top:8px;">
+      <label>Select Station</label>
+      <select id="creatorStationSelect" onchange="loadCreatorStation()"></select>
+      <div class="btns" style="margin-top:8px;">
   <button type="button" onclick="addNewStation()">➕ Add Station</button>
   <button type="button" class="warnbtn" onclick="removeCurrentStation()">🗑 Remove Station</button>
-  <button type="button" class="secondary" onclick="moveCurrentStationUp()">⬆ Move Up</button>
-  <button type="button" class="secondary" onclick="moveCurrentStationDown()">⬇ Move Down</button>
 </div>
       <div class="creator-grid" style="margin-top:12px;">
         <div>
@@ -1017,47 +882,6 @@ window.saveSelfEvaluation = async function(stationId, value){
   if(typeof renderTeacherTracker === 'function'){
     renderTeacherTracker();
   }
-};
-
-  window.removeCurrentStation = async function(){
-  const select = byId('creatorStationSelect');
-  if(!select) return;
-
-  const id = select.value;
-  if(!id) return;
-
-  if(id === 'starter'){
-    showNotice('creatorNotice', 'Starter station cannot be removed.', 'warn');
-    return;
-  }
-
-  const station = getStationById(id);
-  const stationTitle = station ? station.title : id;
-
-  if(!confirm('Remove this station: ' + stationTitle + '?')) return;
-
-  lessonStations = lessonStations.filter(function(s){
-    return s.id !== id;
-  });
-
-  if(lessonContent && lessonContent[id]){
-    delete lessonContent[id];
-  }
-
-  await dbRef(configPath()).set(lessonStations);
-  await dbRef(contentPath()).set(lessonContent);
-
-  fillTeacherSelects();
-
-  const nextId = (lessonStations[0] && lessonStations[0].id) || 'starter';
-  if(select) select.value = nextId;
-
-  loadCreatorStation();
-  renderTeacherOverview();
-  renderControlStatus();
-  renderTeacherTracker();
-
-  showNotice('creatorNotice', 'Station removed successfully.', 'good');
 };
 
   function updateRankingBoard(){
@@ -1274,43 +1098,9 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){
-  ['studentView','teacherView'].forEach(function(id){
-    const el = byId(id);
-    if(el) el.classList.add('hidden');
-  });
-
-  const target = byId(viewId);
-  if(target) target.classList.remove('hidden');
-
-  const home = byId('homeRow');
-  if(home) home.classList.add('hidden');
-
-  window.scrollTo(0,0);
-}
-
-  window.backToHome = function(){
-  sessionStorage.removeItem('dl_role');
-  sessionStorage.removeItem('dl_student_name');
-  sessionStorage.removeItem('dl_student_id');
-
-  const studentView = byId('studentView');
-  const teacherView = byId('teacherView');
-  const homeRow = byId('homeRow');
-  const trackerCard = byId('teacherTrackerCard');
-  const controlCard = byId('teacherControlCard');
-  const creatorCard = byId('teacherCreatorCard');
-
-  if(studentView) studentView.classList.add('hidden');
-  if(teacherView) teacherView.classList.add('hidden');
-  if(homeRow) homeRow.classList.remove('hidden');
-  if(trackerCard) trackerCard.classList.remove('hidden');
-  if(controlCard) controlCard.classList.add('hidden');
-  if(creatorCard) creatorCard.classList.add('hidden');
-
-  window.scrollTo(0,0);
-};
-  window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
+function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
+window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
   if(!src) return;
@@ -1871,74 +1661,18 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-
-  if(currentStudent && byId('studentHeaderInfo')){
-    byId('studentHeaderInfo').innerHTML =
-      currentStudent.name +
-      ' | ID: ' + currentStudent.id +
-      ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-      ((liveBonus[currentStudent.id] && liveBonus[currentStudent.id].points) || 0) +
-      '</span>';
-  }
-
-  const currentStation = getStationById(currentOpenStation) || lessonStations[0] || {};
-
-  top.innerHTML = lessonStations.map(function(s){
-    const active = s.id === currentOpenStation ? 'active' : '';
-    const locked = (s.unlocked || s.id === 'starter') ? '' : 'locked';
-
-    return `
-      <div class="item ${active} ${locked}" onclick="${(s.unlocked || s.id === 'starter') ? "openStation('" + escapeJs(s.id) + "')" : ''}">
-        ${escapeHtml(s.title || s.id)}
-      </div>
-    `;
+  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
+  currentStudent.name +
+  ' | ID: ' + currentStudent.id +
+  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+  (liveBonus[currentStudent.id]?.points || 0) +
+  '</span>';
+  side.innerHTML = lessonStations.map(function(s){
+    const ct = getStationContent(s.id);
+    const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
+    return '<div class="station-box ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')">' + thumb + '<div><strong>' + escapeHtml(s.title) + '</strong><div class="meta">🎯 ' + escapeHtml(s.objective) + '<br>⏱ ' + escapeHtml(s.time) + ' | ' + (s.unlocked?'🔓':'🔒') + '<br>⭐ ' + scoreTextForStudent(s.id) + '</div></div></div>';
   }).join('');
-
-  side.innerHTML = `
-    <div class="lesson-info-box">
-
-      <div class="station-side-head">
-        <div class="station-side-title">${escapeHtml(currentStation.title || 'Station')}</div>
-        <div class="station-side-meta">⏱ ${escapeHtml(String(currentStation.time || ''))}</div>
-        <div class="station-side-timer">${formatStationTime(stationTimeLeft || 0)}</div>
-      </div>
-
-      <div class="lesson-side-section">
-        <div class="lesson-label">📘 Lesson Title</div>
-        <div class="meta lesson-title-red">
-          ${escapeHtml(lessonMeta.lessonTitle || '')}
-        </div>
-      </div>
-
-      <div class="lesson-side-section">
-        <div class="lesson-label">🎯 Lesson Objectives</div>
-        <div class="meta">
-          ${(lessonMeta.lessonObjectives || '')
-            .split('\n')
-            .filter(Boolean)
-            .map(function(obj){
-              return '<div class="student-obj">✔ ' + escapeHtml(obj) + '</div>';
-            })
-            .join('')}
-        </div>
-      </div>
-
-      <div class="lesson-side-section">
-        <div class="lesson-label">🔑 Keywords</div>
-        <div class="meta">
-          ${(lessonMeta.lessonKeywords || '')
-            .split(',')
-            .map(function(k){ return k.trim(); })
-            .filter(Boolean)
-            .map(function(k){
-              return '<span class="student-tag">' + escapeHtml(k) + '</span>';
-            })
-            .join('')}
-        </div>
-      </div>
-
-    </div>
-  `;
+  top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
 }
 
 function renderQuestion(q, stationId, index){
@@ -2287,10 +2021,10 @@ window.submitCurrentStation = async function(stationId){
   const questions = ct.questions || [];
 
   // 1) block submit if time is up or station is locked
-  if(station && !station.unlocked){
-  alert('This station is locked and cannot be submitted.');
-  return;
-}
+  if(stationTimeLeft <= 0 || (station && !station.unlocked)){
+    alert('⏰ Time is up. This station is locked and cannot be submitted.');
+    return;
+  }
 
   // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
@@ -3205,70 +2939,6 @@ window.clearAllCreatorQuestions = function(){
   showNotice('creatorNotice', 'New station added successfully.', 'good');
 }
 
-  window.moveCurrentStationUp = async function(){
-  const select = byId('creatorStationSelect');
-  if(!select) return;
-
-  const id = select.value;
-  const index = lessonStations.findIndex(function(s){
-    return s.id === id;
-  });
-
-  if(index <= 0){
-    showNotice('creatorNotice', 'This station is already at the top.', 'warn');
-    return;
-  }
-
-  const temp = lessonStations[index - 1];
-  lessonStations[index - 1] = lessonStations[index];
-  lessonStations[index] = temp;
-
-  await dbRef(configPath()).set(lessonStations);
-
-  fillTeacherSelects();
-  byId('creatorStationSelect').value = id;
-  byId('controlStationSelect').value = id;
-
-  loadCreatorStation();
-  renderTeacherOverview();
-  renderControlStatus();
-  renderTeacherTracker();
-
-  showNotice('creatorNotice', 'Station moved up successfully.', 'good');
-};
-
-window.moveCurrentStationDown = async function(){
-  const select = byId('creatorStationSelect');
-  if(!select) return;
-
-  const id = select.value;
-  const index = lessonStations.findIndex(function(s){
-    return s.id === id;
-  });
-
-  if(index === -1 || index >= lessonStations.length - 1){
-    showNotice('creatorNotice', 'This station is already at the bottom.', 'warn');
-    return;
-  }
-
-  const temp = lessonStations[index + 1];
-  lessonStations[index + 1] = lessonStations[index];
-  lessonStations[index] = temp;
-
-  await dbRef(configPath()).set(lessonStations);
-
-  fillTeacherSelects();
-  byId('creatorStationSelect').value = id;
-  byId('controlStationSelect').value = id;
-
-  loadCreatorStation();
-  renderTeacherOverview();
-  renderControlStatus();
-  renderTeacherTracker();
-
-  showNotice('creatorNotice', 'Station moved down successfully.', 'good');
-};
-
   function renderCreatorStationOptions(){
   const select = byId('creatorStationSelect');
   if(!select) return;
@@ -3534,19 +3204,39 @@ const text = stationTimeLeft > 0
 });
 }
 
- async function autoLockStationByTimer(stationId){
-  currentTimedStationId = null;
-  stationTimeLeft = 0;
-  updateStationTimerDisplay();
-  showNotice('controlNotice', 'Time finished. Station remains open.', 'warn');
+  async function autoLockStationByTimer(stationId){
+  if(!requireConnection()) return;
+  if(!stationId || stationId === 'starter') return;
+
+  const station = getStationById(stationId);
+  if(!station || !station.unlocked) return;
+
+  lessonStations = lessonStations.map(function(s){
+    if(s.id === stationId){
+      return Object.assign({}, s, {
+        unlocked: false,
+        displayed: false
+      });
+    }
+    return s;
+  });
+
+  await dbRef(configPath()).set(lessonStations);
+
+  renderControlStatus();
+  renderTeacherOverview();
+  renderStudentNav();
+  renderStationContent();
+
+  showNotice('controlNotice', 'Time finished. Station locked automatically.', 'warn');
 }
   
- function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
+  function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
   currentTimedStationId = stationId;
 
   const totalSeconds = Math.max(0, Number(minutes || 0) * 60);
-  let finishedShown = false;
+  let autoLocked = false;
 
   function tick(){
     if(stationId === 'starter'){
@@ -3567,12 +3257,10 @@ const text = stationTimeLeft > 0
     updateStationTimerDisplay();
 
     if(stationTimeLeft <= 0){
-      stationTimeLeft = 0;
-      updateStationTimerDisplay();
       stopStationTimer();
 
-      if(!finishedShown){
-        finishedShown = true;
+      if(!autoLocked){
+        autoLocked = true;
         autoLockStationByTimer(stationId);
       }
     }
@@ -3919,26 +3607,6 @@ padding-left: 18px;
     <div class="lp-school">Al Reyada School</div>
     <div class="lp-sub">English Department</div>
     <div class="lp-sub">Lesson Plan</div>
-  </div>
-</div>
-
-<div id="studentView" class="hidden">
-  <div class="btns" style="margin:0 0 12px 0;">
-    <button class="muted" onclick="backToHome()">Back Home</button>
-  </div>
-
-  <div class="card" style="margin-bottom:12px;">
-    <h2 style="margin:0 0 8px 0;">Student View</h2>
-    <div class="small" id="studentHeaderInfo">Student session</div>
-  </div>
-
-  <div class="top-bar" id="topStations"></div>
-
-  <div class="student-layout">
-    <div class="sidebar">
-      <div id="stationList"></div>
-    </div>
-    <div class="main" id="stationContent"></div>
   </div>
 </div>
 
