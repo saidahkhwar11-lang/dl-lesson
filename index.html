@@ -857,6 +857,84 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   );
 }
 
+  window.moveCurrentStationUp = async function(){
+  const select = byId('creatorStationSelect');
+  if(!select) return;
+
+  const stationId = select.value;
+  if(!stationId) return;
+
+  const index = lessonStations.findIndex(function(s){
+    return s.id === stationId;
+  });
+
+  if(index <= 0){
+    showNotice('creatorNotice', 'This station is already at the top.', 'warn');
+    return;
+  }
+
+  if(stationId === 'starter'){
+    showNotice('creatorNotice', 'Starter station must stay first.', 'warn');
+    return;
+  }
+
+  const temp = lessonStations[index - 1];
+  lessonStations[index - 1] = lessonStations[index];
+  lessonStations[index] = temp;
+
+  await dbRef(configPath()).set(lessonStations);
+
+  fillTeacherSelects();
+  byId('creatorStationSelect').value = stationId;
+
+  loadCreatorStation();
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+  renderStudentNav();
+
+  showNotice('creatorNotice', 'Station moved up successfully.', 'good');
+};
+
+  window.moveCurrentStationDown = async function(){
+  const select = byId('creatorStationSelect');
+  if(!select) return;
+
+  const stationId = select.value;
+  if(!stationId) return;
+
+  const index = lessonStations.findIndex(function(s){
+    return s.id === stationId;
+  });
+
+  if(index === -1 || index >= lessonStations.length - 1){
+    showNotice('creatorNotice', 'This station is already at the bottom.', 'warn');
+    return;
+  }
+
+  if(stationId === 'exit'){
+    showNotice('creatorNotice', 'Exit Ticket must stay last.', 'warn');
+    return;
+  }
+
+  const temp = lessonStations[index + 1];
+  lessonStations[index + 1] = lessonStations[index];
+  lessonStations[index] = temp;
+
+  await dbRef(configPath()).set(lessonStations);
+
+  fillTeacherSelects();
+  byId('creatorStationSelect').value = stationId;
+
+  loadCreatorStation();
+  renderTeacherOverview();
+  renderControlStatus();
+  renderTeacherTracker();
+  renderStudentNav();
+
+  showNotice('creatorNotice', 'Station moved down successfully.', 'good');
+};
+  
   window.removeCurrentStation = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
