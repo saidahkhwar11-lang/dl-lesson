@@ -600,7 +600,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div>
   </div>
 
- <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+<div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
   <div class="btns" style="justify-content:space-between;align-items:center;">
     <h2 style="margin:0;">Lesson Stations</h2>
     <div class="btns">
@@ -629,9 +629,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
   </div>
 
-    <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
-
-    <div id="teacherOverviewStations" class="top-bar"></div>
+  <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+  <div id="teacherOverviewStations" class="top-bar"></div>
 
     <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
       <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
@@ -895,12 +894,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 };
 
   window.toggleSpinnerPopup = function(){
-  const box = byId('spinnerPopup');
-  if(!box) return;
-  box.classList.toggle('hidden');
-};
-
-window.toggleSpinnerPopup = function(){
   const box = byId('spinnerPopup');
   if(!box) return;
   box.classList.toggle('hidden');
