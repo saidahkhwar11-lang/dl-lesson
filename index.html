@@ -594,13 +594,39 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
     <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+    <div class="btns" style="margin-bottom:10px;">
+  <button class="secondary" onclick="spinStudent()">🎡 Spinner</button>
+</div>
+      <div id="spinnerBox" style="
+  display:none;
+  margin-top:10px;
+  padding:20px;
+  border-radius:16px;
+  background:#f5f7ff;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
+  text-align:center;
+">
+
+  <div style="font-weight:700;">🎡 Random Student</div>
+
+  <div id="spinnerName" style="font-size:26px; margin:15px 0;">
+    ---
+  </div>
+
+  <div style="display:flex; justify-content:center; gap:10px;">
+    <button onclick="addSpinnerBonus()">⭐ Add Bonus</button>
+    <button onclick="spinStudent()">🎡 Spin Again</button>
+  </div>
+
+</div>
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
         <div class="btns">
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
   <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
   <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-  
+  <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
+
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -1839,7 +1865,42 @@ window.unlockTeacherStation = async function(id){
   renderControlStatus();
   openTeacherStationPreview(id);
 };
+  
+window.spinStudent = function(){
+  try{
+    if(!liveStudents || Object.keys(liveStudents).length === 0){
+      alert('No students available');
+      return;
+    }
 
+    const students = Object.entries(liveStudents).map(function(entry){
+      return {
+        id: entry[0],
+        name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+      };
+    });
+
+    const randomIndex = Math.floor(Math.random() * students.length);
+    const selected = students[randomIndex];
+
+    selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
+
+    // Show box
+    const box = document.getElementById('spinnerBox');
+    const nameEl = document.getElementById('spinnerName');
+
+    if(box && nameEl){
+      box.style.display = 'block';
+      nameEl.textContent = selected.name;
+    }
+
+  }catch(err){
+    console.error(err);
+    alert('Error selecting student');
+  }
+};
+  
 window.lockTeacherStation = async function(id){
   if(!requireConnection()) return;
 
