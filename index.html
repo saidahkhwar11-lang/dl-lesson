@@ -2010,8 +2010,8 @@ function renderQuestion(q, stationId, index){
     '<div style="margin-top:10px;">' + body + '</div>' +
 
     '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
-      '<button type="button" onclick="alert(\'RAISE BUTTON CLICKED\'); raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
-      '<button type="button" onclick="alert(\'CANCEL BUTTON CLICKED\'); cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
+    '<button type="button" onclick="alert(\'RAISE BUTTON CLICKED\'); alert(typeof window.raiseHandForQuestion); window.raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
+'<button type="button" onclick="alert(\'CANCEL BUTTON CLICKED\'); alert(typeof window.cancelRaiseHandForQuestion); window.cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
     '</div>' +
 
     '<div class="feedback"></div>' +
