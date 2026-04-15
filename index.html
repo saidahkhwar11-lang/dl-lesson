@@ -2009,8 +2009,8 @@ return '<div class="question" id="q_' + stationId + '_' + index + '">' +
   '<div style="margin-top:10px;">' + body + '</div>' +
 
   '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
-    '<button type="button"' + raiseDisabled + ' onclick="raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
-    '<button type="button" class="ghostbtn"' + raiseDisabled + ' onclick="cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
+'<button type="button" onclick="raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
+'<button type="button" class="ghostbtn" onclick="cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
   '</div>' +
 
   '<div class="feedback"></div>' +
