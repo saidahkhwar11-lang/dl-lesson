@@ -827,7 +827,7 @@ sessionStorage.clear();
   console.log('NEW VERSION LOADED 🚀'); 
   
   let storage = null;
-
+  
   function buildLessonInfoBoxHtml(){
   return (
     '<div class="lesson-info-box">' +
@@ -1156,6 +1156,9 @@ function bonusPath(){ return lessonBase() + '/bonus'; }
 function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
+function getQuestionRaisePath(stationId, questionIndex){
+  return `lessons/${lessonKey}/raises/${stationId}/q_${questionIndex}`;
+}
 function getStationById(id){ return lessonStations.find(function(s){ return s.id === id; }); }
 function getStationContent(id){
   return lessonContent[id] || {
@@ -1449,6 +1452,40 @@ const initial = {
   }catch(err){
     console.error('Student session error:', err);
     showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
+  }
+};
+
+  window.raiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+
+    await db.ref(path).set({
+      studentId: currentStudent.id,
+      studentName: currentStudent.name || 'Student',
+      clickedAt: Date.now(),
+      status: 'waiting'
+    });
+
+    showNotice('studentNotice', 'You asked to answer this question.', 'good');
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not save your request.', 'bad');
+  }
+};
+
+window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
+
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
+    await db.ref(path).remove();
+
+    showNotice('studentNotice', 'Your request was removed.', 'warn');
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not remove your request.', 'bad');
   }
 };
 
@@ -1802,6 +1839,19 @@ function renderStudentNav(){
   top.innerHTML = lessonStations.map(function(s){ return '<div class="item ' + (currentOpenStation===s.id?'active':'') + ' ' + (s.unlocked?'':'locked') + '" onclick="openStation(\'' + escapeJs(s.id) + '\')"><strong>' + escapeHtml(s.title) + '</strong><div>⭐ ' + scoreTextForStudent(s.id) + '</div></div>'; }).join('');
 }
 
+  function renderStudentQuestionRaiseButtons(stationId, questionIndex){
+  return `
+    <div class="question-hand-actions">
+      <button type="button" onclick="raiseHandForQuestion('${stationId}', ${questionIndex})">
+        🙋 I want to answer
+      </button>
+      <button type="button" class="ghostbtn" onclick="cancelRaiseHandForQuestion('${stationId}', ${questionIndex})">
+        Cancel
+      </button>
+    </div>
+  `;
+}
+
 function renderQuestion(q, stationId, index){
   const inputName = 'answer_' + stationId + '_' + index;
   const submitted = isStationSubmitted(stationId);
@@ -1809,6 +1859,8 @@ function renderQuestion(q, stationId, index){
   const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
+  
+  const raiseDisabled = submitted ? ' disabled' : '';
 
   if(q.type === 'mcq'){
     body = (q.choices || []).map(function(choice){
@@ -1901,8 +1953,17 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  return '<div class="question" id="q_' + stationId + '_' + index + '"><div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div><div style="margin-top:10px;">' + body + '</div><div class="feedback"></div></div>';
-}
+return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+  '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
+  '<div style="margin-top:10px;">' + body + '</div>' +
+
+  '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
+  '<button type="button"' + raiseDisabled + ' onclick="raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>'
+'<button type="button" class="ghostbtn"' + raiseDisabled + ' onclick="cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>'
+  '</div>' +
+
+  '<div class="feedback"></div>' +
+'</div>';
   
 window.openStation = function(id){
   const st = getStationById(id);
