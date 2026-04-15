@@ -1910,8 +1910,6 @@ function renderQuestion(q, stationId, index){
   const savedAnswers = (student && student.stationAnswers && student.stationAnswers[stationId]) || {};
   const savedAnswer = savedAnswers[index] || '';
   let body = '';
-  
-  const raiseDisabled = submitted ? ' disabled' : '';
 
   if(q.type === 'mcq'){
     body = (q.choices || []).map(function(choice){
@@ -2004,18 +2002,18 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-  '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
-  '<div style="margin-top:10px;">' + body + '</div>' +
+  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
+    '<div style="margin-top:10px;">' + body + '</div>' +
 
-  '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
-'<button type="button" onclick="raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
-'<button type="button" class="ghostbtn" onclick="cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
-  '</div>' +
+    '<div class="question-hand-actions" style="margin-top:10px; display:flex; gap:8px; flex-wrap:wrap;">' +
+      '<button type="button" onclick="alert(\'RAISE BUTTON CLICKED\'); raiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">🙋 I want to answer</button>' +
+      '<button type="button" onclick="alert(\'CANCEL BUTTON CLICKED\'); cancelRaiseHandForQuestion(\'' + escapeJs(stationId) + '\',' + index + ')">Cancel</button>' +
+    '</div>' +
 
-  '<div class="feedback"></div>' +
-'</div>';
-  }
+    '<div class="feedback"></div>' +
+  '</div>';
+}
   
 window.openStation = function(id){
   const st = getStationById(id);
