@@ -962,6 +962,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     alert('Error selecting student');
   }
 };
+
   window.addSpinnerBonus = async function(){
   try{
     if(!selectedSpinnerStudentId){
@@ -970,23 +971,38 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     }
 
     const student = liveStudents[selectedSpinnerStudentId] || {};
-    const oldBonus = Number(student.bonus || 0);
 
-    await dbRef(studentPath(selectedSpinnerStudentId)).update({
-      bonus: oldBonus + 1
+    const oldBonus = Number(((liveBonus[selectedSpinnerStudentId] || {}).points) || 0);
+    const newBonus = oldBonus + 1;
+
+    await dbRef(bonusPath() + '/' + selectedSpinnerStudentId).set({
+      id: selectedSpinnerStudentId,
+      name: selectedSpinnerStudentName || student.name || 'Student',
+      points: newBonus
     });
 
-    if(!liveStudents[selectedSpinnerStudentId]){
-      liveStudents[selectedSpinnerStudentId] = {};
-    }
-    liveStudents[selectedSpinnerStudentId].bonus = oldBonus + 1;
+    await dbRef(studentPath(selectedSpinnerStudentId)).update({
+  total: (Number(student.total || 0) + 1)
+});
+
+    // update local liveBonus (VERY IMPORTANT)
+    liveBonus[selectedSpinnerStudentId] = {
+      id: selectedSpinnerStudentId,
+      name: selectedSpinnerStudentName || student.name || 'Student',
+      points: newBonus
+    };
+
+    renderBonusBox();        // update popup
+    renderTeacherTracker();  // update tracker
 
     alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
+
   }catch(err){
     console.error(err);
     alert('Could not add bonus.');
   }
 };
+  
   window.moveCurrentStationDown = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
