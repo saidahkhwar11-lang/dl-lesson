@@ -1568,14 +1568,26 @@ const initial = {
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
     showOnly('studentView');
     renderStudentNav();
-    listenStudentLive();
-    const displayedStation = (lessonStations.find(function(s){ return s.displayed && (s.unlocked || s.id === 'starter'); }) || {id:'starter'}).id;
-    openStation(displayedStation);
-  }catch(err){
-    console.error('Student session error:', err);
-    showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
-  }
-};
+   function listenStudentLive(){
+  if(studentBonusRef) studentBonusRef.off();
+  if(studentSelfRef) studentSelfRef.off();
+
+  studentBonusRef = dbRef(bonusPath());
+  studentSelfRef = dbRef(studentPath(currentStudent.id));
+
+  studentBonusRef.on('value', function(snap){
+    liveBonus = snap.val() || {};
+    renderStudentNav();   // ✅ refresh student header and nav
+  });
+
+  studentSelfRef.on('value', function(snap){
+    if(!snap.exists()) return;
+    liveStudents[currentStudent.id] = snap.val();
+    renderStudentNav();
+  });
+
+  updateRankingBoard();
+}
 
   window.raiseHandForQuestion = async function(stationId, questionIndex){
   try{
