@@ -519,6 +519,15 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
     <div id="studentNotice" class="notice bad hidden"></div>
   </div>
+  
+  <label>Team</label>
+<select id="studentTeam">
+  <option value="Red">Red Team</option>
+  <option value="Blue">Blue Team</option>
+  <option value="Green">Green Team</option>
+  <option value="Yellow">Yellow Team</option>
+</select>
+
 
   <!-- Teacher Login -->
 <div class="card" style="
@@ -1554,6 +1563,7 @@ window.startStudentSession = async function(){
 const initial = {
   name:name,
   id:id,
+  team: byId('studentTeam').value,
   scores:{},
   total:0,
   startedAt:Date.now(),
