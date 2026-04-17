@@ -1598,10 +1598,16 @@ window.startStudentSession = async function(){
     });
 
     showOnly('studentView');
-    renderStudentNav();
-    listenStudentLive();
+renderStudentNav();
+listenStudentLive();
 
-    openStation('starter');
+const displayedStation = (
+  lessonStations.find(function(s){
+    return s.displayed && (s.unlocked || s.id === 'starter');
+  }) || {id:'starter'}
+).id;
+
+openStation(displayedStation);
 
   }catch(err){
     console.error(err);
@@ -1619,12 +1625,21 @@ window.startStudentSession = async function(){
   studentBonusRef.on('value', function(snap){
     liveBonus = snap.val() || {};
     renderStudentNav();
+
+    if(currentOpenStation){
+      openStation(currentOpenStation);
+    }
   });
 
   studentSelfRef.on('value', function(snap){
     if(!snap.exists()) return;
+
     liveStudents[currentStudent.id] = snap.val();
     renderStudentNav();
+
+    if(currentOpenStation){
+      openStation(currentOpenStation);
+    }
   });
 }
 
