@@ -2102,7 +2102,28 @@ function renderQuestion(q, stationId, index){
     }
 
   } else if(q.type === 'drag_gap'){
-    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
+    const disabled = submitted ? ' disabled' : '';
+    const savedGaps = Array.isArray(savedAnswer) ? savedAnswer : [];
+
+    body = `
+      <div style="margin-bottom:10px;" class="small">
+        Word Bank:
+        ${(q.words || []).map(function(word){
+          return '<span class="lesson-tag">' + escapeHtml(word) + '</span>';
+        }).join(' ')}
+      </div>
+
+      <div class="choice" style="padding:12px; line-height:2;">
+        ${(q.parts || []).map(function(part, partIndex){
+          const inputHtml = partIndex < (q.parts.length - 1)
+            ? '<input type="text" data-gap-index="' + partIndex + '" value="' + escapeHtml(savedGaps[partIndex] || '') + '"' + disabled + ' style="width:120px; display:inline-block; margin:0 6px; padding:8px; border-radius:8px; border:1px solid #cfd8e7;">'
+            : '';
+
+          return '<span>' + escapeHtml(part) + '</span>' + inputHtml;
+        }).join('')}
+      </div>`;
+
+  } else {
 
   } else {
     body = '<div class="small">Unsupported question type</div>';
@@ -2396,6 +2417,49 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
       return;
     }
 
+  // ✅ DRAG GAP HANDLING
+if(q.type === 'drag_gap'){
+  const inputs = wrap.querySelectorAll('input[data-gap-index]');
+  const studentAnswers = Array.from(inputs).map(function(input){
+    return input.value.trim();
+  });
+
+  submittedAnswers[i] = studentAnswers;
+
+  const correctAnswers = q.answers || [];
+
+  let correctCount = 0;
+
+  inputs.forEach(function(input, gapIndex){
+    const userVal = studentAnswers[gapIndex] || '';
+    const correctVal = correctAnswers[gapIndex] || '';
+
+    if(normalizeAnswer(userVal) === normalizeAnswer(correctVal)){
+      correctCount++;
+      input.style.background = '#eafaf1';
+      input.style.borderColor = '#2ecc71';
+    } else {
+      input.style.background = '#fdecea';
+      input.style.borderColor = '#e74c3c';
+    }
+
+    input.disabled = true;
+  });
+
+  score += correctCount;
+
+  if(correctCount === correctAnswers.length){
+    wrap.classList.add('correct');
+    wrap.querySelector('.feedback').innerHTML = '✅ Correct';
+  } else {
+    wrap.classList.add('wrong');
+    wrap.querySelector('.feedback').innerHTML =
+      '❌ Correct answers: ' + escapeHtml(correctAnswers.join(', '));
+  }
+
+  return; // 🚨 VERY IMPORTANT (skip MCQ logic)
+}
+
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
     if(!checked){
       unanswered = true;
@@ -2508,10 +2572,11 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
 
   const nextScores = Object.assign({}, existing.scores || {}, {[stationId]: score});
 
-  const stationMax = questions.reduce(function(total, q){
-    if(q.type === 'matching') return total + ((q.pairs || []).length);
-    return total + 1;
-  }, 0);
+ const stationMax = questions.reduce(function(total, q){
+  if(q.type === 'matching') return total + ((q.pairs || []).length);
+  if(q.type === 'drag_gap') return total + ((q.answers || []).length);
+  return total + 1;
+}, 0);
 
   const nextResults = Object.assign({}, existing.stationResults || {}, {
     [stationId]: { score: score, max: stationMax }
