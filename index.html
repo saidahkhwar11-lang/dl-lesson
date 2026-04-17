@@ -512,11 +512,15 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   overflow:hidden;
 ">
     <h2>Student Login</h2>
-    <label>Student Name</label>
-    <input id="studentName" placeholder="Enter student name" />
-    <label>Student ID</label>
-    <label>Team</label>
-    
+   <h2>Student Login</h2>
+
+<label>Student Name</label>
+<input id="studentName" placeholder="Enter student name" />
+
+<label>Student ID</label>
+<input id="studentId" placeholder="Enter student ID" />
+
+<label>Team</label>
 <select id="studentTeam">
   <option value="Red">🔴 Red Team</option>
   <option value="Blue">🔵 Blue Team</option>
@@ -524,9 +528,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <option value="Yellow">🟡 Yellow Team</option>
 </select>
 
-    <input id="studentId" placeholder="Enter student ID" />
-    <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
-    <div id="studentNotice" class="notice bad hidden"></div>
+<button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+<div id="studentNotice" class="notice bad hidden">
   </div>
 
   <!-- Teacher Login -->
