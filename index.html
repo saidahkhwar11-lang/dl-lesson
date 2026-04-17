@@ -1350,40 +1350,45 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){
-  ['studentView','teacherView','homeRow'].forEach(function(id){
+  function showOnly(viewId){
+  ['homeRow','studentView','teacherView'].forEach(function(id){
     const el = byId(id);
     if(el) el.classList.add('hidden');
   });
 
-  const active = byId(viewId);
-  if(active) active.classList.remove('hidden');
+  const activeView = byId(viewId);
+  if(activeView) activeView.classList.remove('hidden');
 
   const header = byId('headerPanel');
   if(header){
-    if(viewId === 'studentView' || viewId === 'teacherView'){
-      header.classList.add('hidden');
-    } else {
+    if(viewId === 'homeRow'){
       header.classList.remove('hidden');
+    } else {
+      header.classList.add('hidden');
     }
   }
 
   window.scrollTo(0,0);
 }
 
-  window.backToHome = function(){
+ window.backToHome = function(){
   sessionStorage.removeItem('dl_role');
   sessionStorage.removeItem('dl_student_name');
   sessionStorage.removeItem('dl_student_id');
+
   byId('studentView').classList.add('hidden');
   byId('teacherView').classList.add('hidden');
   byId('homeRow').classList.remove('hidden');
-  byId('headerPanel').classList.remove('hidden');
+
+  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
+
   byId('teacherTrackerCard').classList.remove('hidden');
   byId('teacherControlCard').classList.add('hidden');
   byId('teacherCreatorCard').classList.add('hidden');
+
   window.scrollTo(0,0);
 };
+  
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
