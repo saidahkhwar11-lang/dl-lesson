@@ -512,24 +512,12 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   overflow:hidden;
 ">
     <h2>Student Login</h2>
-   <h2>Student Login</h2>
-
-<label>Student Name</label>
-<input id="studentName" placeholder="Enter student name" />
-
-<label>Student ID</label>
-<input id="studentId" placeholder="Enter student ID" />
-
-<label>Team</label>
-<select id="studentTeam">
-  <option value="Red">🔴 Red Team</option>
-  <option value="Blue">🔵 Blue Team</option>
-  <option value="Green">🟢 Green Team</option>
-  <option value="Yellow">🟡 Yellow Team</option>
-</select>
-
-<button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
-<div id="studentNotice" class="notice bad hidden">
+    <label>Student Name</label>
+    <input id="studentName" placeholder="Enter student name" />
+    <label>Student ID</label>
+    <input id="studentId" placeholder="Enter student ID" />
+    <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
+    <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
   <!-- Teacher Login -->
@@ -1555,93 +1543,59 @@ window.startStudentSession = async function(){
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
-
     const name = byId('studentName').value.trim();
     const id = sanitizeKey(byId('studentId').value.trim());
-
-    if(!name || !id){
-      showNotice('studentNotice','Please enter student name and ID.','bad');
-      return;
-    }
-
+    if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
     hideNotice('studentNotice');
-
     currentStudent = {name:name, id:id};
-
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
-
-    const initial = {
-      name:name,
-      id:id,
-      team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
-      scores:{},
-      total:0,
-      startedAt:Date.now(),
-      currentStation:'starter',
-      stationResults:{},
-      stationAnswers:{},
-      submittedStations:{},
-      stationSelfEval:{}
-    };
-
+const initial = {
+  name:name,
+  id:id,
+  scores:{},
+  total:0,
+  startedAt:Date.now(),
+  currentStation:'starter',
+  stationResults:{},
+  stationAnswers:{},
+  submittedStations:{},
+  stationSelfEval:{}
+};
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
-
-    await dbRef(attendancePath(id)).set({
-      name:name,
-      id:id,
-      team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
-      startedAt:Date.now(),
-      present:true
-    });
-
+    await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
     showOnly('studentView');
-renderStudentNav();
-listenStudentLive();
-
-const displayedStation = (
-  lessonStations.find(function(s){
-    return s.displayed && (s.unlocked || s.id === 'starter');
-  }) || {id:'starter'}
-).id;
-
-openStation(displayedStation);
-
+    renderStudentNav();
+    listenStudentLive();
+    const displayedStation = (lessonStations.find(function(s){ return s.displayed && (s.unlocked || s.id === 'starter'); }) || {id:'starter'}).id;
+    openStation(displayedStation);
   }catch(err){
-    console.error(err);
-    showNotice('studentNotice','Error starting session','bad');
+    console.error('Student session error:', err);
+    showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
   }
 };
 
-  function listenStudentLive(){
-  if(studentBonusRef) studentBonusRef.off();
-  if(studentSelfRef) studentSelfRef.off();
+  window.raiseHandForQuestion = async function(stationId, questionIndex){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
 
-  studentBonusRef = dbRef(bonusPath());
-  studentSelfRef = dbRef(studentPath(currentStudent.id));
+    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
 
-  studentBonusRef.on('value', function(snap){
-    liveBonus = snap.val() || {};
-    renderStudentNav();
+    await db.ref(path).set({
+      studentId: currentStudent.id,
+      studentName: currentStudent.name || 'Student',
+      clickedAt: Date.now(),
+      status: 'waiting'
+    });
 
-    if(currentOpenStation){
-      openStation(currentOpenStation);
-    }
-  });
-
-  studentSelfRef.on('value', function(snap){
-    if(!snap.exists()) return;
-
-    liveStudents[currentStudent.id] = snap.val();
-    renderStudentNav();
-
-    if(currentOpenStation){
-      openStation(currentOpenStation);
-    }
-  });
-}
+    showNotice('studentNotice', 'You asked to answer this question.', 'good');
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice', 'Could not save your request.', 'bad');
+  }
+};
 
 window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
   try{
