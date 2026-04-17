@@ -1351,28 +1351,11 @@ function bindButtons(){
 }
 
  function showOnly(viewId){
-  const home = byId('homeRow');
-  const student = byId('studentView');
-  const teacher = byId('teacherView');
-  const header = byId('headerPanel');
-
-  if(home) home.classList.add('hidden');
-  if(student) student.classList.add('hidden');
-  if(teacher) teacher.classList.add('hidden');
-
-  if(viewId === 'studentView'){
-    if(student) student.classList.remove('hidden');
-    if(header) header.classList.add('hidden');
-  }
-  else if(viewId === 'teacherView'){
-    if(teacher) teacher.classList.remove('hidden');
-    if(header) header.classList.add('hidden');
-  }
-  else {
-    if(home) home.classList.remove('hidden');
-    if(header) header.classList.remove('hidden');
-  }
-
+  ['studentView','teacherView'].forEach(function(id){
+    byId(id).classList.add('hidden');
+  });
+  byId(viewId).classList.remove('hidden');
+  byId('homeRow').classList.add('hidden');
   window.scrollTo(0,0);
 }
   
@@ -1381,14 +1364,14 @@ window.backToHome = function(){
   sessionStorage.removeItem('dl_student_name');
   sessionStorage.removeItem('dl_student_id');
 
-  if(byId('studentView')) byId('studentView').classList.add('hidden');
-  if(byId('teacherView')) byId('teacherView').classList.add('hidden');
-  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
-  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
+  byId('studentView').classList.add('hidden');
+  byId('teacherView').classList.add('hidden');
+  byId('homeRow').classList.remove('hidden');
+  byId('headerPanel').classList.remove('hidden');
 
-  if(byId('teacherTrackerCard')) byId('teacherTrackerCard').classList.remove('hidden');
-  if(byId('teacherControlCard')) byId('teacherControlCard').classList.add('hidden');
-  if(byId('teacherCreatorCard')) byId('teacherCreatorCard').classList.add('hidden');
+  byId('teacherTrackerCard').classList.remove('hidden');
+  byId('teacherControlCard').classList.add('hidden');
+  byId('teacherCreatorCard').classList.add('hidden');
 
   window.scrollTo(0,0);
 };
@@ -1607,6 +1590,7 @@ const initial = {
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
+    byId('headerPanel').classList.add('hidden');
     showOnly('studentView');
     renderStudentNav();
     listenStudentLive();
@@ -1667,6 +1651,7 @@ window.openTeacherView = async function(){
     hideNotice('teacherNotice');
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
+     byId('headerPanel').classList.add('hidden');
     showOnly('teacherView');
     fillTeacherSelects();
     loadCreatorStation();
