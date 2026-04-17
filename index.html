@@ -1555,33 +1555,61 @@ window.startStudentSession = async function(){
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
+
     const name = byId('studentName').value.trim();
     const id = sanitizeKey(byId('studentId').value.trim());
-    if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
+
+    if(!name || !id){
+      showNotice('studentNotice','Please enter student name and ID.','bad');
+      return;
+    }
+
     hideNotice('studentNotice');
+
     currentStudent = {name:name, id:id};
+
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
-const initial = {
-  name:name,
-  id:id,
-  team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
-  scores:{},
-  total:0,
-  startedAt:Date.now(),
-  currentStation:'starter',
-  stationResults:{},
-  stationAnswers:{},
-  submittedStations:{},
-  stationSelfEval:{}
-};
+
+    const initial = {
+      name:name,
+      id:id,
+      team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
+      scores:{},
+      total:0,
+      startedAt:Date.now(),
+      currentStation:'starter',
+      stationResults:{},
+      stationAnswers:{},
+      submittedStations:{},
+      stationSelfEval:{}
+    };
+
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
-    await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
+
+    await dbRef(attendancePath(id)).set({
+      name:name,
+      id:id,
+      team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
+      startedAt:Date.now(),
+      present:true
+    });
+
     showOnly('studentView');
     renderStudentNav();
-   function listenStudentLive(){
+    listenStudentLive();
+
+    openStation('starter');
+
+  }catch(err){
+    console.error(err);
+    showNotice('studentNotice','Error starting session','bad');
+  }
+};
+
+  function listenStudentLive(){
   if(studentBonusRef) studentBonusRef.off();
   if(studentSelfRef) studentSelfRef.off();
 
@@ -1590,7 +1618,7 @@ const initial = {
 
   studentBonusRef.on('value', function(snap){
     liveBonus = snap.val() || {};
-    renderStudentNav();   // ✅ refresh student header and nav
+    renderStudentNav();
   });
 
   studentSelfRef.on('value', function(snap){
@@ -1598,29 +1626,7 @@ const initial = {
     liveStudents[currentStudent.id] = snap.val();
     renderStudentNav();
   });
-
-  updateRankingBoard();
 }
-
-  window.raiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!db || !currentStudent || !currentStudent.id) return;
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-
-    await db.ref(path).set({
-      studentId: currentStudent.id,
-      studentName: currentStudent.name || 'Student',
-      clickedAt: Date.now(),
-      status: 'waiting'
-    });
-
-    showNotice('studentNotice', 'You asked to answer this question.', 'good');
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not save your request.', 'bad');
-  }
-};
 
 window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
   try{
