@@ -1350,7 +1350,7 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-  function showOnly(viewId){
+ function showOnly(viewId){
   const home = byId('homeRow');
   const student = byId('studentView');
   const teacher = byId('teacherView');
@@ -1363,16 +1363,19 @@ function bindButtons(){
   if(viewId === 'studentView'){
     if(student) student.classList.remove('hidden');
     if(header) header.classList.add('hidden');
-  } else if(viewId === 'teacherView'){
+  }
+  else if(viewId === 'teacherView'){
     if(teacher) teacher.classList.remove('hidden');
     if(header) header.classList.add('hidden');
-  } else {
+  }
+  else {
     if(home) home.classList.remove('hidden');
     if(header) header.classList.remove('hidden');
   }
 
   window.scrollTo(0,0);
 }
+  
 window.backToHome = function(){
   sessionStorage.removeItem('dl_role');
   sessionStorage.removeItem('dl_student_name');
