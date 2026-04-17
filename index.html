@@ -364,7 +364,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <body>
   
 <div class="wrap">
-  <div class="hero">
+  <div class="hero" id="headerPanel">
  <div style="
   width:100%;
   max-width:1200px;
@@ -1350,8 +1350,40 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+function showOnly(viewId){
+  ['studentView','teacherView','homeRow'].forEach(function(id){
+    const el = byId(id);
+    if(el) el.classList.add('hidden');
+  });
+
+  const active = byId(viewId);
+  if(active) active.classList.remove('hidden');
+
+  const header = byId('headerPanel');
+  if(header){
+    if(viewId === 'studentView' || viewId === 'teacherView'){
+      header.classList.add('hidden');
+    } else {
+      header.classList.remove('hidden');
+    }
+  }
+
+  window.scrollTo(0,0);
+}
+
+  window.backToHome = function(){
+  sessionStorage.removeItem('dl_role');
+  sessionStorage.removeItem('dl_student_name');
+  sessionStorage.removeItem('dl_student_id');
+  byId('studentView').classList.add('hidden');
+  byId('teacherView').classList.add('hidden');
+  byId('homeRow').classList.remove('hidden');
+  byId('headerPanel').classList.remove('hidden');
+  byId('teacherTrackerCard').classList.remove('hidden');
+  byId('teacherControlCard').classList.add('hidden');
+  byId('teacherCreatorCard').classList.add('hidden');
+  window.scrollTo(0,0);
+};
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
