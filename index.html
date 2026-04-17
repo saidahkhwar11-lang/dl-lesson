@@ -1566,7 +1566,7 @@ window.startStudentSession = async function(){
 const initial = {
   name:name,
   id:id,
-  team: byId('studentTeam').value,
+  team: byId('studentTeam') ? byId('studentTeam').value : 'Red',
   scores:{},
   total:0,
   startedAt:Date.now(),
