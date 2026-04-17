@@ -1351,40 +1351,41 @@ function bindButtons(){
 }
 
   function showOnly(viewId){
-  ['homeRow','studentView','teacherView'].forEach(function(id){
-    const el = byId(id);
-    if(el) el.classList.add('hidden');
-  });
-
-  const activeView = byId(viewId);
-  if(activeView) activeView.classList.remove('hidden');
-
+  const home = byId('homeRow');
+  const student = byId('studentView');
+  const teacher = byId('teacherView');
   const header = byId('headerPanel');
-  if(header){
-    if(viewId === 'homeRow'){
-      header.classList.remove('hidden');
-    } else {
-      header.classList.add('hidden');
-    }
+
+  if(home) home.classList.add('hidden');
+  if(student) student.classList.add('hidden');
+  if(teacher) teacher.classList.add('hidden');
+
+  if(viewId === 'studentView'){
+    if(student) student.classList.remove('hidden');
+    if(header) header.classList.add('hidden');
+  } else if(viewId === 'teacherView'){
+    if(teacher) teacher.classList.remove('hidden');
+    if(header) header.classList.add('hidden');
+  } else {
+    if(home) home.classList.remove('hidden');
+    if(header) header.classList.remove('hidden');
   }
 
   window.scrollTo(0,0);
 }
-
- window.backToHome = function(){
+window.backToHome = function(){
   sessionStorage.removeItem('dl_role');
   sessionStorage.removeItem('dl_student_name');
   sessionStorage.removeItem('dl_student_id');
 
-  byId('studentView').classList.add('hidden');
-  byId('teacherView').classList.add('hidden');
-  byId('homeRow').classList.remove('hidden');
-
+  if(byId('studentView')) byId('studentView').classList.add('hidden');
+  if(byId('teacherView')) byId('teacherView').classList.add('hidden');
+  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
   if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
 
-  byId('teacherTrackerCard').classList.remove('hidden');
-  byId('teacherControlCard').classList.add('hidden');
-  byId('teacherCreatorCard').classList.add('hidden');
+  if(byId('teacherTrackerCard')) byId('teacherTrackerCard').classList.remove('hidden');
+  if(byId('teacherControlCard')) byId('teacherControlCard').classList.add('hidden');
+  if(byId('teacherCreatorCard')) byId('teacherCreatorCard').classList.add('hidden');
 
   window.scrollTo(0,0);
 };
@@ -4131,6 +4132,11 @@ window.addEventListener('load', function(){
   if(saved){
     ratePlatform(parseInt(saved));
   }
+});
+
+  window.addEventListener('load', function(){
+  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
+  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
 });
 
 </script>
