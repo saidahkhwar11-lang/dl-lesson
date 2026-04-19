@@ -364,7 +364,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <body>
   
 <div class="wrap">
-  <div class="hero" id="headerPanel">
+  <div class="hero">
  <div style="
   width:100%;
   max-width:1200px;
@@ -779,8 +779,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
-            <label>Question Image URL</label>
-<input id="builderQuestionImage" placeholder="Paste image link here" />
 
             <div id="builderMcqFields">
   <label>MCQ Options (at least 2, one per line)</label>
@@ -1352,32 +1350,8 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
- function showOnly(viewId){
-  ['studentView','teacherView'].forEach(function(id){
-    byId(id).classList.add('hidden');
-  });
-  byId(viewId).classList.remove('hidden');
-  byId('homeRow').classList.add('hidden');
-  window.scrollTo(0,0);
-}
-  
-window.backToHome = function(){
-  sessionStorage.removeItem('dl_role');
-  sessionStorage.removeItem('dl_student_name');
-  sessionStorage.removeItem('dl_student_id');
-
-  byId('studentView').classList.add('hidden');
-  byId('teacherView').classList.add('hidden');
-  byId('homeRow').classList.remove('hidden');
-  byId('headerPanel').classList.remove('hidden');
-
-  byId('teacherTrackerCard').classList.remove('hidden');
-  byId('teacherControlCard').classList.add('hidden');
-  byId('teacherCreatorCard').classList.add('hidden');
-
-  window.scrollTo(0,0);
-};
-  
+function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
+window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
@@ -1592,7 +1566,6 @@ const initial = {
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
     await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
-    byId('headerPanel').classList.add('hidden');
     showOnly('studentView');
     renderStudentNav();
     listenStudentLive();
@@ -1653,7 +1626,6 @@ window.openTeacherView = async function(){
     hideNotice('teacherNotice');
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
-     byId('headerPanel').classList.add('hidden');
     showOnly('teacherView');
     fillTeacherSelects();
     loadCreatorStation();
@@ -2136,20 +2108,11 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  let questionImageHtml = '';
-if(q.imageUrl){
-  questionImageHtml =
-    '<div style="margin:10px 0;">' +
-      '<img src="' + escapeHtml(q.imageUrl) + '" style="max-width:100%; border-radius:12px; border:1px solid #d9e2f2;">' +
-    '</div>';
-}
-
-return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-  '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
-  questionImageHtml +
-  '<div style="margin-top:10px;">' + body + '</div>' +
-  '<div class="feedback"></div>' +
-'</div>';
+  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
+    '<div style="margin-top:10px;">' + body + '</div>' +
+    '<div class="feedback"></div>' +
+  '</div>';
 }
   
 window.openStation = function(id){
@@ -3038,7 +3001,6 @@ window.clearQuestionBuilder = function(){
   byId('builderGapAnswers').value = '';
   byId('builderGapWords').value = '';
   byId('builderPollOptions').value = '';
-  byId('builderQuestionImage').value = '';
   toggleBuilderFields();
 };
 
@@ -3092,7 +3054,6 @@ window.editCreatorQuestion = function(index){
 
   byId('builderQuestionType').value = q.type;
   byId('builderQuestionText').value = q.text || '';
-  byId('builderQuestionImage').value = q.imageUrl || '';
 
   if(q.type === 'mcq'){
     byId('builderChoiceOptions').value = (q.choices || []).join('\n');
@@ -3131,10 +3092,9 @@ window.addCreatorQuestion = function(){
   }
 
   const newQuestion = {
-  type: type,
-  text: byId('builderQuestionText').value.trim(),
-  imageUrl: byId('builderQuestionImage').value.trim()
-};
+    type: type,
+    text: questionText
+  };
 
   if(type === 'mcq'){
     const options = byId('builderChoiceOptions').value
@@ -4134,11 +4094,6 @@ window.addEventListener('load', function(){
   if(saved){
     ratePlatform(parseInt(saved));
   }
-});
-
-  window.addEventListener('load', function(){
-  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
-  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
 });
 
 </script>
