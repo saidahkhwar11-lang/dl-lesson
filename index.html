@@ -779,6 +779,8 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
+            <label>Question Image URL</label>
+<input id="builderQuestionImage" placeholder="Paste image link here" />
 
             <div id="builderMcqFields">
   <label>MCQ Options (at least 2, one per line)</label>
@@ -2134,11 +2136,20 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
-    '<div style="margin-top:10px;">' + body + '</div>' +
-    '<div class="feedback"></div>' +
-  '</div>';
+  let questionImageHtml = '';
+if(q.imageUrl){
+  questionImageHtml =
+    '<div style="margin:10px 0;">' +
+      '<img src="' + escapeHtml(q.imageUrl) + '" style="max-width:100%; border-radius:12px; border:1px solid #d9e2f2;">' +
+    '</div>';
+}
+
+return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+  '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
+  questionImageHtml +
+  '<div style="margin-top:10px;">' + body + '</div>' +
+  '<div class="feedback"></div>' +
+'</div>';
 }
   
 window.openStation = function(id){
@@ -3027,6 +3038,7 @@ window.clearQuestionBuilder = function(){
   byId('builderGapAnswers').value = '';
   byId('builderGapWords').value = '';
   byId('builderPollOptions').value = '';
+  byId('builderQuestionImage').value = '';
   toggleBuilderFields();
 };
 
@@ -3080,6 +3092,7 @@ window.editCreatorQuestion = function(index){
 
   byId('builderQuestionType').value = q.type;
   byId('builderQuestionText').value = q.text || '';
+  byId('builderQuestionImage').value = q.imageUrl || '';
 
   if(q.type === 'mcq'){
     byId('builderChoiceOptions').value = (q.choices || []).join('\n');
@@ -3118,9 +3131,10 @@ window.addCreatorQuestion = function(){
   }
 
   const newQuestion = {
-    type: type,
-    text: questionText
-  };
+  type: type,
+  text: byId('builderQuestionText').value.trim(),
+  imageUrl: byId('builderQuestionImage').value.trim()
+};
 
   if(type === 'mcq'){
     const options = byId('builderChoiceOptions').value
