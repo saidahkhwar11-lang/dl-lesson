@@ -362,121 +362,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </style>
 </head>
 <body>
-  
-<div class="wrap">
-  <div class="hero">
- <div style="
-  width:100%;
-  max-width:1200px;
-  margin:0 auto;
-  background:linear-gradient(135deg,#fff9fd 0%, #f9fbff 60%, #fffdf6 100%);
-  border:2px solid #efe7ff;
-  border-radius:18px;
-  padding:14px 22px;
-  font-family:Arial, sans-serif;
-">
-
-  <div style="
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-  ">
-
-    <!-- LEFT -->
-    <div style="flex:1; min-width:280px;">
-
-      <h2 style="
-        margin:0;
-        color:#5b6fb5;
-        font-size:20px;
-        font-weight:600;
-      ">
-        Grade 9 English Interactive Lessons
-      </h2>
-
-      <div style="
-        font-size:12px;
-        color:#8a8fa8;
-        margin-top:4px;
-      ">
-        Alreyadah School – Created by <strong>Ms. Saidah Khwar</strong>
-      </div>
-<div style="
-  font-size:13px;
-  line-height:1.6;
-  color:#6a6f85;
-  margin-top:6px;
-  margin-bottom:10px;
-  max-width:600px;
-">
-  A smart English learning platform designed to make lessons interactive, organized, and engaging through live tracking, self-assessment, and real-time teacher support.
-</div>
     
-
-    <!-- MIDDLE -->
-    <div style="
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px 14px;
-      font-size:12.5px;
-      color:#5a6178;
-      justify-content:center;
-    ">
-      <span>📄 Lesson Plan</span>
-      <span>🧩 Stations</span>
-      <span>📝 Worksheets</span>
-      <span>🎥 Videos</span>
-      <span>📊 Tracker</span>
-      <span>✅ Auto</span>
-      <span>😊 Assessment</span>
-      <span>🎁 Bonus</span>
-      <span>🏆 Top 5</span>
-      <span>📈 Grades</span>
-    </div>
-
-    <!-- RIGHT SIDE RATING -->
-<div style="
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-width:160px;
-">
-
-  <div style="
-    font-size:12px;
-    color:#7a82b8;
-    margin-bottom:4px;
-    font-weight:600;
-  ">
-    ⭐ Rate
-  </div>
-
-  <div id="starRating" style="
-    font-size:22px;
-    cursor:pointer;
-    letter-spacing:4px;
-  ">
-    <span onclick="ratePlatform(1)">☆</span>
-    <span onclick="ratePlatform(2)">☆</span>
-    <span onclick="ratePlatform(3)">☆</span>
-    <span onclick="ratePlatform(4)">☆</span>
-    <span onclick="ratePlatform(5)">☆</span>
-  </div>
-
-  <div id="ratingMsg" style="
-    font-size:11px;
-    margin-top:4px;
-    color:#9aa0b8;
-  "></div>
-
-</div>
-</div>
-
-</div>
-</div>
   <div id="setupCard" class="card hidden">
   <h2>Firebase Setup</h2>
   <label>Lesson Name</label>
@@ -4094,6 +3980,14 @@ window.addEventListener('load', function(){
   if(saved){
     ratePlatform(parseInt(saved));
   }
+});
+
+  window.addEventListener('load', function(){
+  // Hide heavy header on login page
+  if(byId('headerPanel')) byId('headerPanel').classList.add('hidden');
+
+  // Make sure login cards show
+  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
 });
 
 </script>
