@@ -1236,8 +1236,44 @@ function bindButtons(){
   if(teacherBtn) teacherBtn.onclick = window.openTeacherView;
 }
 
-function showOnly(viewId){ ['studentView','teacherView'].forEach(function(id){ byId(id).classList.add('hidden'); }); byId(viewId).classList.remove('hidden'); byId('homeRow').classList.add('hidden'); window.scrollTo(0,0); }
-window.backToHome = function(){ sessionStorage.removeItem('dl_role'); sessionStorage.removeItem('dl_student_name'); sessionStorage.removeItem('dl_student_id'); byId('studentView').classList.add('hidden'); byId('teacherView').classList.add('hidden'); byId('homeRow').classList.remove('hidden'); byId('teacherTrackerCard').classList.remove('hidden'); byId('teacherControlCard').classList.add('hidden'); byId('teacherCreatorCard').classList.add('hidden'); window.scrollTo(0,0); };
+function showOnly(viewId){
+  ['homeRow','studentView','teacherView'].forEach(function(id){
+    const el = byId(id);
+    if(el) el.classList.add('hidden');
+  });
+
+  const active = byId(viewId);
+  if(active) active.classList.remove('hidden');
+
+  const header = byId('headerPanel');
+  if(header){
+    if(viewId === 'homeRow'){
+      header.classList.remove('hidden');
+    } else {
+      header.classList.add('hidden');
+    }
+  }
+
+  window.scrollTo(0,0);
+}
+
+window.backToHome = function(){
+  sessionStorage.removeItem('dl_role');
+  sessionStorage.removeItem('dl_student_name');
+  sessionStorage.removeItem('dl_student_id');
+
+  byId('studentView').classList.add('hidden');
+  byId('teacherView').classList.add('hidden');
+  byId('homeRow').classList.remove('hidden');
+
+  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
+
+  byId('teacherTrackerCard').classList.remove('hidden');
+  byId('teacherControlCard').classList.add('hidden');
+  byId('teacherCreatorCard').classList.add('hidden');
+
+  window.scrollTo(0,0);
+};
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
