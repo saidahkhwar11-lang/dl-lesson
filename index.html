@@ -2638,7 +2638,7 @@ function renderTeacherTracker(){
             <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
             <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
             <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
-            <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
+            <button class="muted" onclick="removeStudent('${escapeJs(s.id)}')" style="padding:6px 10px;">✖</button>
           </div>
         </td>
       </tr>
@@ -2778,6 +2778,11 @@ window.giveBonus = async function(name,id,delta){
 };
 
 window.removeStudent = function(id){
+  if(!id){
+    alert('Error: Missing student ID. Cannot remove student.');
+    return;
+  }
+
   if(!confirm('Remove this student?')) return;
 
   dbRef(studentPath(id)).remove();
