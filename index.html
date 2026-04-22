@@ -4098,14 +4098,11 @@ window.addEventListener('load', function(){
   }
 });
 
-  window.addEventListener('load', function(){
-  // Hide heavy header on login page
-  if(byId('headerPanel')) byId('headerPanel').classList.add('hidden');
-
-  // Make sure login cards show
-  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
+ window.addEventListener('load', function(){
+  loadSavedConfig();
+  showOnly('homeRow');
 });
-
+  
 </script>
 
 <div id="lessonInfoPopup" class="lesson-popup hidden">
