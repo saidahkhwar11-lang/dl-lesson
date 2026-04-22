@@ -1979,12 +1979,17 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
-  currentStudent.name +
-  ' | ID: ' + currentStudent.id +
-  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-  (liveBonus[currentStudent.id]?.points || 0) +
-  '</span>';
+  if(currentStudent && byId('studentHeaderInfo')){
+  const student = liveStudents[currentStudent.id] || {};
+  const bonus = Number((liveBonus[currentStudent.id]?.points) || 0);
+  const total = Number(student.total || 0);
+
+  byId('studentHeaderInfo').innerHTML =
+    currentStudent.name +
+    ' | ID: ' + currentStudent.id +
+    ' <span style="color:#2f5ea8;font-weight:bold;">🏆 ' + total + '</span>' +
+    ' <span style="color:#f39c12;font-weight:bold; margin-left:8px;">⭐ ' + bonus + '</span>';
+}
   side.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
     const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
