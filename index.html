@@ -1001,6 +1001,17 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
   showNotice('creatorNotice', 'Station moved down successfully.', 'good');
 };
+
+  async function waitForFirebase(maxWaitMs){
+  const start = Date.now();
+
+  while(typeof firebase === 'undefined'){
+    if(Date.now() - start > maxWaitMs) return false;
+    await new Promise(function(resolve){ setTimeout(resolve, 300); });
+  }
+
+  return true;
+}
   
   window.removeCurrentStation = async function(){
   const select = byId('creatorStationSelect');
@@ -1537,6 +1548,11 @@ window.loadSavedConfig = function(){
 
 window.startStudentSession = async function(){
   try{
+    const firebaseReady = await waitForFirebase(8000);
+if(!firebaseReady){
+  showNotice('studentNotice','Login failed: Firebase did not load. Please refresh and try again.','bad');
+  return;
+}
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
@@ -1609,17 +1625,28 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
 };
 
 window.openTeacherView = async function(){
-   try{
+  try{
+    const firebaseReady = await waitForFirebase(4000);
+    if(!firebaseReady){
+      showNotice('teacherNotice','Login failed: Firebase did not load. Please refresh and try again.','bad');
+      return;
+    }
+
     initFirebaseFromInputs();
 
     showNotice('teacherNotice','Opening teacher view...','warn');
     const pw = byId('teacherPassword').value;
-    if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
+    if(pw !== TEACHER_PASSWORD){
+      showNotice('teacherNotice','Incorrect password.','bad');
+      return;
+    }
+
     if(!requireConnection()){
       byId('setupCard').classList.remove('hidden');
       showNotice('teacherNotice','Please click Save Config first.','bad');
       return;
     }
+
     hideNotice('teacherNotice');
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
@@ -1633,7 +1660,8 @@ window.openTeacherView = async function(){
     showTeacherSection('teacherTrackerCard');
     startTeacherListeners();
     if(typeof renderBonusBox === 'function') renderBonusBox();
-    }catch(err){
+
+  }catch(err){
     console.error('Teacher view error:', err);
     showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
     byId('teacherView').classList.add('hidden');
@@ -4111,6 +4139,21 @@ window.addEventListener('load', function(){
  window.addEventListener('load', function(){
   loadSavedConfig();
   showOnly('homeRow');
+});
+
+  window.addEventListener('load', function(){
+  loadSavedConfig();
+
+  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
+  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
+  if(byId('studentView')) byId('studentView').classList.add('hidden');
+  if(byId('teacherView')) byId('teacherView').classList.add('hidden');
+
+  if(typeof firebase === 'undefined'){
+    if(byId('studentNotice')){
+      showNotice('studentNotice','Network is slow. Please wait a few seconds, then refresh if needed.','warn');
+    }
+  }
 });
   
 </script>
