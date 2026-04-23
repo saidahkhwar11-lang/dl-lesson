@@ -471,11 +471,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   position:relative;
   overflow:hidden;
 ">
-    <h2>Student Login</h2>
-    <label>Student Name</label>
-    <input id="studentName" placeholder="Enter student name" />
-    <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
-    <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
   <!-- Teacher Login -->
@@ -911,7 +906,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     const randomIndex = Math.floor(Math.random() * students.length);
     const selected = students[randomIndex];
 
-    selectedSpinnerStudentId = selected.id;
     selectedSpinnerStudentName = selected.name;
 
     alert('🎉 Selected Student: ' + selected.name);
@@ -939,19 +933,22 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       points: newBonus
     });
 
-    await dbRef(studentPath(selectedSpinnerStudentId)).update({
-  total: (Number(student.total || 0) + 1)
+    await dbRef(studentPath(selectedSpinnerStudentId) + '/total').transaction(function(current){
+  return (Number(current || 0) + 1);
 });
 
     // update local liveBonus (VERY IMPORTANT)
     liveBonus[selectedSpinnerStudentId] = {
-      id: selectedSpinnerStudentId,
-      name: selectedSpinnerStudentName || student.name || 'Student',
-      points: newBonus
-    };
+  id: selectedSpinnerStudentId,
+  name: selectedSpinnerStudentName || student.name || 'Student',
+  points: newBonus
+};
 
-    renderBonusBox();        // update popup
-    renderTeacherTracker();  // update tracker
+if(!liveStudents[selectedSpinnerStudentId]) liveStudents[selectedSpinnerStudentId] = {};
+liveStudents[selectedSpinnerStudentId].total = Number(student.total || 0) + 1;
+
+renderBonusBox();
+renderTeacherTracker();
 
     alert('⭐ Bonus added to ' + (selectedSpinnerStudentName || 'student'));
 
@@ -1541,6 +1538,8 @@ window.startStudentSession = async function(){
     }
 
     initFirebaseFromInputs();
+    await ensureLessonDefaults();
+
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
 
@@ -1552,13 +1551,13 @@ window.startStudentSession = async function(){
     }
 
     let id = sessionStorage.getItem('dl_student_id');
-
     if(!id){
       id = sanitizeKey(name + '_' + Date.now());
       sessionStorage.setItem('dl_student_id', id);
     }
 
     hideNotice('studentNotice');
+
     currentStudent = {name:name, id:id};
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
@@ -1611,7 +1610,6 @@ window.startStudentSession = async function(){
     const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
 
     await db.ref(path).set({
-      studentId: currentStudent.id,
       studentName: currentStudent.name || 'Student',
       clickedAt: Date.now(),
       status: 'waiting'
@@ -1639,17 +1637,29 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
 };
 
 window.openTeacherView = async function(){
-   try{
+  try{
+    if(typeof firebase === 'undefined'){
+      showNotice('teacherNotice','Login failed: Please refresh and try again.','bad');
+      return;
+    }
+
     initFirebaseFromInputs();
+    await ensureLessonDefaults();
 
     showNotice('teacherNotice','Opening teacher view...','warn');
+
     const pw = byId('teacherPassword').value;
-    if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
+    if(pw !== TEACHER_PASSWORD){
+      showNotice('teacherNotice','Incorrect password.','bad');
+      return;
+    }
+
     if(!requireConnection()){
       byId('setupCard').classList.remove('hidden');
       showNotice('teacherNotice','Please click Save Config first.','bad');
       return;
     }
+
     hideNotice('teacherNotice');
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
@@ -1662,8 +1672,10 @@ window.openTeacherView = async function(){
     renderTeacherTracker();
     showTeacherSection('teacherTrackerCard');
     startTeacherListeners();
+
     if(typeof renderBonusBox === 'function') renderBonusBox();
-    }catch(err){
+
+  }catch(err){
     console.error('Teacher view error:', err);
     showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
     byId('teacherView').classList.add('hidden');
@@ -1926,7 +1938,6 @@ window.spinStudent = function(){
     const randomIndex = Math.floor(Math.random() * students.length);
     const selected = students[randomIndex];
 
-    selectedSpinnerStudentId = selected.id;
     selectedSpinnerStudentName = selected.name;
 
     // Show box
@@ -3514,11 +3525,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
   if(savedRole === 'student'){
     const savedName = sessionStorage.getItem('dl_student_name');
-    const savedId = sessionStorage.getItem('dl_student_id');
 
-    if(savedName && savedId){
+    if(savedName){
       byId('studentName').value = savedName;
-      byId('studentId').value = savedId;
 
       setTimeout(function(){
         try{
