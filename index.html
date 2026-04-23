@@ -474,8 +474,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <h2>Student Login</h2>
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
-    <label>Student ID</label>
-    <input id="studentId" placeholder="Enter student ID" />
     <button id="studentStartBtn" onclick="startStudentSession()">Start Student Session</button>
     <div id="studentNotice" class="notice bad hidden"></div>
   </div>
@@ -1537,48 +1535,75 @@ window.loadSavedConfig = function(){
 
 window.startStudentSession = async function(){
   try{
+    if(typeof firebase === 'undefined'){
+      showNotice('studentNotice','Login failed: Please refresh and try again.','bad');
+      return;
+    }
 
-   if(typeof firebase === 'undefined'){
-  showNotice('studentNotice','Login failed: Please refresh and try again.','bad');
-  return;
-}
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
+
     const name = byId('studentName').value.trim();
-    const id = sanitizeKey(byId('studentId').value.trim());
-    if(!name || !id){ showNotice('studentNotice','Please enter student name and ID.','bad'); return; }
+
+    if(!name){
+      showNotice('studentNotice','Please enter student name.','bad');
+      return;
+    }
+
+    let id = sessionStorage.getItem('dl_student_id');
+
+    if(!id){
+      id = sanitizeKey(name + '_' + Date.now());
+      sessionStorage.setItem('dl_student_id', id);
+    }
+
     hideNotice('studentNotice');
     currentStudent = {name:name, id:id};
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
-const initial = {
-  name:name,
-  id:id,
-  scores:{},
-  total:0,
-  startedAt:Date.now(),
-  currentStation:'starter',
-  stationResults:{},
-  stationAnswers:{},
-  submittedStations:{},
-  stationSelfEval:{}
-};
+
+    const initial = {
+      name:name,
+      id:id,
+      scores:{},
+      total:0,
+      startedAt:Date.now(),
+      currentStation:'starter',
+      stationResults:{},
+      stationAnswers:{},
+      submittedStations:{},
+      stationSelfEval:{}
+    };
+
     const snap = await getSnap(studentPath(id));
     if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
-    await dbRef(attendancePath(id)).set({ name:name, id:id, startedAt:Date.now(), present:true });
+
+    await dbRef(attendancePath(id)).set({
+      name:name,
+      id:id,
+      startedAt:Date.now(),
+      present:true
+    });
+
     showOnly('studentView');
     renderStudentNav();
     listenStudentLive();
-    const displayedStation = (lessonStations.find(function(s){ return s.displayed && (s.unlocked || s.id === 'starter'); }) || {id:'starter'}).id;
+
+    const displayedStation = (
+      lessonStations.find(function(s){
+        return s.displayed && (s.unlocked || s.id === 'starter');
+      }) || {id:'starter'}
+    ).id;
+
     openStation(displayedStation);
+
   }catch(err){
     console.error('Student session error:', err);
     showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
   }
 };
-
   window.raiseHandForQuestion = async function(stationId, questionIndex){
   try{
     if(!db || !currentStudent || !currentStudent.id) return;
