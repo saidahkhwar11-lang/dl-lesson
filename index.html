@@ -467,55 +467,66 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
   <!-- Student Login -->
   <div class="card" style="
-  width:300px;
-  position:relative;
-  overflow:hidden;
-">
+    width:300px;
+    position:relative;
+    overflow:hidden;
+  ">
+    <h2>Student Login</h2>
+
+    <label>Student Name</label>
+    <input id="studentName" placeholder="Enter student name" />
+
+    <button id="studentStartBtn" onclick="startStudentSession()">
+      Start Student Session
+    </button>
+
+    <div id="studentNotice" class="notice bad hidden"></div>
   </div>
 
   <!-- Teacher Login -->
-<div class="card" style="
-  width:300px;
-  position:relative;
-  overflow:hidden;
-">
-  <div style="
-  position:absolute;
-  right:-10px;
-  bottom:-10px;
-  font-size:90px;
-  color:rgba(120,130,200,0.08);
-  pointer-events:none;
-">
-  ABC
-</div>
-  <div style="
-  position:absolute;
-  right:-5px;
-  bottom:-5px;
-  font-size:70px;
-  opacity:0.06;
-">
-  📚
-</div>
-  <!-- RIGHT -->
-<div style="
-  position:absolute;
-  right:-10px;
-  bottom:-10px;
-  font-size:80px;
-  opacity:0.06;
-">A</div>
+  <div class="card" style="
+    width:300px;
+    position:relative;
+    overflow:hidden;
+  ">
+    <div style="
+      position:absolute;
+      right:-10px;
+      bottom:-10px;
+      font-size:90px;
+      color:rgba(120,130,200,0.08);
+      pointer-events:none;
+    ">
+      ABC
+    </div>
 
-<!-- LEFT -->
-<div style="
-  position:absolute;
-  left:-10px;
-  top:-10px;
-  font-size:80px;
-  opacity:0.05;
-">B</div>
-  <h2>Teacher View</h2>
+    <div style="
+      position:absolute;
+      right:-5px;
+      bottom:-5px;
+      font-size:70px;
+      opacity:0.06;
+    ">
+      📚
+    </div>
+
+    <div style="
+      position:absolute;
+      right:-10px;
+      bottom:-10px;
+      font-size:80px;
+      opacity:0.06;
+    ">A</div>
+
+    <div style="
+      position:absolute;
+      left:-10px;
+      top:-10px;
+      font-size:80px;
+      opacity:0.05;
+    ">B</div>
+
+    <h2>Teacher View</h2>
     <label>Teacher Password</label>
     <input id="teacherPassword" type="password" placeholder="Enter password" />
     <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
