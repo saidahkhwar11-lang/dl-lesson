@@ -440,7 +440,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="setupCard" class="card hidden">
   <h2>Firebase Setup</h2>
   <label>Lesson Name</label>
-<input id="lessonKey" value="Technology in Our World" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
+<input id="lessonKey" value="Making Small Talk" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
     <label>Firebase Config JSON</label>
   <textarea id="firebaseConfigText">{
   "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
@@ -1001,7 +1001,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
   showNotice('creatorNotice', 'Station moved down successfully.', 'good');
 };
-
   
   window.removeCurrentStation = async function(){
   const select = byId('creatorStationSelect');
@@ -1538,11 +1537,6 @@ window.loadSavedConfig = function(){
 
 window.startStudentSession = async function(){
   try{
-    const firebaseReady = await waitForFirebase(2000);
-if(!firebaseReady){
-  showNotice('studentNotice','Login failed: Firebase did not load. Please refresh and try again.','bad');
-  return;
-}
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
@@ -1615,28 +1609,17 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
 };
 
 window.openTeacherView = async function(){
-  try{
-    const firebaseReady = await waitForFirebase(2000);
-    if(!firebaseReady){
-      showNotice('teacherNotice','Login failed: Firebase did not load. Please refresh and try again.','bad');
-      return;
-    }
-
+   try{
     initFirebaseFromInputs();
 
     showNotice('teacherNotice','Opening teacher view...','warn');
     const pw = byId('teacherPassword').value;
-    if(pw !== TEACHER_PASSWORD){
-      showNotice('teacherNotice','Incorrect password.','bad');
-      return;
-    }
-
+    if(pw !== TEACHER_PASSWORD){ showNotice('teacherNotice','Incorrect password.','bad'); return; }
     if(!requireConnection()){
       byId('setupCard').classList.remove('hidden');
       showNotice('teacherNotice','Please click Save Config first.','bad');
       return;
     }
-
     hideNotice('teacherNotice');
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
@@ -1650,8 +1633,7 @@ window.openTeacherView = async function(){
     showTeacherSection('teacherTrackerCard');
     startTeacherListeners();
     if(typeof renderBonusBox === 'function') renderBonusBox();
-
-  }catch(err){
+    }catch(err){
     console.error('Teacher view error:', err);
     showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
     byId('teacherView').classList.add('hidden');
@@ -1997,17 +1979,12 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')){
-  const student = liveStudents[currentStudent.id] || {};
-  const bonus = Number((liveBonus[currentStudent.id]?.points) || 0);
-  const total = Number(student.total || 0);
-
-  byId('studentHeaderInfo').innerHTML =
-    currentStudent.name +
-    ' | ID: ' + currentStudent.id +
-    ' <span style="color:#2f5ea8;font-weight:bold;">🏆 ' + total + '</span>' +
-    ' <span style="color:#f39c12;font-weight:bold; margin-left:8px;">⭐ ' + bonus + '</span>';
-}
+  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
+  currentStudent.name +
+  ' | ID: ' + currentStudent.id +
+  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
+  (liveBonus[currentStudent.id]?.points || 0) +
+  '</span>';
   side.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
     const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
@@ -2656,7 +2633,7 @@ function renderTeacherTracker(){
             <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
             <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
             <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
-            <button class="muted" onclick="removeStudent('${escapeJs(s.id)}')" style="padding:6px 10px;">✖</button>
+            <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
           </div>
         </td>
       </tr>
@@ -2796,11 +2773,6 @@ window.giveBonus = async function(name,id,delta){
 };
 
 window.removeStudent = function(id){
-  if(!id){
-    alert('Error: Missing student ID. Cannot remove student.');
-    return;
-  }
-
   if(!confirm('Remove this student?')) return;
 
   dbRef(studentPath(id)).remove();
@@ -4129,21 +4101,6 @@ window.addEventListener('load', function(){
  window.addEventListener('load', function(){
   loadSavedConfig();
   showOnly('homeRow');
-});
-
-  window.addEventListener('load', function(){
-  loadSavedConfig();
-
-  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
-  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
-  if(byId('studentView')) byId('studentView').classList.add('hidden');
-  if(byId('teacherView')) byId('teacherView').classList.add('hidden');
-
-  if(typeof firebase === 'undefined'){
-    if(byId('studentNotice')){
-      showNotice('studentNotice','Network is slow. Please wait a few seconds, then refresh if needed.','warn');
-    }
-  }
 });
   
 </script>
