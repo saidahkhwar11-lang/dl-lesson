@@ -1537,6 +1537,11 @@ window.loadSavedConfig = function(){
 
 window.startStudentSession = async function(){
   try{
+
+   if(typeof firebase === 'undefined'){
+  showNotice('studentNotice','Login failed: Please refresh and try again.','bad');
+  return;
+}
     initFirebaseFromInputs();
     showNotice('studentNotice','Starting student session...','warn');
     if(!requireConnection()) return;
