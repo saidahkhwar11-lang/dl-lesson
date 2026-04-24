@@ -2943,8 +2943,8 @@ window.exportTrackerCsv = function(){
     stationHeaders.push(s.title + ' Self-Eval');
   });
 
-  const rows = [['Name','ID','Current'].concat(stationHeaders).concat(['Bonus','Total'])];
-
+const rows = [['Name','Current'].concat(stationHeaders).concat(['Total','Bonus'])];
+  
   function shortSelfEval(value){
     if(value === 'I understood it well') return 'Very well';
     if(value === 'I understood some of it') return 'Some';
@@ -2965,7 +2965,6 @@ window.exportTrackerCsv = function(){
 
     rows.push([
       s.name,
-      s.id,
       s.currentStation || ''
     ].concat(stationData).concat([
       bonus,
