@@ -1649,10 +1649,16 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
   }
 };
 
-  function showClassSummary(){
-  const students = Object.values(window.trackerData || {});
+function showClassSummary(){
+  const wrap = document.getElementById('teacherTrackerWrap');
+  if(!wrap){
+    alert("Tracker not found");
+    return;
+  }
 
-  if(!students.length){
+  const rows = wrap.querySelectorAll('tbody tr');
+
+  if(!rows.length){
     alert("No student data yet");
     return;
   }
@@ -1660,29 +1666,27 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
   let total = 0;
   let highest = -Infinity;
   let lowest = Infinity;
-  let finished = 0;
+  let count = 0;
 
-  students.forEach(s => {
-    const score = Number(s.total || 0);
+  rows.forEach(row => {
+    const cells = row.querySelectorAll('td');
 
+  const score = Number(cells[cells.length - 2].textContent) || 0;
     total += score;
     if(score > highest) highest = score;
     if(score < lowest) lowest = score;
 
-    // safer check
-    if(s.finished === true || s.currentStation === 'exit'){
-      finished++;
-    }
+    count++;
   });
 
-  const avg = (total / students.length).toFixed(1);
+  const avg = (total / count).toFixed(1);
 
   alert(
     `📊 Class Summary\n\n` +
     `Average: ${avg}\n` +
     `Highest: ${highest}\n` +
     `Lowest: ${lowest}\n` +
-    `Finished: ${finished} / ${students.length}`
+    `Students: ${count}`
   );
 }
 window.openTeacherView = async function(){
