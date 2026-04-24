@@ -2767,10 +2767,9 @@ function renderTeacherTracker(){
     return `
       <tr>
         <td class="name-col">${escapeHtml(s.name || '')}</td>
-        <td class="id-col">${escapeHtml(s.id || '')}</td>
         <td>${escapeHtml(s.currentStation || '-')}</td>
         ${scoreCells}
-        <td>${(s.total || 0) + bonus}</td>
+        <td><strong>${(s.total || 0) + bonus}</strong></td>
         <td>
           <div style="display:flex; align-items:center; gap:8px;">
             <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
@@ -2789,7 +2788,6 @@ function renderTeacherTracker(){
     <thead>
       <tr>
         <th class="name-col">Name</th>
-        <th class="id-col">ID</th>   // ✅ ADD THIS LINE
         <th>Current</th>
         ${header}
         <th>Total</th>
@@ -2797,7 +2795,7 @@ function renderTeacherTracker(){
       </tr>
     </thead>
     <tbody>
-      ${rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>'}
+      ${rows || '<tr><td colspan="' + (lessonStations.length + 4) + '">No student data yet.</td></tr>'}
     </tbody>
   </table>
 `;
