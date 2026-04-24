@@ -551,37 +551,40 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   </button>
 </div>
   <div id="studentView" class="hidden">
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-<div class="card" style="margin-bottom:12px;">
-  <h2 style="margin:0 0 8px 0;">Student View</h2>
-
-  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
-    
-    <div class="small" id="studentHeaderInfo">Student session</div>
-
-    <div id="studentProgressBox" style="
-      padding:6px 10px;
-      background:#f0f4ff;
-      border-radius:10px;
-      font-weight:bold;
-      font-size:13px;
-    ">
-      Progress: 0 / 0 stations completed
-    </div>
-
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
   </div>
-</div>
-    <div class="top-bar" id="topStations"></div>
-    <div class="student-layout">
-      <div class="sidebar">
-  <h3 style="margin-top:0">Stations</h3>
-  <div id="stationList"></div>
 
-</div>
-      <div class="main" id="stationContent"></div>
+  <div class="card" style="margin-bottom:12px;">
+    <h2 style="margin:0 0 8px 0;">Student View</h2>
+
+    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+      <div class="small" id="studentHeaderInfo">Student session</div>
+
+      <div id="studentProgressBox" style="
+        padding:6px 10px;
+        background:#f0f4ff;
+        border-radius:10px;
+        font-weight:bold;
+        font-size:13px;
+      ">
+        Progress: 0 / 0 stations completed
+      </div>
     </div>
   </div>
 
+  <div class="top-bar" id="topStations"></div>
+
+  <div class="student-layout">
+    <div class="sidebar">
+      <h3 style="margin-top:0">Stations</h3>
+      <div id="stationList"></div>
+    </div>
+
+    <div class="main" id="stationContent"></div>
+  </div>
+</div>
+  
   <div id="teacherView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
     <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
@@ -1589,15 +1592,13 @@ window.startStudentSession = async function(){
       return;
     }
 
-    let id = sessionStorage.getItem('dl_student_id');
-    if(!id){
-      id = sanitizeKey(name + '_' + Date.now());
-      sessionStorage.setItem('dl_student_id', id);
-    }
+    // ✅ same name = same saved work
+    let id = sanitizeKey(name);
 
     hideNotice('studentNotice');
 
     currentStudent = {name:name, id:id};
+
     sessionStorage.setItem('dl_role', 'student');
     sessionStorage.setItem('dl_student_name', name);
     sessionStorage.setItem('dl_student_id', id);
@@ -1615,8 +1616,22 @@ window.startStudentSession = async function(){
       stationSelfEval:{}
     };
 
-    const snap = await getSnap(studentPath(id));
-    if(!snap.exists()) await dbRef(studentPath(id)).set(initial);
+   const snap = await getSnap(studentPath(id));
+
+if(!snap.exists()){
+  await dbRef(studentPath(id)).set(initial);
+} else {
+  await dbRef(studentPath(id)).update({
+    name:name,
+    id:id,
+    lastLoginAt:Date.now()
+  });
+}
+
+// keep UI safe
+if(!liveStudents[id]) liveStudents[id] = {};
+liveStudents[id].name = name;
+liveStudents[id].id = id;
 
     await dbRef(attendancePath(id)).set({
       name:name,
@@ -1626,9 +1641,9 @@ window.startStudentSession = async function(){
     });
 
     showOnly('studentView');
-    updateStudentProgress();
     renderStudentNav();
     listenStudentLive();
+    updateStudentProgress();
 
     const displayedStation = (
       lessonStations.find(function(s){
@@ -1643,39 +1658,7 @@ window.startStudentSession = async function(){
     showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
   }
 };
-  window.raiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!db || !currentStudent || !currentStudent.id) return;
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-
-    await db.ref(path).set({
-      studentName: currentStudent.name || 'Student',
-      clickedAt: Date.now(),
-      status: 'waiting'
-    });
-
-    showNotice('studentNotice', 'You asked to answer this question.', 'good');
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not save your request.', 'bad');
-  }
-};
-
-window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
-  try{
-    if(!db || !currentStudent || !currentStudent.id) return;
-
-    const path = getQuestionRaisePath(stationId, questionIndex) + '/' + currentStudent.id;
-    await db.ref(path).remove();
-
-    showNotice('studentNotice', 'Your request was removed.', 'warn');
-  }catch(err){
-    console.error(err);
-    showNotice('studentNotice', 'Could not remove your request.', 'bad');
-  }
-};
-
+  
 function showClassSummary(){
   const wrap = document.getElementById('teacherTrackerWrap');
   if(!wrap){
@@ -2933,7 +2916,12 @@ window.giveBonus = async function(name,id,delta){
 };
 
 window.removeStudent = function(id){
-  if(!confirm('Remove this student?')) return;
+  if(!id || !String(id).trim()){
+    alert('No student selected.');
+    return;
+  }
+
+  if(!confirm('Remove this student only?')) return;
 
   dbRef(studentPath(id)).remove();
   dbRef(bonusPath()).child(id).remove();
