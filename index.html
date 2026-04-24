@@ -552,23 +552,28 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
   <div id="studentView" class="hidden">
     <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Student View</h2><div class="small" id="studentHeaderInfo">Student session</div></div>
+<div class="card" style="margin-bottom:12px;">
+  <h2 style="margin:0 0 8px 0;">Student View</h2>
+
+  <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+    
+    <div class="small" id="studentHeaderInfo">Student session</div>
+
+    <div id="studentProgressBox" style="
+      padding:6px 10px;
+      background:#f0f4ff;
+      border-radius:10px;
+      font-weight:bold;
+      font-size:13px;
+    ">
+      Progress: 0 / 0 stations completed
+    </div>
+
+  </div>
+</div>
     <div class="top-bar" id="topStations"></div>
     <div class="student-layout">
       <div class="sidebar">
-
-        <div class="sidebar">
-
-  <div id="studentProgressBox" style="
-    margin-bottom:12px;
-    padding:8px 12px;
-    background:#f0f4ff;
-    border-radius:10px;
-    font-weight:bold;
-  ">
-    Progress: 0 / 0 stations completed
-  </div>
-
   <h3 style="margin-top:0">Stations</h3>
   <div id="stationList"></div>
 
