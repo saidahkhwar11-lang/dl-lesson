@@ -547,9 +547,23 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="top-bar" id="topStations"></div>
     <div class="student-layout">
       <div class="sidebar">
-        <h3 style="margin-top:0">Stations</h3>
-        <div id="stationList"></div>
-      </div>
+
+        <div class="sidebar">
+
+  <div id="studentProgressBox" style="
+    margin-bottom:12px;
+    padding:8px 12px;
+    background:#f0f4ff;
+    border-radius:10px;
+    font-weight:bold;
+  ">
+    Progress: 0 / 0 stations completed
+  </div>
+
+  <h3 style="margin-top:0">Stations</h3>
+  <div id="stationList"></div>
+
+</div>
       <div class="main" id="stationContent"></div>
     </div>
   </div>
@@ -1600,6 +1614,7 @@ window.startStudentSession = async function(){
     });
 
     showOnly('studentView');
+    updateStudentProgress();
     renderStudentNav();
     listenStudentLive();
 
@@ -2069,6 +2084,25 @@ function getNextUnlockedStationId(stationId){
   return null;
 }
 
+  function updateStudentProgress(){
+  if(!lessonStations || !lessonStations.length) return;
+
+  const totalStations = lessonStations.length;
+  let completed = 0;
+
+  lessonStations.forEach(st => {
+    const data = studentAnswers && studentAnswers[st.id];
+    if(data && data.submitted){
+      completed++;
+    }
+  });
+
+  const box = document.getElementById('studentProgressBox');
+  if(box){
+    box.textContent = `Progress: ${completed} / ${totalStations} stations completed`;
+  }
+}
+  
 function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
@@ -2628,6 +2662,7 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
   liveStudents[currentStudent.id].total = total;
 
   renderStudentNav();
+  updateStudentProgress();
   openStation(stationId);
 };
   
