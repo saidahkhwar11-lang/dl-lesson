@@ -2783,24 +2783,13 @@ function renderTeacherTracker(){
     `;
   }).join('');
 
- // ✅ Remove ID column from each tracker row
-if(rows){
-  rows = rows.replace(/<tr>([\s\S]*?)<\/tr>/g, function(fullRow, rowContent){
-    const cells = rowContent.match(/<td[\s\S]*?<\/td>/g) || [];
 
-    if(cells.length > 1){
-      cells.splice(1, 1); // remove 2nd cell = ID
-      return '<tr>' + cells.join('') + '</tr>';
-    }
-
-    return fullRow;
-  });
-}
   wrap.innerHTML = `
   <table class="tracker-table">
     <thead>
       <tr>
         <th class="name-col">Name</th>
+        <th class="id-col">ID</th>   // ✅ ADD THIS LINE
         <th>Current</th>
         ${header}
         <th>Total</th>
@@ -2808,7 +2797,7 @@ if(rows){
       </tr>
     </thead>
     <tbody>
-      ${rows || '<tr><td colspan="' + (lessonStations.length + 4) + '">No student data yet.</td></tr>'}
+      ${rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>'}
     </tbody>
   </table>
 `;
