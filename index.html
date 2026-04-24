@@ -610,6 +610,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
   <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
   <button onclick="showTeacherSection('teacherCreatorCard')">🛠 Lesson Builder</button>
+      
+  <button onclick="showClassSummary()">📈 Class Summary</button>
 </div>
 <button onclick="toggleTopStudents()" class="secondary">
   Show Top 5
@@ -1647,6 +1649,42 @@ window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
   }
 };
 
+  function showClassSummary(){
+  const students = Object.values(window.trackerData || {});
+
+  if(!students.length){
+    alert("No student data yet");
+    return;
+  }
+
+  let total = 0;
+  let highest = -Infinity;
+  let lowest = Infinity;
+  let finished = 0;
+
+  students.forEach(s => {
+    const score = Number(s.total || 0);
+
+    total += score;
+    if(score > highest) highest = score;
+    if(score < lowest) lowest = score;
+
+    // safer check
+    if(s.finished === true || s.currentStation === 'exit'){
+      finished++;
+    }
+  });
+
+  const avg = (total / students.length).toFixed(1);
+
+  alert(
+    `📊 Class Summary\n\n` +
+    `Average: ${avg}\n` +
+    `Highest: ${highest}\n` +
+    `Lowest: ${lowest}\n` +
+    `Finished: ${finished} / ${students.length}`
+  );
+}
 window.openTeacherView = async function(){
   try{
     if(typeof firebase === 'undefined'){
