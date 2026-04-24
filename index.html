@@ -2783,6 +2783,19 @@ function renderTeacherTracker(){
     `;
   }).join('');
 
+ // ✅ Remove ID column from each tracker row
+if(rows){
+  rows = rows.replace(/<tr>([\s\S]*?)<\/tr>/g, function(fullRow, rowContent){
+    const cells = rowContent.match(/<td[\s\S]*?<\/td>/g) || [];
+
+    if(cells.length > 1){
+      cells.splice(1, 1); // remove 2nd cell = ID
+      return '<tr>' + cells.join('') + '</tr>';
+    }
+
+    return fullRow;
+  });
+}
   wrap.innerHTML = `
   <table class="tracker-table">
     <thead>
