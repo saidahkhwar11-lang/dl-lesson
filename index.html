@@ -2784,22 +2784,21 @@ function renderTeacherTracker(){
   }).join('');
 
   wrap.innerHTML = `
-    <table class="tracker-table">
-      <thead>
-        <tr>
-          <th class="name-col">Name</th>
-          <th class="id-col">ID</th>
-          <th>Current</th>
-          ${header}
-          <th>Total</th>
-          <th>Bonus</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows || '<tr><td colspan="' + (lessonStations.length + 5) + '">No student data yet.</td></tr>'}
-      </tbody>
-    </table>
-  `;
+  <table class="tracker-table">
+    <thead>
+      <tr>
+        <th class="name-col">Name</th>
+        <th>Current</th>
+        ${header}
+        <th>Total</th>
+        <th>Bonus</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows || '<tr><td colspan="' + (lessonStations.length + 4) + '">No student data yet.</td></tr>'}
+    </tbody>
+  </table>
+`;
 
   renderTeacherOverview();
   if(typeof renderTopStudents === 'function') renderTopStudents();
