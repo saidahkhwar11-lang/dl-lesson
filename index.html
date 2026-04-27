@@ -1389,32 +1389,25 @@ window.backToHome = function(){
 window.toggleBonusPopup = function(){ const popup = byId('bonusPopup'); popup.style.display = popup.style.display === 'block' ? 'none' : 'block'; };
 
 window.maximizeImage = function(src){
-  if(!src){
-    alert('No image available');
-    return;
-  }
+  if(!src) return;
 
-  let modal = document.getElementById('imageModal');
-  if(!modal){
-    modal = document.createElement('div');
-    modal.id = 'imageModal';
-    document.body.appendChild(modal);
-  }
+  const modal = byId('imageModal');
+  if(!modal) return;
+
+  modal.innerHTML =
+    '<div class="image-modal-content" onclick="event.stopPropagation()">' +
+      '<button type="button" class="image-modal-close" onclick="closeImageModal()">✕</button>' +
+      '<img src="' + escapeHtml(src) + '" alt="maximized image">' +
+    '</div>';
 
   modal.className = 'image-modal';
-  modal.style.display = 'flex';
-  modal.innerHTML = `
-    <div class="image-modal-content" onclick="event.stopPropagation()">
-      <button type="button" class="image-modal-close" onclick="closeImageModal()">✕</button>
-      <img src="${src}" alt="maximized image">
-    </div>
-  `;
+  modal.classList.remove('hidden');
 };
-
+  
 window.closeImageModal = function(){
-  const modal = document.getElementById('imageModal');
+  const modal = byId('imageModal');
   if(!modal) return;
-  modal.style.display = 'none';
+  modal.className = 'image-modal hidden';
   modal.innerHTML = '';
 };
    function getSelfEvalValue(stationId){
@@ -1776,7 +1769,7 @@ if(content.imageUrl){
   imageHtml = `
     <img class="reading-img" src="${escapeHtml(content.imageUrl)}" alt="Station Image">
     <div class="image-actions">
-    <button type="button" class="secondary" onclick="window.maximizeImage('${escapeJs(content.imageUrl)}')">
+   <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">
   🔍 Maximize Picture
 </button>
     </div>
