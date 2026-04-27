@@ -1395,50 +1395,27 @@ window.maximizeImage = function(src){
   }
 
   let modal = document.getElementById('imageModal');
-
-  // create modal if missing
   if(!modal){
     modal = document.createElement('div');
     modal.id = 'imageModal';
     document.body.appendChild(modal);
   }
 
-  modal.style.cssText = `
-    position:fixed;
-    inset:0;
-    background:rgba(0,0,0,.85);
-    z-index:999999;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:20px;
-  `;
-
+  modal.className = 'image-modal';
+  modal.style.display = 'flex';
   modal.innerHTML = `
-    <div style="position:relative; max-width:95vw; max-height:95vh;" onclick="event.stopPropagation()">
-      <button type="button" onclick="closeImageModal()" style="
-        position:absolute;
-        top:-45px;
-        right:0;
-        background:white;
-        border:0;
-        border-radius:10px;
-        padding:10px 14px;
-        font-weight:bold;
-        cursor:pointer;
-      ">✕ Close</button>
-
-      <img src="${src}" style="
-        max-width:95vw;
-        max-height:90vh;
-        object-fit:contain;
-        border-radius:14px;
-        background:white;
-      ">
+    <div class="image-modal-content" onclick="event.stopPropagation()">
+      <button type="button" class="image-modal-close" onclick="closeImageModal()">✕</button>
+      <img src="${src}" alt="maximized image">
     </div>
   `;
+};
 
-  modal.onclick = closeImageModal;
+window.closeImageModal = function(){
+  const modal = document.getElementById('imageModal');
+  if(!modal) return;
+  modal.style.display = 'none';
+  modal.innerHTML = '';
 };
    function getSelfEvalValue(stationId){
   const student = currentStudent && liveStudents[currentStudent.id];
@@ -1799,7 +1776,9 @@ if(content.imageUrl){
   imageHtml = `
     <img class="reading-img" src="${escapeHtml(content.imageUrl)}" alt="Station Image">
     <div class="image-actions">
-      <button type="button" class="secondary" onclick="window.maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
+    <button type="button" class="secondary" onclick="window.maximizeImage('${escapeJs(content.imageUrl)}')">
+  🔍 Maximize Picture
+</button>
     </div>
   `;
 }
