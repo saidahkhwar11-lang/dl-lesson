@@ -449,7 +449,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="setupCard" class="card hidden">
   <h2>Firebase Setup</h2>
   <label>Lesson Name</label>
-<input id="lessonKey" value="Used to and Would" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
+<input id="lessonKey" value="Technology_in_Our_World" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
     <label>Firebase Config JSON</label>
   <textarea id="firebaseConfigText">{
   "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
@@ -1401,14 +1401,7 @@ window.maximizeImage = function(src){
     '</div>';
 
   modal.className = 'image-modal';
-  modal.classList.remove('hidden');
-};
-  
-window.closeImageModal = function(){
-  const modal = byId('imageModal');
-  if(!modal) return;
-  modal.className = 'image-modal hidden';
-  modal.innerHTML = '';
+modal.classList.remove('hidden');
 };
    function getSelfEvalValue(stationId){
   const student = currentStudent && liveStudents[currentStudent.id];
@@ -1432,12 +1425,12 @@ window.saveSelfEvaluation = async function(stationId, value){
 };
 
 window.closeImageModal = function(){
-  const modal = document.getElementById('imageModal');
+  const modal = byId('imageModal');
   if(!modal) return;
-
-  modal.style.display = 'none';
+  modal.className = 'image-modal hidden';
   modal.innerHTML = '';
 };
+
 function initFirebaseFromInputs(){
   lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
@@ -1765,16 +1758,14 @@ window.openTeacherStationPreview = function(id){
   wrap.dataset.currentStationId = id;
 
   let imageHtml = '';
-if(content.imageUrl){
-  imageHtml = `
-    <img class="reading-img" src="${escapeHtml(content.imageUrl)}" alt="Station Image">
-    <div class="image-actions">
-   <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">
-  🔍 Maximize Picture
-</button>
-    </div>
-  `;
-}
+  if(content.imageUrl){
+    imageHtml = `
+      <img class="reading-img" src="${escapeHtml(content.imageUrl)}" alt="Station Image">
+      <div class="image-actions">
+        <button type="button" class="secondary" onclick="maximizeImage('${escapeJs(content.imageUrl)}')">🔍 Maximize Picture</button>
+      </div>
+    `;
+  }
 
   let audioHtml = '';
 if(content.audioUrl){
@@ -4198,8 +4189,6 @@ padding-left: 18px;
     <td>Promotes responsible learning, awareness, positive values, and informed decision-making.</td>
   </tr>
 </table>
-
-<div id="imageModal" class="image-modal hidden" onclick="closeImageModal()"></div>
 
 </body>
 </html>
