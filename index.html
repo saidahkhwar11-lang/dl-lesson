@@ -586,9 +586,44 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
   
   <div id="teacherView" class="hidden">
-    <div class="btns" style="margin:0 0 12px 0;"><button class="muted" onclick="backToHome()">Back Home</button></div>
-    <div class="card" style="margin-bottom:12px;"><h2 style="margin:0 0 8px 0;">Teacher View</h2><div class="small">Teacher dashboard, controls, creator, save/load lesson data, and bonus popup.</div></div>
-    <div id="teacherOverviewCard" class="card" style="margin-bottom:12px;">
+
+  <div class="btns" style="margin:0 0 12px 0;">
+    <button class="muted" onclick="backToHome()">Back Home</button>
+  </div>
+
+  <div class="card" style="margin-bottom:12px;">
+    <h2>Teacher View</h2>
+    <div class="small">Teacher dashboard...</div>
+  </div>
+
+  <div id="teacherTopTimer" class="card" style="
+    margin-bottom:12px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  ">
+    <strong>⏱ Teacher Timer</strong>
+
+    <input id="teacherTimerMinutes" type="number" min="1" max="60" value="5" style="width:70px;">
+    <span class="small">minutes</span>
+
+    <div id="teacherTimerDisplay" style="
+      font-size:24px;
+      font-weight:bold;
+      min-width:80px;
+    ">05:00</div>
+
+    <button onclick="setTeacherTimer()">Set</button>
+    <button onclick="startTeacherTimer()">▶ Start</button>
+    <button onclick="pauseTeacherTimer()">⏸ Pause</button>
+    <button onclick="resetTeacherTimer()">↻ Reset</button>
+    <button onclick="maximizeTeacherTimer()">⛶ Maximize</button>
+  </div>
+
+  
+  <div id="teacherOverviewCard" class="card">
+
     <div class="btns" style="margin-bottom:10px;">
   <button class="secondary" onclick="spinStudent()">🎡 Spinner</button>
 </div>
@@ -1052,6 +1087,100 @@ lessonStations[index] = temp;
 
   showNotice('creatorNotice', 'Station moved down successfully.', 'good');
 };
+
+  let teacherTimerSeconds = 5 * 60;
+let teacherTimerOriginalSeconds = 5 * 60;
+let teacherTimerInterval = null;
+
+function formatTeacherTime(sec){
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function renderTeacherTimer(){
+  const text = formatTeacherTime(teacherTimerSeconds);
+
+  const d = byId('teacherTimerDisplay');
+  if(d) d.textContent = text;
+
+  const big = byId('bigTeacherTimerDisplay');
+  if(big) big.textContent = text;
+}
+
+function setTeacherTimer(){
+  let m = Number(byId('teacherTimerMinutes').value || 5);
+
+  if(m < 1) m = 1;
+  if(m > 60) m = 60;
+
+  byId('teacherTimerMinutes').value = m;
+
+  pauseTeacherTimer();
+  teacherTimerSeconds = m * 60;
+  teacherTimerOriginalSeconds = teacherTimerSeconds;
+  renderTeacherTimer();
+}
+
+function startTeacherTimer(){
+  clearInterval(teacherTimerInterval);
+
+  teacherTimerInterval = setInterval(function(){
+    if(teacherTimerSeconds <= 0){
+      clearInterval(teacherTimerInterval);
+      alert('⏰ Time is up!');
+      return;
+    }
+
+    teacherTimerSeconds--;
+    renderTeacherTimer();
+  }, 1000);
+}
+
+function pauseTeacherTimer(){
+  clearInterval(teacherTimerInterval);
+}
+
+function resetTeacherTimer(){
+  pauseTeacherTimer();
+  teacherTimerSeconds = teacherTimerOriginalSeconds;
+  renderTeacherTimer();
+}
+
+function maximizeTeacherTimer(){
+  const overlay = document.createElement('div');
+
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(10,20,40,.95);
+    color:white;
+    z-index:999999;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+  `;
+
+  overlay.innerHTML = `
+    <button onclick="this.parentElement.remove()" style="
+      position:absolute;
+      top:20px;
+      right:20px;
+      padding:10px 14px;
+      border-radius:10px;
+      border:0;
+      font-weight:bold;
+      cursor:pointer;
+    ">✕ Close</button>
+
+    <div style="font-size:30px; margin-bottom:20px;">⏱ Teacher Timer</div>
+    <div id="bigTeacherTimerDisplay" style="font-size:140px; font-weight:bold;">00:00</div>
+  `;
+
+  document.body.appendChild(overlay);
+  renderTeacherTimer();
+}
   
   window.removeCurrentStation = async function(){
   const select = byId('creatorStationSelect');
@@ -1741,6 +1870,7 @@ window.openTeacherView = async function(){
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
     showOnly('teacherView');
+    renderTeacherTimer();
     fillTeacherSelects();
     loadCreatorStation();
     renderTeacherOverview();
