@@ -596,56 +596,41 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <div class="small">Teacher dashboard...</div>
   </div>
 
-  <div id="teacherTopTimer" class="card" style="
-    margin-bottom:12px;
-    display:flex;
-    align-items:center;
-    gap:10px;
-    flex-wrap:wrap;
-  ">
-
-   <div id="teacherTopTimer" class="card" style="
+<div id="teacherTopTimer" class="card" style="
   margin-bottom:12px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  flex-wrap:wrap;
+  gap:10px;
+  flex-wrap:nowrap;
+  overflow-x:auto;
 ">
 
-  <!-- LEFT -->
-  <div style="display:flex; align-items:center; gap:10px;">
-    <strong>⏱ Timer</strong>
+  <strong>⏱</strong>
 
-    <input id="teacherTimerMinutes" type="number" min="1" max="60" value="5" style="
-      width:60px;
-      padding:4px 6px;
-      border-radius:8px;
-      border:1px solid var(--line);
-      text-align:center;
-    ">
-    <span class="small">min</span>
-  </div>
-
-  <!-- CENTER -->
-  <div id="teacherTimerDisplay" style="
-    font-size:26px;
-    font-weight:bold;
-    min-width:80px;
+  <input id="teacherTimerMinutes" type="number" min="1" max="60" value="5" style="
+    width:55px;
+    padding:4px;
+    border-radius:6px;
+    border:1px solid var(--line);
     text-align:center;
+  ">
+
+  <span class="small">min</span>
+
+  <div id="teacherTimerDisplay" style="
+    font-size:22px;
+    font-weight:bold;
+    margin:0 10px;
+    min-width:70px;
   ">05:00</div>
 
-  <!-- RIGHT (controls) -->
-  <div style="display:flex; gap:6px; flex-wrap:wrap;">
-    <button class="secondary" onclick="setTeacherTimer()">Set</button>
-    <button onclick="startTeacherTimer()">▶</button>
-    <button onclick="pauseTeacherTimer()">⏸</button>
-    <button onclick="resetTeacherTimer()">↻</button>
-    <button class="secondary" onclick="maximizeTeacherTimer()">⛶</button>
-  </div>
+  <button onclick="setTeacherTimer()">Set</button>
+  <button onclick="startTeacherTimer()">▶</button>
+  <button onclick="pauseTeacherTimer()">⏸</button>
+  <button onclick="resetTeacherTimer()">↻</button>
+  <button onclick="maximizeTeacherTimer()">⛶</button>
 
 </div>
-
   
   <div id="teacherOverviewCard" class="card">
 
@@ -4209,9 +4194,9 @@ padding-left: 18px;
   display: none;
 }
 #teacherTopTimer button{
-  padding:6px 10px;
-  border-radius:8px;
-  font-size:13px;
+  padding:4px 8px;
+  font-size:12px;
+  border-radius:6px;
 }
 </style>
 </head>
