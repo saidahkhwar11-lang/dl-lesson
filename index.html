@@ -608,18 +608,47 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     <input id="teacherTimerMinutes" type="number" min="1" max="60" value="5" style="width:70px;">
     <span class="small">minutes</span>
 
-    <div id="teacherTimerDisplay" style="
-      font-size:24px;
-      font-weight:bold;
-      min-width:80px;
-    ">05:00</div>
+   <div id="teacherTopTimer" class="card" style="
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex-wrap:wrap;
+">
 
-    <button onclick="setTeacherTimer()">Set</button>
-    <button onclick="startTeacherTimer()">▶ Start</button>
-    <button onclick="pauseTeacherTimer()">⏸ Pause</button>
-    <button onclick="resetTeacherTimer()">↻ Reset</button>
-    <button onclick="maximizeTeacherTimer()">⛶ Maximize</button>
+  <!-- LEFT -->
+  <div style="display:flex; align-items:center; gap:10px;">
+    <strong>⏱ Timer</strong>
+
+    <input id="teacherTimerMinutes" type="number" min="1" max="60" value="5" style="
+      width:60px;
+      padding:4px 6px;
+      border-radius:8px;
+      border:1px solid var(--line);
+      text-align:center;
+    ">
+    <span class="small">min</span>
   </div>
+
+  <!-- CENTER -->
+  <div id="teacherTimerDisplay" style="
+    font-size:26px;
+    font-weight:bold;
+    min-width:80px;
+    text-align:center;
+  ">05:00</div>
+
+  <!-- RIGHT (controls) -->
+  <div style="display:flex; gap:6px; flex-wrap:wrap;">
+    <button class="secondary" onclick="setTeacherTimer()">Set</button>
+    <button onclick="startTeacherTimer()">▶</button>
+    <button onclick="pauseTeacherTimer()">⏸</button>
+    <button onclick="resetTeacherTimer()">↻</button>
+    <button class="secondary" onclick="maximizeTeacherTimer()">⛶</button>
+  </div>
+
+</div>
 
   
   <div id="teacherOverviewCard" class="card">
@@ -4111,6 +4140,7 @@ function downloadLessonPlan(){
   margin-top:10px;
   align-items:flex-start;
 }
+
 .lesson-objectives-box{
   flex:2;
   min-width:0;
@@ -4181,6 +4211,11 @@ padding-left: 18px;
   #teacherView .rating-box,
 #studentView .rating-box {
   display: none;
+}
+#teacherTopTimer button{
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:13px;
 }
 </style>
 </head>
