@@ -1023,14 +1023,22 @@ renderTeacherTracker();
   }
 
   if(stationId === 'exit'){
-    showNotice('creatorNotice', 'Exit Ticket must stay last.', 'warn');
-    return;
-  }
+  showNotice('creatorNotice', 'Exit Ticket must stay last.', 'warn');
+  return;
+}
 
-  const temp = lessonStations[index + 1];
-  lessonStations[index + 1] = lessonStations[index];
-  lessonStations[index] = temp;
+const temp = lessonStations[index + 1];
 
+// ❗ check BEFORE swap
+if(temp && temp.id === 'exit'){
+  showNotice('creatorNotice', 'Exit station must stay last.', 'warn');
+  return;
+}
+
+// ✅ then swap
+lessonStations[index + 1] = lessonStations[index];
+lessonStations[index] = temp;
+    
   await dbRef(configPath()).set(lessonStations);
 
   fillTeacherSelects();
