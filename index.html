@@ -947,17 +947,8 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     return;
   }
 
-  if(stationId === 'starter'){
-    showNotice('creatorNotice', 'Starter station must stay first.', 'warn');
-    return;
-  }
 
   const temp = lessonStations[index - 1];
-
-    if(temp && temp.id === 'starter'){
-  showNotice('creatorNotice', 'Starter station must stay first.', 'warn');
-  return;
-}
     
   lessonStations[index - 1] = lessonStations[index];
   lessonStations[index] = temp;
