@@ -967,6 +967,7 @@ loadCreatorStation();
   renderControlStatus();
   renderTeacherTracker();
   renderStudentNav();
+  currentOpenStation = '';
 
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
 };
@@ -1093,6 +1094,7 @@ loadCreatorStation();
   renderControlStatus();
   renderTeacherTracker();
   renderStudentNav();
+  currentOpenStation = '';
 
   showNotice('creatorNotice', 'Station moved down successfully.', 'good');
 };
@@ -1802,8 +1804,6 @@ liveStudents[id].id = id;
         return s.displayed && (s.unlocked || s.id === 'starter');
       }) || {id:'starter'}
     ).id;
-
-    openStation(displayedStation);
 
   }catch(err){
     console.error('Student session error:', err);
@@ -4114,6 +4114,25 @@ function downloadLessonPlan(){
     background: #eeeeee;
     font-weight: bold;
   }
+  .station-box.active,
+.top-bar .item.active{
+  background:var(--primary2);
+  color:#fff;
+  box-shadow:0 0 0 4px rgba(63,118,199,.18),
+             0 8px 18px rgba(63,118,199,.28);
+  animation:stationGlow 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes stationGlow{
+  from{
+    box-shadow:0 0 0 3px rgba(63,118,199,.15),
+               0 6px 14px rgba(63,118,199,.22);
+  }
+  to{
+    box-shadow:0 0 0 6px rgba(63,118,199,.32),
+               0 10px 24px rgba(63,118,199,.35);
+  }
+}
  .lesson-top-grid{
   display:flex;
   gap:14px;
