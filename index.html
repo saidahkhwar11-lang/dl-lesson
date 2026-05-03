@@ -955,10 +955,14 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
   await dbRef(configPath()).set(lessonStations);
 
-  fillTeacherSelects();
-  byId('creatorStationSelect').value = stationId;
+ fillTeacherSelects();
 
-  loadCreatorStation();
+const selectAfterMove = byId('creatorStationSelect');
+if(selectAfterMove){
+  selectAfterMove.value = stationId;
+}
+
+loadCreatorStation();
   renderTeacherOverview();
   renderControlStatus();
   renderTeacherTracker();
@@ -1078,9 +1082,13 @@ lessonStations[index] = temp;
   await dbRef(configPath()).set(lessonStations);
 
   fillTeacherSelects();
-  byId('creatorStationSelect').value = stationId;
 
-  loadCreatorStation();
+const selectAfterMove = byId('creatorStationSelect');
+if(selectAfterMove){
+  selectAfterMove.value = stationId;
+}
+
+loadCreatorStation();
   renderTeacherOverview();
   renderControlStatus();
   renderTeacherTracker();
