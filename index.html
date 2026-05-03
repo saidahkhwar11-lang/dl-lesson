@@ -2429,12 +2429,11 @@ function renderQuestion(q, stationId, index){
     body = '<div class="small">Unsupported question type</div>';
   }
 
-  return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-    '<div><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text) + '</div>' +
-    '<div style="margin-top:10px;">' + body + '</div>' +
-    '<div class="feedback"></div>' +
-  '</div>';
-}
+ return '<div class="question" id="q_' + stationId + '_' + index + '">' +
+  '<div class="student-question-title"><strong>Q' + (index + 1) + '. ' + escapeHtml(q.text || q.question || '') + '</strong></div>' +
+  '<div style="margin-top:10px;">' + body + '</div>' +
+  '<div class="feedback"></div>' +
+'</div>';
   
 window.openStation = function(id){
   const st = getStationById(id);
@@ -4257,6 +4256,15 @@ padding-left: 18px;
   padding:4px 8px;
   font-size:12px;
   border-radius:6px;
+}
+.student-question-title{
+  font-weight:700;
+  font-size:16px;
+  color:#2f5ea8;
+  background:#eaf1ff;
+  padding:8px 10px;
+  border-radius:10px;
+  margin-bottom:10px;
 }
 </style>
 </head>
