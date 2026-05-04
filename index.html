@@ -1395,7 +1395,7 @@ const APP_NAME = 'dl_online_live_app';
 const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
 
   const defaultStations = [
-  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:true, displayed:true, thumbnail:''},
+  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:false, displayed:true, thumbnail:''},
   {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
   {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
   {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
@@ -1835,10 +1835,10 @@ liveStudents[id].id = id;
     updateStudentProgress();
 
     const displayedStation = (
-      lessonStations.find(function(s){
-        return s.displayed && (s.unlocked || s.id === 'starter');
-      }) || {id:'starter'}
-    ).id;
+  lessonStations.find(function(s){
+    return s.displayed && s.unlocked;
+  }) || {id:'starter'}
+).id;
 
   }catch(err){
     console.error('Student session error:', err);
