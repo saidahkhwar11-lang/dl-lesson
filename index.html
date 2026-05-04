@@ -1834,11 +1834,13 @@ liveStudents[id].id = id;
     listenStudentLive();
     updateStudentProgress();
 
-    const displayedStation = (
-  lessonStations.find(function(s){
-    return s.displayed && s.unlocked;
-  }) || {id:'starter'}
-).id;
+    const displayedStation = lessonStations.find(function(s){
+  return s.displayed && s.unlocked;
+});
+
+if(displayedStation){
+  openStation(displayedStation.id);
+}
 
   }catch(err){
     console.error('Student session error:', err);
