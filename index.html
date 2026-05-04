@@ -2171,10 +2171,15 @@ window.unlockTeacherStation = async function(id){
   if(!requireConnection()) return;
 
   lessonStations = lessonStations.map(function(s){
-    if(s.id === id) s.unlocked = true;
-    return s;
-  });
-
+  if(s.id === id){
+    s.unlocked = true;
+    s.displayed = true;
+  } else {
+    s.displayed = false;   // 👈 important
+  }
+  return s;
+});
+  
   await dbRef(configPath()).set(lessonStations);
   renderTeacherOverview();
   renderControlStatus();
