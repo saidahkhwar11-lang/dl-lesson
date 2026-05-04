@@ -2219,7 +2219,7 @@ window.lockTeacherStation = async function(id){
   if(!requireConnection()) return;
 
   lessonStations = lessonStations.map(function(s){
-    if(s.id === id && s.id !== 'starter') s.unlocked = false;
+    if(s.id === id) s.unlocked = false;
     return s;
   });
 
