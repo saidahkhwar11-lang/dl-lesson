@@ -2441,7 +2441,7 @@ function renderQuestion(q, stationId, index){
 window.openStation = function(id){
   const st = getStationById(id);
   if(!st) return;
-  if(!st.unlocked && id !== 'starter') return;
+if(!st.unlocked) return;
   const previousStation = currentOpenStation;
   currentOpenStation = id;
   renderStudentNav();
