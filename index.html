@@ -1194,6 +1194,10 @@ function resetTeacherTimer(){
 }
 
 function maximizeTeacherTimer(){
+  const currentId = byId('creatorStationSelect')?.value;
+  const currentStation = getStationById(currentId);
+  const activityDetails = currentStation ? (currentStation.details || '') : '';
+
   const overlay = document.createElement('div');
 
   overlay.style.cssText = `
@@ -1206,6 +1210,7 @@ function maximizeTeacherTimer(){
     flex-direction:column;
     align-items:center;
     justify-content:center;
+    padding:20px;
   `;
 
   overlay.innerHTML = `
@@ -1222,25 +1227,23 @@ function maximizeTeacherTimer(){
 
     <div style="font-size:30px; margin-bottom:14px;">⏱ Teacher Timer</div>
 
-    <div style="
-      font-size:20px;
-      margin-bottom:8px;
-      font-weight:bold;
-    ">
+    <div style="font-size:20px; margin-bottom:8px; font-weight:bold;">
       Activity Details
     </div>
 
-    <textarea id="bigTimerActivityDetails" placeholder="Write activity details here..." style="
+    <div style="
       width:70vw;
       max-width:900px;
-      height:110px;
-      padding:12px;
-      border-radius:12px;
-      border:0;
-      font-size:18px;
-      resize:none;
-      margin-bottom:20px;
-    "></textarea>
+      background:white;
+      color:#23324a;
+      padding:14px;
+      border-radius:14px;
+      font-size:22px;
+      text-align:center;
+      margin-bottom:22px;
+    ">
+      ${escapeHtml(activityDetails || 'No activity details added.')}
+    </div>
 
     <div id="bigTeacherTimerDisplay" style="
       font-size:140px;
@@ -1251,18 +1254,6 @@ function maximizeTeacherTimer(){
 
   document.body.appendChild(overlay);
   renderTeacherTimer();
-
-  // ✅ save + restore text
-  setTimeout(function(){
-    const textarea = document.getElementById('bigTimerActivityDetails');
-    if(textarea){
-      textarea.value = teacherActivityDetails || '';
-
-      textarea.addEventListener('input', function(){
-        teacherActivityDetails = textarea.value;
-      });
-    }
-  }, 50);
 }
   
   window.removeCurrentStation = async function(){
