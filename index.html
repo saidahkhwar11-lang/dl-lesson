@@ -848,9 +848,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
             <select id="builderQuestionType" onchange="toggleBuilderFields()">
   <option value="mcq">Multiple Choice</option>
   <option value="tf">True / False</option>
-  <option value="matching">Matching</option>
-  <option value="drag_gap">Drag Gap Fill</option>
-  <option value="poll">Voting Poll</option>
   </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
@@ -1144,6 +1141,7 @@ function formatTeacherTime(sec){
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
 
+
 function renderTeacherTimer(){
   const text = formatTeacherTime(teacherTimerSeconds);
 
@@ -1167,6 +1165,68 @@ function setTeacherTimer(){
   teacherTimerOriginalSeconds = teacherTimerSeconds;
   renderTeacherTimer();
 }
+
+  window.openStudentAnswers = function(studentId){
+  const student = liveStudents[studentId];
+  if(!student){
+    alert('Student data not found.');
+    return;
+  }
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = `
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.7);
+    z-index:999999;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  `;
+
+  const stationAnswers = student.stationAnswers || {};
+  let answersHtml = '';
+
+  Object.keys(stationAnswers).forEach(function(stId){
+    const station = getStationById(stId) || {};
+    const answers = stationAnswers[stId];
+
+    answersHtml += `
+      <div style="margin-bottom:14px; padding:12px; border:1px solid #ddd; border-radius:12px;">
+        <strong>${escapeHtml(station.title || stId)}</strong>
+        <pre style="white-space:pre-wrap; font-family:inherit;">${escapeHtml(JSON.stringify(answers, null, 2))}</pre>
+      </div>
+    `;
+  });
+
+  if(!answersHtml){
+    answersHtml = '<div>No answers submitted yet.</div>';
+  }
+
+  overlay.innerHTML = `
+    <div style="
+      background:white;
+      color:#23324a;
+      padding:20px;
+      border-radius:16px;
+      width:520px;
+      max-width:95vw;
+      max-height:85vh;
+      overflow:auto;
+    ">
+      <h3 style="margin-top:0;">📝 ${escapeHtml(student.name || 'Student Answers')}</h3>
+
+      ${answersHtml}
+
+      <div style="margin-top:12px;">
+      <button onclick="this.closest('.answers-popup-overlay').remove()">Close</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+};
 
 function startTeacherTimer(){
   clearInterval(teacherTimerInterval);
@@ -1196,6 +1256,7 @@ function resetTeacherTimer(){
 function maximizeTeacherTimer(){
 
   const overlay = document.createElement('div');
+  overlay.className = 'answers-popup-overlay';
 
   overlay.style.cssText = `
     position:fixed;
@@ -2000,90 +2061,42 @@ if(content.audioUrl){
 
   let questionsHtml = '';
 
-  if(content.questions && content.questions.length){
-    questionsHtml = content.questions.map(function(q, i){
-      const questionText = escapeHtml(q.question || q.text || 'No question text');
-      let extraHtml = '';
+if(content.questions && content.questions.length){
+  questionsHtml = content.questions.map(function(q, i){
+    const questionText = escapeHtml(q.question || q.text || 'No question text');
+    let extraHtml = '';
 
-      if(q.type === 'mcq'){
-        extraHtml = '<div style="margin-top:8px;">' +
-          (q.choices || []).map(function(choice){
-            return '<div class="teacher-small-choice">• ' + escapeHtml(choice) + '</div>';
-          }).join('') +
-        '</div>';
-      }
+    if(q.type === 'mcq'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        (q.choices || []).map(function(choice){
+          return '<div class="teacher-small-choice">• ' + escapeHtml(choice) + '</div>';
+        }).join('') +
+      '</div>';
+    }
 
-      else if(q.type === 'tf'){
-        extraHtml = '<div style="margin-top:8px;">' +
-          '<div class="teacher-small-choice">• True</div>' +
-          '<div class="teacher-small-choice">• False</div>' +
-        '</div>';
-      }
+    else if(q.type === 'tf'){
+      extraHtml = '<div style="margin-top:8px;">' +
+        '<div class="teacher-small-choice">• True</div>' +
+        '<div class="teacher-small-choice">• False</div>' +
+      '</div>';
+    }
 
-      else if(q.type === 'matching'){
-        extraHtml = '<div style="margin-top:8px;">' +
-          (q.pairs || []).map(function(pair){
-            return '<div class="teacher-small-choice">• ' +
-              escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right) +
-            '</div>';
-          }).join('') +
-        '</div>';
-      }
+    else if(q.type === 'written'){
+      extraHtml = '<div class="teacher-small-choice">✍️ Written answer question</div>';
+    }
 
-      else if(q.type === 'drag_gap'){
-        extraHtml = '<div style="margin-top:8px;">' +
-          '<div class="teacher-small-choice">• Gap answers: ' + escapeHtml((q.answers || []).join(', ')) + '</div>' +
-        '</div>';
-      }
-
-      else if(q.type === 'poll'){
-        if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
-          extraHtml = '<div style="margin-top:8px;">' +
-            '<div class="small" style="margin-bottom:8px;"><strong>' + escapeHtml(q.pollTitle || 'Now I Know How to...') + '</strong></div>' +
-            (q.objectives || []).map(function(obj, objIndex){
-              const yesKey = objIndex + '_✅';
-              const noKey = objIndex + '_❌';
-              const poll = getPollResults(id, i, [yesKey, noKey], function(answer){
-                return Array.isArray(answer) ? [objIndex + '_' + (answer[objIndex] || '')] : [];
-              });
-
-              return '<div class="teacher-small-choice" style="margin-bottom:10px;">' +
-                '<div style="margin-bottom:4px;">• ' + escapeHtml(obj) + '</div>' +
-                '<div style="padding-left:12px;">✅ <strong>' + (poll.percentages[yesKey] || 0) + '%</strong> (' + (poll.counts[yesKey] || 0) + ')</div>' +
-                '<div style="padding-left:12px;">❌ <strong>' + (poll.percentages[noKey] || 0) + '%</strong> (' + (poll.counts[noKey] || 0) + ')</div>' +
-              '</div>';
-            }).join('') +
-          '</div>';
-        } else if(q.options){
-          const poll = getPollResults(id, i, q.options);
-
-          extraHtml = '<div style="margin-top:8px;">' +
-            (q.options || []).map(function(option){
-              return '<div class="teacher-small-choice">• ' +
-                escapeHtml(option) +
-                ' — <strong>' + (poll.percentages[option] || 0) + '%</strong>' +
-                ' (' + (poll.counts[option] || 0) + ')' +
-              '</div>';
-            }).join('') +
-            '<div class="small" style="margin-top:8px;">Total votes: ' + poll.total + '</div>' +
-          '</div>';
-        }
-      }
-     return `
-  <div class="question-box">
-    
-    <div class="question-title">
-      Q${i + 1}. ${questionText}
-    </div>
-
-    ${extraHtml}
-
-  </div>
-`;
-    }).join('');
-  } else {
-    questionsHtml = '<div class="teacher-preview-empty">No questions added yet.</div>';
-  }
+    return `
+      <div class="question-box">
+        <div class="question-title">
+          Q${i + 1}. ${questionText}
+        </div>
+        ${extraHtml}
+      </div>
+    `;
+  }).join('');
+} else {
+  questionsHtml = '<div class="teacher-preview-empty">No questions added yet.</div>';
+}
 
   wrap.className = '';
   wrap.classList.add('teacher-preview');
@@ -2374,97 +2387,34 @@ function renderQuestion(q, stationId, index){
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
     }).join('');
+  }
 
-  } else if(q.type === 'tf'){
+  else if(q.type === 'tf'){
     body = ['True','False'].map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
       return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
     }).join('');
+  }
 
-  } else if(q.type === 'matching'){
-    const rights = (q.pairs || []).map(function(pair){ return pair.right; });
+  else if(q.type === 'written'){
     const disabled = submitted ? ' disabled' : '';
+    body = '<textarea name="' + inputName + '" maxlength="200" ' + disabled + ' style="width:100%; min-height:90px; padding:10px; border-radius:10px;">' +
+      escapeHtml(savedAnswer || '') +
+      '</textarea>' +
+      '<div class="small">Max 200 characters</div>';
+  }
 
-    body = (q.pairs || []).map(function(pair, pairIndex){
-      const selectedValue = Array.isArray(savedAnswer) ? (savedAnswer[pairIndex] || '') : '';
-      return `
-        <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-          <div style="margin-bottom:8px;"><strong>${escapeHtml(pair.left)}</strong></div>
-          <select data-match-index="${pairIndex}" ${disabled}>
-            <option value="">Select answer</option>
-            ${rights.map(function(right){
-              const selected = normalizeAnswer(selectedValue) === normalizeAnswer(right) ? ' selected' : '';
-              return '<option value="' + escapeHtml(right) + '"' + selected + '>' + escapeHtml(right) + '</option>';
-            }).join('')}
-          </select>
-        </div>
-      `;
-    }).join('');
-
-  } else if(q.type === 'poll'){
-    if(q.pollMode === 'objectives' && Array.isArray(q.objectives)){
-      const savedPollAnswers = Array.isArray(savedAnswer) ? savedAnswer : [];
-      const disabled = submitted ? ' disabled' : '';
-
-      body = `
-        <div class="poll-objectives-wrap">
-          <div style="font-weight:700; margin-bottom:12px; font-size:16px;">
-            ${escapeHtml(q.pollTitle || 'Now I Know How to...')}
-          </div>
-
-          ${(q.objectives || []).map(function(obj, objIndex){
-            const selected = savedPollAnswers[objIndex] || '';
-
-            return `
-              <div class="choice" style="margin-bottom:12px; padding:10px; border:1px solid #ddd; border-radius:10px;">
-                <div style="margin-bottom:8px;">
-                  ${escapeHtml(obj)}
-                </div>
-
-                <label style="margin-right:16px;">
-                  <input type="radio"
-                         name="${inputName}_${objIndex}"
-                         value="✅"
-                         ${selected === '✅' ? 'checked' : ''}
-                         ${disabled}>
-                  ✅
-                </label>
-
-                <label>
-                  <input type="radio"
-                         name="${inputName}_${objIndex}"
-                         value="❌"
-                         ${selected === '❌' ? 'checked' : ''}
-                         ${disabled}>
-                  ❌
-                </label>
-              </div>
-            `;
-          }).join('')}
-        </div>
-      `;
-    } else {
-      const disabled = submitted ? ' disabled' : '';
-      body = (q.options || []).map(function(choice){
-        const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
-        return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
-      }).join('');
-    }
-
-  } else if(q.type === 'drag_gap'){
-    body = '<div class="small">Drag gap question saved. Student display not added yet.</div>';
-
-  } else {
+  else {
     body = '<div class="small">Unsupported question type</div>';
   }
 
- return '<div class="question" id="q_' + stationId + '_' + index + '">' +
-  '<div class="student-question-title"><strong>Q' + (index + 1) + '. ' + escapeHtml(q.text || q.question || '') + '</strong></div>' +
-  '<div style="margin-top:10px;">' + body + '</div>' +
-  '<div class="feedback"></div>' +
-'</div>';
-  }
+  return '<div class="question question-box" id="q_' + stationId + '_' + index + '">' +
+    '<div class="student-question-title"><strong>Q' + (index + 1) + '.</strong> ' + escapeHtml(q.text || q.question || '') + '</div>' +
+    '<div style="margin-top:10px;">' + body + '</div>' +
+    '<div class="feedback"></div>' +
+  '</div>';
+}
   
 window.openStation = function(id){
   const st = getStationById(id);
@@ -2705,52 +2655,28 @@ window.submitCurrentStation = async function(stationId){
   if(!currentStudent) return;
   if(isStationSubmitted(stationId)) return openStation(stationId);
 
-  const station = getStationById(stationId);
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
 
-// ⛔ Timer/lock disabled for testing
-/*
-if(stationTimeLeft <= 0 || (station && !station.unlocked)){
-  alert('⏰ Time is up. This station is locked and cannot be submitted.');
-  return;
-}
-*/
-
-  // 2) block submit if self-evaluation is missing
   const selfEval = getSelfEvalValue(stationId);
   if(!selfEval){
     alert('📝 Please complete the self-evaluation before submitting.');
     return;
   }
 
-  // 3) block submit if any question is unanswered
   let unanswered = false;
 
   questions.forEach(function(q, i){
     if(unanswered) return;
 
-    if(q.type === 'matching'){
-      const wrap = byId('q_' + stationId + '_' + i);
-      if(!wrap){
-        unanswered = true;
-        return;
-      }
-
-      const selects = wrap.querySelectorAll('select[data-match-index]');
-      for(let j = 0; j < selects.length; j++){
-        if(!(selects[j].value || '').trim()){
-          unanswered = true;
-          break;
-        }
-      }
+    if(q.type === 'written'){
+      const text = document.querySelector('textarea[name="answer_' + stationId + '_' + i + '"]');
+      if(!text || !text.value.trim()) unanswered = true;
       return;
     }
 
     const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-    if(!checked){
-      unanswered = true;
-    }
+    if(!checked) unanswered = true;
   });
 
   if(unanswered){
@@ -2767,50 +2693,15 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
 
     wrap.classList.remove('correct','wrong');
 
-    const labels = wrap.querySelectorAll('.choice');
-    labels.forEach(function(lbl){
-      lbl.style.background = '';
-      lbl.style.borderColor = '';
-    });
+    if(q.type === 'written'){
+      const text = document.querySelector('textarea[name="answer_' + stationId + '_' + i + '"]');
+      const answer = text ? text.value.trim() : '';
+      submittedAnswers[i] = answer;
 
-    if(q.type === 'matching'){
-      const selects = wrap.querySelectorAll('select[data-match-index]');
-      const submittedMatchAnswers = [];
-      let matchScore = 0;
+      if(text) text.disabled = true;
 
-      selects.forEach(function(sel, pairIndex){
-        const selectedValue = sel.value || '';
-        submittedMatchAnswers[pairIndex] = selectedValue;
-
-        const correctAnswer = q.pairs && q.pairs[pairIndex] ? q.pairs[pairIndex].right : '';
-
-        if(normalizeAnswer(selectedValue) === normalizeAnswer(correctAnswer)){
-          matchScore++;
-          sel.style.background = '#eafaf1';
-          sel.style.borderColor = '#2ecc71';
-        } else {
-          sel.style.background = '#fdecea';
-          sel.style.borderColor = '#e74c3c';
-        }
-
-        sel.disabled = true;
-      });
-
-      submittedAnswers[i] = submittedMatchAnswers;
-      score += matchScore;
-
-      if(matchScore === (q.pairs || []).length){
-        wrap.classList.add('correct');
-        wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-      } else {
-        wrap.classList.add('wrong');
-        wrap.querySelector('.feedback').innerHTML =
-          '❌ Correct answers: ' +
-          (q.pairs || []).map(function(pair){
-            return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-          }).join('<br>');
-      }
-
+      wrap.classList.add('correct');
+      wrap.querySelector('.feedback').innerHTML = '✍️ Answer submitted for teacher marking.';
       return;
     }
 
@@ -2818,28 +2709,26 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
     const answer = checked ? checked.value : '';
     submittedAnswers[i] = answer;
 
+    const labels = wrap.querySelectorAll('.choice');
+
     labels.forEach(function(lbl){
       const input = lbl.querySelector('input');
       if(!input) return;
 
-      if(q.type !== 'poll' && normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
+      input.disabled = true;
+
+      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
         lbl.style.background = '#eafaf1';
         lbl.style.borderColor = '#2ecc71';
       }
 
-      if(checked && input === checked && q.type !== 'poll' && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
+      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
         lbl.style.background = '#fdecea';
         lbl.style.borderColor = '#e74c3c';
       }
-
-      input.disabled = true;
     });
 
-    if(q.type === 'poll'){
-      score += 1;
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '🗳️ Vote recorded';
-    } else if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
+    if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
       score += 1;
       wrap.classList.add('correct');
       wrap.querySelector('.feedback').innerHTML = '✅ Correct';
@@ -2857,15 +2746,18 @@ if(stationTimeLeft <= 0 || (station && !station.unlocked)){
     submittedStations:{}
   };
 
+  const autoMarkMax = questions.filter(function(q){
+    return q.type !== 'written';
+  }).length;
+
   const nextScores = Object.assign({}, existing.scores || {}, {[stationId]: score});
 
-  const stationMax = questions.reduce(function(total, q){
-    if(q.type === 'matching') return total + ((q.pairs || []).length);
-    return total + 1;
-  }, 0);
-
   const nextResults = Object.assign({}, existing.stationResults || {}, {
-    [stationId]: { score: score, max: stationMax }
+    [stationId]: {
+      score: score,
+      max: autoMarkMax,
+      hasWritten: questions.some(function(q){ return q.type === 'written'; })
+    }
   });
 
   const nextAnswers = Object.assign({}, existing.stationAnswers || {}, {[stationId]: submittedAnswers});
@@ -2996,13 +2888,15 @@ function renderTeacherTracker(){
         ${scoreCells}
         <td><strong>${(s.total || 0) + bonus}</strong></td>
         <td>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
-            <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
-            <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
-            <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
-          </div>
-        </td>
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <button onclick="openStudentAnswers('${escapeJs(s.id || '')}')" class="secondary" style="padding:6px 10px;">View</button>
+
+    <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
+    <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
+    <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
+    <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
+  </div>
+</td>
       </tr>
     `;
   }).join('');
