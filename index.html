@@ -1160,18 +1160,49 @@ function setTeacherTimer(){
 
   Object.keys(stationAnswers).forEach(function(stId){
     const station = getStationById(stId) || {};
-    const answers = stationAnswers[stId];
+    const answers = stationAnswers[stId] || {};
+    const content = getStationContent(stId);
+    const questions = content.questions || [];
 
-    answersHtml += `
-      <div style="margin-bottom:14px; padding:12px; border:1px solid #ddd; border-radius:12px;">
-        <strong>${escapeHtml(station.title || stId)}</strong>
-        <pre style="white-space:pre-wrap; font-family:inherit;">${escapeHtml(JSON.stringify(answers, null, 2))}</pre>
-      </div>
-    `;
+    const savedMark = (((student.teacherMarks || {})[stId] || {}).mark) || 0;
+
+    let writtenHtml = '';
+
+    questions.forEach(function(q, i){
+      if(q.type !== 'written') return;
+
+      writtenHtml += `
+        <div style="margin-top:10px; padding:10px; background:#f5f7fb; border-radius:10px;">
+          <strong>Q${i + 1}. ${escapeHtml(q.text || q.question || '')}</strong>
+          <div style="margin-top:8px; white-space:pre-wrap;">
+            ${escapeHtml(answers[i] || 'No answer')}
+          </div>
+        </div>
+      `;
+    });
+
+    if(writtenHtml){
+      answersHtml += `
+        <div style="margin-bottom:16px; padding:14px; border:1px solid #ddd; border-radius:14px;">
+          <h3 style="margin-top:0;">${escapeHtml(station.title || stId)}</h3>
+
+          ${writtenHtml}
+
+          <div style="margin-top:12px;">
+            <label><strong>Mark</strong></label>
+            <input id="mark_${stId}" type="number" min="0" value="${savedMark}" style="width:80px;">
+          </div>
+
+          <button onclick="saveWrittenMark('${escapeJs(studentId)}','${escapeJs(stId)}')" style="margin-top:10px;">
+            Save Mark
+          </button>
+        </div>
+      `;
+    }
   });
 
   if(!answersHtml){
-    answersHtml = '<div>No answers submitted yet.</div>';
+    answersHtml = '<div>No written answers submitted yet.</div>';
   }
 
   overlay.innerHTML = `
@@ -1180,24 +1211,86 @@ function setTeacherTimer(){
       color:#23324a;
       padding:20px;
       border-radius:16px;
-      width:520px;
+      width:620px;
       max-width:95vw;
       max-height:85vh;
       overflow:auto;
     ">
-      <h3 style="margin-top:0;">📝 ${escapeHtml(student.name || 'Student Answers')}</h3>
+      <h2 style="margin-top:0;">📝 ${escapeHtml(student.name || 'Student')}</h2>
 
       ${answersHtml}
 
-      <div style="margin-top:12px;">
-<button onclick="document.getElementById('studentAnswersPopup').remove()">Close</button>
-      </div>
+      <button onclick="document.getElementById('studentAnswersPopup').remove()" style="margin-top:12px;">
+        Close
+      </button>
     </div>
   `;
 
   document.body.appendChild(overlay);
 };
 
+  window.saveWrittenMark = async function(studentId, stationId){
+  const markInput = byId('mark_' + stationId);
+  const mark = Number(markInput && markInput.value ? markInput.value : 0);
+
+  const studentSnap = await getSnap(studentPath(studentId));
+  if(!studentSnap.exists()){
+    alert('Student not found.');
+    return;
+  }
+
+  const student = studentSnap.val();
+  const oldResult = (student.stationResults || {})[stationId] || {};
+  const oldTeacherMark = Number(oldResult.teacherMark || 0);
+
+  const autoScore = typeof oldResult.autoScore === 'number'
+    ? oldResult.autoScore
+    : Math.max(0, Number(oldResult.score || 0) - oldTeacherMark);
+
+  const newScore = autoScore + mark;
+
+  const nextScores = Object.assign({}, student.scores || {}, {
+    [stationId]: newScore
+  });
+
+  const nextResults = Object.assign({}, student.stationResults || {}, {
+    [stationId]: Object.assign({}, oldResult, {
+      autoScore: autoScore,
+      teacherMark: mark,
+      score: newScore,
+      max: totalMarksForStation(stationId),
+      markedByTeacher: true
+    })
+  });
+
+  const nextTeacherMarks = Object.assign({}, student.teacherMarks || {}, {
+    [stationId]: {
+      mark: mark,
+      markedAt: Date.now()
+    }
+  });
+
+  const total = Object.values(nextScores).reduce(function(a, b){
+    return a + Number(b || 0);
+  }, 0);
+
+  await dbRef(studentPath(studentId)).update({
+    scores: nextScores,
+    stationResults: nextResults,
+    teacherMarks: nextTeacherMarks,
+    total: total
+  });
+
+  if(!liveStudents[studentId]) liveStudents[studentId] = {};
+  liveStudents[studentId].scores = nextScores;
+  liveStudents[studentId].stationResults = nextResults;
+  liveStudents[studentId].teacherMarks = nextTeacherMarks;
+  liveStudents[studentId].total = total;
+
+  renderTeacherTracker();
+
+  alert('Mark saved and total updated ✔');
+};
 function startTeacherTimer(){
   clearInterval(teacherTimerInterval);
 
@@ -1561,8 +1654,18 @@ function getSnap(path){ return dbRef(path).once('value'); }
 
   return summary;
 }
-function totalMarksForStation(id){ return (getStationContent(id).questions || []).length; }
-function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
+function totalMarksForStation(id){
+  const questions = (getStationContent(id).questions || []);
+
+  return questions.reduce(function(total, q){
+    if(q.type === 'written'){
+      return total + Number(q.maxMark || 1);
+    }
+
+    return total + 1;
+  }, 0);
+}
+  function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
   function renderBonusBox(){
   const box = byId('bonusLiveContent');
