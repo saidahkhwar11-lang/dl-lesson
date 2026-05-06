@@ -2850,60 +2850,44 @@ function renderTeacherTracker(){
       `;
     }).join('');
 
-    return `
-      <tr>
-        <td class="name-col">${escapeHtml(s.name || '')}</td>
-        <td>${escapeHtml(s.currentStation || '-')}</td>
-        ${scoreCells}
-        <td><strong>${(s.total || 0) + bonus}</strong></td>
-        <td>
-<td style="min-width:140px;">
-  <div style="display:flex; align-items:center; gap:6px; justify-content:flex-end;">
+  return `
+  <tr>
+    <td class="name-col">${escapeHtml(s.name || '')}</td>
+    <td>${escapeHtml(s.currentStation || '-')}</td>
+    ${scoreCells}
+    <td><strong>${(s.total || 0) + bonus}</strong></td>
 
-    <button class="secondary" 
-      onclick="openStudentAnswers('${escapeJs(s.id || '')}')" 
-      title="View Answers"
-      style="width:28px; height:28px; font-size:14px;">
-      👁
-    </button>
+    <td style="min-width:140px;">
+      <div style="display:flex; align-items:center; gap:6px; justify-content:flex-end;">
 
-    <button 
-      onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" 
-      title="Add Bonus"
-      style="width:28px; height:28px; font-size:16px;">
-      +
-    </button>
+        <button class="secondary"
+          onclick="openStudentAnswers('${escapeJs(s.id || '')}')"
+          title="View Answers"
+          style="width:28px; height:28px;">👁</button>
 
-    <div style="min-width:18px; text-align:center; font-weight:bold;">
-      ${bonus}
-    </div>
+        <button
+          onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)"
+          title="Add Bonus"
+          style="width:28px; height:28px;">+</button>
 
-    <button class="warnbtn" 
-      onclick="takeBonus('${escapeJs(s.id || '')}')" 
-      title="Remove Bonus"
-      style="width:28px; height:28px; font-size:16px;">
-      −
-    </button>
+        <div style="min-width:18px; text-align:center; font-weight:bold;">
+          ${bonus}
+        </div>
 
-    <button class="muted" 
-      onclick="removeStudent('${escapeJs(s.id || '')}')" 
-      title="Remove Student"
-      style="width:28px; height:28px;">
-      ✖
-    </button>
+        <button class="warnbtn"
+          onclick="takeBonus('${escapeJs(s.id || '')}')"
+          title="Remove Bonus"
+          style="width:28px; height:28px;">−</button>
 
-  </div>
-</td>
-    <button onclick="openStudentAnswers('${escapeJs(s.id || '')}')" class="secondary" style="padding:6px 10px;">View</button>
+        <button class="muted"
+          onclick="removeStudent('${escapeJs(s.id || '')}')"
+          title="Remove Student"
+          style="width:28px; height:28px;">✖</button>
 
-    <button onclick="giveBonus('${escapeJs(s.name || '')}','${escapeJs(s.id || '')}',1)" style="width:40px; padding:8px 0; font-size:20px;">+</button>
-    <div style="min-width:28px; text-align:center; font-weight:bold;">${bonus}</div>
-    <button class="warnbtn" onclick="takeBonus('${escapeJs(s.id || '')}')" style="width:40px; padding:8px 0; font-size:20px;">−</button>
-    <button class="muted" onclick="removeStudent('${escapeJs(s.id || '')}')" style="padding:6px 10px;">✖</button>
-  </div>
-</td>
-      </tr>
-    `;
+      </div>
+    </td>
+  </tr>
+`;
   }).join('');
 
 
