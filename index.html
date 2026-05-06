@@ -1143,6 +1143,7 @@ function setTeacherTimer(){
   }
 
   const overlay = document.createElement('div');
+  overlay.id = 'studentAnswersPopup';
   overlay.style.cssText = `
     position:fixed;
     inset:0;
@@ -1189,7 +1190,7 @@ function setTeacherTimer(){
       ${answersHtml}
 
       <div style="margin-top:12px;">
-<button onclick="this.closest('.answers-popup-overlay').remove()">Close</button>
+<button onclick="document.getElementById('studentAnswersPopup').remove()">Close</button>
       </div>
     </div>
   `;
@@ -1823,27 +1824,26 @@ window.startStudentSession = async function(){
     initFirebaseFromInputs();
     await ensureLessonDefaults();
 
-    showNotice('studentNotice','Starting student session...','warn');
-    if(!requireConnection()) return;
+   showNotice('studentNotice','Starting student session...','warn');
+if(!requireConnection()) return;
 
-    const name = byId('studentName').value.trim();
+const name = byId('studentName').value.trim();
 
-    if(!name){
-      showNotice('studentNotice','Please enter student name.','bad');
-      return;
-    }
+if(!name){
+  showNotice('studentNotice','Please enter student name.','bad');
+  return;
+}
 
-    // ✅ same name = same saved work
-    let id = sanitizeKey(name);
+// ✅ same name = same saved work
+let id = sanitizeKey(name + '_' + Math.floor(Math.random()*1000));
+    
+hideNotice('studentNotice');
 
-    hideNotice('studentNotice');
+currentStudent = {name:name, id:id};
 
-    currentStudent = {name:name, id:id};
-
-    sessionStorage.setItem('dl_role', 'student');
-    sessionStorage.setItem('dl_student_name', name);
-    sessionStorage.setItem('dl_student_id', id);
-
+sessionStorage.setItem('dl_role', 'student');
+sessionStorage.setItem('dl_student_name', name);
+sessionStorage.setItem('dl_student_id', id);
     const initial = {
       name:name,
       id:id,
@@ -2836,7 +2836,11 @@ function renderTeacherTracker(){
     return '-';
   }
 
-  const rows = Object.values(liveStudents || {}).map(function(s){
+  const rows = Object.values(liveStudents || {})
+  .filter(function(s){
+    return s && s.name && s.name.trim() !== '';
+  })
+  .map(function(s){
     const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
 
     const scoreCells = lessonStations.map(function(st){
