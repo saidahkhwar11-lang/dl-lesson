@@ -3932,9 +3932,11 @@ const text = stationTimeLeft > 0
   const box = document.getElementById('bigTimerStationInfo');
   if(!box) return;
 
-  const currentId =
-    (byId('creatorStationSelect') && byId('creatorStationSelect').value) ||
-    (byId('teacherStationPreview') && byId('teacherStationPreview').dataset.currentStationId);
+ const previewWrap = byId('teacherStationPreview');
+
+const currentId =
+  (previewWrap && previewWrap.dataset.currentStationId) ||
+  (byId('creatorStationSelect') && byId('creatorStationSelect').value);
 
   const currentStation = getStationById(currentId) || {};
 
