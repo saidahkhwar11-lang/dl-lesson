@@ -848,6 +848,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
             <select id="builderQuestionType" onchange="toggleBuilderFields()">
   <option value="mcq">Multiple Choice</option>
   <option value="tf">True / False</option>
+  <option value="written">Written Answer</option>
   </select>
             <label>Question Text</label>
             <textarea id="builderQuestionText" placeholder="Write the question here"></textarea>
@@ -859,39 +860,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
   <label>Correct Answer (write the exact option text)</label>
   <input id="builderCorrectOptionText" placeholder="Type the correct option exactly as written above" />
 </div>
-            <!-- MATCHING FIELDS -->
-<div id="builderMatchingFields" class="hidden">
-  <label>Matching Pairs</label>
-  <textarea id="builderMatchingPairs"
-    placeholder="word|meaning&#10;gesture|body movement&#10;solve|find answer">
-  </textarea>
-</div>
 
-<!-- DRAG GAP FIELDS -->
-<div id="builderGapFields" class="hidden">
-  <label>Sentence Parts (use | to split)</label>
-  <textarea id="builderGapParts"
-    placeholder="Women use | language to | ideas.">
-  </textarea>
-
-  <label>Correct Answers (comma separated)</label>
-  <input id="builderGapAnswers" placeholder="body, share" />
-
-  <label>Word Bank (comma separated)</label>
-  <input id="builderGapWords" placeholder="body, share, quickly" />
-</div>
-
-  <div id="builderPollFields" class="hidden">
-  <label>Poll Options (at least 2, one per line)</label>
-  <textarea id="builderPollOptions" placeholder="Strongly Agree&#10;Agree&#10;Disagree&#10;Strongly Disagree"></textarea>
-</div>
-            <div id="builderTfFields" class="hidden">
-              <label>Correct Answer</label>
-              <select id="builderCorrectTf">
-                <option value="True">True</option>
-                <option value="False">False</option>
-              </select>
-            </div>
 
             <div class="btns" style="margin-top:10px;">
               <button type="button" onclick="addCreatorQuestion()">Add Question</button>
@@ -1220,7 +1189,7 @@ function setTeacherTimer(){
       ${answersHtml}
 
       <div style="margin-top:12px;">
-      <button onclick="this.closest('.answers-popup-overlay').remove()">Close</button>
+<button onclick="this.closest('.answers-popup-overlay').remove()">Close</button>
       </div>
     </div>
   `;
@@ -3245,27 +3214,22 @@ if(creatorImageNotes) creatorImageNotes.value = ct.imageNotes || '';
 window.toggleBuilderFields = function(){
   const type = byId('builderQuestionType').value;
 
-  byId('builderMcqFields').classList.toggle('hidden', type !== 'mcq');
-  byId('builderTfFields').classList.toggle('hidden', type !== 'tf');
-  byId('builderMatchingFields').classList.toggle('hidden', type !== 'matching');
-  byId('builderGapFields').classList.toggle('hidden', type !== 'drag_gap');
-  byId('builderPollFields').classList.toggle('hidden', type !== 'poll');
-};
+  const mcq = byId('builderMcqFields');
+  const tf = byId('builderTfFields');
 
+  if(mcq) mcq.classList.toggle('hidden', type !== 'mcq');
+  if(tf) tf.classList.toggle('hidden', type !== 'tf');
+};
 window.clearQuestionBuilder = function(){
   byId('builderQuestionType').value = 'mcq';
   byId('builderQuestionText').value = '';
   byId('builderChoiceOptions').value = '';
   byId('builderCorrectOptionText').value = '';
   byId('builderCorrectTf').value = 'True';
-  byId('builderMatchingPairs').value = '';
-  byId('builderGapParts').value = '';
-  byId('builderGapAnswers').value = '';
-  byId('builderGapWords').value = '';
-  byId('builderPollOptions').value = '';
+
   toggleBuilderFields();
 };
-
+  
 window.renderCreatorQuestionsList = function(){
   const wrap = byId('creatorQuestionsList');
   if(!wrap) return;
@@ -3283,13 +3247,9 @@ window.renderCreatorQuestionsList = function(){
       details = 'Choices: ' + escapeHtml((q.choices || []).join(' | '));
     } else if(q.type === 'tf'){
       details = 'Choices: True | False';
-    } else if(q.type === 'matching'){
-      details = (q.pairs || []).map(function(pair){
-        return escapeHtml(pair.left) + ' → ' + escapeHtml(pair.right);
-      }).join(' | ');
-    } else if(q.type === 'drag_gap'){
-      details = 'Words: ' + escapeHtml((q.words || []).join(', '));
-    }
+    } else if(q.type === 'written'){
+  details = 'Written answer';
+}
 
     return `
       <div style="margin-bottom:12px; padding:14px; border:1px solid #d9dfef; border-radius:18px; background:#fff;">
@@ -3315,32 +3275,27 @@ window.editCreatorQuestion = function(index){
   if(!q) return;
 
   byId('builderQuestionType').value = q.type;
-  byId('builderQuestionText').value = q.text || '';
+  byId('builderQuestionText').value = q.text || q.question || '';
 
   if(q.type === 'mcq'){
     byId('builderChoiceOptions').value = (q.choices || []).join('\n');
     byId('builderCorrectOptionText').value = q.answer || '';
+  }
 
-  } else if(q.type === 'tf'){
+  else if(q.type === 'tf'){
     byId('builderCorrectTf').value = q.answer || 'True';
+  }
 
-  } else if(q.type === 'matching'){
-    byId('builderMatchingPairs').value = (q.pairs || []).map(function(pair){
-      return (pair.left || '') + '|' + (pair.right || '');
-    }).join('\n');
-
-  } else if(q.type === 'poll'){
-    byId('builderPollOptions').value = (q.options || []).join('\n');
-
-  } else if(q.type === 'drag_gap'){
-    byId('builderGapParts').value = (q.parts || []).join(' | ');
-    byId('builderGapAnswers').value = (q.answers || []).join(', ');
-    byId('builderGapWords').value = (q.words || []).join(', ');
+  // ✅ Written → nothing extra needed
+  else if(q.type === 'written'){
+    // no extra fields
   }
 
   toggleBuilderFields();
+
   creatorDraftQuestions.splice(index, 1);
   renderCreatorQuestionsList();
+
   showNotice('creatorNotice', 'Edit the question and click Add Question to save changes.', 'warn');
 };
   
@@ -3389,125 +3344,37 @@ window.addCreatorQuestion = function(){
     newQuestion.answer = options.find(function(opt){
       return normalizeAnswer(opt) === normalizeAnswer(correctText);
     });
-
-  } else if(type === 'tf'){
-    newQuestion.answer = byId('builderCorrectTf').value;
-
-  } else if(type === 'matching'){
-    const raw = byId('builderMatchingPairs').value.trim();
-
-    if(!raw){
-      alert('Please add matching pairs.');
-      return;
-    }
-
-    const pairs = raw.split('\n')
-      .map(function(line){ return line.trim(); })
-      .filter(Boolean)
-      .map(function(line){
-        const parts = line.split('|');
-        return {
-          left: (parts[0] || '').trim(),
-          right: (parts[1] || '').trim()
-        };
-      })
-      .filter(function(pair){ return pair.left && pair.right; });
-
-    if(!pairs.length){
-      alert('Please write valid matching pairs like: word|meaning');
-      return;
-    }
-
-    newQuestion.pairs = pairs;
-
-      } else if(type === 'poll'){
-    const stationTitle = (creatorDraft.title || '').toLowerCase().trim();
-    const isExitTicket = stationTitle.includes('exit ticket');
-
-    if(isExitTicket){
-      const objectives = (lessonMeta.lessonObjectives || '')
-        .split('\n')
-        .map(function(x){ return x.trim(); })
-        .filter(Boolean);
-
-      if(!objectives.length){
-        alert('Please add lesson objectives first.');
-        return;
-      }
-
-      newQuestion.pollMode = 'objectives';
-      newQuestion.pollTitle = 'Now I Know How to...';
-      newQuestion.objectives = objectives;
-      newQuestion.options = ['✅', '❌'];
-
-    } else {
-      const options = byId('builderPollOptions').value
-        .split('\n')
-        .map(function(x){ return x.trim(); })
-        .filter(Boolean);
-
-      if(options.length < 2){
-        alert('Please add at least 2 poll options.');
-        return;
-      }
-
-      newQuestion.options = options;
-    }
-
-  } else if(type === 'drag_gap'){
-    const parts = byId('builderGapParts').value
-      .split('|')
-      .map(function(x){ return x.trim(); });
-
-    const answers = byId('builderGapAnswers').value
-      .split(',')
-      .map(function(x){ return x.trim(); })
-      .filter(Boolean);
-
-    const words = byId('builderGapWords').value
-      .split(',')
-      .map(function(x){ return x.trim(); })
-      .filter(Boolean);
-
-    if(parts.length < 2){
-      alert('Please write sentence parts using | to split the gaps.');
-      return;
-    }
-
-    if(!answers.length){
-      alert('Please add the correct answers.');
-      return;
-    }
-
-    if(!words.length){
-      alert('Please add the word bank.');
-      return;
-    }
-
-    newQuestion.parts = parts;
-    newQuestion.answers = answers;
-    newQuestion.words = words;
   }
 
- if(typeof window.editingQuestionIndex === 'number'){
-  creatorDraftQuestions[window.editingQuestionIndex] = newQuestion;
-  window.editingQuestionIndex = null;
-  showNotice('creatorNotice', 'Question updated successfully.', 'good');
-} else {
-  creatorDraftQuestions.push(newQuestion);
-  showNotice('creatorNotice', 'Question added successfully.', 'good');
-}
+  else if(type === 'tf'){
+    newQuestion.answer = byId('builderCorrectTf').value;
+  }
 
-renderCreatorQuestionsList();
-clearQuestionBuilder();
+  else if(type === 'written'){
+    newQuestion.maxLength = 200;
+  }
+
+  if(typeof window.editingQuestionIndex === 'number'){
+    creatorDraftQuestions[window.editingQuestionIndex] = newQuestion;
+    window.editingQuestionIndex = null;
+    showNotice('creatorNotice', 'Question updated successfully.', 'good');
+  } else {
+    creatorDraftQuestions.push(newQuestion);
+    showNotice('creatorNotice', 'Question added successfully.', 'good');
+  }
+
+  renderCreatorQuestionsList();
+  clearQuestionBuilder();
 };
-
+  
 window.removeCreatorQuestion = function(index){
   creatorDraftQuestions.splice(index,1);
   renderCreatorQuestionsList();
 };
 
 window.clearAllCreatorQuestions = function(){
+  if(!confirm('Are you sure you want to delete all questions?')) return;
+
   creatorDraftQuestions = [];
   renderCreatorQuestionsList();
   showNotice('creatorNotice','All questions cleared.','warn');
