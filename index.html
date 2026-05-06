@@ -1220,12 +1220,49 @@ function maximizeTeacherTimer(){
       cursor:pointer;
     ">✕ Close</button>
 
-    <div style="font-size:30px; margin-bottom:20px;">⏱ Teacher Timer</div>
-    <div id="bigTeacherTimerDisplay" style="font-size:140px; font-weight:bold;">00:00</div>
+    <div style="font-size:30px; margin-bottom:14px;">⏱ Teacher Timer</div>
+
+    <div style="
+      font-size:20px;
+      margin-bottom:8px;
+      font-weight:bold;
+    ">
+      Activity Details
+    </div>
+
+    <textarea id="bigTimerActivityDetails" placeholder="Write activity details here..." style="
+      width:70vw;
+      max-width:900px;
+      height:110px;
+      padding:12px;
+      border-radius:12px;
+      border:0;
+      font-size:18px;
+      resize:none;
+      margin-bottom:20px;
+    "></textarea>
+
+    <div id="bigTeacherTimerDisplay" style="
+      font-size:140px;
+      font-weight:bold;
+      margin-top:10px;
+    ">00:00</div>
   `;
 
   document.body.appendChild(overlay);
   renderTeacherTimer();
+
+  // ✅ save + restore text
+  setTimeout(function(){
+    const textarea = document.getElementById('bigTimerActivityDetails');
+    if(textarea){
+      textarea.value = teacherActivityDetails || '';
+
+      textarea.addEventListener('input', function(){
+        teacherActivityDetails = textarea.value;
+      });
+    }
+  }, 50);
 }
   
   window.removeCurrentStation = async function(){
@@ -1234,11 +1271,6 @@ function maximizeTeacherTimer(){
 
   const stationId = select.value;
   if(!stationId) return;
-
-  if(stationId === 'starter'){
-    alert('Starter station cannot be deleted.');
-    return;
-  }
 
   if(!confirm('Are you sure you want to delete this station?')) return;
 
