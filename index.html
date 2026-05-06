@@ -1927,7 +1927,7 @@ window.startStudentSession = async function(){
     initFirebaseFromInputs();
     await ensureLessonDefaults();
 
-   showNotice('studentNotice','Starting student session...','warn');
+showNotice('studentNotice','Starting student session...','warn');
 if(!requireConnection()) return;
 
 const name = byId('studentName').value.trim();
@@ -1937,9 +1937,38 @@ if(!name){
   return;
 }
 
-// ✅ same name = same saved work
-let id = sanitizeKey(name + '_' + Math.floor(Math.random()*1000));
-    
+const normalizedName = name.toLowerCase().trim();
+
+// check if another active student is using same name
+const existing = Object.values(liveStudents || {}).find(function(s){
+  return s.name && s.name.toLowerCase().trim() === normalizedName;
+});
+
+if(existing){
+  const savedId = sessionStorage.getItem('dl_student_id');
+
+  if(!savedId || existing.id !== savedId){
+showNotice('studentNotice','Name already taken. Please add your last name.','bad');
+    return;
+  }
+}
+
+// ✅ keep same student work for 1 hour if same name logs in again
+const studentKey = 'DL_student_' + lessonKey + '_' + sanitizeKey(name);
+const savedStudent = JSON.parse(localStorage.getItem(studentKey) || '{}');
+
+let id = '';
+
+if(savedStudent.id && savedStudent.time && (Date.now() - savedStudent.time < 60 * 60 * 1000)){
+  id = savedStudent.id; // same work within 1 hour
+} else {
+  id = sanitizeKey(name + '_' + Date.now());
+}
+
+localStorage.setItem(studentKey, JSON.stringify({
+  id: id,
+  time: Date.now()
+}));    
 hideNotice('studentNotice');
 
 currentStudent = {name:name, id:id};
