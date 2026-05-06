@@ -3953,29 +3953,54 @@ const text = stationTimeLeft > 0
     : '';
 
   box.innerHTML = `
-    <div style="font-size:24px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
-      📌 ${escapeHtml(currentStation.title || 'No station selected')}
+  <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
+
+    <!-- LEFT (text) -->
+    <div style="flex:2; min-width:300px;">
+
+      <div style="font-size:26px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
+        📌 ${escapeHtml(currentStation.title || 'No station selected')}
+      </div>
+
+      <div style="margin-bottom:12px;background:#eaf1ff;padding:12px;border-radius:12px;">
+        🎯 <strong>Objective:</strong><br>
+        ${escapeHtml(currentStation.objective || 'No objective added.')}
+      </div>
+
+      <div style="background:#f5f7fb;padding:12px;border-radius:12px;">
+        📝 <strong>Activity:</strong><br>
+        ${escapeHtml(
+          currentStation.details ||
+          currentStation.instructions ||
+          currentStation.activityDetails ||
+          currentStation.description ||
+          'No activity details added.'
+        )}
+      </div>
+
     </div>
 
-    ${imageHtml}
+    <!-- RIGHT (image) -->
+    ${
+      content.imageUrl
+      ? `
+      <div style="flex:1; min-width:220px; text-align:center;">
+        <img src="${escapeHtml(content.imageUrl)}" style="
+          width:100%;
+          max-width:300px;
+          max-height:200px;
+          object-fit:cover;
+          border-radius:14px;
+          border:2px solid #ddd;
+          box-shadow:0 6px 18px rgba(0,0,0,0.2);
+        ">
+      </div>
+      `
+      : ''
+    }
 
-    <div style="margin-bottom:10px;background:#eaf1ff;padding:10px;border-radius:10px;">
-      🎯 <strong>Objective:</strong><br>
-      ${escapeHtml(currentStation.objective || 'No objective added.')}
-    </div>
-
-    <div style="background:#f5f7fb;padding:10px;border-radius:10px;">
-      📝 <strong>Activity:</strong><br>
-      ${escapeHtml(
-        currentStation.details ||
-        currentStation.instructions ||
-        currentStation.activityDetails ||
-        currentStation.description ||
-        'No activity details added.'
-      )}
-    </div>
-  `;
-}
+  </div>
+`;
   
   function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
