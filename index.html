@@ -3932,18 +3932,32 @@ const text = stationTimeLeft > 0
   const box = document.getElementById('bigTimerStationInfo');
   if(!box) return;
 
- const previewWrap = byId('teacherStationPreview');
+  const previewWrap = byId('teacherStationPreview');
 
-const currentId =
-  (previewWrap && previewWrap.dataset.currentStationId) ||
-  (byId('creatorStationSelect') && byId('creatorStationSelect').value);
+  const currentId =
+    (previewWrap && previewWrap.dataset.currentStationId) ||
+    (byId('creatorStationSelect') && byId('creatorStationSelect').value);
 
   const currentStation = getStationById(currentId) || {};
+  const content = getStationContent(currentId) || {};
+
+  const imageHtml = content.imageUrl
+    ? `<img src="${escapeHtml(content.imageUrl)}" style="
+        width:120px;
+        height:80px;
+        object-fit:cover;
+        border-radius:10px;
+        border:1px solid #ddd;
+        margin-bottom:10px;
+      ">`
+    : '';
 
   box.innerHTML = `
     <div style="font-size:24px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
       📌 ${escapeHtml(currentStation.title || 'No station selected')}
     </div>
+
+    ${imageHtml}
 
     <div style="margin-bottom:10px;background:#eaf1ff;padding:10px;border-radius:10px;">
       🎯 <strong>Objective:</strong><br>
@@ -3952,11 +3966,16 @@ const currentId =
 
     <div style="background:#f5f7fb;padding:10px;border-radius:10px;">
       📝 <strong>Activity:</strong><br>
-      ${escapeHtml(currentStation.details || 'No activity details added.')}
+      ${escapeHtml(
+        currentStation.details ||
+        currentStation.instructions ||
+        currentStation.activityDetails ||
+        currentStation.description ||
+        'No activity details added.'
+      )}
     </div>
   `;
 }
-
   
   function startStationTimerFromUnlock(stationId, minutes, timerStartedAt){
   stopStationTimer();
