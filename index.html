@@ -1194,9 +1194,6 @@ function resetTeacherTimer(){
 }
 
 function maximizeTeacherTimer(){
-  const currentId = byId('creatorStationSelect')?.value;
-  const currentStation = getStationById(currentId);
-  const activityDetails = currentStation ? (currentStation.details || '') : '';
 
   const overlay = document.createElement('div');
 
@@ -1225,24 +1222,22 @@ function maximizeTeacherTimer(){
       cursor:pointer;
     ">✕ Close</button>
 
-    <div style="font-size:30px; margin-bottom:14px;">⏱ Teacher Timer</div>
-
-    <div style="font-size:20px; margin-bottom:8px; font-weight:bold;">
-      Activity Details
+    <div style="font-size:32px; margin-bottom:18px; font-weight:bold;">
+      ⏱ Teacher Timer
     </div>
 
-    <div style="
+    <!-- ✅ Dynamic Station Info -->
+    <div id="bigTimerStationInfo" style="
       width:70vw;
       max-width:900px;
-      background:white;
+      background:#ffffff;
       color:#23324a;
-      padding:14px;
-      border-radius:14px;
-      font-size:22px;
-      text-align:center;
-      margin-bottom:22px;
+      padding:20px;
+      border-radius:16px;
+      font-size:18px;
+      margin-bottom:25px;
+      box-shadow:0 8px 25px rgba(0,0,0,0.15);
     ">
-      ${escapeHtml(activityDetails || 'No activity details added.')}
     </div>
 
     <div id="bigTeacherTimerDisplay" style="
@@ -1253,7 +1248,11 @@ function maximizeTeacherTimer(){
   `;
 
   document.body.appendChild(overlay);
+
   renderTeacherTimer();
+
+  // ✅ Fill station info immediately
+  updateTeacherTimerPopupInfo();
 }
   
   window.removeCurrentStation = async function(){
@@ -2169,6 +2168,7 @@ ${selfEvalHtml}
       ${questionsHtml}
     </div>
   `;
+  updateTeacherTimerPopupInfo();
 };
 
 window.toggleTeacherQuestions = function(id){
@@ -3926,6 +3926,33 @@ const text = stationTimeLeft > 0
     timerBox.classList.add('timer-warning');
   }
 });
+}
+
+  function updateTeacherTimerPopupInfo(){
+  const box = document.getElementById('bigTimerStationInfo');
+  if(!box) return;
+
+  const currentId =
+    (byId('creatorStationSelect') && byId('creatorStationSelect').value) ||
+    (byId('teacherStationPreview') && byId('teacherStationPreview').dataset.currentStationId);
+
+  const currentStation = getStationById(currentId) || {};
+
+  box.innerHTML = `
+    <div style="font-size:24px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
+      📌 ${escapeHtml(currentStation.title || 'No station selected')}
+    </div>
+
+    <div style="margin-bottom:10px;background:#eaf1ff;padding:10px;border-radius:10px;">
+      🎯 <strong>Objective:</strong><br>
+      ${escapeHtml(currentStation.objective || 'No objective added.')}
+    </div>
+
+    <div style="background:#f5f7fb;padding:10px;border-radius:10px;">
+      📝 <strong>Activity:</strong><br>
+      ${escapeHtml(currentStation.details || 'No activity details added.')}
+    </div>
+  `;
 }
 
   
