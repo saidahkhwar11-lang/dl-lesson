@@ -2276,8 +2276,17 @@ ${selfEvalHtml}
       ${questionsHtml}
     </div>
   `;
-  updateTeacherTimerPopupInfo();
-};
+ updateTeacherTimerPopupInfo();
+
+if(window.teacherTimerPopupInterval){
+  clearInterval(window.teacherTimerPopupInterval);
+}
+
+window.teacherTimerPopupInterval = setInterval(function(){
+  if(document.getElementById('bigTimerStationInfo')){
+    updateTeacherTimerPopupInfo();
+  }
+}, 2000);
 
 window.toggleTeacherQuestions = function(id){
   teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
@@ -3850,6 +3859,13 @@ const text = stationTimeLeft > 0
     (byId('creatorStationSelect') && byId('creatorStationSelect').value);
 
   const currentStation = getStationById(currentId) || {};
+  const finishedCount = Object.values(liveStudents || {}).filter(function(st){
+  return st && st.submittedStations && st.submittedStations[currentId];
+}).length;
+
+const totalStudents = Object.values(liveStudents || {}).filter(function(st){
+  return st && st.name && st.name.trim();
+}).length;
   const content = getStationContent(currentId) || {};
 
   const imageHtml = content.imageUrl
@@ -3872,6 +3888,17 @@ const text = stationTimeLeft > 0
       <div style="font-size:26px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
         📌 ${escapeHtml(currentStation.title || 'No station selected')}
       </div>
+      <div style="
+  display:inline-block;
+  background:#eafaf1;
+  color:#1f8f5f;
+  padding:8px 14px;
+  border-radius:999px;
+  font-weight:bold;
+  margin-bottom:12px;
+">
+  ✅ Finished: ${finishedCount} / ${totalStudents}
+</div>
 
       <div style="margin-bottom:12px;background:#eaf1ff;padding:12px;border-radius:12px;">
         🎯 <strong>Objective:</strong><br>
