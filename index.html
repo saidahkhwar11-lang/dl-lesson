@@ -3977,26 +3977,90 @@ const totalStudents = Object.values(liveStudents || {}).filter(function(st){
   tick();
   stationTimerInterval = setInterval(tick, 1000);
 }
+
+  function generateProfessionalActivityDescription(s){
+
+  const qTypes = (s.questions || []).map(function(q){ return q.type; });
+
+  const hasMcq = qTypes.includes('mcq');
+  const hasTf = qTypes.includes('tf');
+  const hasWritten = qTypes.includes('written');
+
+  const title = (s.title || '').toLowerCase();
+  const details = (s.details || '').toLowerCase();
+  const objective = (s.objective || '').toLowerCase();
+
+  let skillText = '';
+
+  if(title.includes('spell') || details.includes('spell') || objective.includes('spell')){
+    skillText = 'Students complete a spelling and vocabulary activity where they identify correct spelling, word meaning, and accurate word use in context.';
+  }
+
+  else if(title.includes('grammar') || details.includes('grammar')){
+    skillText = 'Students practise the target grammar rule through sentence-based tasks that help them apply language accurately.';
+  }
+
+  else if(title.includes('read') || details.includes('read') || objective.includes('main idea')){
+    skillText = 'Students work with a reading text to understand the main ideas, supporting details, vocabulary, and meaning in context.';
+  }
+
+  else if(title.includes('writing') || title.includes('letter') || title.includes('essay')){
+    skillText = 'Students develop their writing by planning, organizing, and producing responses that match the target writing skill.';
+  }
+
+  else if(title.includes('listening') || details.includes('listen')){
+    skillText = 'Students listen carefully to the given audio or spoken input and complete tasks that check understanding of key information.';
+  }
+
+  else if(title.includes('exit') || title.includes('plenary')){
+    skillText = 'Students complete a short final task to show what they understood from the lesson and reflect on their learning.';
+  }
+
+  else {
+    skillText = 'Students complete an interactive station activity designed to practise the lesson objective and demonstrate understanding.';
+  }
+
+  let assessmentText = '';
+
+  if(hasMcq && hasWritten){
+    assessmentText = ' Students answer multiple-choice questions and written-response questions, allowing both automatic checking and teacher marking.';
+  } else if(hasMcq && hasTf){
+    assessmentText = ' Students answer multiple-choice and true/false questions to check understanding.';
+  } else if(hasMcq){
+    assessmentText = ' Students answer multiple-choice questions to check accuracy and understanding.';
+  } else if(hasTf){
+    assessmentText = ' Students answer true/false questions to confirm understanding.';
+  } else if(hasWritten){
+    assessmentText = ' Students write responses that the teacher reviews and marks manually.';
+  }
+
+  let mediaText = '';
+  if(s.hasImage) mediaText += ' The station includes a visual activity image to support the task.';
+  if(s.hasAudio) mediaText += ' Audio is included to support listening or pronunciation practice.';
+  if(s.hasVideo) mediaText += ' Video support is included as part of the station.';
+  if(s.hasLink) mediaText += ' An external activity link is included for extra practice or completion.';
+
+  return `
+    <p><b>Activity Name:</b> ${escapeHtml(s.title || 'Station Activity')}</p>
+    <p><b>Objective:</b> ${escapeHtml(s.objective || 'Students complete the activity successfully.')}</p>
+    <p><b>Time:</b> ${escapeHtml(s.time || 'Not specified')}</p>
+    <p><b>Activity Explanation:</b> ${escapeHtml(skillText + assessmentText + mediaText + ' The teacher monitors students through the live tracker, checks completion, supports students during the task, and reviews written answers when needed.')}</p>
+  `;
+}
 function downloadLessonPlan(){
   try{
-    const stationsSource =
-      (typeof lessonStations !== 'undefined' && lessonStations) ||
-      (typeof liveStations !== 'undefined' && liveStations) ||
-      (typeof window.stations !== 'undefined' && window.stations) ||
-      (typeof defaultStations !== 'undefined' && defaultStations) ||
-      [];
-
+    const stationsSource = lessonStations || [];
     const lessonTitle = lessonMeta.lessonTitle || 'Untitled Lesson';
 
     const objectives = (lessonMeta.lessonObjectives || '')
       .split('\n')
       .map(function(s){ return s.trim(); })
-      .filter(function(s){ return s; });
+      .filter(Boolean);
 
     const keywords = (lessonMeta.lessonKeywords || '')
       .split(',')
       .map(function(s){ return s.trim(); })
-      .filter(function(s){ return s; });
+      .filter(Boolean);
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('en-GB', {
@@ -4007,10 +4071,7 @@ function downloadLessonPlan(){
     });
 
     const stations = stationsSource.map(function(station){
-      let content = {};
-      if(typeof getStationContent === 'function'){
-        content = getStationContent(station.id) || {};
-      }
+      const content = getStationContent(station.id) || {};
 
       return {
         id: station.id,
@@ -4045,130 +4106,140 @@ function downloadLessonPlan(){
              !t.includes('plenary');
     });
 
-    const totalMainTime = mainStations.map(function(s){
-      const n = parseInt(s.time, 10);
-      return isNaN(n) ? 0 : n;
-    }).reduce(function(a, b){
-      return a + b;
-    }, 0);
+    function activityDescription(s){
+      const qTypes = (s.questions || []).map(function(q){ return q.type; });
+      const hasMcq = qTypes.includes('mcq');
+      const hasTf = qTypes.includes('tf');
+      const hasWritten = qTypes.includes('written');
 
-    function cleanText(text){
-      return String(text || '').replace(/\s+/g, ' ').trim();
-    }
+      const title = (s.title || '').toLowerCase();
+      const details = (s.details || '').toLowerCase();
+      const objective = (s.objective || '').toLowerCase();
 
-    function shortenText(text, max){
-      const clean = cleanText(text);
-      if(clean.length <= max) return clean;
-      return clean.slice(0, max).trim() + '...';
-    }
+      let explanation = '';
 
-    function getQuestionSamples(questions, maxCount){
-      return (questions || [])
-        .map(function(q){ return cleanText(q.text || ''); })
-        .filter(function(q){ return q; })
-        .slice(0, maxCount);
-    }
-
-    const successCriteria = objectives.length
-      ? objectives.map(function(obj){
-          return 'Students will be able to ' + obj.replace(/^to\s+/i, '').trim() + '.';
-        })
-      : [
-          'Students will be able to understand the lesson content.',
-          'Students will be able to complete the lesson tasks accurately.',
-          'Students will be able to use key vocabulary from the lesson.'
-        ];
-
-    const topicText = objectives.length
-      ? 'This lesson focuses on ' + lessonTitle.toLowerCase() + ' and helps students develop understanding through reading, discussion, vocabulary work, and text-based responses.'
-      : 'This lesson focuses on developing students’ understanding and reading skills through interactive activities.';
-
-    const hotQuestion = objectives.length
-      ? 'How can the ideas in ' + lessonTitle.toLowerCase() + ' connect to real life, and how can you justify your thinking using evidence from the lesson?'
-      : 'How can the ideas in this lesson be applied in real-life situations, and how would you justify your opinion?';
-
-    let eTools = [];
-    stations.forEach(function(s){
-      if(s.hasImage) eTools.push('PPT slides / visuals');
-      if(s.hasAudio) eTools.push('Audio recording');
-      if(s.hasVideo) eTools.push('Video');
-      if(s.hasLink) eTools.push('Hybrid link / online resource');
-    });
-    eTools.push('DL Online Lesson');
-    eTools = Array.from(new Set(eTools));
-
-    function generateStationActivityText(station, index){
-      const title = cleanText(station.title || ('Station ' + (index + 1)));
-      const objective = cleanText(station.objective || '');
-      const details = cleanText(station.details || '');
-      const sourceText = cleanText(station.sourceText || '');
-      const qCount = Array.isArray(station.questions) ? station.questions.length : 0;
-      const questionSamples = getQuestionSamples(station.questions, 3);
-
-      const titleLower = title.toLowerCase();
-      const detailsLower = details.toLowerCase();
-      const objectiveLower = objective.toLowerCase();
-
-      let activityText = '';
-
-      if(titleLower.includes('starter') || titleLower.includes('warm') || detailsLower.includes('predict')){
-        activityText = 'Students begin by using the visual/text prompt to predict the lesson topic and activate prior knowledge.';
-      } else if(titleLower.includes('exit') || titleLower.includes('plenary')){
-        activityText = 'Students complete the final reflection task to summarize learning and show overall understanding of the lesson.';
-      } else if(objectiveLower.includes('main idea') || objectiveLower.includes('details') || detailsLower.includes('read')){
-        activityText = 'Students read the station task carefully to identify main ideas, locate supporting details, and respond using evidence from the text.';
-      } else if(objectiveLower.includes('vocabulary') || objectiveLower.includes('context clue') || detailsLower.includes('vocabulary')){
-        activityText = 'Students focus on vocabulary in context and use clues from the task to work out meanings accurately.';
-      } else if(objectiveLower.includes('evidence') || detailsLower.includes('evidence')){
-        activityText = 'Students return to the text to locate evidence and justify their answers clearly.';
+      if(title.includes('spell') || details.includes('spell') || objective.includes('spell')){
+        explanation = 'Students complete a spelling and vocabulary activity in which they focus on correct spelling, word meaning, and accurate use of vocabulary in context.';
+      } else if(title.includes('grammar') || details.includes('grammar') || objective.includes('grammar')){
+        explanation = 'Students practise the target grammar point through guided sentence-based tasks that help them apply the rule accurately.';
+      } else if(title.includes('read') || details.includes('read') || objective.includes('main idea')){
+        explanation = 'Students work with a reading text to understand key ideas, supporting details, vocabulary meaning, and context clues.';
+      } else if(title.includes('writing') || title.includes('letter') || title.includes('essay')){
+        explanation = 'Students develop their writing by planning, organizing, and producing responses that match the lesson focus.';
+      } else if(title.includes('listening') || details.includes('listen')){
+        explanation = 'Students listen carefully to the given input and complete tasks that check understanding of key information and context.';
+      } else if(title.includes('exit') || title.includes('plenary')){
+        explanation = 'Students complete a short final task to demonstrate understanding and reflect on what they learned during the lesson.';
       } else {
-        activityText = 'Students complete the station task carefully and respond to the activity questions using the lesson content.';
+        explanation = 'Students complete an interactive station activity designed to practise the lesson objective and show understanding.';
       }
 
-      if(details){
-        activityText += ' The task instructions ask students to: ' + details + '.';
+      if(hasMcq && hasWritten){
+        explanation += ' They answer multiple-choice questions and written-response questions, allowing both automatic checking and teacher marking.';
+      } else if(hasMcq && hasTf){
+        explanation += ' They answer multiple-choice and true/false questions to check understanding.';
+      } else if(hasMcq){
+        explanation += ' They answer multiple-choice questions to check accuracy and understanding.';
+      } else if(hasTf){
+        explanation += ' They answer true/false questions to confirm understanding.';
+      } else if(hasWritten){
+        explanation += ' They write responses that the teacher reviews and marks manually.';
       }
 
-      if(sourceText){
-        activityText += ' The station content is about "' + shortenText(sourceText, 150) + '".';
-      }
+      if(s.hasImage) explanation += ' A visual activity image is included to support the task.';
+      if(s.hasAudio) explanation += ' Audio is included to support listening or pronunciation practice.';
+      if(s.hasVideo) explanation += ' Video support is included as part of the activity.';
+      if(s.hasLink) explanation += ' An external activity link is included for additional practice or completion.';
 
-      if(qCount > 0){
-        activityText += ' Students then complete ' + qCount + ' question' + (qCount === 1 ? '' : 's') + ' to check understanding and apply the skill.';
-      }
-
-      if(questionSamples.length){
-        activityText += ' Question focus includes: ' + questionSamples.join(' | ') + '.';
-      }
-
-      const mediaParts = [];
-      if(station.hasImage) mediaParts.push('visual support');
-      if(station.hasAudio) mediaParts.push('audio');
-      if(station.hasVideo) mediaParts.push('video');
-      if(station.hasLink) mediaParts.push('an online link');
-
-      if(mediaParts.length){
-        activityText += ' The task is supported by ' + mediaParts.join(', ') + ' to increase engagement and deepen understanding.';
-      }
-
-      return activityText;
-    }
-
-    const mainActivitiesHtml = mainStations.map(function(s, index){
-      const mins = s.time || '';
-      const activityText = generateStationActivityText(s, index);
+      explanation += ' The teacher monitors students through the live tracker, checks completion, supports students during the task, and reviews written answers when needed.';
 
       return `
-        <div style="margin-bottom:12px;">
-          <strong>🔵 Main Activity ${index + 1} (${escapeHtml(mins)})</strong><br>
-          <strong>${escapeHtml(s.title)}</strong><br>
-          ${escapeHtml(activityText)}<br>
-          <strong>Teacher Role:</strong> Monitor progress, model where needed, guide students to the text or task, and support accurate responses.<br>
-          <strong>Student Role:</strong> Read, think critically, discuss ideas where needed, and complete the task independently or with peers.<br>
-          <strong>AFL:</strong> Oral responses, teacher observation, task completion, peer discussion, and direct feedback.
+        <div class="activity-box">
+          <p><b>Activity Name:</b> ${escapeHtml(s.title || 'Station Activity')}</p>
+          <p><b>Objective:</b> ${escapeHtml(s.objective || 'Students complete the activity successfully.')}</p>
+          <p><b>Time:</b> ${escapeHtml(s.time || 'Not specified')}</p>
+          <p><b>Activity Instructions:</b> ${escapeHtml(s.details || 'Students complete the station task prepared by the teacher.')}</p>
+          <p><b>Professional Activity Explanation:</b> ${escapeHtml(explanation)}</p>
         </div>
       `;
-    }).join('');
+    }
+
+    const html = `
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>${escapeHtml(lessonTitle)} Lesson Plan</title>
+        <style>
+          body{font-family:Arial,sans-serif;line-height:1.6;color:#222;padding:30px;}
+          h1{text-align:center;color:#2f5ea8;}
+          h2{color:#2f5ea8;border-bottom:2px solid #dbe6ff;padding-bottom:4px;}
+          h3{color:#3f76c7;margin-top:18px;}
+          table{width:100%;border-collapse:collapse;margin-bottom:18px;}
+          td,th{border:1px solid #ccc;padding:8px;vertical-align:top;}
+          .activity-box{border:1px solid #dbe6ff;background:#f7faff;border-radius:10px;padding:12px;margin-bottom:14px;}
+          .tag{display:inline-block;background:#eef5ff;padding:4px 8px;border-radius:8px;margin:3px;}
+        </style>
+      </head>
+
+      <body>
+        <h1>${escapeHtml(lessonTitle)}</h1>
+
+        <table>
+          <tr><th>Date</th><td>${escapeHtml(formattedDate)}</td></tr>
+          <tr><th>Subject</th><td>English</td></tr>
+          <tr><th>Grade</th><td>Grade 9</td></tr>
+          <tr><th>Teacher</th><td>Ms. Saidah Khwar</td></tr>
+          <tr><th>School</th><td>Al Reyada School</td></tr>
+        </table>
+
+        <h2>Lesson Objectives</h2>
+        <ul>
+          ${objectives.map(function(o){ return '<li>' + escapeHtml(o) + '</li>'; }).join('')}
+        </ul>
+
+        <h2>Keywords</h2>
+        <div>
+          ${keywords.map(function(k){ return '<span class="tag">' + escapeHtml(k) + '</span>'; }).join('')}
+        </div>
+
+        <h2>Lesson Activities</h2>
+
+        ${starterStation ? `
+          <h3>Starter Activity</h3>
+          ${activityDescription(starterStation)}
+        ` : ''}
+
+        ${mainStations.map(function(s, i){
+          return `
+            <h3>Main Activity ${i + 1}</h3>
+            ${activityDescription(s)}
+          `;
+        }).join('')}
+
+        ${plenaryStation ? `
+          <h3>Plenary / Exit Ticket</h3>
+          ${activityDescription(plenaryStation)}
+        ` : ''}
+
+        <h2>Assessment and Monitoring</h2>
+        <p>
+          Students complete station-based activities through the digital lesson system. The teacher monitors progress using the live tracker, checks station completion, reviews automatic scores, awards bonus points when needed, and marks written responses manually.
+        </p>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
+    win.print();
+
+  }catch(err){
+    console.error(err);
+    alert('Could not generate lesson plan: ' + err.message);
+  }
+}
 
     const html = `
 <!DOCTYPE html>
