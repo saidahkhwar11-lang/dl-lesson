@@ -4343,23 +4343,37 @@ const totalStudents = Object.values(liveStudents || {}).filter(function(st){
   <div style="display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;">
 
     <!-- LEFT (text) -->
-    <div style="flex:2; min-width:300px;">
+   <div style="flex:2; min-width:300px;">
 
-      <div style="font-size:26px;font-weight:bold;margin-bottom:12px;color:#2f5ea8;">
-        📌 ${escapeHtml(currentStation.title || 'No station selected')}
-      </div>
-      <div style="
-  display:inline-block;
-  background:#eafaf1;
-  color:#1f8f5f;
-  padding:8px 14px;
-  border-radius:999px;
-  font-weight:bold;
-  margin-bottom:12px;
-">
-  ✅ Finished: ${finishedCount} / ${totalStudents}
-</div>
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  ">
 
+    <div style="
+      font-size:26px;
+      font-weight:bold;
+      color:#2f5ea8;
+    ">
+      📌 ${escapeHtml(currentStation.title || 'No station selected')}
+    </div>
+
+    <div style="
+      background:#eafaf1;
+      color:#1f8f5f;
+      padding:8px 14px;
+      border-radius:999px;
+      font-weight:bold;
+      white-space:nowrap;
+    ">
+      ✅ Finished: ${finishedCount} / ${totalStudents}
+    </div>
+
+  </div>
       <div style="margin-bottom:12px;background:#eaf1ff;padding:12px;border-radius:12px;">
         🎯 <strong>Objective:</strong><br>
         ${escapeHtml(currentStation.objective || 'No objective added.')}
