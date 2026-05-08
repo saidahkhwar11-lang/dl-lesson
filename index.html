@@ -3327,14 +3327,24 @@ function listenStudentLive(){
     liveBonus = snap.val() || {};
   });
 
-  studentSelfRef.on('value', function(snap){
-    if(!snap.exists()) return;
+ studentSelfRef.on('value', function(snap){
 
-    liveStudents[currentStudent.id] = snap.val();
+  if(!snap.exists()) return;
 
-    renderStudentNav();
-    updateStudentProgress(); // ✅ ADD THIS LINE
-  });
+  const data = snap.val();
+
+  liveStudents[currentStudent.id] = data;
+
+  currentStudent.name = data.name || currentStudent.name;
+  currentStudent.id = data.id || currentStudent.id;
+
+  renderStudentNav();
+  updateStudentProgress();
+
+  if(currentOpenStation){
+    openStation(currentOpenStation);
+  }
+});
 
   updateRankingBoard();
 }
