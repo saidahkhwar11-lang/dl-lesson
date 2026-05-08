@@ -484,7 +484,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="setupCard" class="card hidden">
   <h2>Firebase Setup</h2>
   <label>Lesson Name</label>
-<input id="lessonKey" value="Understand_Conversations_New" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
+<input id="lessonKey" value="Understand_Conversations" placeholder="Enter lesson name (e.g. lesson1, reading_unit3)" />
     <label>Firebase Config JSON</label>
   <textarea id="firebaseConfigText">{
   "apiKey": "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
@@ -1866,15 +1866,14 @@ console.log('Using storage bucket:', firebase.app().options.storageBucket);
   async function ensureLessonDefaults(){
   const configSnap = await getSnap(configPath());
   if(!configSnap.exists()){
-    await dbRef(configPath()).set(JSON.parse(JSON.stringify(defaultStations)));
+    await dbRef(configPath()).set([]);
   }
 
   const contentSnap = await getSnap(contentPath());
   if(!contentSnap.exists()){
-    await dbRef(contentPath()).set(JSON.parse(JSON.stringify(defaultContent)));
+    await dbRef(contentPath()).set({});
   }
 }
-  
 function isLegacyBadQuestion(q){
   const text = String((q && q.text) || '').toLowerCase();
   const answer = String((q && q.answer) || '').toLowerCase();
