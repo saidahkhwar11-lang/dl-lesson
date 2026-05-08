@@ -611,16 +611,17 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
    <div style="text-align:center; margin:10px 0 14px;">
 
   <button onclick="checkMyAchievement()" style="
-    background:#f39a2d;
-    color:white;
-    border:none;
-    border-radius:12px;
-    padding:10px 14px;
-    font-weight:bold;
-    cursor:pointer;
-  ">
-    🏆 Check My Achievement
-  </button>
+  background:#f39a2d;
+  color:white;
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:bold;
+  cursor:pointer;
+  width:auto;
+">
+  🏆 Check My Achievement
+</button>
 
   <div id="achievementMsg" class="small" style="margin-top:8px;"></div>
 
@@ -2777,7 +2778,12 @@ window.getTop5Students = async function(){
   const snap = await getSnap(lessonBase() + '/students');
   const studentsData = snap.val() || {};
 
-  return Object.values(studentsData)
+  return Object.keys(studentsData)
+    .map(function(id){
+      const s = studentsData[id] || {};
+      s.id = s.id || id;
+      return s;
+    })
     .filter(function(s){
       return s && s.name && s.name.trim();
     })
@@ -2786,7 +2792,6 @@ window.getTop5Students = async function(){
     })
     .slice(0,5);
 };
-
 window.isCurrentStudentTop5 = async function(){
   if(!currentStudent || !currentStudent.name) return false;
 
