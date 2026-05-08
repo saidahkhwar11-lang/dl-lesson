@@ -369,7 +369,55 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 }
 .feedback{margin-top:8px;font-weight:bold}.correct{border:2px solid #2ecc71;background:#eafaf1}.wrong{border:2px solid #e74c3c;background:#fdecea}
 .station-result{padding:10px 12px;border-radius:12px;background:#eef6ff;margin:12px 0;font-weight:bold}
-.tracker-table{width:100%;border-collapse:collapse}.tracker-table th,.tracker-table td{border:1px solid #dfe7f3;padding:4px;text-align:left;font-size:10px;vertical-align:top}.tracker-table td.name-col,.tracker-table th.name-col{width:120px;max-width:120px}.tracker-table td.id-col,.tracker-table th.id-col{width:90px;max-width:90px}.tracker-table th{background:#f0f5fd}
+.tracker-table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:11px;
+}
+
+.tracker-table th,
+.tracker-table td{
+  border:1px solid #dfe7f3;
+  padding:4px 6px;
+  text-align:left;
+  vertical-align:top;
+  font-size:11px;
+  line-height:1.3;
+}
+
+.tracker-table th{
+  background:#f0f5fd;
+  font-weight:700;
+}
+
+.tracker-table td.name-col,
+.tracker-table th.name-col{
+  width:110px;
+  max-width:110px;
+}
+
+.tracker-table td.id-col,
+.tracker-table th.id-col{
+  width:70px;
+  max-width:70px;
+}
+
+.tracker-table button{
+  width:30px;
+  height:30px;
+  padding:0;
+  border-radius:50%;
+  font-size:14px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin:2px;
+}
+
+.tracker-table .btns{
+  gap:4px;
+  flex-wrap:nowrap;
+}
 .bonus-popup{position:fixed;top:18px;right:18px;width:320px;max-height:80vh;overflow:auto;padding:14px;background:#fff;border:2px solid var(--accent);border-radius:16px;box-shadow:0 8px 24px rgba(30,60,120,.18);z-index:9999;display:none}
 .reading-img{
   width:100%;
@@ -3035,6 +3083,10 @@ if(allowed){
 #bigTimerStationInfo *{
   max-width:100%;
   word-break:break-word;
+}
+#teacherTrackerCard h2{
+  font-size:24px;
+  margin:10px 0;
 }
 
   .certificate{
