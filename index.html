@@ -604,23 +604,31 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
 
     <button onclick="checkMyAchievement()" style="
-      background:#f39a2d;
-      color:white;
-      border:none;
-      border-radius:12px;
-      padding:10px 14px;
-      font-weight:bold;
-      cursor:pointer;
-      width:auto;
-      white-space:nowrap;
-    ">
-      🏆 Achievement
-    </button>
+  background:#f39a2d;
+  color:white;
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:bold;
+  cursor:pointer;
+  width:auto;
+  white-space:nowrap;
+">
+  🏆 Check My Achievement
+</button>
 
   </div>
 
-  <div id="achievementMsg" class="small" style="margin-top:8px;"></div>
-
+<div style="
+  display:flex;
+  justify-content:flex-end;
+">
+  <div id="achievementMsg" class="small" style="
+    margin-top:6px;
+    text-align:right;
+    max-width:320px;
+  "></div>
+</div>
   <div id="studentProgressBox" style="
     margin-top:12px;
     padding:6px 10px;
@@ -2831,14 +2839,47 @@ window.checkMyAchievement = async function(){
 
     const allowed = await isCurrentStudentTop5();
 
-    if(allowed){
-      if(msg) msg.innerHTML = '🏆 Congratulations! Opening your certificate...';
-      downloadAchievementCertificate();
-    } else {
-      if(msg){
-        msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
-      }
-    }
+if(allowed){
+
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#eefbf3;
+        color:#1f8f5f;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #b9e7ca;
+      ">
+        🏆 Congratulations! Opening your certificate...
+      </div>
+    `;
+  }
+
+  downloadAchievementCertificate();
+
+} else {
+
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#fff7ea;
+        color:#9a6700;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #f3d38b;
+      ">
+        🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
+      </div>
+    `;
+  }
+
+}
 
   }catch(err){
     console.error('Achievement check error:', err);
