@@ -2852,11 +2852,13 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    const requiredStations = lessonStations.filter(function(s){
-  return s.unlocked;
+   const student = liveStudents[currentStudent.id] || {};
+
+const requiredStations = lessonStations.filter(function(s){
+  return s.unlocked && s.displayed;
 });
 
-const submitted = currentStudent.submissions || {};
+const submitted = student.submittedStations || {};
 
 const completedCount = requiredStations.filter(function(s){
   return submitted[s.id];
@@ -2876,7 +2878,7 @@ if(completedCount < requiredStations.length){
         font-size:13px;
         border:1px solid #c9d8ff;
       ">
-        🔒 Complete all unlocked lesson stations first before checking your achievement.
+        🔒 Complete all opened stations first before checking your achievement.
       </div>
     `;
   }
