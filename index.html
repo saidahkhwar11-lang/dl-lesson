@@ -2773,32 +2773,27 @@ actionBtns;
   }
 };
 
-window.isCurrentStudentTop5 = function(){
-
-  if(!currentStudent || !currentStudent.name){
-    return false;
-  }
-
-  const students = Object.values(liveStudents || {})
+window.getTop5Students = function(){
+  return Object.values(liveStudents || {})
     .filter(function(s){
       return s && s.name && s.name.trim();
-    });
-
-  // sort highest first
-  students.sort(function(a,b){
-    return Number(b.total || 0) - Number(a.total || 0);
-  });
-
-  // top 5 only
-  const top5 = students.slice(0,5);
-
-  // ONLY exact current student
-  return top5.some(function(s){
-    return String(s.name).trim().toLowerCase() ===
-           String(currentStudent.name).trim().toLowerCase();
-  });
+    })
+    .sort(function(a,b){
+      return Number(b.total || 0) - Number(a.total || 0);
+    })
+    .slice(0,5);
 };
 
+window.isCurrentStudentTop5 = function(){
+  if(!currentStudent || !currentStudent.name) return false;
+
+  const top5 = getTop5Students();
+
+  return top5.some(function(s){
+    return String(s.name || '').trim().toLowerCase() ===
+           String(currentStudent.name || '').trim().toLowerCase();
+  });
+};
   window.checkMyAchievement = function(){
   const msg = byId('achievementMsg');
 
@@ -2819,6 +2814,13 @@ window.isCurrentStudentTop5 = function(){
   }
 };
   window.downloadAchievementCertificate = function(){
+    if(!isCurrentStudentTop5()){
+  const msg = byId('achievementMsg');
+  if(msg){
+    msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
+  }
+  return;
+}
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
 
