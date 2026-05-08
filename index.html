@@ -2773,20 +2773,29 @@ actionBtns;
   }
 };
 
-  window.isCurrentStudentTop5 = function(){
-  if(!currentStudent || !currentStudent.id) return false;
+window.isCurrentStudentTop5 = function(){
+
+  if(!currentStudent || !currentStudent.name){
+    return false;
+  }
 
   const students = Object.values(liveStudents || {})
     .filter(function(s){
       return s && s.name && s.name.trim();
-    })
-    .sort(function(a,b){
-      return Number(b.total || 0) - Number(a.total || 0);
-    })
-    .slice(0,5);
+    });
 
-  return students.some(function(s){
-    return s.id === currentStudent.id || s.name === currentStudent.name;
+  // sort highest first
+  students.sort(function(a,b){
+    return Number(b.total || 0) - Number(a.total || 0);
+  });
+
+  // top 5 only
+  const top5 = students.slice(0,5);
+
+  // ONLY exact current student
+  return top5.some(function(s){
+    return String(s.name).trim().toLowerCase() ===
+           String(currentStudent.name).trim().toLowerCase();
   });
 };
 
