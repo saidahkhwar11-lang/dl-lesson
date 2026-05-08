@@ -1545,21 +1545,29 @@ window.handleCreatorAudio = async function(event){
   if(!file) return;
 
   try{
-    showNotice('creatorNotice', 'Uploading audio...', 'warn');
+    showNotice('creatorNotice', 'Uploading audio... Please wait.', 'warn');
 
-    const stationId = byId('creatorStationSelect').value;
-    const fileName = Date.now() + '_' + file.name;
+    if(!storage){
+      storage = firebase.storage();
+    }
 
-    const ref = storageRef('lesson_media/' + stationId + '/audio/' + fileName);
+    const stationId = byId('creatorStationSelect').value || 'station';
+    const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const fileName = Date.now() + '_' + safeName;
+
+    const ref = storage.ref('lesson_media/' + stationId + '/audio/' + fileName);
 
     await ref.put(file);
+
     const url = await ref.getDownloadURL();
 
     byId('creatorAudioUrl').value = url;
-    showNotice('creatorNotice', 'Audio uploaded successfully', 'good');
-  } catch(err){
+
+    showNotice('creatorNotice', '✅ Audio uploaded successfully. Now click Save Station.', 'good');
+
+  }catch(err){
     console.error('Audio upload failed:', err);
-    showNotice('creatorNotice','Audio upload failed: ' + err.message,'bad');
+    showNotice('creatorNotice','Audio upload failed: ' + (err.message || err),'bad');
   }
 };
   
