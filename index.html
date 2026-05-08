@@ -1936,7 +1936,7 @@ function tryAutoConnect(){
   try{
     if(db && lessonKey) return true;
     initFirebaseFromInputs();
-    ensureLessonDefaults().catch(console.warn);
+    alert("Current lessonKey is: " + lessonKey);
     startLessonConfigListener();
     return true;
   }catch(err){
@@ -1957,6 +1957,7 @@ window.saveConfig = async function(){
   try{
     showNotice('setupNotice','Saving config and testing connection...','warn');
     initFirebaseFromInputs();
+    alert("Current lessonKey is: " + lessonKey);
     localStorage.setItem('DL_firebase_config', JSON.stringify(firebaseConfig));
     localStorage.setItem('DL_lesson_key', lessonKey);
 // await ensureLessonDefaults();
