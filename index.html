@@ -2807,15 +2807,17 @@ window.isCurrentStudentTop5 = function(){
     return;
   }
 
-  if(isCurrentStudentTop5()){
+  const allowed = isCurrentStudentTop5();
+
+  if(allowed === true){
     downloadAchievementCertificate();
   } else {
     if(msg){
       msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
     }
+    return;
   }
 };
-
   window.downloadAchievementCertificate = function(){
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
