@@ -1843,13 +1843,17 @@ console.log('PARSED CONFIG:', firebaseConfig);
 }
 
   if(firebase.apps.length){
-    appInstance = firebase.app(); // use default app
-  } else {
-    appInstance = firebase.initializeApp(firebaseConfig); // create default app
-  }
+  appInstance = firebase.app();
+} else {
+  appInstance = firebase.initializeApp(firebaseConfig);
+}
 
-  db = firebase.database();
-  storage = firebase.storage();
+db = firebase.database(appInstance);
+
+// force correct storage bucket
+storage = firebase.app().storage('gs://online-english-lesson-grade-9.firebasestorage.app');
+
+console.log('Using storage bucket:', firebase.app().options.storageBucket);
 }
 
   async function ensureLessonDefaults(){
