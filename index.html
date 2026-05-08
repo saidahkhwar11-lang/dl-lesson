@@ -1567,38 +1567,34 @@ window.handleCreatorVideo = async function(event){
   const file = event.target.files[0];
   if(!file) return;
 
-  showNotice('creatorNotice','Uploading video...','warn');
+  try{
+    showNotice('creatorNotice','Uploading video... Please wait.','warn');
 
-  const stationId = byId('creatorStationSelect').value;
-  const fileName = Date.now() + '_' + file.name;
-  const ref = storageRef('lesson_media/' + stationId + '/video/' + fileName);
+    if(!storage){
+      storage = firebase.storage();
+    }
 
-  await ref.put(file);
-  const url = await ref.getDownloadURL();
+    const stationId = byId('creatorStationSelect').value || 'station';
+    const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const fileName = Date.now() + '_' + safeName;
 
-  byId('creatorVideoUrl').value = url;
-  showNotice('creatorNotice','Video uploaded successfully','good');
+    const ref = storage.ref('lesson_media/' + stationId + '/video/' + fileName);
+
+    await ref.put(file);
+
+    const url = await ref.getDownloadURL();
+
+    byId('creatorVideoUrl').value = url;
+
+    showNotice('creatorNotice','✅ Video uploaded successfully. Now click Save Station.','good');
+
+  }catch(err){
+    console.error('Video upload failed:', err);
+    showNotice('creatorNotice','Video upload failed: ' + (err.message || err),'bad');
+  }
 };
-
-const TEACHER_PASSWORD = 'Welcome@2020';
-const APP_NAME = 'dl_online_live_app';
-const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 };
-
-  const defaultStations = [
-  {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:false, displayed:true, thumbnail:''},
-  {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''},
-  {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Wrap up the whole lesson', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''}
-];
   
-const defaultContent = {
-  starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
-  st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
-  st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
-  st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]},
-  exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}
-};
+const defaultStations = [ {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:false, displayed:true, thumbnail:''}, {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Wrap up the whole lesson', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''} ]; const defaultContent = { starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]} }; isn't this good?
 
 let firebaseConfig = null;
 let lessonKey = '';
