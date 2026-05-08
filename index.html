@@ -2792,35 +2792,8 @@ window.getTop5Students = async function(){
     })
     .slice(0,5);
 };
-window.isCurrentStudentTop5 = async function(){
-  if(!currentStudent || !currentStudent.name) return false;
-
-  const top5 = await getTop5Students();
-
-  return top5.some(function(s){
-    return String(s.name || '').trim().toLowerCase() ===
-           String(currentStudent.name || '').trim().toLowerCase();
-  });
-};
-
-window.getTop5Students = async function(){
-
-  const snap = await getSnap(lessonBase() + '/students');
-
-  const studentsData = snap.val() || {};
-
-  return Object.values(studentsData)
-    .filter(function(s){
-      return s && s.name && s.name.trim();
-    })
-    .sort(function(a,b){
-      return Number(b.total || 0) - Number(a.total || 0);
-    })
-    .slice(0,5);
-};
 
 window.isCurrentStudentTop5 = async function(){
-
   if(!currentStudent || !currentStudent.name){
     return false;
   }
@@ -2834,56 +2807,42 @@ window.isCurrentStudentTop5 = async function(){
 };
 
 window.checkMyAchievement = async function(){
-
   const msg = byId('achievementMsg');
 
-  if(!currentStudent){
-    if(msg){
-      msg.textContent = 'Please log in first.';
+  try{
+    if(msg) msg.innerHTML = 'Checking achievement...';
+
+    if(!currentStudent){
+      if(msg) msg.innerHTML = 'Please log in first.';
+      return;
     }
-    return;
-  }
 
-  const allowed = await isCurrentStudentTop5();
+    if(!requireConnection()){
+      if(msg) msg.innerHTML = 'System is not connected. Please refresh.';
+      return;
+    }
 
-  if(allowed){
-    downloadAchievementCertificate();
-  } else {
+    const allowed = await isCurrentStudentTop5();
+
+    if(allowed){
+      if(msg) msg.innerHTML = '🏆 Congratulations! Opening your certificate...';
+      downloadAchievementCertificate();
+    } else {
+      if(msg){
+        msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
+      }
+    }
+
+  }catch(err){
+    console.error('Achievement check error:', err);
     if(msg){
-      msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
+      msg.innerHTML = 'Could not check achievement: ' + (err && err.message ? err.message : err);
+    } else {
+      alert('Could not check achievement: ' + (err && err.message ? err.message : err));
     }
   }
 };
-
-window.isCurrentStudentTop5 = function(){
-  if(!currentStudent || !currentStudent.name) return false;
-
-  const top5 = getTop5Students();
-
-  return top5.some(function(s){
-    return String(s.name || '').trim().toLowerCase() ===
-           String(currentStudent.name || '').trim().toLowerCase();
-  });
-};
-  window.checkMyAchievement = function(){
-  const msg = byId('achievementMsg');
-
-  if(!currentStudent){
-    if(msg) msg.textContent = 'Please log in first.';
-    return;
-  }
-
-  const allowed = isCurrentStudentTop5();
-
-  if(allowed === true){
-    downloadAchievementCertificate();
-  } else {
-    if(msg){
-      msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
-    }
-    return;
-  }
-};
+  
   window.downloadAchievementCertificate = function(){
    
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
