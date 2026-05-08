@@ -1391,18 +1391,23 @@ function maximizeTeacherTimer(){
     </div>
 
     <!-- ✅ Dynamic Station Info -->
-    <div id="bigTimerStationInfo" style="
-      width:70vw;
-      max-width:900px;
-      background:#ffffff;
-      color:#23324a;
-      padding:20px;
-      border-radius:16px;
-      font-size:18px;
-      margin-bottom:25px;
-      box-shadow:0 8px 25px rgba(0,0,0,0.15);
-    ">
-    </div>
+   <div id="bigTimerStationInfo" style="
+  width:min(90vw, 900px);
+  max-width:900px;
+  background:#ffffff;
+  color:#23324a;
+  padding:20px;
+  border-radius:16px;
+  font-size:18px;
+  margin-bottom:25px;
+  box-shadow:0 8px 25px rgba(0,0,0,0.15);
+  overflow:hidden;
+  word-break:break-word;
+  white-space:normal;
+  line-height:1.4;
+  box-sizing:border-box;
+">
+</div>
 
     <div id="bigTeacherTimerDisplay" style="
       font-size:140px;
@@ -1936,7 +1941,6 @@ function tryAutoConnect(){
   try{
     if(db && lessonKey) return true;
     initFirebaseFromInputs();
-    alert("Current lessonKey is: " + lessonKey);
     startLessonConfigListener();
     return true;
   }catch(err){
@@ -1957,7 +1961,6 @@ window.saveConfig = async function(){
   try{
     showNotice('setupNotice','Saving config and testing connection...','warn');
     initFirebaseFromInputs();
-    alert("Current lessonKey is: " + lessonKey);
     localStorage.setItem('DL_firebase_config', JSON.stringify(firebaseConfig));
     localStorage.setItem('DL_lesson_key', lessonKey);
 // await ensureLessonDefaults();
@@ -2985,6 +2988,21 @@ if(allowed){
     font-weight:bold;
     cursor:pointer;
   }
+
+  #bigTimerStationInfo{
+  box-sizing:border-box;
+  width:100%;
+  max-width:900px;
+  overflow:hidden;
+  word-break:break-word;
+  white-space:normal;
+  line-height:1.4;
+}
+
+#bigTimerStationInfo *{
+  max-width:100%;
+  word-break:break-word;
+}
 
   .certificate{
     width:1100px;
