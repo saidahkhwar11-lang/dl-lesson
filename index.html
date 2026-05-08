@@ -589,45 +589,52 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div class="btns" style="margin:0 0 12px 0;">
     <button class="muted" onclick="backToHome()">Back Home</button>
   </div>
+<div class="card" style="margin-bottom:12px;">
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:12px;
+    flex-wrap:wrap;
+  ">
 
-  <div class="card" style="margin-bottom:12px;">
-    <h2 style="margin:0 0 8px 0;">Student View</h2>
-
-    <div style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:260px;">
+      <h2 style="margin:0 0 8px 0;">Student View</h2>
       <div class="small" id="studentHeaderInfo">Student session</div>
-
-      <div id="studentProgressBox" style="
-        padding:6px 10px;
-        background:#f0f4ff;
-        border-radius:10px;
-        font-weight:bold;
-        font-size:13px;
-      ">
-        Progress: 0 / 0 stations completed
-      </div>
     </div>
+
+    <button onclick="checkMyAchievement()" style="
+      background:#f39a2d;
+      color:white;
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:bold;
+      cursor:pointer;
+      width:auto;
+      white-space:nowrap;
+    ">
+      🏆 Achievement
+    </button>
+
   </div>
-
-   <div style="text-align:center; margin:10px 0 14px;">
-
-  <button onclick="checkMyAchievement()" style="
-  background:#f39a2d;
-  color:white;
-  border:none;
-  border-radius:12px;
-  padding:10px 14px;
-  font-weight:bold;
-  cursor:pointer;
-  width:auto;
-">
-  🏆 Check My Achievement
-</button>
 
   <div id="achievementMsg" class="small" style="margin-top:8px;"></div>
 
+  <div id="studentProgressBox" style="
+    margin-top:12px;
+    padding:6px 10px;
+    background:#f0f4ff;
+    border-radius:10px;
+    font-weight:bold;
+    font-size:13px;
+  ">
+    Progress: 0 / 0 stations completed
+  </div>
 </div>
-  <div class="top-bar" id="topStations"></div>
 
+<div class="top-bar" id="topStations"></div>
+    
   <div class="student-layout">
     <div class="sidebar">
       <h3 style="margin-top:0">Stations</h3>
