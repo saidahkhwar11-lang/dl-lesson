@@ -2773,8 +2773,11 @@ actionBtns;
   }
 };
 
-window.getTop5Students = function(){
-  return Object.values(liveStudents || {})
+window.getTop5Students = async function(){
+  const snap = await getSnap(lessonBase() + '/students');
+  const studentsData = snap.val() || {};
+
+  return Object.values(studentsData)
     .filter(function(s){
       return s && s.name && s.name.trim();
     })
@@ -2782,6 +2785,69 @@ window.getTop5Students = function(){
       return Number(b.total || 0) - Number(a.total || 0);
     })
     .slice(0,5);
+};
+
+window.isCurrentStudentTop5 = async function(){
+  if(!currentStudent || !currentStudent.name) return false;
+
+  const top5 = await getTop5Students();
+
+  return top5.some(function(s){
+    return String(s.name || '').trim().toLowerCase() ===
+           String(currentStudent.name || '').trim().toLowerCase();
+  });
+};
+
+window.getTop5Students = async function(){
+
+  const snap = await getSnap(lessonBase() + '/students');
+
+  const studentsData = snap.val() || {};
+
+  return Object.values(studentsData)
+    .filter(function(s){
+      return s && s.name && s.name.trim();
+    })
+    .sort(function(a,b){
+      return Number(b.total || 0) - Number(a.total || 0);
+    })
+    .slice(0,5);
+};
+
+window.isCurrentStudentTop5 = async function(){
+
+  if(!currentStudent || !currentStudent.name){
+    return false;
+  }
+
+  const top5 = await getTop5Students();
+
+  return top5.some(function(s){
+    return String(s.name || '').trim().toLowerCase() ===
+           String(currentStudent.name || '').trim().toLowerCase();
+  });
+};
+
+window.checkMyAchievement = async function(){
+
+  const msg = byId('achievementMsg');
+
+  if(!currentStudent){
+    if(msg){
+      msg.textContent = 'Please log in first.';
+    }
+    return;
+  }
+
+  const allowed = await isCurrentStudentTop5();
+
+  if(allowed){
+    downloadAchievementCertificate();
+  } else {
+    if(msg){
+      msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
+    }
+  }
 };
 
 window.isCurrentStudentTop5 = function(){
@@ -2814,13 +2880,7 @@ window.isCurrentStudentTop5 = function(){
   }
 };
   window.downloadAchievementCertificate = function(){
-    if(!isCurrentStudentTop5()){
-  const msg = byId('achievementMsg');
-  if(msg){
-    msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
-  }
-  return;
-}
+   
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
 
