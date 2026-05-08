@@ -1991,7 +1991,6 @@ window.startStudentSession = async function(){
     }
 
     initFirebaseFromInputs();
-    await ensureLessonDefaults();
 
 showNotice('studentNotice','Starting student session...','warn');
 if(!requireConnection()) return;
@@ -4193,8 +4192,7 @@ document.addEventListener('DOMContentLoaded', function(){
   bindButtons();
   toggleBuilderFields();
 
-  if(localStorage.getItem('DL_firebase_config')) window.loadSavedConfig();
-  else tryAutoConnect();
+  tryAutoConnect();
 
   const savedRole = sessionStorage.getItem('dl_role');
 
@@ -4233,15 +4231,6 @@ document.addEventListener('DOMContentLoaded', function(){
       }, 600);
     }
   }
-});
-  
-window.addEventListener('load', function(){
-  loadSavedConfig();
-
-  if(byId('homeRow')) byId('homeRow').classList.remove('hidden');
-  if(byId('headerPanel')) byId('headerPanel').classList.remove('hidden');
-  if(byId('studentView')) byId('studentView').classList.add('hidden');
-  if(byId('teacherView')) byId('teacherView').classList.add('hidden');
 });
 
   let stationTimerInterval = null;
