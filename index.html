@@ -608,6 +608,23 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
     </div>
   </div>
 
+   <div style="text-align:center; margin:10px 0 14px;">
+
+  <button onclick="checkMyAchievement()" style="
+    background:#f39a2d;
+    color:white;
+    border:none;
+    border-radius:12px;
+    padding:10px 14px;
+    font-weight:bold;
+    cursor:pointer;
+  ">
+    🏆 Check My Achievement
+  </button>
+
+  <div id="achievementMsg" class="small" style="margin-top:8px;"></div>
+
+</div>
   <div class="top-bar" id="topStations"></div>
 
   <div class="student-layout">
@@ -2754,6 +2771,283 @@ actionBtns;
         wasCorrect ? '✅ Correct' : '❌ Correct answer: ' + escapeHtml(q.answer);
     });
   }
+};
+
+  window.isCurrentStudentTop5 = function(){
+  if(!currentStudent || !currentStudent.id) return false;
+
+  const students = Object.values(liveStudents || {})
+    .filter(function(s){
+      return s && s.name && s.name.trim();
+    })
+    .sort(function(a,b){
+      return Number(b.total || 0) - Number(a.total || 0);
+    })
+    .slice(0,5);
+
+  return students.some(function(s){
+    return s.id === currentStudent.id || s.name === currentStudent.name;
+  });
+};
+
+  window.checkMyAchievement = function(){
+  const msg = byId('achievementMsg');
+
+  if(!currentStudent){
+    if(msg) msg.textContent = 'Please log in first.';
+    return;
+  }
+
+  if(isCurrentStudentTop5()){
+    downloadAchievementCertificate();
+  } else {
+    if(msg){
+      msg.innerHTML = '🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.';
+    }
+  }
+};
+
+  window.downloadAchievementCertificate = function(){
+  const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
+  const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
+
+  const today = new Date();
+  const dateText = today.toLocaleDateString('en-GB', {
+    day:'numeric',
+    month:'long',
+    year:'numeric'
+  });
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Achievement Certificate</title>
+<style>
+  body{
+    margin:0;
+    font-family: Georgia, 'Times New Roman', serif;
+    background:#eef3f8;
+    color:#10294a;
+  }
+
+  .print-btn{
+    text-align:center;
+    margin:18px;
+  }
+
+  .print-btn button{
+    background:#1f3f6d;
+    color:white;
+    border:0;
+    border-radius:10px;
+    padding:10px 18px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+
+  .certificate{
+    width:1100px;
+    height:780px;
+    margin:20px auto;
+    background:linear-gradient(135deg,#ffffff 0%,#fffaf0 55%,#f5fbff 100%);
+    border:8px double #c89b3c;
+    outline:4px solid #10294a;
+    padding:34px;
+    box-sizing:border-box;
+    position:relative;
+  }
+
+  .inner-border{
+    height:100%;
+    border:2px solid #d8b763;
+    padding:30px;
+    box-sizing:border-box;
+    text-align:center;
+    position:relative;
+  }
+
+  .top-icon{
+    font-size:46px;
+    color:#c89b3c;
+    margin-bottom:8px;
+  }
+
+  .title{
+    font-size:58px;
+    letter-spacing:8px;
+    font-weight:bold;
+    color:#10294a;
+  }
+
+  .subtitle{
+    font-size:30px;
+    letter-spacing:5px;
+    color:#b8862b;
+    margin-bottom:22px;
+  }
+
+  .presented{
+    font-size:18px;
+    letter-spacing:3px;
+    margin-top:10px;
+    font-weight:bold;
+  }
+
+  .student-name{
+    font-size:54px;
+    font-weight:bold;
+    margin:24px auto 18px;
+    color:#10294a;
+    border-bottom:2px solid #d8b763;
+    display:inline-block;
+    padding:0 60px 8px;
+    font-family: Georgia, 'Times New Roman', serif;
+  }
+
+  .message{
+    font-size:22px;
+    line-height:1.5;
+    max-width:720px;
+    margin:0 auto;
+  }
+
+  .top5{
+    margin-top:24px;
+    font-size:26px;
+    letter-spacing:3px;
+    font-weight:bold;
+    color:#10294a;
+  }
+
+  .top5 span{
+    color:#b8862b;
+  }
+
+  .seal{
+    margin:18px auto 0;
+    width:82px;
+    height:82px;
+    border-radius:50%;
+    background:linear-gradient(135deg,#d9a441,#fff2b0,#b8862b);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#10294a;
+    font-size:34px;
+    border:4px solid #10294a;
+  }
+
+  .bottom{
+    position:absolute;
+    left:40px;
+    right:40px;
+    bottom:26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:20px;
+  }
+
+  .bottom-box{
+    width:32%;
+    text-align:center;
+    font-size:18px;
+  }
+
+  .bottom-title{
+    color:#b8862b;
+    font-weight:bold;
+    letter-spacing:2px;
+    margin-bottom:5px;
+  }
+
+  .line{
+    border-top:2px solid #d8b763;
+    margin:8px auto;
+    width:220px;
+  }
+
+  .date-box{
+    font-size:18px;
+    text-align:center;
+  }
+
+  @media print{
+    .print-btn{display:none;}
+    body{background:white;}
+    .certificate{margin:0 auto;}
+  }
+</style>
+</head>
+
+<body>
+  <div class="print-btn">
+    <button onclick="window.print()">Print / Save as PDF</button>
+  </div>
+
+  <div class="certificate">
+    <div class="inner-border">
+
+      <div class="top-icon">🏆</div>
+
+      <div class="title">CERTIFICATE</div>
+      <div class="subtitle">OF ACHIEVEMENT</div>
+
+      <div class="presented">THIS CERTIFICATE IS PROUDLY PRESENTED TO</div>
+
+      <div class="student-name">${escapeHtml(studentName)}</div>
+
+      <div class="message">
+        for outstanding performance, active participation,<br>
+        and excellent achievement during today’s<br>
+        English Language lesson.
+      </div>
+
+      <div class="top5">
+        AWARDED AS ONE OF THE <span>TOP 5 STUDENTS</span>
+      </div>
+
+      <div class="seal">★</div>
+
+      <div class="bottom">
+        <div class="bottom-box">
+          <div class="bottom-title">ALREYADA SCHOOL</div>
+          <div class="line"></div>
+          <div class="bottom-title">PRINCIPAL</div>
+          <div>Ms. Shaweqya Al Hosani</div>
+        </div>
+
+        <div class="date-box">
+          <div class="bottom-title">DATE</div>
+          <div>${escapeHtml(dateText)}</div>
+        </div>
+
+        <div class="bottom-box">
+          <div class="bottom-title">ENGLISH LANGUAGE</div>
+          <div class="line"></div>
+          <div class="bottom-title">TEACHER</div>
+          <div>Ms. Saidah Khwar</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+  const win = window.open('', '_blank');
+
+  if(!win){
+    alert('Popup blocked. Please allow popups.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
 };
   
 window.submitCurrentStation = async function(stationId){
