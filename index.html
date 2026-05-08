@@ -2852,6 +2852,37 @@ window.checkMyAchievement = async function(){
       return;
     }
 
+    const requiredStations = lessonStations.filter(function(s){
+  return s.unlocked;
+});
+
+const submitted = currentStudent.submissions || {};
+
+const completedCount = requiredStations.filter(function(s){
+  return submitted[s.id];
+}).length;
+
+if(completedCount < requiredStations.length){
+
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#eef4ff;
+        color:#1f3f6d;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #c9d8ff;
+      ">
+        🔒 Complete all unlocked lesson stations first before checking your achievement.
+      </div>
+    `;
+  }
+
+  return;
+}
     const allowed = await isCurrentStudentTop5();
 
 if(allowed){
