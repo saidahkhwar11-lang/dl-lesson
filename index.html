@@ -2778,8 +2778,8 @@ const linkBlock = (ct.links && ct.links.length)
 
   const nextStationId = getNextUnlockedStationId(id);
   const submitBtn = submitted
-    ? '<button class="muted" disabled>Station Submitted</button>'
-    : '<button onclick="submitCurrentStation(\'' + escapeJs(id) + '\')">Submit Station</button>';
+  ? '<button class="muted" disabled>Station Submitted</button>'
+  : '<button onclick="submitCurrentStationFromStages(\'' + escapeJs(id) + '\')">Submit Station</button>';
 
   const nextBtn = nextStationId
     ? '<button class="secondary" onclick="openStation(\'' + escapeJs(nextStationId) + '\')">Next Station</button>'
@@ -3030,6 +3030,17 @@ function saveVisibleStageAnswers(requireAll){
     });
 
   });
+
+}
+
+  function submitCurrentStationFromStages(id){
+
+  if(!saveVisibleStageAnswers(true)){
+    alert("Please answer all questions before submitting.");
+    return;
+  }
+
+  submitCurrentStation(id);
 
 }
 
