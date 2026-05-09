@@ -3236,6 +3236,35 @@ if(allowed){
     body{background:white;}
     .certificate{margin:0 auto;}
   }
+  .student-view .card{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:18px;
+}
+
+.student-view .card img,
+.student-view .card video{
+  max-width:100%;
+  border-radius:12px;
+}
+
+@media(max-width:850px){
+  .student-view .card{
+    grid-template-columns:1fr;
+  }
+}
+#studentPage .question-card,
+#studentPage .self-eval-box,
+#studentPage button{
+  grid-column:2;
+}
+
+#studentPage h2,
+#studentPage .station-info,
+#studentPage img,
+#studentPage video{
+  grid-column:1;
+}
 </style>
 </head>
 
