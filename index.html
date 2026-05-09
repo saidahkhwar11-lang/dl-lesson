@@ -2152,6 +2152,7 @@ await dbRef(attendancePath(id)).set({
 });
 
 showOnly('studentView');
+document.body.classList.add("student-mode");
 renderStudentNav();
 listenStudentLive();
 updateStudentProgress();
@@ -3236,34 +3237,30 @@ if(allowed){
     body{background:white;}
     .certificate{margin:0 auto;}
   }
-  .student-view .card{
+body.student-mode .card{
   display:grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns:1fr 1fr;
   gap:18px;
+  align-items:start;
 }
 
-.student-view .card img,
-.student-view .card video{
-  max-width:100%;
-  border-radius:12px;
-}
-
-@media(max-width:850px){
-  .student-view .card{
-    grid-template-columns:1fr;
-  }
-}
-#studentPage .question-card,
-#studentPage .self-eval-box,
-#studentPage button{
+body.student-mode .question-card,
+body.student-mode .self-eval-box,
+body.student-mode button{
   grid-column:2;
 }
 
-#studentPage h2,
-#studentPage .station-info,
-#studentPage img,
-#studentPage video{
+body.student-mode img,
+body.student-mode video,
+body.student-mode h2,
+body.student-mode .small{
   grid-column:1;
+}
+
+@media(max-width:850px){
+  body.student-mode .card{
+    grid-template-columns:1fr;
+  }
 }
 </style>
 </head>
