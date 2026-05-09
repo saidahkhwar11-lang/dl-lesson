@@ -1715,6 +1715,8 @@ let appInstance = null;
 let db = null;
 let currentStudent = null;
 let liveStudents = {};
+let studentQuestionStage = 0;
+const questionsPerStage = 4;
 let liveBonus = {};
 let lessonStations = JSON.parse(JSON.stringify(defaultStations));
 let lessonContent = JSON.parse(JSON.stringify(defaultContent));
@@ -2665,6 +2667,9 @@ function renderQuestion(q, stationId, index){
 }
   
 window.openStation = function(id){
+  if(currentOpenStation !== id){
+  studentQuestionStage = 0;
+}
   const st = getStationById(id);
   if(!st) return;
 if(!st.unlocked) return;
@@ -2717,9 +2722,28 @@ if(!st.unlocked) return;
     '</div>' +
   '</div>';
   
-  const questionsHtml = (ct.questions || []).map(function(q,i){
-    return renderQuestion(q,id,i);
-  }).join('');
+  const allQuestions = ct.questions || [];
+
+const totalStages = Math.ceil(allQuestions.length / questionsPerStage);
+
+if(studentQuestionStage >= totalStages){
+  studentQuestionStage = 0;
+}
+
+const startIndex = studentQuestionStage * questionsPerStage;
+const endIndex = startIndex + questionsPerStage;
+
+const visibleQuestions = allQuestions.slice(startIndex, endIndex);
+
+const questionsHtml = visibleQuestions.map(function(q,localIndex){
+
+  const realIndex = startIndex + localIndex;
+
+  return renderQuestion(q,id,realIndex);
+
+}).join('');
+
+const isLastStage = studentQuestionStage >= totalStages - 1;
 
   const resultText = scoreTextForStudent(id);
 
@@ -2796,7 +2820,35 @@ const selfEvalHtml = `
   </div>
 `;
 
-  const actionBtns = '<div class="btns" style="margin-top:12px;">' + submitBtn + nextBtn + '</div>';
+  let actionBtns = '';
+
+if(submitted){
+
+  actionBtns =
+    '<div class="btns" style="margin-top:12px;">' +
+      submitBtn +
+      nextBtn +
+    '</div>';
+
+}
+else if(!isLastStage){
+
+  actionBtns =
+    '<div class="btns" style="margin-top:12px;">' +
+      '<button class="secondary" onclick="nextQuestionStage()">Next</button>' +
+    '</div>';
+
+}
+else{
+
+  actionBtns =
+    selfEvalHtml +
+    '<div class="btns" style="margin-top:12px;">' +
+      submitBtn +
+      nextBtn +
+    '</div>';
+
+}
   const submittedNote = submitted
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
@@ -2816,7 +2868,6 @@ studentLessonBox +
     '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
 questionsHtml +
-selfEvalHtml +
 actionBtns;
 
   if(id === 'st1' && previousStation === 'starter'){
@@ -2898,6 +2949,14 @@ actionBtns;
     });
   }
 };
+
+  function nextQuestionStage(){
+
+  studentQuestionStage++;
+
+  openStation(currentOpenStation);
+
+}
 
 window.getTop5Students = async function(){
   const snap = await getSnap(lessonBase() + '/students');
