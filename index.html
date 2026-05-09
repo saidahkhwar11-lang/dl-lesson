@@ -2996,14 +2996,26 @@ function saveVisibleStageAnswers(requireAll){
     const wrap = visibleWraps[w];
     const index = wrap.id.split('_').pop();
 
-    const checked = wrap.querySelector('input[type="radio"]:checked');
+    let answer = "";
 
-    if(requireAll && !checked){
+    const checked = wrap.querySelector('input[type="radio"]:checked');
+    const textInput = wrap.querySelector('input[type="text"], textarea');
+    const select = wrap.querySelector('select');
+
+    if(checked){
+      answer = checked.value.trim();
+    } else if(textInput){
+      answer = textInput.value.trim();
+    } else if(select){
+      answer = select.value.trim();
+    }
+
+    if(requireAll && !answer){
       return false;
     }
 
-    if(checked){
-      studentStageAnswers[currentOpenStation][index] = checked.value;
+    if(answer){
+      studentStageAnswers[currentOpenStation][index] = answer;
     }
   }
 
@@ -3040,8 +3052,18 @@ function saveVisibleStageAnswers(requireAll){
     return;
   }
 
-  submitCurrentStation(id);
+  const ct = getStationContent(id);
+  const totalQuestions = (ct.questions || []).length;
+  const saved = studentStageAnswers[id] || {};
 
+  for(let i = 0; i < totalQuestions; i++){
+    if(!saved[i] && saved[i] !== 0){
+      alert("Please answer all questions before submitting.");
+      return;
+    }
+  }
+
+  submitCurrentStation(id);
 }
 
 window.getTop5Students = async function(){
