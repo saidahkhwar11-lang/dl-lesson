@@ -2962,7 +2962,7 @@ actionBtns;
   }
 };
 
-  function nextQuestionStage(){
+ function nextQuestionStage(){
 
   if(!saveVisibleStageAnswers(true)){
     alert("Please answer all questions before going next.");
@@ -2973,6 +2973,7 @@ actionBtns;
   openStation(currentOpenStation);
 
 }
+
   function previousQuestionStage(){
 
   saveVisibleStageAnswers(false);
@@ -2981,6 +2982,8 @@ actionBtns;
     studentQuestionStage--;
     openStation(currentOpenStation);
   }
+
+}
 
 }
 
