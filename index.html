@@ -1717,6 +1717,7 @@ let currentStudent = null;
 let liveStudents = {};
 let studentQuestionStage = 0;
 const questionsPerStage = 4;
+let studentStageAnswers = {};
 let liveBonus = {};
 let lessonStations = JSON.parse(JSON.stringify(defaultStations));
 let lessonContent = JSON.parse(JSON.stringify(defaultContent));
@@ -2835,18 +2836,27 @@ else if(!isLastStage){
 
   actionBtns =
     '<div class="btns" style="margin-top:12px;">' +
-      '<button class="secondary" onclick="nextQuestionStage()">Next</button>' +
+(studentQuestionStage > 0
+  ? '<button class="secondary" onclick="previousQuestionStage()">Previous</button>'
+  : '') +
+'<button class="secondary" onclick="nextQuestionStage()">Next</button>' +
     '</div>';
 
 }
 else{
 
-  actionBtns =
-    selfEvalHtml +
-    '<div class="btns" style="margin-top:12px;">' +
-      submitBtn +
-      nextBtn +
-    '</div>';
+ actionBtns =
+  selfEvalHtml +
+  '<div class="btns" style="margin-top:12px;">' +
+
+    (studentQuestionStage > 0
+      ? '<button class="secondary" onclick="previousQuestionStage()">Previous</button>'
+      : '') +
+
+    submitBtn +
+    nextBtn +
+
+  '</div>';
 
 }
   const submittedNote = submitted
@@ -2952,9 +2962,54 @@ actionBtns;
 
   function nextQuestionStage(){
 
-  studentQuestionStage++;
+  if(!saveVisibleStageAnswers(true)){
+    alert("Please answer all questions before going next.");
+    return;
+  }
 
+  studentQuestionStage++;
   openStation(currentOpenStation);
+
+}
+  function previousQuestionStage(){
+
+  saveVisibleStageAnswers(false);
+
+  if(studentQuestionStage > 0){
+    studentQuestionStage--;
+    openStation(currentOpenStation);
+  }
+
+}
+
+  function saveVisibleStageAnswers(requireAll){
+
+  const startIndex = studentQuestionStage * questionsPerStage;
+  const endIndex = startIndex + questionsPerStage;
+
+  if(!studentStageAnswers[currentOpenStation]){
+    studentStageAnswers[currentOpenStation] = {};
+  }
+
+  for(let i = startIndex; i < endIndex; i++){
+
+    const wrap = document.getElementById('q_' + currentOpenStation + '_' + i);
+
+    if(!wrap) continue;
+
+    const checked = wrap.querySelector('input[type="radio"]:checked');
+
+    if(requireAll && !checked){
+      return false;
+    }
+
+    if(checked){
+      studentStageAnswers[currentOpenStation][i] = checked.value;
+    }
+
+  }
+
+  return true;
 
 }
 
