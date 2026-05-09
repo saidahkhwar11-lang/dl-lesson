@@ -3476,11 +3476,15 @@ if(allowed){
 };
   
 window.submitCurrentStation = async function(stationId){
+
   if(!currentStudent) return;
   if(isStationSubmitted(stationId)) return openStation(stationId);
 
+  saveVisibleStageAnswers(false);
+
   const ct = getStationContent(stationId);
   const questions = ct.questions || [];
+  const savedStageAnswers = studentStageAnswers[stationId] || {};
 
   const selfEval = getSelfEvalValue(stationId);
   if(!selfEval){
@@ -3493,14 +3497,11 @@ window.submitCurrentStation = async function(stationId){
   questions.forEach(function(q, i){
     if(unanswered) return;
 
-    if(q.type === 'written'){
-      const text = document.querySelector('textarea[name="answer_' + stationId + '_' + i + '"]');
-      if(!text || !text.value.trim()) unanswered = true;
-      return;
-    }
+    const savedAnswer = savedStageAnswers[i];
 
-    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-    if(!checked) unanswered = true;
+    if(savedAnswer === undefined || savedAnswer === null || String(savedAnswer).trim() === ''){
+      unanswered = true;
+    }
   });
 
   if(unanswered){
@@ -3512,54 +3513,20 @@ window.submitCurrentStation = async function(stationId){
   const submittedAnswers = {};
 
   questions.forEach(function(q, i){
-    const wrap = byId('q_' + stationId + '_' + i);
-    if(!wrap) return;
 
-    wrap.classList.remove('correct','wrong');
+    const answer = savedStageAnswers[i] !== undefined ? savedStageAnswers[i] : '';
+    submittedAnswers[i] = answer;
 
     if(q.type === 'written'){
       const text = document.querySelector('textarea[name="answer_' + stationId + '_' + i + '"]');
-      const answer = text ? text.value.trim() : '';
-      submittedAnswers[i] = answer;
-
       if(text) text.disabled = true;
-
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✍️ Answer submitted for teacher marking.';
       return;
     }
 
-    const checked = document.querySelector('input[name="answer_' + stationId + '_' + i + '"]:checked');
-    const answer = checked ? checked.value : '';
-    submittedAnswers[i] = answer;
-
-    const labels = wrap.querySelectorAll('.choice');
-
-    labels.forEach(function(lbl){
-      const input = lbl.querySelector('input');
-      if(!input) return;
-
-      input.disabled = true;
-
-      if(normalizeAnswer(input.value) === normalizeAnswer(q.answer)){
-        lbl.style.background = '#eafaf1';
-        lbl.style.borderColor = '#2ecc71';
-      }
-
-      if(checked && input === checked && normalizeAnswer(input.value) !== normalizeAnswer(q.answer)){
-        lbl.style.background = '#fdecea';
-        lbl.style.borderColor = '#e74c3c';
-      }
-    });
-
     if(normalizeAnswer(answer) === normalizeAnswer(q.answer)){
       score += 1;
-      wrap.classList.add('correct');
-      wrap.querySelector('.feedback').innerHTML = '✅ Correct';
-    } else {
-      wrap.classList.add('wrong');
-      wrap.querySelector('.feedback').innerHTML = '❌ Correct answer: ' + escapeHtml(q.answer);
     }
+
   });
 
   const studentSnap = await getSnap(studentPath(currentStudent.id));
@@ -3607,7 +3574,6 @@ window.submitCurrentStation = async function(stationId){
   updateStudentProgress();
   openStation(stationId);
 };
-  
 function listenStudentLive(){
   if(studentBonusRef) studentBonusRef.off();
   if(studentSelfRef) studentSelfRef.off();
