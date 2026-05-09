@@ -3210,8 +3210,30 @@ if(allowed){
     }
   }
 };
+
+  function hasCompletedAllStations(){
+
+  if(!currentStudent || !liveStudents[currentStudent.id]){
+    return false;
+  }
+
+  const student = liveStudents[currentStudent.id];
+  const submitted = student.submittedStations || {};
+
+  const requiredStations = lessonStations.filter(function(st){
+    return st && st.id && st.id !== 'starter';
+  });
+
+  return requiredStations.every(function(st){
+    return submitted[st.id] === true;
+  });
+}
   
   window.downloadAchievementCertificate = function(){
+    if(!hasCompletedAllStations()){
+  alert("Please complete all stations before downloading your achievement certificate.");
+  return;
+}
    
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
