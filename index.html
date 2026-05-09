@@ -2880,6 +2880,8 @@ studentLessonBox +
 questionsHtml +
 actionBtns;
 
+  restoreVisibleStageAnswers();
+
   if(id === 'st1' && previousStation === 'starter'){
   showLessonInfoPopup();
 }
@@ -3010,6 +3012,29 @@ actionBtns;
   }
 
   return true;
+
+}
+
+  function restoreVisibleStageAnswers(){
+
+  const saved = studentStageAnswers[currentOpenStation] || {};
+
+  Object.keys(saved).forEach(function(index){
+
+    const value = saved[index];
+
+    const wrap = document.getElementById('q_' + currentOpenStation + '_' + index);
+    if(!wrap) return;
+
+    const inputs = wrap.querySelectorAll('input[type="radio"]');
+
+    inputs.forEach(function(input){
+      if(input.value === value){
+        input.checked = true;
+      }
+    });
+
+  });
 
 }
 
