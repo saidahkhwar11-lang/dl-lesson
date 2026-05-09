@@ -2152,7 +2152,6 @@ await dbRef(attendancePath(id)).set({
 });
 
 showOnly('studentView');
-document.body.classList.add("student-mode");
 renderStudentNav();
 listenStudentLive();
 updateStudentProgress();
@@ -3237,31 +3236,7 @@ if(allowed){
     body{background:white;}
     .certificate{margin:0 auto;}
   }
-body.student-mode .card{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:18px;
-  align-items:start;
-}
 
-body.student-mode .question-card,
-body.student-mode .self-eval-box,
-body.student-mode button{
-  grid-column:2;
-}
-
-body.student-mode img,
-body.student-mode video,
-body.student-mode h2,
-body.student-mode .small{
-  grid-column:1;
-}
-
-@media(max-width:850px){
-  body.student-mode .card{
-    grid-template-columns:1fr;
-  }
-}
 </style>
 </head>
 
