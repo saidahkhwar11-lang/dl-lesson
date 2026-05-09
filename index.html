@@ -2827,8 +2827,18 @@ if(submitted){
 
   actionBtns =
     '<div class="btns" style="margin-top:12px;">' +
+
+      (studentQuestionStage > 0
+        ? '<button class="secondary" onclick="previousQuestionStage()">Previous</button>'
+        : '') +
+
+      (!isLastStage
+        ? '<button class="secondary" onclick="studentQuestionStage++; openStation(currentOpenStation);">Next</button>'
+        : '') +
+
       submitBtn +
       nextBtn +
+
     '</div>';
 
 }
