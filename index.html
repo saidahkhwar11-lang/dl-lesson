@@ -3183,31 +3183,30 @@ async function getFreshCurrentStudentData(){
 
 async function hasCompletedAllOpenedStations(){
 
-  const student = await getFreshCurrentStudentData();
-  const submitted = student.submittedStations || {};
+  if(!currentStudent || !currentStudent.id){
+    return false;
+  }
+
+  const studentData =
+    (liveStudents && liveStudents[currentStudent.id])
+      ? liveStudents[currentStudent.id]
+      : {};
+
+  const submitted = studentData.submittedStations || {};
 
   const requiredStations = lessonStations.filter(function(st){
-    return st &&
-           st.id &&
-           st.id !== 'starter';
+    return st && st.id;
   });
 
   if(requiredStations.length === 0){
     return false;
   }
 
-  let completed = 0;
-
-  requiredStations.forEach(function(st){
-    if(submitted[st.id] === true){
-      completed++;
-    }
+  return requiredStations.every(function(st){
+    return submitted[st.id] === true;
   });
 
-  return completed >= requiredStations.length;
-
 }
-
 window.checkMyAchievement = async function(){
 
   const msg = byId('achievementMsg');
@@ -3609,32 +3608,7 @@ await downloadAchievementCertificate();
   win.document.close();
 };
 
-async function hasCompletedAllOpenedStations(){
 
-  const student = await getFreshCurrentStudentData();
-
-  const submitted = student.submittedStations || {};
-  const results = student.stationResults || {};
-  const answers = student.stationAnswers || {};
-  const scores = student.scores || {};
-
-  const requiredStations = getRequiredAchievementStations();
-
-  if(requiredStations.length === 0){
-    return false;
-  }
-
-  return requiredStations.every(function(st){
-
-    return submitted[st.id] === true ||
-           results[st.id] ||
-           answers[st.id] ||
-           Object.prototype.hasOwnProperty.call(scores, st.id);
-
-  });
-
-}
-  
 window.submitCurrentStation = async function(stationId){
 
   if(!currentStudent) return;
