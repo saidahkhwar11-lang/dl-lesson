@@ -3214,28 +3214,29 @@ if(completedCount < requiredStations.length){
 }
     const allowed = await isCurrentStudentTop5();
 
-if(allowed && completedCount >= requiredStations.length){
+if(completedCount < requiredStations.length){
+
   if(msg){
     msg.innerHTML = `
       <div style="
-        background:#eefbf3;
-        color:#1f8f5f;
+        background:#eef4ff;
+        color:#1f3f6d;
         padding:8px 12px;
         border-radius:10px;
         margin-top:6px;
         font-weight:600;
         font-size:13px;
-        border:1px solid #b9e7ca;
+        border:1px solid #c9d8ff;
       ">
-        🏆 Congratulations! Opening your certificate...
+        🔒 Please finish all stations first.
       </div>
     `;
   }
 
-  downloadAchievementCertificate();
+  return;
+}
 
-} else {
-
+if(allowed){
   if(msg){
     msg.innerHTML = `
       <div style="
