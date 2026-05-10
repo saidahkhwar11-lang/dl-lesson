@@ -3221,6 +3221,27 @@ async function hasCompletedAllOpenedStations(){
   return completed >= requiredStations.length;
 
 }
+
+  async function getAchievementStatus(){
+
+  if(achievementUnlocked !== true){
+    return 'locked';
+  }
+
+  const finished = await hasCompletedAllOpenedStations();
+
+  if(!finished){
+    return 'unfinished';
+  }
+
+  const allowed = await isCurrentStudentTop5();
+
+  if(allowed){
+    return 'top5';
+  }
+
+  return 'not_top5';
+}
 window.checkMyAchievement = async function(){
 
   const msg = byId('achievementMsg');
