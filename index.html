@@ -2159,6 +2159,7 @@ await dbRef(attendancePath(id)).set({
 showOnly('studentView');
 renderStudentNav();
 listenStudentLive();
+listenAchievementUnlock();
 updateStudentProgress();
     const displayedStation = lessonStations.find(function(s){
   return s.displayed && s.unlocked;
@@ -3096,16 +3097,27 @@ window.getTop5Students = async function(){
     })
     .slice(0,5);
 };
-  window.unlockAchievements = function(){
+  window.unlockAchievements = async function(){
 
   achievementUnlocked = true;
+
+  await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
   toggleTopStudents();
 
   alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
 
 };
+  
+  function listenAchievementUnlock(){
 
+  dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
+
+    achievementUnlocked = snap.val() === true;
+
+  });
+
+}
 window.isCurrentStudentTop5 = async function(){
   if(!currentStudent || !currentStudent.name){
     return false;
