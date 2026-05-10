@@ -1564,6 +1564,7 @@ font-size:95px;
 }
 
 window.saveSelfEvaluation = async function(stationId, value){
+  saveVisibleStageAnswers(false);
   if(!requireConnection() || !currentStudent) return;
 
   const student = liveStudents[currentStudent.id] || {};
@@ -1580,6 +1581,8 @@ window.saveSelfEvaluation = async function(stationId, value){
 
   renderStudentNav();
 
+  restoreVisibleStageAnswers();
+  
   if(typeof renderTeacherTracker === 'function'){
     renderTeacherTracker();
   }
