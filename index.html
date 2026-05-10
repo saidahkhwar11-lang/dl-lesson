@@ -1839,6 +1839,13 @@ function totalMarksForStation(id){
     return total + 1;
   }, 0);
 }
+  function getLessonMaxMark(){
+
+  return lessonStations.reduce(function(total, st){
+    return total + totalMarksForStation(st.id);
+  }, 0);
+
+}
   function normalizeAnswer(v){ return String(v == null ? '' : v).trim().toLowerCase(); }
 function configsEqual(a,b){ return JSON.stringify(a || {}) === JSON.stringify(b || {}); }
   function renderBonusBox(){
@@ -1886,7 +1893,7 @@ function showOnly(viewId){
 
   window.scrollTo(0,0);
 }
-
+  
 window.backToHome = function(){
   sessionStorage.removeItem('dl_role');
   sessionStorage.removeItem('dl_student_name');
@@ -2643,12 +2650,35 @@ function renderStudentNav(){
   const side = byId('stationList');
   const top = byId('topStations');
   if(!side || !top) return;
-  if(currentStudent && byId('studentHeaderInfo')) byId('studentHeaderInfo').innerHTML =
-  currentStudent.name +
-  ' | ID: ' + currentStudent.id +
-  ' <span style="color:#f39c12;font-weight:bold;">⭐ ' +
-  (liveBonus[currentStudent.id]?.points || 0) +
-  '</span>';
+ if(currentStudent && byId('studentHeaderInfo')){
+
+  const student = liveStudents[currentStudent.id] || {};
+  const scores = student.scores || {};
+
+  const stationMark = Object.values(scores).reduce(function(a,b){
+    return a + Number(b || 0);
+  }, 0);
+
+  const bonus = Number((liveBonus[currentStudent.id]?.points) || 0);
+
+  const maxMark = getLessonMaxMark();
+
+  const finalTotal = stationMark + bonus;
+
+  byId('studentHeaderInfo').innerHTML =
+    currentStudent.name +
+    ' | ID: ' + currentStudent.id +
+    ' <span style="color:#1f8f5f;font-weight:bold;">📘 ' +
+    stationMark + '/' + maxMark +
+    '</span>' +
+    ' <span style="color:#f39c12;font-weight:bold;margin-left:10px;">⭐ Bonus: ' +
+    bonus +
+    '</span>' +
+    ' <span style="color:#10294a;font-weight:bold;margin-left:10px;">🏆 Total: ' +
+    finalTotal + '/' + maxMark +
+    '</span>';
+
+}
   side.innerHTML = lessonStations.map(function(s){
     const ct = getStationContent(s.id);
     const thumb = ct.imageUrl ? '<img class="station-thumb" src="' + ct.imageUrl + '" alt="thumb" />' : '<div class="station-thumb"></div>';
