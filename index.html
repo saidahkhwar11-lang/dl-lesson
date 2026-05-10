@@ -3147,8 +3147,8 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    if(!achievementUnlocked){
-  if(msg){
+if(achievementUnlocked !== true){
+    if(msg){
     msg.innerHTML = `
       <div style="
         background:#eef4ff;
@@ -3167,8 +3167,8 @@ window.checkMyAchievement = async function(){
   return;
 }
 
-   const student = liveStudents[currentStudent.id] || {};
-
+const studentSnap = await getSnap(studentPath(currentStudent.id));
+const student = studentSnap.exists() ? studentSnap.val() : (liveStudents[currentStudent.id] || {});
   
 const requiredStations = lessonStations.filter(function(s){
   return s &&
@@ -3181,7 +3181,7 @@ const requiredStations = lessonStations.filter(function(s){
 const submitted = student.submittedStations || {};
 
 const completedCount = requiredStations.filter(function(s){
-  return submitted[s.id];
+return submitted[s.id] === true;
 }).length;
 
 if(completedCount < requiredStations.length){
