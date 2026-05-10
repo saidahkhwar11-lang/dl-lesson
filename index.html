@@ -1111,19 +1111,22 @@ loadCreatorStation();
   showNotice('creatorNotice', 'Station moved up successfully.', 'good');
 };
 
-  window.spinStudent = function(){
-  try{
-    if(!liveStudents || Object.keys(liveStudents).length === 0){
-      alert('No students available');
-      return;
-    }
+ window.spinStudent = function(){
 
-    const students = Object.entries(liveStudents)
+  try{
+
+    const students = Object.entries(liveStudents || {})
       .map(function(entry){
+        const id = entry[0];
+        const data = entry[1] || {};
+
         return {
-          id: entry[0],
-          name: entry[1] && entry[1].name ? entry[1].name : 'Student'
+          id: data.id || id,
+          name: data.name || 'Student'
         };
+      })
+      .filter(function(s){
+        return s.id && s.name;
       });
 
     if(!students.length){
@@ -1134,16 +1137,25 @@ loadCreatorStation();
     const randomIndex = Math.floor(Math.random() * students.length);
     const selected = students[randomIndex];
 
-    selectedSpinnerStudentName = selected.name;
     selectedSpinnerStudentId = selected.id;
+    selectedSpinnerStudentName = selected.name;
+
+    const box = byId('spinnerBox');
+    const nameBox = byId('spinnerName');
+
+    if(box) box.style.display = 'block';
+    if(nameBox) nameBox.textContent = selected.name;
 
     alert('🎉 Selected Student: ' + selected.name);
+
   }catch(err){
+
     console.error(err);
     alert('Error selecting student');
-  }
-};
 
+  }
+
+};
   window.addSpinnerBonus = async function(){
   try{
     if(!selectedSpinnerStudentId){
