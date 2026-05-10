@@ -3120,17 +3120,7 @@ window.getTop5Students = async function(){
   alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
 
 };
-  showOnly('studentView');
-
-renderStudentNav();
-listenStudentLive();
-
-const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
-achievementUnlocked = unlockSnap.val() === true;
-
-listenAchievementUnlock();
-
-updateStudentProgress();
+  
   function listenAchievementUnlock(){
 
   dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
