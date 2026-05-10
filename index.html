@@ -2748,9 +2748,11 @@ window.openStation = function(id){
   studentQuestionStage = 0;
 }
   const st = getStationById(id);
-  if(!st) return;
-if(!st.unlocked) return;
-  const previousStation = currentOpenStation;
+if(!st) return;
+
+const stationIsLocked = !st.unlocked;
+
+const previousStation = currentOpenStation;
   currentOpenStation = id;
   renderStudentNav();
 
@@ -2812,13 +2814,36 @@ const endIndex = startIndex + questionsPerStage;
 
 const visibleQuestions = allQuestions.slice(startIndex, endIndex);
 
-const questionsHtml = visibleQuestions.map(function(q,localIndex){
+let questionsHtml = '';
 
-  const realIndex = startIndex + localIndex;
+if(stationIsLocked){
 
-  return renderQuestion(q,id,realIndex);
+  questionsHtml = `
+    <div style="
+      background:#fff7ea;
+      border:1px solid #f3d38b;
+      color:#9a6700;
+      padding:14px;
+      border-radius:12px;
+      margin:14px 0;
+      font-weight:600;
+      text-align:center;
+    ">
+      🔒 Questions are locked. Please wait for your teacher to unlock this station.
+    </div>
+  `;
 
-}).join('');
+} else {
+
+  questionsHtml = visibleQuestions.map(function(q,localIndex){
+
+    const realIndex = startIndex + localIndex;
+
+    return renderQuestion(q,id,realIndex);
+
+  }).join('');
+
+}
 
 const isLastStage = studentQuestionStage >= totalStages - 1;
 
@@ -2899,7 +2924,11 @@ const selfEvalHtml = `
 
   let actionBtns = '';
 
-if(submitted){
+if(stationIsLocked){
+
+  actionBtns = '';
+
+} else if(submitted){
 
   actionBtns =
     '<div class="btns" style="margin-top:12px;">' +
