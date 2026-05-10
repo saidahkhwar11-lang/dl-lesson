@@ -3205,7 +3205,7 @@ if(completedCount < requiredStations.length){
         font-size:13px;
         border:1px solid #c9d8ff;
       ">
-        🔒 Complete all opened stations first before checking your achievement.
+        🔒 Please finish all stations first.
       </div>
     `;
   }
@@ -3293,8 +3293,8 @@ if(allowed){
 }
   
   window.downloadAchievementCertificate = function(){
-    if(!hasCompletedAllStations()){
-  alert("Please complete all stations before downloading your achievement certificate.");
+if(!hasCompletedAllOpenedStations()){
+    alert("Please complete all stations before downloading your achievement certificate.");
   return;
 }
    
@@ -3569,6 +3569,30 @@ if(allowed){
   win.document.write(html);
   win.document.close();
 };
+
+  function hasCompletedAllOpenedStations(){
+
+  if(!currentStudent || !liveStudents[currentStudent.id]){
+    return false;
+  }
+
+  const student = liveStudents[currentStudent.id];
+  const submitted = student.submittedStations || {};
+
+  const requiredStations = lessonStations.filter(function(s){
+    return s &&
+           s.id &&
+           s.id !== 'starter' &&
+           s.unlocked &&
+           s.displayed;
+  });
+
+  if(requiredStations.length === 0) return false;
+
+  return requiredStations.every(function(s){
+    return submitted[s.id] === true;
+  });
+}
   
 window.submitCurrentStation = async function(stationId){
 
