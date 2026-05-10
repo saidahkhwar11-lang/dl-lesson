@@ -3087,8 +3087,10 @@ function saveVisibleStageAnswers(requireAll){
     const value = saved[index];
 
     const wrap = document.getElementById('q_' + currentOpenStation + '_' + index);
+
     if(!wrap) return;
 
+    // radio answers
     const inputs = wrap.querySelectorAll('input[type="radio"]');
 
     inputs.forEach(function(input){
@@ -3096,6 +3098,20 @@ function saveVisibleStageAnswers(requireAll){
         input.checked = true;
       }
     });
+
+    // written answers
+    const textInput = wrap.querySelector('textarea, input[type="text"]');
+
+    if(textInput){
+      textInput.value = value;
+    }
+
+    // select answers
+    const select = wrap.querySelector('select');
+
+    if(select){
+      select.value = value;
+    }
 
   });
 
