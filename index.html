@@ -3138,8 +3138,12 @@ window.isCurrentStudentTop5 = async function(){
 
   const top5 = await getTop5Students();
 
+  console.log('CURRENT STUDENT ID:', currentStudent.id);
+  console.log('TOP 5 IDS:', top5.map(s => s.id));
+
   return top5.some(function(s){
-    return String(s.id || '') === String(currentStudent.id || '');
+    return String(s.id || '').trim() ===
+           String(currentStudent.id || '').trim();
   });
 
 };
@@ -3331,8 +3335,8 @@ await downloadAchievementCertificate();
   
  window.downloadAchievementCertificate = async function(){
 
-  if(!achievementUnlocked){
-    alert("Achievement certificates are locked until the teacher announces the Top 5.");
+if(achievementUnlocked !== true){
+   alert("Achievement certificates are locked until the teacher announces the Top 5.");
     return;
   }
 
