@@ -3221,8 +3221,8 @@ if(allowed){
   const submitted = student.submittedStations || {};
 
   const requiredStations = lessonStations.filter(function(st){
-    return st && st.id && st.id !== 'starter';
-  });
+  return st && st.id && st.id !== 'starter' && st.unlocked && st.displayed;
+});
 
   return requiredStations.every(function(st){
     return submitted[st.id] === true;
