@@ -3191,12 +3191,11 @@ async function hasCompletedAllOpenedStations(){
     return false;
   }
 
-  const studentData =
-    (liveStudents && liveStudents[currentStudent.id])
-      ? liveStudents[currentStudent.id]
-      : {};
+  const student =
+    liveStudents[currentStudent.id] || {};
 
-  const submitted = studentData.submittedStations || {};
+  const submitted =
+    student.submittedStations || {};
 
   const requiredStations = lessonStations.filter(function(st){
     return st && st.id;
@@ -3206,9 +3205,20 @@ async function hasCompletedAllOpenedStations(){
     return false;
   }
 
-  return requiredStations.every(function(st){
-    return submitted[st.id] === true;
+  let completed = 0;
+
+  requiredStations.forEach(function(st){
+
+    if(submitted[st.id] === true){
+      completed++;
+    }
+
   });
+
+  console.log('Completed:', completed);
+  console.log('Required:', requiredStations.length);
+
+  return completed >= requiredStations.length;
 
 }
 window.checkMyAchievement = async function(){
