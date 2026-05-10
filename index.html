@@ -1158,10 +1158,22 @@ loadCreatorStation();
 };
   window.addSpinnerBonus = async function(){
   try{
-    if(!selectedSpinnerStudentId){
-      alert('Please pick a student first.');
-      return;
-    }
+    if(!selectedSpinnerStudentId && selectedSpinnerStudentName){
+
+  const found = Object.entries(liveStudents || {}).find(function(entry){
+    const student = entry[1] || {};
+    return student.name === selectedSpinnerStudentName;
+  });
+
+  if(found){
+    selectedSpinnerStudentId = (found[1] && found[1].id) || found[0];
+  }
+}
+
+if(!selectedSpinnerStudentId){
+  alert('Please pick a student first.');
+  return;
+}
 
     const student = liveStudents[selectedSpinnerStudentId] || {};
 
