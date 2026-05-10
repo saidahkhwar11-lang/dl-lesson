@@ -3111,7 +3111,6 @@ window.getTop5Students = async function(){
 };
   window.unlockAchievements = async function(){
 
-  achievementUnlocked = true;
 
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
@@ -3144,7 +3143,6 @@ window.isCurrentStudentTop5 = async function(){
 };
 window.unlockAchievements = async function(){
 
-  achievementUnlocked = true;
 
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
