@@ -3153,7 +3153,13 @@ window.isCurrentStudentTop5 = async function(){
   const snap = await getSnap(lessonBase() + '/settings/finalTop5Ids');
   const ids = snap.val() || [];
 
-  return ids.map(String).includes(String(currentStudent.id));
+  console.log('Current student:', currentStudent.id);
+  console.log('Final Top 5 IDs:', ids);
+
+  return Array.isArray(ids) && ids.some(function(id){
+    return String(id).trim() === String(currentStudent.id).trim();
+  });
+
 };
   
 window.unlockAchievements = async function(){
