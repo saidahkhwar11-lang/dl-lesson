@@ -2078,7 +2078,9 @@ window.loadSavedConfig = function(){
 };
 
 window.startStudentSession = async function(){
+
   try{
+
     if(typeof firebase === 'undefined'){
       showNotice('studentNotice','Login failed: Please refresh and try again.','bad');
       return;
@@ -2086,99 +2088,102 @@ window.startStudentSession = async function(){
 
     initFirebaseFromInputs();
 
-showNotice('studentNotice','Starting student session...','warn');
-if(!requireConnection()) return;
+    showNotice('studentNotice','Starting student session...','warn');
 
-const name = byId('studentName').value.trim();
+    if(!requireConnection()) return;
 
-if(!name){
-  showNotice('studentNotice','Please enter student name.','bad');
-  return;
-}
+    const name = byId('studentName').value.trim();
 
-// ✅ 1-hour resume ID first
+    if(!name){
+      showNotice('studentNotice','Please enter student name.','bad');
+      return;
+    }
 
+    let id = sanitizeKey(name);
 
-let id = sanitizeKey(name);
+    const normalizedName = name.toLowerCase().trim();
 
-// ✅ block duplicate name only if different ID
-const normalizedName = name.toLowerCase().trim();
-const existing = Object.values(liveStudents || {}).find(function(s){
-  return s && s.name && s.name.toLowerCase().trim() === normalizedName;
-});
+    const existing = Object.values(liveStudents || {}).find(function(s){
+      return s && s.name && s.name.toLowerCase().trim() === normalizedName;
+    });
 
-if(existing && existing.id !== id){
-  showNotice('studentNotice','Name already taken. Please add your last name.','bad');
-  return;
-}
+    if(existing && existing.id !== id){
+      showNotice('studentNotice','Name already taken. Please add your last name.','bad');
+      return;
+    }
 
-hideNotice('studentNotice');
+    hideNotice('studentNotice');
 
-currentStudent = {name:name, id:id};
+    currentStudent = {name:name, id:id};
 
-sessionStorage.setItem('dl_role', 'student');
-sessionStorage.setItem('dl_student_name', name);
-sessionStorage.setItem('dl_student_id', id);
+    sessionStorage.setItem('dl_role', 'student');
+    sessionStorage.setItem('dl_student_name', name);
+    sessionStorage.setItem('dl_student_id', id);
 
-const initial = {
-  name:name,
-  id:id,
-  scores:{},
-  total:0,
-  startedAt:Date.now(),
-  currentStation:'starter',
-  stationResults:{},
-  stationAnswers:{},
-  submittedStations:{},
-  stationSelfEval:{}
-};
+    const initial = {
+      name:name,
+      id:id,
+      scores:{},
+      total:0,
+      startedAt:Date.now(),
+      currentStation:'starter',
+      stationResults:{},
+      stationAnswers:{},
+      submittedStations:{},
+      stationSelfEval:{}
+    };
 
-const snap = await getSnap(studentPath(id));
+    const snap = await getSnap(studentPath(id));
 
-if(!snap.exists()){
-  await dbRef(studentPath(id)).set(initial);
-} else {
-  await dbRef(studentPath(id)).update({
-    name:name,
-    id:id,
-    lastLoginAt:Date.now()
-  });
-}
+    if(!snap.exists()){
+      await dbRef(studentPath(id)).set(initial);
+    } else {
+      await dbRef(studentPath(id)).update({
+        name:name,
+        id:id,
+        lastLoginAt:Date.now()
+      });
+    }
 
-if(!liveStudents[id]) liveStudents[id] = {};
-liveStudents[id].name = name;
-liveStudents[id].id = id;
+    if(!liveStudents[id]) liveStudents[id] = {};
+    liveStudents[id].name = name;
+    liveStudents[id].id = id;
 
-await dbRef(attendancePath(id)).set({
-  name:name,
-  id:id,
-  startedAt:Date.now(),
-  present:true
-});
+    await dbRef(attendancePath(id)).set({
+      name:name,
+      id:id,
+      startedAt:Date.now(),
+      present:true
+    });
 
-showOnly('studentView');
-renderStudentNav();
-listenStudentLive();
-listenAchievementUnlock();
+    showOnly('studentView');
 
-const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
-achievementUnlocked = unlockSnap.val() === true;
+    renderStudentNav();
+    listenStudentLive();
 
-updateStudentProgress();
+    const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
+    achievementUnlocked = unlockSnap.val() === true;
+
+    listenAchievementUnlock();
+
+    updateStudentProgress();
+
     const displayedStation = lessonStations.find(function(s){
-  return s.displayed && s.unlocked;
-});
+      return s.displayed && s.unlocked;
+    });
 
-if(displayedStation){
-  openStation(displayedStation.id);
-}
+    if(displayedStation){
+      openStation(displayedStation.id);
+    }
 
   }catch(err){
+
     console.error('Student session error:', err);
     showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
+
   }
+
 };
-  
 function showClassSummary(){
   const wrap = document.getElementById('teacherTrackerWrap');
   if(!wrap){
@@ -2248,8 +2253,8 @@ window.openTeacherView = async function(){
     byId('setupCard').classList.remove('hidden');
     showOnly('teacherView');
     await dbRef(lessonBase() + '/settings/achievementUnlocked').set(false);
-
 achievementUnlocked = false;
+    
     renderTeacherTimer();
     fillTeacherSelects();
     loadCreatorStation();
@@ -3115,7 +3120,17 @@ window.getTop5Students = async function(){
   alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
 
 };
-  
+  showOnly('studentView');
+
+renderStudentNav();
+listenStudentLive();
+
+const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
+achievementUnlocked = unlockSnap.val() === true;
+
+listenAchievementUnlock();
+
+updateStudentProgress();
   function listenAchievementUnlock(){
 
   dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
@@ -3190,7 +3205,6 @@ async function hasCompletedAllOpenedStations(){
 
   const student = await getFreshCurrentStudentData();
   const submitted = student.submittedStations || {};
-  const answers = student.stationAnswers || {};
 
   const requiredStations = getRequiredAchievementStations();
 
@@ -3199,11 +3213,10 @@ async function hasCompletedAllOpenedStations(){
   }
 
   return requiredStations.every(function(st){
-    return submitted[st.id] === true && answers[st.id];
+    return submitted[st.id] === true;
   });
 
 }
-
 
 window.checkMyAchievement = async function(){
 
