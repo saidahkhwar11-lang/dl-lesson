@@ -3325,28 +3325,7 @@ if(status === 'top5'){
     `;
   }
 
-  await downloadAchievementCertificate();
-
-} else {
-
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#fff7ea;
-        color:#9a6700;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #f3d38b;
-      ">
-        🌟 Great effort! Opening your progress certificate...
-      </div>
-    `;
-  }
-
-  await downloadProgressCertificate();
+await downloadProgressCertificate();
 
 }
   }catch(err){
@@ -3630,6 +3609,207 @@ if(status === 'top5'){
 
     </div>
   </div>
+</body>
+</html>
+`;
+
+  const win = window.open('', '_blank');
+
+  if(!win){
+    alert('Popup blocked. Please allow popups.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+  window.downloadProgressCertificate = async function(){
+
+  const student = await getFreshCurrentStudentData();
+  const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
+  const totalMark = Number(student.total || 0);
+  const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
+
+  const today = new Date();
+  const dateText = today.toLocaleDateString('en-GB', {
+    day:'numeric',
+    month:'long',
+    year:'numeric'
+  });
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Progress Certificate</title>
+<style>
+body{
+  margin:0;
+  font-family:Georgia, 'Times New Roman', serif;
+  background:#eef3f8;
+  color:#10294a;
+}
+
+.print-btn{
+  text-align:center;
+  margin:18px;
+}
+
+.print-btn button{
+  background:#1f3f6d;
+  color:white;
+  border:0;
+  border-radius:10px;
+  padding:10px 18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.certificate{
+  width:1100px;
+  min-height:780px;
+  margin:20px auto;
+  background:linear-gradient(135deg,#ffffff 0%,#f5fbff 60%,#fffaf0 100%);
+  border:8px double #5b6fb5;
+  outline:4px solid #10294a;
+  padding:38px;
+  box-sizing:border-box;
+  text-align:center;
+}
+
+.title{
+  font-size:50px;
+  font-weight:bold;
+  letter-spacing:4px;
+  color:#10294a;
+  margin-top:20px;
+}
+
+.subtitle{
+  font-size:24px;
+  color:#5b6fb5;
+  letter-spacing:3px;
+  margin-bottom:26px;
+}
+
+.presented{
+  font-size:17px;
+  letter-spacing:2px;
+  font-weight:bold;
+  margin-top:20px;
+}
+
+.student-name{
+  font-size:48px;
+  font-weight:bold;
+  margin:24px auto 18px;
+  border-bottom:2px solid #5b6fb5;
+  display:inline-block;
+  padding:0 60px 8px;
+}
+
+.message{
+  font-size:22px;
+  line-height:1.6;
+  max-width:780px;
+  margin:20px auto;
+}
+
+.mark-box{
+  margin:26px auto;
+  background:#eefbf3;
+  border:2px solid #b9e7ca;
+  color:#1f8f5f;
+  border-radius:18px;
+  padding:18px;
+  width:420px;
+  font-size:30px;
+  font-weight:bold;
+}
+
+.footer{
+  margin-top:60px;
+  display:flex;
+  justify-content:space-between;
+  gap:20px;
+  font-size:18px;
+}
+
+.footer-box{
+  width:32%;
+}
+
+.line{
+  border-top:2px solid #5b6fb5;
+  margin:8px auto;
+  width:220px;
+}
+
+@media print{
+  .print-btn{display:none;}
+  body{background:white;}
+  .certificate{margin:0 auto;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="print-btn">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="certificate">
+
+  <div style="font-size:48px;">🌟</div>
+
+  <div class="title">CERTIFICATE</div>
+  <div class="subtitle">OF PROGRESS</div>
+
+  <div class="presented">THIS CERTIFICATE IS PROUDLY PRESENTED TO</div>
+
+  <div class="student-name">${escapeHtml(studentName)}</div>
+
+  <div class="message">
+    Great effort! You completed all lesson stations successfully.<br>
+    Your hard work, participation, and progress are truly appreciated.
+  </div>
+
+  <div class="mark-box">
+    Total Mark: ${escapeHtml(totalMark)}
+  </div>
+
+  <div class="message" style="font-size:20px;">
+    Keep going, keep learning, and keep improving. Every step forward matters.
+  </div>
+
+  <div class="footer">
+    <div class="footer-box">
+      <strong>ALREYADA SCHOOL</strong>
+      <div class="line"></div>
+      Principal<br>
+      Ms. Shaweqya Al Hosani
+    </div>
+
+    <div class="footer-box">
+      <strong>DATE</strong>
+      <div class="line"></div>
+      ${escapeHtml(dateText)}
+    </div>
+
+    <div class="footer-box">
+      <strong>ENGLISH LANGUAGE</strong>
+      <div class="line"></div>
+      Teacher<br>
+      Ms. Saidah Khwar
+    </div>
+  </div>
+
+</div>
+
 </body>
 </html>
 `;
