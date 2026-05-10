@@ -2243,6 +2243,9 @@ window.openTeacherView = async function(){
     sessionStorage.setItem('dl_role', 'teacher');
     byId('setupCard').classList.remove('hidden');
     showOnly('teacherView');
+    await dbRef(lessonBase() + '/settings/achievementUnlocked').set(false);
+
+achievementUnlocked = false;
     renderTeacherTimer();
     fillTeacherSelects();
     loadCreatorStation();
@@ -3174,8 +3177,8 @@ const requiredStations = lessonStations.filter(function(s){
   return s &&
          s.id &&
          s.id !== 'starter' &&
-         s.unlocked === true &&
-         s.displayed === true;
+         s.unlocked &&
+         s.displayed;
 });
 
 const submitted = student.submittedStations || {};
