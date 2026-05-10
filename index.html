@@ -3220,7 +3220,7 @@ async function hasCompletedAllOpenedStations(){
 
 }
 
-  async function getAchievementStatus(){
+async function getAchievementStatus(){
 
   if(achievementUnlocked !== true){
     return 'locked';
@@ -3234,7 +3234,7 @@ async function hasCompletedAllOpenedStations(){
 
   const allowed = await isCurrentStudentTop5();
 
-  if(allowed){
+  if(allowed === true){
     return 'top5';
   }
 
@@ -3325,8 +3325,7 @@ if(status === 'top5'){
     `;
   }
 
-await downloadProgressCertificate();
-
+await downloadAchievementCertificate();
 }
   }catch(err){
 
