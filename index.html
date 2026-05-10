@@ -842,7 +842,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       
   <button onclick="showClassSummary()">📈 Class Summary</button>
 </div>
-<button onclick="toggleTopStudents()" class="secondary">
+<button onclick="unlockAchievements()" class="secondary">
   Show Top 5
 </button>
     <div id="teacherTrackerCard" class="card">
@@ -1573,7 +1573,6 @@ window.saveSelfEvaluation = async function(stationId, value){
 };
 
   function updateRankingBoard(){
-      achievementUnlocked = true;
 
   const list = byId('rankingList');
   if(!list || !liveStudents) return;
@@ -3096,6 +3095,15 @@ window.getTop5Students = async function(){
       return Number(b.total || 0) - Number(a.total || 0);
     })
     .slice(0,5);
+};
+  window.unlockAchievements = function(){
+
+  achievementUnlocked = true;
+
+  toggleTopStudents();
+
+  alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
+
 };
 
 window.isCurrentStudentTop5 = async function(){
