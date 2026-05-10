@@ -3169,26 +3169,7 @@ window.checkMyAchievement = async function(){
 
    const student = liveStudents[currentStudent.id] || {};
 
-    if(!achievementUnlocked){
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#eef4ff;
-        color:#1f3f6d;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #c9d8ff;
-      ">
-        🔒 Achievement certificates are locked until the teacher announces the Top 5.
-      </div>
-    `;
-  }
-  return;
-}
-
+  
 const requiredStations = lessonStations.filter(function(s){
   return s &&
          s.id &&
