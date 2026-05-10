@@ -3139,20 +3139,29 @@ window.isCurrentStudentTop5 = async function(){
     return false;
   }
 
-  const top5 = await getTop5Students();
+  const snap = await getSnap(lessonBase() + '/settings/finalTop5Ids');
+  const ids = snap.val() || [];
 
-  return top5.some(function(s){
-    return String(s.id).trim() === String(currentStudent.id).trim();
-  });
+  return ids.map(String).includes(String(currentStudent.id));
 };
+  
 window.unlockAchievements = async function(){
 
+  const top5 = await getTop5Students();
+
+  const top5Ids = top5.map(function(s){
+    return s.id;
+  });
+
+  await dbRef(lessonBase() + '/settings/finalTop5Ids').set(top5Ids);
 
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
+  achievementUnlocked = true;
+
   toggleTopStudents();
 
-  alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
+  alert('🏆 Final Top 5 counted. Certificates are now unlocked.');
 };
 
 function getRequiredAchievementStations(){
