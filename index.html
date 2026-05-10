@@ -5383,13 +5383,17 @@ function downloadLessonPlan(){
       return t.includes('exit') || t.includes('plenary');
     });
 
-    const mainStations = stations.filter(function(s){
-      const t = (s.title || '').toLowerCase();
-      return !t.includes('starter') &&
-             !t.includes('warm') &&
-             !t.includes('exit') &&
-             !t.includes('plenary');
-    });
+   const mainStations = stations.filter(function(s){
+
+  const t = (s.title || '').toLowerCase();
+
+  return !t.includes('starter') &&
+         !t.includes('warm') &&
+         !t.includes('make a difference') &&
+         !t.includes('exit') &&
+         !t.includes('plenary');
+
+});
 
     const totalMainTime = mainStations.map(function(s){
       const n = parseInt(s.time, 10);
