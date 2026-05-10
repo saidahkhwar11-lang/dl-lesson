@@ -3285,7 +3285,9 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    if(achievementUnlocked !== true){
+    const status = await getAchievementStatus();
+
+    if(status === 'locked'){
 
       if(msg){
         msg.innerHTML = `
@@ -3307,9 +3309,7 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    const completedAllStations = await hasCompletedAllOpenedStations();
-
-    if(!completedAllStations){
+    if(status === 'unfinished'){
 
       if(msg){
         msg.innerHTML = `
@@ -3331,29 +3331,51 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-   const status = await getAchievementStatus();
+    if(status === 'top5'){
 
-if(status === 'top5'){
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#eefbf3;
+            color:#1f8f5f;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #b9e7ca;
+          ">
+            🏆 Congratulations! Opening your achievement certificate...
+          </div>
+        `;
+      }
 
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#eefbf3;
-        color:#1f8f5f;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #b9e7ca;
-      ">
-        🏆 Congratulations! Opening your achievement certificate...
-      </div>
-    `;
-  }
+      await downloadAchievementCertificate();
+      return;
+    }
 
-await downloadAchievementCertificate();
-}
+    if(status === 'not_top5'){
+
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#fff7ea;
+            color:#9a6700;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #f3d38b;
+          ">
+            🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
+          </div>
+        `;
+      }
+
+      return;
+    }
+
   }catch(err){
 
     console.error('Achievement check error:', err);
@@ -3367,8 +3389,6 @@ await downloadAchievementCertificate();
   }
 
 };
-
-  
  window.downloadAchievementCertificate = async function(){
 
    const status = await getAchievementStatus();
