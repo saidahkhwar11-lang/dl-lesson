@@ -3275,49 +3275,51 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    const allowed = await isCurrentStudentTop5();
+   const status = await getAchievementStatus();
 
-    if(allowed){
+if(status === 'top5'){
 
-      if(msg){
-        msg.innerHTML = `
-          <div style="
-            background:#eefbf3;
-            color:#1f8f5f;
-            padding:8px 12px;
-            border-radius:10px;
-            margin-top:6px;
-            font-weight:600;
-            font-size:13px;
-            border:1px solid #b9e7ca;
-          ">
-            🏆 Congratulations! Opening your certificate...
-          </div>
-        `;
-      }
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#eefbf3;
+        color:#1f8f5f;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #b9e7ca;
+      ">
+        🏆 Congratulations! Opening your achievement certificate...
+      </div>
+    `;
+  }
 
-await downloadAchievementCertificate();
-    } else {
+  await downloadAchievementCertificate();
 
-      if(msg){
-        msg.innerHTML = `
-          <div style="
-            background:#fff7ea;
-            color:#9a6700;
-            padding:8px 12px;
-            border-radius:10px;
-            margin-top:6px;
-            font-weight:600;
-            font-size:13px;
-            border:1px solid #f3d38b;
-          ">
-            🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
-          </div>
-        `;
-      }
+} else {
 
-    }
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#fff7ea;
+        color:#9a6700;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #f3d38b;
+      ">
+        🌟 Great effort! Opening your progress certificate...
+      </div>
+    `;
+  }
 
+  await downloadProgressCertificate();
+
+}
   }catch(err){
 
     console.error('Achievement check error:', err);
@@ -3608,6 +3610,124 @@ if(achievementUnlocked !== true){
 
     </div>
   </div>
+</body>
+</html>
+`;
+
+  const win = window.open('', '_blank');
+
+  if(!win){
+    alert('Popup blocked. Please allow popups.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+  window.downloadProgressCertificate = async function(){
+
+  if(!await hasCompletedAllOpenedStations()){
+    alert("Please finish all stations first.");
+    return;
+  }
+
+  const student = await getFreshCurrentStudentData();
+
+  const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
+  const totalMark = Number(student.total || 0);
+  const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Progress Certificate</title>
+<style>
+body{
+  margin:0;
+  font-family:Georgia, 'Times New Roman', serif;
+  background:#eef3f8;
+  color:#10294a;
+}
+.certificate{
+  width:1100px;
+  height:780px;
+  margin:20px auto;
+  background:linear-gradient(135deg,#ffffff,#f5fbff);
+  border:8px double #5b6fb5;
+  padding:40px;
+  text-align:center;
+}
+.title{
+  font-size:52px;
+  font-weight:bold;
+  margin-top:40px;
+}
+.name{
+  font-size:50px;
+  margin:35px auto;
+  border-bottom:2px solid #5b6fb5;
+  display:inline-block;
+  padding:0 60px 8px;
+}
+.message{
+  font-size:24px;
+  line-height:1.6;
+  margin-top:20px;
+}
+.mark{
+  font-size:34px;
+  color:#1f8f5f;
+  margin-top:28px;
+  font-weight:bold;
+}
+.print-btn{
+  text-align:center;
+  margin:18px;
+}
+.print-btn button{
+  background:#1f3f6d;
+  color:white;
+  border:0;
+  border-radius:10px;
+  padding:10px 18px;
+  font-weight:bold;
+}
+@media print{
+  .print-btn{display:none;}
+  body{background:white;}
+}
+</style>
+</head>
+<body>
+
+<div class="print-btn">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="certificate">
+  <div class="title">CERTIFICATE OF PROGRESS</div>
+
+  <div class="name">${escapeHtml(studentName)}</div>
+
+  <div class="message">
+    Great effort! You completed all lesson stations successfully.<br>
+    Keep learning, keep improving, and be proud of your progress.
+  </div>
+
+  <div class="mark">
+    Total Mark: ${escapeHtml(totalMark)}
+  </div>
+
+  <div class="message" style="font-size:20px;margin-top:50px;">
+    English Language Lesson<br>
+    Teacher: Ms. Saidah Khwar
+  </div>
+</div>
+
 </body>
 </html>
 `;
