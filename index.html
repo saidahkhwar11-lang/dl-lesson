@@ -2111,6 +2111,18 @@ window.startStudentSession = async function(){
 const name = byId('studentName').value.trim();
 const studentCode = byId('studentCode').value.trim();
     let id = sanitizeKey(studentCode);
+    const oldId = sessionStorage.getItem('dl_student_id');
+
+if(oldId && oldId !== id){
+  sessionStorage.removeItem('dl_student_name');
+  sessionStorage.removeItem('dl_student_id');
+    delete liveStudents[oldId];
+
+  currentStudent = null;
+  currentOpenStation = '';
+  studentQuestionStage = 0;
+  studentStageAnswers = {};
+}
 
 if(!name){
   showNotice('studentNotice','Please enter student name.','bad');
