@@ -3110,7 +3110,7 @@ window.getTop5Students = async function(){
     .slice(0,5);
 };
   window.unlockAchievements = async function(){
-
+  achievementUnlocked = true;
 
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
