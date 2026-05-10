@@ -3118,23 +3118,28 @@ window.getTop5Students = async function(){
 
   await dbRef(lessonBase() + '/settings/finalTop5Ids').remove();
 
-  const top5 = await getTop5Students();
+  const studentsArr = Object.values(liveStudents || {})
+    .filter(function(s){
+      return s && s.id && s.name && Number(s.total || 0) > 0;
+    })
+    .sort(function(a,b){
+      return Number(b.total || 0) - Number(a.total || 0);
+    })
+    .slice(0,5);
 
-  const top5Ids = top5.map(function(s){
-    return s.id;
+  const top5Ids = studentsArr.map(function(s){
+    return String(s.id).trim();
   });
 
   await dbRef(lessonBase() + '/settings/finalTop5Ids').set(top5Ids);
-
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
   achievementUnlocked = true;
 
   toggleTopStudents();
 
-  alert('🏆 Final Top 5 counted. Certificates are now unlocked.');
+  alert('🏆 Final Top 5 counted:\n' + top5Ids.join('\n'));
 };
-  
   function listenAchievementUnlock(){
 
   dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
@@ -3153,15 +3158,11 @@ window.isCurrentStudentTop5 = async function(){
   const snap = await getSnap(lessonBase() + '/settings/finalTop5Ids');
   const ids = snap.val() || [];
 
-  console.log('Current student:', currentStudent.id);
-  console.log('Final Top 5 IDs:', ids);
-
   return Array.isArray(ids) && ids.some(function(id){
-    return String(id).trim() === String(currentStudent.id).trim();
+    return String(id).trim().toLowerCase() ===
+           String(currentStudent.id).trim().toLowerCase();
   });
-
 };
-  
 window.unlockAchievements = async function(){
 
   const top5 = await getTop5Students();
