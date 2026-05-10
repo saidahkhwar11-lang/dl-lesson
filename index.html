@@ -604,6 +604,19 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
     <label>Student Name</label>
     <input id="studentName" placeholder="Enter student name" />
+    <input
+  id="studentCode"
+  type="text"
+  placeholder="Enter Student ID / Class ID"
+  style="
+    width:100%;
+    padding:12px;
+    border-radius:10px;
+    border:1px solid #d0d7e2;
+    margin-top:10px;
+    box-sizing:border-box;
+  "
+>
 
     <button id="studentStartBtn" onclick="startStudentSession()">
       Start Student Session
@@ -2090,27 +2103,29 @@ window.startStudentSession = async function(){
 
     showNotice('studentNotice','Starting student session...','warn');
 
-    if(!requireConnection()) return;
+   if(!requireConnection()) return;
 
-    const name = byId('studentName').value.trim();
+const name = byId('studentName').value.trim();
+const studentCode = byId('studentCode').value.trim();
 
-    if(!name){
-      showNotice('studentNotice','Please enter student name.','bad');
-      return;
-    }
+if(!name){
+  showNotice('studentNotice','Please enter student name.','bad');
+  return;
+}
 
-    let id = sanitizeKey(name);
+if(!studentCode){
+  showNotice('studentNotice','Please enter Student ID / Class ID.','bad');
+  return;
+}
 
-    const normalizedName = name.toLowerCase().trim();
+const existing = Object.values(liveStudents || {}).find(function(s){
+  return s && String(s.id) === String(id);
+});
 
-    const existing = Object.values(liveStudents || {}).find(function(s){
-      return s && s.name && s.name.toLowerCase().trim() === normalizedName;
-    });
-
-    if(existing && existing.id !== id){
-      showNotice('studentNotice','Name already taken. Please add your last name.','bad');
-      return;
-    }
+if(existing){
+  showNotice('studentNotice','This Student ID is already logged in.','bad');
+  return;
+}
 
     hideNotice('studentNotice');
 
