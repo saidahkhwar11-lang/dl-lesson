@@ -5369,9 +5369,14 @@ function downloadLessonPlan(){
     });
 
     const starterStation = stations.find(function(s){
-      const t = (s.title || '').toLowerCase();
-      return t.includes('starter') || t.includes('warm');
-    });
+
+  const t = (s.title || '').toLowerCase();
+
+  return t.includes('starter') ||
+         t.includes('warm') ||
+         t.includes('make a difference');
+
+});
 
     const plenaryStation = stations.find(function(s){
       const t = (s.title || '').toLowerCase();
