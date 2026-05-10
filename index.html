@@ -3195,6 +3195,9 @@ const completedCount = requiredStations.filter(function(s){
 
 }).length;
 
+  
+if(completedCount < requiredStations.length){
+
   if(msg){
     msg.innerHTML = `
       <div style="
