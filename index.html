@@ -3153,16 +3153,6 @@ window.unlockAchievements = async function(){
   alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
 };
 
-
-function listenAchievementUnlock(){
-
-  dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
-    achievementUnlocked = snap.val() === true;
-  });
-
-}
-
-
 function getRequiredAchievementStations(){
 
   return lessonStations.filter(function(s){
