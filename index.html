@@ -3331,8 +3331,20 @@ await downloadAchievementCertificate();
   
  window.downloadAchievementCertificate = async function(){
 
+  if(!achievementUnlocked){
+    alert("Achievement certificates are locked until the teacher announces the Top 5.");
+    return;
+  }
+
   if(!await hasCompletedAllOpenedStations()){
     alert("Please finish all stations first.");
+    return;
+  }
+
+  const allowed = await isCurrentStudentTop5();
+
+  if(!allowed){
+    alert("Great effort! Certificate is only for Top 5 students.");
     return;
   }
    
