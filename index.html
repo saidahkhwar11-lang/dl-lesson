@@ -3099,14 +3099,17 @@ window.getTop5Students = async function(){
   return Object.keys(studentsData)
     .map(function(id){
       const s = studentsData[id] || {};
-      s.id = s.id || id;
-      return s;
+      return {
+        id: id,
+        name: s.name || '',
+        total: Number(s.total || 0)
+      };
     })
     .filter(function(s){
-      return s && s.name && s.name.trim();
+      return s.name.trim() !== '';
     })
     .sort(function(a,b){
-      return Number(b.total || 0) - Number(a.total || 0);
+      return b.total - a.total;
     })
     .slice(0,5);
 };
@@ -3138,14 +3141,9 @@ window.isCurrentStudentTop5 = async function(){
 
   const top5 = await getTop5Students();
 
-  console.log('CURRENT STUDENT ID:', currentStudent.id);
-  console.log('TOP 5 IDS:', top5.map(s => s.id));
-
   return top5.some(function(s){
-    return String(s.id || '').trim() ===
-           String(currentStudent.id || '').trim();
+    return String(s.id).trim() === String(currentStudent.id).trim();
   });
-
 };
 window.unlockAchievements = async function(){
 
@@ -3368,22 +3366,13 @@ if(status === 'top5'){
   
  window.downloadAchievementCertificate = async function(){
 
-if(achievementUnlocked !== true){
-   alert("Achievement certificates are locked until the teacher announces the Top 5.");
+   const status = await getAchievementStatus();
+
+  if(status !== 'top5'){
+    alert("This achievement certificate is only for Top 5 students.");
     return;
   }
 
-  if(!await hasCompletedAllOpenedStations()){
-    alert("Please finish all stations first.");
-    return;
-  }
-
-  const allowed = await isCurrentStudentTop5();
-
-  if(!allowed){
-    alert("Great effort! Certificate is only for Top 5 students.");
-    return;
-  }
    
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
