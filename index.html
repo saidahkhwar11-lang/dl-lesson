@@ -1573,6 +1573,8 @@ window.saveSelfEvaluation = async function(stationId, value){
 };
 
   function updateRankingBoard(){
+      achievementUnlocked = true;
+
   const list = byId('rankingList');
   if(!list || !liveStudents) return;
 
@@ -1715,6 +1717,7 @@ let appInstance = null;
 let db = null;
 let currentStudent = null;
 let liveStudents = {};
+let achievementUnlocked = false;
 let studentQuestionStage = 0;
 const questionsPerStage = 4;
 let studentStageAnswers = {};
@@ -3123,6 +3126,26 @@ window.checkMyAchievement = async function(){
       if(msg) msg.innerHTML = 'System is not connected. Please refresh.';
       return;
     }
+
+    if(!achievementUnlocked){
+  if(msg){
+    msg.innerHTML = `
+      <div style="
+        background:#eef4ff;
+        color:#1f3f6d;
+        padding:8px 12px;
+        border-radius:10px;
+        margin-top:6px;
+        font-weight:600;
+        font-size:13px;
+        border:1px solid #c9d8ff;
+      ">
+        🔒 Achievement certificates are locked until the teacher announces the Top 5.
+      </div>
+    `;
+  }
+  return;
+}
 
    const student = liveStudents[currentStudent.id] || {};
 
