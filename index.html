@@ -3609,26 +3609,29 @@ await downloadAchievementCertificate();
 };
 
 async function hasCompletedAllOpenedStations(){
-  if(!currentStudent || !liveStudents[currentStudent.id]){
+
+  const student = await getFreshCurrentStudentData();
+
+  const submitted = student.submittedStations || {};
+  const results = student.stationResults || {};
+  const answers = student.stationAnswers || {};
+  const scores = student.scores || {};
+
+  const requiredStations = getRequiredAchievementStations();
+
+  if(requiredStations.length === 0){
     return false;
   }
 
-  const student = liveStudents[currentStudent.id];
-  const submitted = student.submittedStations || {};
+  return requiredStations.every(function(st){
 
-  const requiredStations = lessonStations.filter(function(s){
-    return s &&
-           s.id &&
-           s.id !== 'starter' &&
-           s.unlocked &&
-           s.displayed;
+    return submitted[st.id] === true ||
+           results[st.id] ||
+           answers[st.id] ||
+           Object.prototype.hasOwnProperty.call(scores, st.id);
+
   });
 
-  if(requiredStations.length === 0) return false;
-
-  return requiredStations.every(function(s){
-    return submitted[s.id] === true;
-  });
 }
   
 window.submitCurrentStation = async function(stationId){
