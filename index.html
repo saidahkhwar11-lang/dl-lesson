@@ -3188,10 +3188,12 @@ const requiredStations = lessonStations.filter(function(s){
 const submitted = student.submittedStations || {};
 
 const completedCount = requiredStations.filter(function(s){
-return submitted[s.id] === true;
-}).length;
 
-if(completedCount < requiredStations.length){
+  return submitted[s.id] === true &&
+         (student.stationAnswers &&
+          student.stationAnswers[s.id]);
+
+}).length;
 
   if(msg){
     msg.innerHTML = `
