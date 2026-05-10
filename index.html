@@ -3290,8 +3290,7 @@ window.checkMyAchievement = async function(){
         `;
       }
 
-      downloadAchievementCertificate();
-
+await downloadAchievementCertificate();
     } else {
 
       if(msg){
@@ -3328,15 +3327,12 @@ window.checkMyAchievement = async function(){
 };
 
   
-  window.downloadAchievementCertificate = function(){
-    if(!await hasCompletedAllOpenedStations()){
+ window.downloadAchievementCertificate = async function(){
+
+  if(!await hasCompletedAllOpenedStations()){
     alert("Please finish all stations first.");
     return;
   }
-if(!hasCompletedAllOpenedStations()){
-    alert("Please complete all stations before downloading your achievement certificate.");
-  return;
-}
    
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
   const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
