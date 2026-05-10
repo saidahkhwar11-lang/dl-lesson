@@ -3183,28 +3183,29 @@ async function getFreshCurrentStudentData(){
 
 async function hasCompletedAllOpenedStations(){
 
-  if(!currentStudent || !currentStudent.id){
+  const student = await getFreshCurrentStudentData();
+  const submitted = student.submittedStations || {};
+
+  const requiredStations = lessonStations.filter(function(st){
+    return st &&
+           st.id &&
+           st.id !== 'starter';
+  });
+
+  if(requiredStations.length === 0){
     return false;
   }
 
-  const studentSnap = await getSnap(studentPath(currentStudent.id));
-  const student = studentSnap.exists() ? studentSnap.val() : (liveStudents[currentStudent.id] || {});
+  let completed = 0;
 
-  const submitted = student.submittedStations || {};
-
-  const requiredStations = lessonStations.filter(function(s){
-    return s &&
-           s.id &&
-           s.id !== 'starter' &&
-           s.unlocked &&
-           s.displayed;
+  requiredStations.forEach(function(st){
+    if(submitted[st.id] === true){
+      completed++;
+    }
   });
 
-  if(requiredStations.length === 0) return false;
+  return completed >= requiredStations.length;
 
-  return requiredStations.every(function(s){
-    return submitted[s.id] === true;
-  });
 }
 
 window.checkMyAchievement = async function(){
