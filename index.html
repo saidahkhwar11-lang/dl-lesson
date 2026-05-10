@@ -2107,6 +2107,7 @@ window.startStudentSession = async function(){
 
 const name = byId('studentName').value.trim();
 const studentCode = byId('studentCode').value.trim();
+    let id = sanitizeKey(studentCode);
 
 if(!name){
   showNotice('studentNotice','Please enter student name.','bad');
