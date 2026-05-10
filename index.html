@@ -3170,7 +3170,11 @@ window.checkMyAchievement = async function(){
    const student = liveStudents[currentStudent.id] || {};
 
 const requiredStations = lessonStations.filter(function(s){
-  return s.unlocked && s.displayed;
+  return s &&
+         s.id &&
+         s.id !== 'starter' &&
+         s.unlocked === true &&
+         s.displayed === true;
 });
 
 const submitted = student.submittedStations || {};
@@ -3264,8 +3268,16 @@ if(allowed){
   const submitted = student.submittedStations || {};
 
   const requiredStations = lessonStations.filter(function(st){
-  return st && st.id && st.id !== 'starter' && st.unlocked && st.displayed;
-});
+    return st &&
+           st.id &&
+           st.id !== 'starter' &&
+           st.unlocked === true &&
+           st.displayed === true;
+  });
+
+  if(requiredStations.length === 0){
+    return false;
+  }
 
   return requiredStations.every(function(st){
     return submitted[st.id] === true;
