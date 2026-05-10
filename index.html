@@ -3092,6 +3092,7 @@ function saveVisibleStageAnswers(requireAll){
 }
 
 window.getTop5Students = async function(){
+
   const snap = await getSnap(lessonBase() + '/students');
   const studentsData = snap.val() || {};
 
@@ -3130,16 +3131,17 @@ window.getTop5Students = async function(){
 
 }
 window.isCurrentStudentTop5 = async function(){
-  if(!currentStudent || !currentStudent.name){
+
+  if(!currentStudent || !currentStudent.id){
     return false;
   }
 
   const top5 = await getTop5Students();
 
   return top5.some(function(s){
-    return String(s.name || '').trim().toLowerCase() ===
-           String(currentStudent.name || '').trim().toLowerCase();
+    return String(s.id || '') === String(currentStudent.id || '');
   });
+
 };
 window.unlockAchievements = async function(){
 
