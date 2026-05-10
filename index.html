@@ -3137,11 +3137,80 @@ window.isCurrentStudentTop5 = async function(){
            String(currentStudent.name || '').trim().toLowerCase();
   });
 };
+window.unlockAchievements = async function(){
+
+  achievementUnlocked = true;
+
+  await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
+
+  toggleTopStudents();
+
+  alert('🏆 Achievement certificates are now unlocked for eligible Top 5 students.');
+};
+
+
+function listenAchievementUnlock(){
+
+  dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
+    achievementUnlocked = snap.val() === true;
+  });
+
+}
+
+
+function getRequiredAchievementStations(){
+
+  return lessonStations.filter(function(s){
+    return s &&
+           s.id &&
+           s.id !== 'starter' &&
+           s.unlocked &&
+           s.displayed;
+  });
+
+}
+
+
+async function getFreshCurrentStudentData(){
+
+  if(!currentStudent || !currentStudent.id){
+    return {};
+  }
+
+  const studentSnap = await getSnap(studentPath(currentStudent.id));
+
+  return studentSnap.exists()
+    ? studentSnap.val()
+    : (liveStudents[currentStudent.id] || {});
+
+}
+
+
+async function hasCompletedAllOpenedStations(){
+
+  const student = await getFreshCurrentStudentData();
+  const submitted = student.submittedStations || {};
+  const answers = student.stationAnswers || {};
+
+  const requiredStations = getRequiredAchievementStations();
+
+  if(requiredStations.length === 0){
+    return false;
+  }
+
+  return requiredStations.every(function(st){
+    return submitted[st.id] === true && answers[st.id];
+  });
+
+}
+
 
 window.checkMyAchievement = async function(){
+
   const msg = byId('achievementMsg');
 
   try{
+
     if(msg) msg.innerHTML = 'Checking achievement...';
 
     if(!currentStudent){
@@ -3154,150 +3223,116 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-if(achievementUnlocked !== true){
-    if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#eef4ff;
-        color:#1f3f6d;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #c9d8ff;
-      ">
-        🔒 Achievement certificates are locked until the teacher announces the Top 5.
-      </div>
-    `;
-  }
-  return;
-}
+    if(achievementUnlocked !== true){
 
-const studentSnap = await getSnap(studentPath(currentStudent.id));
-const student = studentSnap.exists() ? studentSnap.val() : (liveStudents[currentStudent.id] || {});
-  
-const requiredStations = lessonStations.filter(function(s){
-  return s &&
-         s.id &&
-         s.id !== 'starter' &&
-         s.unlocked &&
-         s.displayed;
-});
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#eef4ff;
+            color:#1f3f6d;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #c9d8ff;
+          ">
+            🔒 Achievement certificates are locked until the teacher announces the Top 5.
+          </div>
+        `;
+      }
 
-const submitted = student.submittedStations || {};
+      return;
+    }
 
-const completedCount = requiredStations.filter(function(s){
+    const completedAllStations = await hasCompletedAllOpenedStations();
 
-  return submitted[s.id] === true &&
-         (student.stationAnswers &&
-          student.stationAnswers[s.id]);
+    if(!completedAllStations){
 
-}).length;
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#eef4ff;
+            color:#1f3f6d;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #c9d8ff;
+          ">
+            🔒 Please finish all stations first.
+          </div>
+        `;
+      }
 
-  
-if(completedCount < requiredStations.length){
+      return;
+    }
 
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#eef4ff;
-        color:#1f3f6d;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #c9d8ff;
-      ">
-        🔒 Please finish all stations first.
-      </div>
-    `;
-  }
+    const allowed = await isCurrentStudentTop5();
 
-  return;
-}
-   const allowed = await isCurrentStudentTop5();
+    if(allowed){
 
-if(allowed){
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#eefbf3;
+            color:#1f8f5f;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #b9e7ca;
+          ">
+            🏆 Congratulations! Opening your certificate...
+          </div>
+        `;
+      }
 
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#eefbf3;
-        color:#1f8f5f;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #b9e7ca;
-      ">
-        🏆 Congratulations! Opening your certificate...
-      </div>
-    `;
-  }
+      downloadAchievementCertificate();
 
-  downloadAchievementCertificate();
+    } else {
 
-} else {
+      if(msg){
+        msg.innerHTML = `
+          <div style="
+            background:#fff7ea;
+            color:#9a6700;
+            padding:8px 12px;
+            border-radius:10px;
+            margin-top:6px;
+            font-weight:600;
+            font-size:13px;
+            border:1px solid #f3d38b;
+          ">
+            🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
+          </div>
+        `;
+      }
 
-  if(msg){
-    msg.innerHTML = `
-      <div style="
-        background:#fff7ea;
-        color:#9a6700;
-        padding:8px 12px;
-        border-radius:10px;
-        margin-top:6px;
-        font-weight:600;
-        font-size:13px;
-        border:1px solid #f3d38b;
-      ">
-        🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
-      </div>
-    `;
-  }
+    }
 
-}
-      }catch(err){
+  }catch(err){
 
     console.error('Achievement check error:', err);
+
     if(msg){
       msg.innerHTML = 'Could not check achievement: ' + (err && err.message ? err.message : err);
     } else {
       alert('Could not check achievement: ' + (err && err.message ? err.message : err));
     }
+
   }
+
 };
 
-  function hasCompletedAllStations(){
-
-  if(!currentStudent || !liveStudents[currentStudent.id]){
-    return false;
-  }
-
-  const student = liveStudents[currentStudent.id];
-  const submitted = student.submittedStations || {};
-
-  const requiredStations = lessonStations.filter(function(st){
-    return st &&
-           st.id &&
-           st.id !== 'starter' &&
-           st.unlocked === true &&
-           st.displayed === true;
-  });
-
-  if(requiredStations.length === 0){
-    return false;
-  }
-
-  return requiredStations.every(function(st){
-    return submitted[st.id] === true;
-  });
-}
   
   window.downloadAchievementCertificate = function(){
+    if(!await hasCompletedAllOpenedStations()){
+    alert("Please finish all stations first.");
+    return;
+  }
 if(!hasCompletedAllOpenedStations()){
     alert("Please complete all stations before downloading your achievement certificate.");
   return;
