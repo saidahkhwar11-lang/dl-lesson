@@ -3214,8 +3214,7 @@ if(completedCount < requiredStations.length){
 }
     const allowed = await isCurrentStudentTop5();
 
-if(allowed){
-
+if(allowed && completedCount >= requiredStations.length){
   if(msg){
     msg.innerHTML = `
       <div style="
