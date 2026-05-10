@@ -3203,19 +3203,28 @@ async function getFreshCurrentStudentData(){
 
 async function hasCompletedAllOpenedStations(){
 
-  const student = await getFreshCurrentStudentData();
-  const submitted = student.submittedStations || {};
-
-  const requiredStations = getRequiredAchievementStations();
-
-  if(requiredStations.length === 0){
+  if(!currentStudent || !currentStudent.id){
     return false;
   }
 
-  return requiredStations.every(function(st){
-    return submitted[st.id] === true;
+  const studentSnap = await getSnap(studentPath(currentStudent.id));
+  const student = studentSnap.exists() ? studentSnap.val() : (liveStudents[currentStudent.id] || {});
+
+  const submitted = student.submittedStations || {};
+
+  const requiredStations = lessonStations.filter(function(s){
+    return s &&
+           s.id &&
+           s.id !== 'starter' &&
+           s.unlocked &&
+           s.displayed;
   });
 
+  if(requiredStations.length === 0) return false;
+
+  return requiredStations.every(function(s){
+    return submitted[s.id] === true;
+  });
 }
 
 window.checkMyAchievement = async function(){
@@ -3619,8 +3628,7 @@ await downloadAchievementCertificate();
   win.document.close();
 };
 
-  function hasCompletedAllOpenedStations(){
-
+async function hasCompletedAllOpenedStations(){
   if(!currentStudent || !liveStudents[currentStudent.id]){
     return false;
   }
