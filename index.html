@@ -2160,6 +2160,10 @@ showOnly('studentView');
 renderStudentNav();
 listenStudentLive();
 listenAchievementUnlock();
+
+const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
+achievementUnlocked = unlockSnap.val() === true;
+
 updateStudentProgress();
     const displayedStation = lessonStations.find(function(s){
   return s.displayed && s.unlocked;
