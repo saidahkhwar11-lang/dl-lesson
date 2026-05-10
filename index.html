@@ -4502,14 +4502,24 @@ window.clearTrackerData = async function(){ if(!requireConnection()) return; awa
 window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
 
 window.exportTrackerCsv = function(){
+
   const stationHeaders = [];
+
   lessonStations.forEach(function(s){
     stationHeaders.push(s.title + ' Score');
     stationHeaders.push(s.title + ' Self-Eval');
+
+    const questions = (getStationContent(s.id).questions || []);
+
+    questions.forEach(function(q, index){
+      if(q.type === 'written'){
+        stationHeaders.push(s.title + ' Written Q' + (index + 1));
+      }
+    });
   });
 
-const rows = [['Name','Current'].concat(stationHeaders).concat(['Total','Bonus'])];
-  
+  const rows = [['Name','Current'].concat(stationHeaders).concat(['Bonus','Total'])];
+
   function shortSelfEval(value){
     if(value === 'I understood it well') return 'Very well';
     if(value === 'I understood some of it') return 'Some';
@@ -4518,14 +4528,27 @@ const rows = [['Name','Current'].concat(stationHeaders).concat(['Total','Bonus']
   }
 
   Object.values(liveStudents || {}).forEach(function(s){
-    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
 
+    const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
     const stationData = [];
+
     lessonStations.forEach(function(st){
+
       const score = ((((s.stationResults || {})[st.id] || {}).score) || 0);
       const selfEval = (((s.selfEvaluations || {})[st.id]) || '');
+
       stationData.push(score);
       stationData.push(shortSelfEval(selfEval));
+
+      const questions = (getStationContent(st.id).questions || []);
+      const answers = ((s.stationAnswers || {})[st.id]) || {};
+
+      questions.forEach(function(q, index){
+        if(q.type === 'written'){
+          stationData.push(answers[index] || '');
+        }
+      });
+
     });
 
     rows.push([
@@ -4535,6 +4558,7 @@ const rows = [['Name','Current'].concat(stationHeaders).concat(['Total','Bonus']
       bonus,
       (s.total || 0) + bonus
     ]));
+
   });
 
   const csv = rows.map(function(r){
@@ -4548,6 +4572,7 @@ const rows = [['Name','Current'].concat(stationHeaders).concat(['Total','Bonus']
   link.href = URL.createObjectURL(blob);
   link.download = 'dl_tracker_' + lessonKey + '.csv';
   link.click();
+
 };
 window.exportLessonData = function(){
   const payload = { stations:lessonStations, content:lessonContent, exportedAt:new Date().toISOString() };
@@ -4632,16 +4657,16 @@ window.unlockSelectedStation = async function(){
   
 window.lockSelectedStation = async function(){
   if(!requireConnection()) return;
+
   const id = byId('controlStationSelect').value;
-  if(id === 'starter'){
-    showNotice('controlNotice','Starter stays open by default.','warn');
-    return;
-  }
+
   lessonStations = lessonStations.map(function(s){
     return s.id === id ? Object.assign({}, s, {unlocked:false}) : s;
   });
+
   await dbRef(configPath()).set(lessonStations);
-  showNotice('controlNotice','Station locked.','warn');
+
+  showNotice('controlNotice','Station locked. Instructions stay displayed, questions are hidden.','warn');
 };
   
 window.handleCreatorImage = function(event){
