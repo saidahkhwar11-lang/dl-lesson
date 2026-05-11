@@ -2503,8 +2503,17 @@ ${selfEvalHtml}
     </div>
 
     <div class="preview-right teacher-preview-right-small teacher-preview-questions">
-      <h3>Questions</h3>
-      ${questionsHtml}
+     <h3 style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+  <span>Questions</span>
+
+  ${stationHasWrittenQuestion(id)
+    ? '<button class="secondary" onclick="openWrittenMarkingPopup(\'' + escapeJs(id) + '\')">📝 Mark Written Answers</button>'
+    : ''
+  }
+
+</h3>
+
+${questionsHtml}
     </div>
   `;
  updateTeacherTimerPopupInfo();
@@ -2520,6 +2529,143 @@ window.teacherTimerPopupInterval = setInterval(function(){
 }, 2000);
   };
 
+  window.openWrittenMarkingPopup = function(stationId){
+
+  const station = getStationById(stationId);
+  const content = getStationContent(stationId);
+
+  if(!station || !content) return;
+
+  const writtenQuestions = (content.questions || [])
+    .map(function(q, index){
+      return Object.assign({}, q, {realIndex:index});
+    })
+    .filter(function(q){
+      return q.type === 'written';
+    });
+
+  if(!writtenQuestions.length){
+    alert('No written questions in this station.');
+    return;
+  }
+
+  const students = Object.values(liveStudents || {})
+    .filter(function(s){
+      return s && s.name;
+    })
+    .sort(function(a,b){
+      return (a.name || '').localeCompare(b.name || '');
+    });
+
+  let html = `
+    <div class="popup-overlay" onclick="closePopup(event)">
+      <div class="popup-box large-popup" onclick="event.stopPropagation()">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+          <h2 style="margin:0;">📝 ${escapeHtml(station.title)} - Written Answers</h2>
+
+          <button class="secondary" onclick="closePopup()">
+            ✖
+          </button>
+        </div>
+  `;
+
+  students.forEach(function(student){
+
+    const answers =
+      (((student.stationAnswers || {})[stationId]) || {});
+
+    html += `
+      <div class="question-box" style="margin-bottom:18px;">
+        <div style="font-weight:bold;font-size:16px;margin-bottom:10px;">
+          👤 ${escapeHtml(student.name || 'Student')}
+        </div>
+    `;
+
+    writtenQuestions.forEach(function(q){
+
+      const answer =
+        answers[q.realIndex] || '';
+
+      const existingMark =
+        ((((student.teacherMarks || {})[stationId]) || {}).mark) || '';
+
+      html += `
+        <div style="margin-bottom:14px;padding:12px;border:1px solid #e3e7ef;border-radius:12px;background:#fafcff;">
+
+          <div style="font-weight:600;margin-bottom:8px;">
+            ${escapeHtml(q.question || q.text || '')}
+          </div>
+
+          <div style="
+            background:white;
+            padding:10px;
+            border-radius:10px;
+            border:1px solid #dbe3f0;
+            margin-bottom:10px;
+            white-space:pre-wrap;
+          ">
+            ${escapeHtml(answer || 'No answer submitted yet.')}
+          </div>
+
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+
+            <input
+              id="mark_${stationId}"
+              type="number"
+              min="0"
+              max="${totalMarksForStation(stationId)}"
+              value="${existingMark}"
+              style="
+                width:90px;
+                padding:8px;
+                border-radius:10px;
+                border:1px solid #cfd8e7;
+              "
+            >
+
+            <button
+              class="secondary"
+              onclick="saveWrittenMark('${student.id}','${stationId}')"
+            >
+              💾 Save Mark
+            </button>
+
+          </div>
+
+        </div>
+      `;
+
+    });
+
+    html += `</div>`;
+
+  });
+
+  html += `
+      </div>
+    </div>
+  `;
+
+  const holder = document.createElement('div');
+  holder.id = 'globalPopup';
+  holder.innerHTML = html;
+
+  document.body.appendChild(holder);
+
+};
+window.closePopup = function(event){
+
+  if(event && event.target && !event.target.classList.contains('popup-overlay')){
+    return;
+  }
+
+  const popup = document.getElementById('globalPopup');
+  if(popup){
+    popup.remove();
+  }
+
+};
 window.toggleTeacherQuestions = function(id){
   teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
   openTeacherStationPreview(id);
