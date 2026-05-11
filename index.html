@@ -2738,7 +2738,7 @@ function renderQuestion(q, stationId, index){
     body = (q.choices || []).map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + '> ' + escapeHtml(choice) + '</label>';
+return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + escapeHtml(choice) + '"' + checked + disabled + ' onchange="saveVisibleStageAnswers(false)"> ' + escapeHtml(choice) + '</label>';
     }).join('');
   }
 
@@ -2746,14 +2746,14 @@ function renderQuestion(q, stationId, index){
     body = ['True','False'].map(function(choice){
       const checked = normalizeAnswer(savedAnswer) === normalizeAnswer(choice) ? ' checked' : '';
       const disabled = submitted ? ' disabled' : '';
-      return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + '> ' + choice + '</label>';
+return '<label class="choice"><input type="radio" name="' + inputName + '" value="' + choice + '"' + checked + disabled + ' onchange="saveVisibleStageAnswers(false)"> ' + choice + '</label>';
     }).join('');
   }
 
   else if(q.type === 'written'){
     const disabled = submitted ? ' disabled' : '';
-    body = '<textarea name="' + inputName + '" maxlength="200" ' + disabled + ' style="width:100%; min-height:90px; padding:10px; border-radius:10px;">' +
-      escapeHtml(savedAnswer || '') +
+body = '<textarea name="' + inputName + '" maxlength="200" ' + disabled + ' oninput="saveVisibleStageAnswers(false)" style="width:100%; min-height:90px; padding:10px; border-radius:10px;">' +
+    escapeHtml(savedAnswer || '') +
       '</textarea>' +
       '<div class="small">Max 200 characters</div>';
   }
