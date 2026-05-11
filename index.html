@@ -1633,7 +1633,8 @@ const studentsArr = Object.values(liveStudents || []).filter(function(s){
     
   // sort by score (highest first)
   studentsArr.sort(function(a,b){
-    return (b.total || 0) - (a.total || 0);
+return (Number(b.total || 0) + Number(((liveBonus[b.id] || {}).points) || 0)) -
+       (Number(a.total || 0) + Number(((liveBonus[a.id] || {}).points) || 0));
   });
 
   const top5 = studentsArr.slice(0,5);
@@ -1647,7 +1648,7 @@ const studentsArr = Object.values(liveStudents || []).filter(function(s){
           ${medals[index]} ${escapeHtml(st.name || 'Student')}
         </div>
         <div class="ranking-score">
-          ${st.total || 0} pts
+${Number(st.total || 0) + Number(((liveBonus[st.id] || {}).points) || 0)} pts
         </div>
       </div>
     `;
@@ -3233,7 +3234,7 @@ window.getTop5Students = async function(){
       return {
         id: id,
         name: s.name || '',
-        total: Number(s.total || 0)
+total:Number(s.total || 0) + Number(((liveBonus[id] || {}).points) || 0)
       };
     })
     .filter(function(s){
