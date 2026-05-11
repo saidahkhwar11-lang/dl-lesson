@@ -1445,14 +1445,20 @@ function setTeacherTimer(){
   });
 
   if(!liveStudents[studentId]) liveStudents[studentId] = {};
-  liveStudents[studentId].scores = nextScores;
-  liveStudents[studentId].stationResults = nextResults;
-  liveStudents[studentId].teacherMarks = nextTeacherMarks;
-  liveStudents[studentId].total = total;
+liveStudents[studentId].scores = nextScores;
+liveStudents[studentId].stationResults = nextResults;
+liveStudents[studentId].teacherMarks = nextTeacherMarks;
+liveStudents[studentId].total = total;
 
-  renderTeacherTracker();
+if(currentStudent && currentStudent.id === studentId){
+  renderStudentNav();
+  updateStudentProgress();
+}
 
-  alert('Mark saved and total updated ✔');
+renderTeacherTracker();
+updateRankingBoard();
+
+alert('Mark saved and total updated ✔');
 };
 function startTeacherTimer(){
   clearInterval(teacherTimerInterval);
