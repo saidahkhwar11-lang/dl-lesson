@@ -2346,7 +2346,15 @@ achievementUnlocked = false;
 };
 
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
-  
+  function stationHasWrittenQuestion(stationId){
+
+  const questions = (getStationContent(stationId).questions || []);
+
+  return questions.some(function(q){
+    return q.type === 'written';
+  });
+
+}
 window.openTeacherStationPreview = function(id){
   const wrap = byId('teacherStationPreview');
   const station = getStationById(id);
