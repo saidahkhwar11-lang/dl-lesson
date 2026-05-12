@@ -869,8 +869,8 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
 </div>
 
-   <div id="rankingBoard" class="ranking-box">
-  <div class="ranking-title">🏆 Top 5 Students</div>
+<div id="rankingBoard" class="ranking-box" style="display:none;">
+  <div class="ranking-title">🏆 Top Students</div>
   <div id="rankingList"></div>
 </div>
       
@@ -4859,9 +4859,13 @@ window.removeStudent = function(id){
 };
   
 window.toggleTopStudents = function(){
-  const el = byId('topStudentsBoard');
-  if(!el) return;
-  el.classList.toggle('hidden');
+
+  const ranking = byId('rankingBoard');
+
+  if(ranking){
+    ranking.style.display = 'block';
+  }
+
 };
   
 window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus = {}; renderBonusBox(); renderTeacherTracker(); };
