@@ -2537,25 +2537,74 @@ window.teacherTimerPopupInterval = setInterval(function(){
 }, 2000);
   };
 
-  window.openWrittenMarkingPopup = function(stationId){
+ window.openWrittenMarkingPopup = function(stationId){
+
+  let box = byId('writtenMarkingBox');
+
+  if(!box){
+    box = document.createElement('div');
+    box.id = 'writtenMarkingBox';
+    box.style.cssText = `
+      position:fixed;
+      top:20px;
+      right:20px;
+      width:420px;
+      max-height:85vh;
+      overflow:auto;
+      background:white;
+      border:2px solid #f39a2d;
+      border-radius:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.18);
+      z-index:99999;
+      padding:14px;
+    `;
+    document.body.appendChild(box);
+  }
+
+  box.dataset.stationId = stationId;
+  renderWrittenMarkingBox(stationId);
+};
+  window.closeWrittenMarkingBox = function(){
+  const box = byId('writtenMarkingBox');
+  if(box) box.remove();
+};
+
+  window.saveAllWrittenMarks = async function(stationId){
+
+  const inputs = document.querySelectorAll('#writtenMarkingBox .written-mark-input');
+
+  for(let i = 0; i < inputs.length; i++){
+
+    const input = inputs[i];
+    const studentId = input.dataset.studentId;
+    const mark = Number(input.value || 0);
+
+    await saveWrittenMarkValue(studentId, stationId, mark);
+  }
+
+  renderTeacherTracker();
+  updateRankingBoard();
+  renderWrittenMarkingBox(stationId);
+
+  alert('✅ All written marks saved.');
+};
+
+  function renderWrittenMarkingBox(stationId){
+
+  const box = byId('writtenMarkingBox');
+  if(!box) return;
 
   const station = getStationById(stationId);
   const content = getStationContent(stationId);
+  const questions = (content.questions || []);
 
-  if(!station || !content) return;
-
-  const writtenQuestions = (content.questions || [])
+  const writtenQuestions = questions
     .map(function(q, index){
       return Object.assign({}, q, {realIndex:index});
     })
     .filter(function(q){
       return q.type === 'written';
     });
-
-  if(!writtenQuestions.length){
-    alert('No written questions in this station.');
-    return;
-  }
 
   const students = Object.values(liveStudents || {})
     .filter(function(s){
@@ -2565,103 +2614,96 @@ window.teacherTimerPopupInterval = setInterval(function(){
       return (a.name || '').localeCompare(b.name || '');
     });
 
-  let html = `
-    <div class="popup-overlay" onclick="closePopup(event)">
-      <div class="popup-box large-popup" onclick="event.stopPropagation()">
+  let rowsHtml = '';
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-          <h2 style="margin:0;">📝 ${escapeHtml(station.title)} - Written Answers</h2>
+  writtenQuestions.forEach(function(q){
 
-          <button class="secondary" onclick="closePopup()">
-            ✖
-          </button>
-        </div>
-  `;
+    let studentAnswersHtml = '';
 
-  students.forEach(function(student){
+    students.forEach(function(student){
 
-    const answers =
-      (((student.stationAnswers || {})[stationId]) || {});
+      const answers = (((student.stationAnswers || {})[stationId]) || {});
+      const answer = answers[q.realIndex] || '';
 
-    html += `
-      <div class="question-box" style="margin-bottom:18px;">
-        <div style="font-weight:bold;font-size:16px;margin-bottom:10px;">
-          👤 ${escapeHtml(student.name || 'Student')}
-        </div>
-    `;
+      if(!answer) return;
 
-    writtenQuestions.forEach(function(q){
+      const oldMark = ((((student.teacherMarks || {})[stationId]) || {})['q_' + q.realIndex]) || '';
 
-      const answer =
-        answers[q.realIndex] || '';
-
-      const existingMark =
-        ((((student.teacherMarks || {})[stationId]) || {}).mark) || '';
-
-      html += `
-        <div style="margin-bottom:14px;padding:12px;border:1px solid #e3e7ef;border-radius:12px;background:#fafcff;">
-
-          <div style="font-weight:600;margin-bottom:8px;">
-            ${escapeHtml(q.question || q.text || '')}
+      studentAnswersHtml += `
+        <div style="
+          background:white;
+          border:1px solid #e7edf6;
+          border-radius:12px;
+          padding:10px;
+          margin-bottom:8px;
+        ">
+          <div style="font-weight:800;color:#10294a;margin-bottom:6px;">
+            👤 ${escapeHtml(student.name || 'Student')}
           </div>
 
           <div style="
-            background:white;
-            padding:10px;
-            border-radius:10px;
-            border:1px solid #dbe3f0;
-            margin-bottom:10px;
+            font-size:13px;
+            line-height:1.4;
             white-space:pre-wrap;
-          ">
-            ${escapeHtml(answer || 'No answer submitted yet.')}
-          </div>
+            margin-bottom:8px;
+          ">${escapeHtml(answer)}</div>
 
-          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-
-            <input
-              id="mark_${stationId}"
-              type="number"
-              min="0"
-              max="${totalMarksForStation(stationId)}"
-              value="${existingMark}"
-              style="
-                width:90px;
-                padding:8px;
-                border-radius:10px;
-                border:1px solid #cfd8e7;
-              "
-            >
-
-            <button
-              class="secondary"
-              onclick="saveWrittenMark('${student.id}','${stationId}')"
-            >
-              💾 Save Mark
-            </button>
-
-          </div>
-
+          <input
+            type="number"
+            min="0"
+            value="${escapeHtml(oldMark)}"
+            data-student-id="${escapeHtml(student.id)}"
+            data-question-index="${escapeHtml(q.realIndex)}"
+            class="written-mark-input"
+            placeholder="Mark"
+            style="
+              width:100%;
+              padding:8px;
+              border-radius:10px;
+              border:1px solid #cfd8e7;
+            "
+          >
         </div>
       `;
-
     });
 
-    html += `</div>`;
+    rowsHtml += `
+      <div style="
+        background:#fffaf2;
+        border:1px solid #f3d38b;
+        border-radius:16px;
+        padding:12px;
+        margin-bottom:14px;
+      ">
+        <div style="font-weight:900;color:#10294a;margin-bottom:10px;">
+          📝 ${escapeHtml(q.question || q.text || 'Written Question')}
+        </div>
 
+        ${studentAnswersHtml || '<div style="color:#5f6f89;">No answers yet.</div>'}
+      </div>
+    `;
   });
 
-  html += `
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;">
+      <div>
+        <div style="font-weight:900;color:#10294a;">📝 Written Marking</div>
+        <div style="font-size:12px;color:#5f6f89;">
+          ${escapeHtml(station ? station.title : stationId)}
+        </div>
       </div>
+
+      <button onclick="closeWrittenMarkingBox()" style="width:auto;background:#e74c3c;padding:6px 10px;border-radius:10px;">✖</button>
     </div>
+
+    ${rowsHtml || '<div style="padding:12px;background:#f5f7fb;border-radius:12px;color:#5f6f89;text-align:center;">No written answers submitted yet.</div>'}
+
+    <button onclick="saveAllWrittenMarks('${escapeJs(stationId)}')" style="margin-top:8px;background:#1f8f5f;border-radius:12px;padding:10px;font-weight:bold;">
+      💾 Save All Marks
+    </button>
   `;
-
-  const holder = document.createElement('div');
-  holder.id = 'globalPopup';
-  holder.innerHTML = html;
-
-  document.body.appendChild(holder);
-
-};
+}
+  
 window.closePopup = function(event){
 
   if(event && event.target && !event.target.classList.contains('popup-overlay')){
@@ -4425,6 +4467,10 @@ function startTeacherListeners(){
   teacherTrackerRef.on('value', function(snap){
     liveStudents = snap.val() || {};
     renderTeacherTracker();
+    const markBox = byId('writtenMarkingBox');
+if(markBox && markBox.dataset.stationId){
+  renderWrittenMarkingBox(markBox.dataset.stationId);
+}
 
     if(currentStudent){
       renderStudentNav();
@@ -4434,6 +4480,10 @@ function startTeacherListeners(){
     if(previewWrap && previewWrap.dataset.currentStationId){
       openTeacherStationPreview(previewWrap.dataset.currentStationId);
     }
+    const markBox = byId('writtenMarkingBox');
+if(markBox && markBox.dataset.stationId){
+  renderWrittenMarkingBox(markBox.dataset.stationId);
+}
   });
 
   teacherBonusRef.on('value', function(snap){
