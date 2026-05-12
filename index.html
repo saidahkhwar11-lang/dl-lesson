@@ -1621,8 +1621,8 @@ window.saveSelfEvaluation = async function(stationId, value){
 
   function updateRankingBoard(){
 
-  const box = byId('rankingBoard');
-  if(!box) return;
+  const rankingList = byId('rankingList');
+  if(!rankingList) return;
 
   let students = Object.values(liveStudents || {})
     .filter(function(s){
@@ -1630,14 +1630,13 @@ window.saveSelfEvaluation = async function(stationId, value){
     })
     .map(function(s){
 
-      const total =
-        Number(s.total || 0) +
-        Number((liveBonus[s.id] || 0));
+      const bonus =
+        Number(((liveBonus[s.id] || {}).points) || 0);
 
       return {
         id: s.id,
         name: s.name,
-        total: total
+        total: Number(s.total || 0) + bonus
       };
     });
 
@@ -1645,57 +1644,32 @@ window.saveSelfEvaluation = async function(stationId, value){
     return b.total - a.total;
   });
 
-  if(!students.length){
-    box.innerHTML = '';
-    return;
-  }
-
-  // collect unique marks
-  const uniqueMarks = [...new Set(
+  const top3Marks = [...new Set(
     students.map(function(s){
       return s.total;
     })
-  )];
+  )].slice(0,3);
 
-  // if class has many tied/high repeated scores
-  // use top 3 unique marks instead of top 5 students
-  let finalList = [];
+  const finalStudents = students.filter(function(s){
+    return top3Marks.includes(s.total);
+  });
 
-  if(uniqueMarks.length <= 3){
+  rankingList.innerHTML = finalStudents.map(function(student,index){
 
-    const top3Marks = uniqueMarks.slice(0,3);
+    let medal = '⭐';
 
-    finalList = students.filter(function(s){
-      return top3Marks.includes(s.total);
-    });
+    if(index === 0) medal = '🥇';
+    else if(index === 1) medal = '🥈';
+    else if(index === 2) medal = '🥉';
 
-  } else {
+    return `
+      <div class="ranking-item">
+        <span>${medal} ${escapeHtml(student.name)}</span>
+        <strong>${student.total}</strong>
+      </div>
+    `;
 
-    finalList = students.slice(0,5);
-
-  }
-
-  box.innerHTML = `
-    <div class="ranking-title">
-      🏆 Top Students
-    </div>
-
-    ${finalList.map(function(student,index){
-
-      let medal = '⭐';
-
-      if(index === 0) medal = '🥇';
-      else if(index === 1) medal = '🥈';
-      else if(index === 2) medal = '🥉';
-
-      return `
-        <div class="ranking-row">
-          <span>${medal} ${escapeHtml(student.name)}</span>
-          <span>${student.total}</span>
-        </div>
-      `;
-    }).join('')}
-  `;
+  }).join('');
 }
 window.openHybridLink = function(url){
   if(!url) return;
@@ -3520,7 +3494,7 @@ function saveVisibleStageAnswers(requireAll){
   submitCurrentStation(id);
 }
 
-window.getTop5Students = async function(){
+  window.getTop5Students = async function(){
 
   const snap = await getSnap(lessonBase() + '/students');
   const studentsData = snap.val() || {};
@@ -3541,18 +3515,13 @@ window.getTop5Students = async function(){
       return b.total - a.total;
     });
 
-  const uniqueMarks = [...new Set(students.map(function(s){
+  const top3Marks = [...new Set(students.map(function(s){
     return s.total;
-  }))];
+  }))].slice(0,3);
 
-  if(uniqueMarks.length <= 3){
-    const top3Marks = uniqueMarks.slice(0,3);
-    return students.filter(function(s){
-      return top3Marks.includes(s.total);
-    });
-  }
-
-  return students.slice(0,5);
+  return students.filter(function(s){
+    return top3Marks.includes(s.total);
+  });
 };
   window.unlockAchievements = async function(){
 
