@@ -2722,6 +2722,15 @@ window.saveAllWrittenMarks = async function(stationId){
   for(let i = 0; i < ids.length; i++){
     await saveWrittenMarksForStudent(ids[i], stationId, grouped[ids[i]]);
   }
+  if(typeof renderTracker === 'function'){
+  renderTracker();
+}
+
+if(typeof renderLiveTracker === 'function'){
+  renderLiveTracker();
+}
+
+alert('Written marks saved and totals updated.');
 
   renderTeacherTracker();
   updateRankingBoard();
