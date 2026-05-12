@@ -1621,46 +1621,82 @@ window.saveSelfEvaluation = async function(stationId, value){
 
   function updateRankingBoard(){
 
-  const list = byId('rankingList');
-  if(!list || !liveStudents) return;
+  const box = byId('rankingBoard');
+  if(!box) return;
 
-const seen = {};
+  let students = Object.values(liveStudents || {})
+    .filter(function(s){
+      return s && s.name;
+    })
+    .map(function(s){
 
-const studentsArr = Object.values(liveStudents || []).filter(function(s){
-  if(!s || !s.name) return false;
+      const total =
+        Number(s.total || 0) +
+        Number((liveBonus[s.id] || 0));
 
-  const key = s.name.toLowerCase().trim();
+      return {
+        id: s.id,
+        name: s.name,
+        total: total
+      };
+    });
 
-  if(seen[key]) return false; // remove duplicate
-  seen[key] = true;
-
-  return true;
-});
-    
-  // sort by score (highest first)
-  studentsArr.sort(function(a,b){
-return (Number(b.total || 0) + Number(((liveBonus[b.id] || {}).points) || 0)) -
-       (Number(a.total || 0) + Number(((liveBonus[a.id] || {}).points) || 0));
+  students.sort(function(a,b){
+    return b.total - a.total;
   });
 
-  const top5 = studentsArr.slice(0,5);
+  if(!students.length){
+    box.innerHTML = '';
+    return;
+  }
 
-  list.innerHTML = top5.map(function(st, index){
-    const medals = ['🥇','🥈','🥉','⭐','⭐'];
+  // collect unique marks
+  const uniqueMarks = [...new Set(
+    students.map(function(s){
+      return s.total;
+    })
+  )];
 
-    return `
-      <div class="ranking-item rank-${index+1}">
-        <div class="ranking-name">
-          ${medals[index]} ${escapeHtml(st.name || 'Student')}
+  // if class has many tied/high repeated scores
+  // use top 3 unique marks instead of top 5 students
+  let finalList = [];
+
+  if(uniqueMarks.length <= 3){
+
+    const top3Marks = uniqueMarks.slice(0,3);
+
+    finalList = students.filter(function(s){
+      return top3Marks.includes(s.total);
+    });
+
+  } else {
+
+    finalList = students.slice(0,5);
+
+  }
+
+  box.innerHTML = `
+    <div class="ranking-title">
+      🏆 Top Students
+    </div>
+
+    ${finalList.map(function(student,index){
+
+      let medal = '⭐';
+
+      if(index === 0) medal = '🥇';
+      else if(index === 1) medal = '🥈';
+      else if(index === 2) medal = '🥉';
+
+      return `
+        <div class="ranking-row">
+          <span>${medal} ${escapeHtml(student.name)}</span>
+          <span>${student.total}</span>
         </div>
-        <div class="ranking-score">
-${Number(st.total || 0) + Number(((liveBonus[st.id] || {}).points) || 0)} pts
-        </div>
-      </div>
-    `;
-  }).join('');
+      `;
+    }).join('')}
+  `;
 }
-
 window.openHybridLink = function(url){
   if(!url) return;
   window.open(url, '_blank', 'noopener,noreferrer');
@@ -3489,24 +3525,35 @@ window.getTop5Students = async function(){
   const snap = await getSnap(lessonBase() + '/students');
   const studentsData = snap.val() || {};
 
-  return Object.keys(studentsData)
+  const students = Object.keys(studentsData)
     .map(function(id){
       const s = studentsData[id] || {};
       return {
         id: id,
         name: s.name || '',
-total:Number(s.total || 0) + Number(((liveBonus[id] || {}).points) || 0)
+        total: Number(s.total || 0) + Number(((liveBonus[id] || {}).points) || 0)
       };
     })
     .filter(function(s){
-      return s.name.trim() !== '';
+      return s.name.trim() !== '' && s.total > 0;
     })
     .sort(function(a,b){
       return b.total - a.total;
-    })
-    .slice(0,5);
-};
+    });
 
+  const uniqueMarks = [...new Set(students.map(function(s){
+    return s.total;
+  }))];
+
+  if(uniqueMarks.length <= 3){
+    const top3Marks = uniqueMarks.slice(0,3);
+    return students.filter(function(s){
+      return top3Marks.includes(s.total);
+    });
+  }
+
+  return students.slice(0,5);
+};
   window.unlockAchievements = async function(){
 
   await dbRef(lessonBase() + '/settings/finalTop5Ids').remove();
@@ -3558,21 +3605,51 @@ window.isCurrentStudentTop5 = async function(){
 };
 window.unlockAchievements = async function(){
 
-  const top5 = await getTop5Students();
+  await dbRef(lessonBase() + '/settings/finalTop5Ids').remove();
 
-  const top5Ids = top5.map(function(s){
-    return s.id;
+  let studentsArr = Object.values(liveStudents || {})
+    .filter(function(s){
+      return s && s.id && s.name && Number(s.total || 0) > 0;
+    })
+    .map(function(s){
+      const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
+      return {
+        id: s.id,
+        name: s.name,
+        total: Number(s.total || 0) + bonus
+      };
+    })
+    .sort(function(a,b){
+      return b.total - a.total;
+    });
+
+  const uniqueMarks = [...new Set(studentsArr.map(function(s){
+    return s.total;
+  }))];
+
+  let finalStudents = [];
+
+  if(uniqueMarks.length <= 3){
+    const top3Marks = uniqueMarks.slice(0,3);
+    finalStudents = studentsArr.filter(function(s){
+      return top3Marks.includes(s.total);
+    });
+  } else {
+    finalStudents = studentsArr.slice(0,5);
+  }
+
+  const topIds = finalStudents.map(function(s){
+    return String(s.id).trim();
   });
 
-  await dbRef(lessonBase() + '/settings/finalTop5Ids').set(top5Ids);
-
+  await dbRef(lessonBase() + '/settings/finalTop5Ids').set(topIds);
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
   achievementUnlocked = true;
 
   toggleTopStudents();
 
-  alert('🏆 Final Top 5 counted. Certificates are now unlocked.');
+  alert('🏆 Final winners counted:\n' + topIds.join('\n'));
 };
 
 function getRequiredAchievementStations(){
