@@ -1644,32 +1644,35 @@ window.saveSelfEvaluation = async function(stationId, value){
     return b.total - a.total;
   });
 
+  // TOP 3 UNIQUE MARKS
   const top3Marks = [...new Set(
     students.map(function(s){
       return s.total;
     })
   )].slice(0,3);
 
+  // ALL STUDENTS INSIDE THOSE MARKS
   const finalStudents = students.filter(function(s){
     return top3Marks.includes(s.total);
   });
 
-  rankingList.innerHTML = finalStudents.map(function(student,index){
+  rankingList.innerHTML = '';
+
+  finalStudents.forEach(function(student,index){
 
     let medal = '⭐';
 
-    if(index === 0) medal = '🥇';
-    else if(index === 1) medal = '🥈';
-    else if(index === 2) medal = '🥉';
+    if(student.total === top3Marks[0]) medal = '🥇';
+    else if(student.total === top3Marks[1]) medal = '🥈';
+    else if(student.total === top3Marks[2]) medal = '🥉';
 
-    return `
+    rankingList.innerHTML += `
       <div class="ranking-item">
         <span>${medal} ${escapeHtml(student.name)}</span>
         <strong>${student.total}</strong>
       </div>
     `;
-
-  }).join('');
+  });
 }
 window.openHybridLink = function(url){
   if(!url) return;
@@ -3740,7 +3743,7 @@ window.checkMyAchievement = async function(){
             font-size:13px;
             border:1px solid #c9d8ff;
           ">
-            🔒 Achievement certificates are locked until the teacher announces the Top 5.
+            🔒 Achievement certificates are locked until the teacher announces the Top Students.
           </div>
         `;
       }
@@ -4065,13 +4068,13 @@ window.checkMyAchievement = async function(){
         English Language lesson.
       </div>
 
-      <div class="top5">
-        AWARDED AS ONE OF THE <span>TOP 5 STUDENTS</span>
-      </div>
+     <div class="top5">
+  AWARDED AS ONE OF THE <span>TOP STUDENTS</span>
+</div>
 
-      <div class="seal">★</div>
+<div class="seal">★</div>
 
-      <div class="bottom">
+<div class="bottom">
         <div class="bottom-box">
           <div class="bottom-title">ALREYADA SCHOOL</div>
           <div class="line"></div>
