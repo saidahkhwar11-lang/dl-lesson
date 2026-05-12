@@ -3629,14 +3629,35 @@ async function getAchievementStatus(){
     return 'unfinished';
   }
 
- const allowed = await isCurrentStudentQualified();
-
+const allowed = await window.isCurrentStudentQualified();
+  
 if(allowed === true){
   return 'qualified';
 }
 
 return 'not_qualified';
 }
+
+  window.isCurrentStudentQualified = async function(){
+
+  if(!currentStudent || !currentStudent.id){
+    return false;
+  }
+
+  const minSnap = await getSnap(lessonBase() + '/settings/certificateMinScore');
+
+  const minScore = Number(minSnap.val() || 0);
+
+  const student = await getFreshCurrentStudentData();
+
+  const bonus = Number(((liveBonus[currentStudent.id] || {}).points) || 0);
+
+  const total =
+    Number(student.total || currentStudent.total || 0) + bonus;
+
+  return total >= minScore;
+
+};
 window.checkMyAchievement = async function(){
 
   const msg = byId('achievementMsg');
