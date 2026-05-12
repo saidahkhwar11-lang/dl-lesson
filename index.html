@@ -3526,32 +3526,7 @@ function saveVisibleStageAnswers(requireAll){
     return top3Marks.includes(s.total);
   });
 };
-  window.unlockAchievements = async function(){
-
-  await dbRef(lessonBase() + '/settings/finalTop5Ids').remove();
-
-  const studentsArr = Object.values(liveStudents || {})
-    .filter(function(s){
-      return s && s.id && s.name && Number(s.total || 0) > 0;
-    })
-    .sort(function(a,b){
-      return Number(b.total || 0) - Number(a.total || 0);
-    })
-    .slice(0,5);
-
-  const top5Ids = studentsArr.map(function(s){
-    return String(s.id).trim();
-  });
-
-  await dbRef(lessonBase() + '/settings/finalTop5Ids').set(top5Ids);
-  await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
-
-  achievementUnlocked = true;
-
-  toggleTopStudents();
-
-  alert('🏆 Final Top 5 counted:\n' + top5Ids.join('\n'));
-};
+  
   function listenAchievementUnlock(){
 
   dbRef(lessonBase() + '/settings/achievementUnlocked').on('value', function(snap){
@@ -3561,67 +3536,20 @@ function saveVisibleStageAnswers(requireAll){
   });
 
 }
-window.isCurrentStudentTop5 = async function(){
 
-  if(!currentStudent || !currentStudent.id){
-    return false;
-  }
-
-  const snap = await getSnap(lessonBase() + '/settings/finalTop5Ids');
-  const ids = snap.val() || [];
-
-  return Array.isArray(ids) && ids.some(function(id){
-    return String(id).trim().toLowerCase() ===
-           String(currentStudent.id).trim().toLowerCase();
-  });
-};
 window.unlockAchievements = async function(){
 
-  await dbRef(lessonBase() + '/settings/finalTop5Ids').remove();
+  const passMarkInput = prompt('Enter minimum certificate score for this lesson:', '0');
+  const certificateMinScore = Number(passMarkInput || 0);
 
-  let studentsArr = Object.values(liveStudents || {})
-    .filter(function(s){
-      return s && s.id && s.name && Number(s.total || 0) > 0;
-    })
-    .map(function(s){
-      const bonus = Number(((liveBonus[s.id] || {}).points) || 0);
-      return {
-        id: s.id,
-        name: s.name,
-        total: Number(s.total || 0) + bonus
-      };
-    })
-    .sort(function(a,b){
-      return b.total - a.total;
-    });
-
-  const uniqueMarks = [...new Set(studentsArr.map(function(s){
-    return s.total;
-  }))];
-
-  let finalStudents = [];
-
-  if(uniqueMarks.length <= 3){
-    const top3Marks = uniqueMarks.slice(0,3);
-    finalStudents = studentsArr.filter(function(s){
-      return top3Marks.includes(s.total);
-    });
-  } else {
-    finalStudents = studentsArr.slice(0,5);
-  }
-
-  const topIds = finalStudents.map(function(s){
-    return String(s.id).trim();
-  });
-
-  await dbRef(lessonBase() + '/settings/finalTop5Ids').set(topIds);
+  await dbRef(lessonBase() + '/settings/certificateMinScore').set(certificateMinScore);
   await dbRef(lessonBase() + '/settings/achievementUnlocked').set(true);
 
   achievementUnlocked = true;
 
   toggleTopStudents();
 
-  alert('🏆 Final winners counted:\n' + topIds.join('\n'));
+  alert('🏆 Certificates unlocked!\nMinimum score: ' + certificateMinScore);
 };
 
 function getRequiredAchievementStations(){
@@ -3701,13 +3629,13 @@ async function getAchievementStatus(){
     return 'unfinished';
   }
 
-  const allowed = await isCurrentStudentTop5();
+ const allowed = await isCurrentStudentQualified();
 
-  if(allowed === true){
-    return 'top5';
-  }
+if(allowed === true){
+  return 'qualified';
+}
 
-  return 'not_top5';
+return 'not_qualified';
 }
 window.checkMyAchievement = async function(){
 
@@ -3773,8 +3701,7 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    if(status === 'top5'){
-
+if(status === 'qualified'){
       if(msg){
         msg.innerHTML = `
           <div style="
@@ -3796,8 +3723,7 @@ window.checkMyAchievement = async function(){
       return;
     }
 
-    if(status === 'not_top5'){
-
+if(status === 'not_qualified'){
       if(msg){
         msg.innerHTML = `
           <div style="
@@ -3810,7 +3736,8 @@ window.checkMyAchievement = async function(){
             font-size:13px;
             border:1px solid #f3d38b;
           ">
-            🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the Top 5.
+
+🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the certificate score.
           </div>
         `;
       }
@@ -3835,10 +3762,10 @@ window.checkMyAchievement = async function(){
 
    const status = await getAchievementStatus();
 
-  if(status !== 'top5'){
-    alert("This achievement certificate is only for Top 5 students.");
-    return;
-  }
+  if(status !== 'qualified'){
+  alert("This achievement certificate is only for qualified students.");
+  return;
+}
 
    
   const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
@@ -3850,7 +3777,29 @@ window.checkMyAchievement = async function(){
     month:'long',
     year:'numeric'
   });
+   async function getCurrentStudentRankText(){
 
+  const winners = await getTop5Students();
+
+  const student = winners.find(function(s){
+    return String(s.id).trim().toLowerCase() ===
+           String(currentStudent.id).trim().toLowerCase();
+  });
+
+  if(!student){
+    return '';
+  }
+
+  const marks = [...new Set(winners.map(s => s.total))].sort((a,b) => b - a);
+  const rank = marks.indexOf(student.total) + 1;
+
+  if(rank === 1) return '🥇 First Highest Mark';
+  if(rank === 2) return '🥈 Second Highest Mark';
+  if(rank === 3) return '🥉 Third Highest Mark';
+
+  return '';
+}
+const rankText = await getCurrentStudentRankText();
   const html = `
 <!DOCTYPE html>
 <html>
@@ -3975,6 +3924,13 @@ window.checkMyAchievement = async function(){
     margin:0 auto;
   }
 
+  .rank-text{
+  margin-top:10px;
+  font-size:22px;
+  font-weight:bold;
+  color:#b8860b;
+}
+
   .top5{
     margin-top:24px;
     font-size:26px;
@@ -4069,7 +4025,7 @@ window.checkMyAchievement = async function(){
       </div>
 
      <div class="top5">
-  AWARDED AS ONE OF THE <span>TOP STUDENTS</span>
+  AWARDED FOR <span>EXCELLENT ACHIEVEMENT</span>
 </div>
 
 <div class="seal">★</div>
@@ -4399,8 +4355,9 @@ body{
 <div class="certificate">
   <div class="title">CERTIFICATE OF PROGRESS</div>
 
-  <div class="name">${escapeHtml(studentName)}</div>
+<div class="name">${escapeHtml(studentName)}</div>
 
+<div class="rank-text">${rankText}</div>
   <div class="message">
     Great effort! You completed all lesson stations successfully.<br>
     Keep learning, keep improving, and be proud of your progress.
