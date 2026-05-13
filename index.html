@@ -1635,7 +1635,7 @@ font-size:95px;
   updateTeacherTimerPopupInfo();
 }
   
-  window.removeCurrentStation = async function(){
+window.removeCurrentStation = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
 
@@ -1653,14 +1653,19 @@ font-size:95px;
   }
 
   await dbRef(configPath()).set(lessonStations);
-  await dbRef(contentPath()).set(lessonContent);
+  await dbRef(contentPath()).set(lessonContent || {});
 
   fillTeacherSelects();
 
-  const nextId = (lessonStations[0] && lessonStations[0].id) || 'starter';
-  byId('creatorStationSelect').value = nextId;
+  const nextId = (lessonStations[0] && lessonStations[0].id) || '';
+  if(byId('creatorStationSelect')){
+    byId('creatorStationSelect').value = nextId;
+  }
 
-  loadCreatorStation();
+  if(nextId){
+    loadCreatorStation();
+  }
+
   renderTeacherOverview();
   renderControlStatus();
   renderTeacherTracker();
@@ -1668,13 +1673,6 @@ font-size:95px;
 
   showNotice('creatorNotice', 'Station removed successfully.', 'good');
 };
-  function getSelfEvalValue(stationId){
-  if(!currentStudent || !liveStudents[currentStudent.id]) return '';
-  const student = liveStudents[currentStudent.id] || {};
-  const selfEvaluations = student.selfEvaluations || {};
-  return selfEvaluations[stationId] || '';
-}
-
 window.saveSelfEvaluation = async function(stationId, value){
   saveVisibleStageAnswers(false);
   if(!requireConnection() || !currentStudent) return;
@@ -3371,7 +3369,7 @@ else{
  const skillClashHtml = st.type === 'skillClash'
   ? renderSkillClashStudentGame({
       id: st.id,
-      game: ct.skillClashGame
+      game: (ct && ct.skillClashGame) ? ct.skillClashGame : st.game
     })
   : '';
 
@@ -3409,8 +3407,8 @@ actionBtns;
 
   if(currentStudent) dbRef(studentPath(currentStudent.id)).update({ currentStation:id });
 
-  if(submitted){
-    const student = liveStudents[currentStudent.id] || {};
+if(submitted && st.type !== 'skillClash'){
+  const student = liveStudents[currentStudent.id] || {};
     const savedAnswers = (student.stationAnswers && student.stationAnswers[id]) || {};
 
     (ct.questions || []).forEach(function(q, i){
@@ -6423,8 +6421,11 @@ async function saveSkillClashStation(){
   }
 
   lessonStations = lessonStations.filter(function(s){
-    return s.id !== skillId;
-  });
+  return s.id !== 'skill_clash' &&
+         s.id !== 'skill_clash_v2' &&
+         s.type !== 'skillClash' &&
+         s.title !== '⚔️ Skill Clash';
+});
 
   lessonStations.push(station);
 
