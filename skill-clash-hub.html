@@ -258,44 +258,151 @@ hubRef.on('value', snap=>{
 });
 
 function buildVoting(groups){
-  const battles = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+
+  const battles = [
+    [1,2],
+    [3,4],
+    [5,6],
+    [7,8],
+    [9,10]
+  ];
+
   let html = '';
 
   battles.forEach(pair=>{
-    const a = pair[0], b = pair[1];
-    if(Number(currentGroup) === a || Number(currentGroup) === b){
+
+    const a = pair[0];
+    const b = pair[1];
+
+    if(
+      Number(currentGroup) === a ||
+      Number(currentGroup) === b
+    ){
       return;
     }
 
     const ga = groups['group'+a];
     const gb = groups['group'+b];
 
-    if(!ga || !gb || !ga.answer || !gb.answer) return;
+    if(
+      !ga || !gb ||
+      !ga.answer || !gb.answer
+    ){
+      return;
+    }
 
-    html += `<div class="card">
-      <h3>Group ${a} VS Group ${b}</h3>
-      <div class="groupGrid">
-        <div>
-          <h3>Group ${a}</h3>
-          <div class="answerBox">${escapeHtml(ga.answer)}</div>
+    html += `
+      <div class="card">
+
+        <h3>
+          ⚔️ Group ${a} VS Group ${b}
+        </h3>
+
+        <div class="groupGrid">
+
+          <div>
+            <h3>🔵 Group ${a}</h3>
+
+            <div class="answerBox">
+              ${escapeHtml(ga.answer)}
+            </div>
+
+            <label>
+              <input type="checkbox"
+              id="opinion_${a}_${b}_${a}">
+              Opinion
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="reason_${a}_${b}_${a}">
+              Reason
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="example_${a}_${b}_${a}">
+              Example / Evidence
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="restate_${a}_${b}_${a}">
+              Restated Opinion
+            </label>
+          </div>
+
+          <div>
+            <h3>🔴 Group ${b}</h3>
+
+            <div class="answerBox">
+              ${escapeHtml(gb.answer)}
+            </div>
+
+            <label>
+              <input type="checkbox"
+              id="opinion_${a}_${b}_${b}">
+              Opinion
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="reason_${a}_${b}_${b}">
+              Reason
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="example_${a}_${b}_${b}">
+              Example / Evidence
+            </label><br>
+
+            <label>
+              <input type="checkbox"
+              id="restate_${a}_${b}_${b}">
+              Restated Opinion
+            </label>
+          </div>
+
         </div>
-        <div>
-          <h3>Group ${b}</h3>
-          <div class="answerBox">${escapeHtml(gb.answer)}</div>
-        </div>
+
+        <hr>
+
+        <h3>
+          💪 Stronger Group
+        </h3>
+
+        <label>
+          <input type="radio"
+          name="winner_${a}_${b}"
+          value="${a}">
+          Group ${a}
+        </label>
+
+        <label style="margin-left:20px;">
+          <input type="radio"
+          name="winner_${a}_${b}"
+          value="${b}">
+          Group ${b}
+        </label>
+
+        <button onclick="submitVote(${a},${b})">
+          Submit Evaluation
+        </button>
+
       </div>
-
-      <p><b>Choose stronger group work:</b></p>
-      <button onclick="submitVote(${a},${b},${a})">Vote Group ${a}</button>
-      <button onclick="submitVote(${a},${b},${b})">Vote Group ${b}</button>
-    </div>`;
+    `;
   });
 
-  document.getElementById('voteArea').innerHTML = html || '<p>No battles ready yet.</p>';
+  document.getElementById('voteArea').innerHTML =
+    html || '<p>No battles ready yet.</p>';
 }
+async function submitVote(a,b){
 
-async function submitVote(a,b,winner){
-  const myGroup = Number(currentGroup || sessionStorage.getItem('skillClashGroup'));
+  const myGroup = Number(
+    currentGroup ||
+    sessionStorage.getItem('skillClashGroup')
+  );
 
   if(!myGroup){
     alert('Join a group first.');
@@ -303,45 +410,115 @@ async function submitVote(a,b,winner){
   }
 
   if(myGroup === a || myGroup === b){
-    alert('Your group cannot vote for its own battle.');
+    alert('⚠️ Your group cannot evaluate its own battle.');
     return;
   }
 
-  await hubRef.child(`votes/battle_${a}_${b}/group${myGroup}`).set({
-    voterGroup: myGroup,
-    winner: winner,
-    submittedAt: Date.now()
-  });
+  const winner = document.querySelector(
+    'input[name="winner_' + a + '_' + b + '"]:checked'
+  );
 
-  alert('✅ Vote submitted.');
+  if(!winner){
+    alert('Choose the stronger group.');
+    return;
+  }
+
+  function checked(id){
+    const el = document.getElementById(id);
+    return el && el.checked ? 1 : 0;
+  }
+
+  const scoreA =
+    checked('opinion_' + a + '_' + b + '_' + a) +
+    checked('reason_' + a + '_' + b + '_' + a) +
+    checked('example_' + a + '_' + b + '_' + a) +
+    checked('restate_' + a + '_' + b + '_' + a) +
+    (Number(winner.value) === a ? 2 : 0);
+
+  const scoreB =
+    checked('opinion_' + a + '_' + b + '_' + b) +
+    checked('reason_' + a + '_' + b + '_' + b) +
+    checked('example_' + a + '_' + b + '_' + b) +
+    checked('restate_' + a + '_' + b + '_' + b) +
+    (Number(winner.value) === b ? 2 : 0);
+
+  await hubRef
+    .child(`votes/battle_${a}_${b}/group${myGroup}`)
+    .set({
+      voterGroup: myGroup,
+      teamA: a,
+      teamB: b,
+      scoreA: scoreA,
+      scoreB: scoreB,
+      winner: Number(winner.value),
+      submittedAt: Date.now()
+    });
+
+  alert('✅ Evaluation submitted successfully!');
 }
-
 function showResults(){
-  hubRef.child('votes').once('value', snap=>{
-    const data = snap.val() || {};
-    const scores = {};
-    for(let i=1;i<=10;i++) scores[i]=0;
 
-    Object.keys(data).forEach(battle=>{
-      Object.values(data[battle]).forEach(v=>{
-        scores[v.winner] += 1;
+  hubRef.child('votes').once('value', snap=>{
+
+    const data = snap.val() || {};
+
+    const scores = {};
+
+    for(let i=1;i<=10;i++){
+      scores[i] = 0;
+    }
+
+    Object.keys(data).forEach(battleKey=>{
+
+      const battle = data[battleKey] || {};
+
+      Object.keys(battle).forEach(voteKey=>{
+
+        const v = battle[voteKey];
+
+        scores[v.teamA] += Number(v.scoreA || 0);
+        scores[v.teamB] += Number(v.scoreB || 0);
+
       });
     });
 
     const ranking = Object.keys(scores)
-      .map(t=>({team:t,score:scores[t]}))
+      .map(team=>({
+        team: team,
+        score: scores[team]
+      }))
       .sort((a,b)=>b.score-a.score);
 
-    let html = '';
-    ranking.forEach((r,i)=>{
-      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-      html += `<div class="soft"><b>${medal} Group ${r.team}</b>: ${r.score} votes</div>`;
+    let html = `
+      <h3>🏆 Final Ranking</h3>
+    `;
+
+    ranking.forEach((item,index)=>{
+
+      let medal = '';
+
+      if(index === 0) medal = '🥇';
+      else if(index === 1) medal = '🥈';
+      else if(index === 2) medal = '🥉';
+
+      html += `
+        <div class="soft">
+          <h3>
+            ${medal} Group ${item.team}
+          </h3>
+
+          <p>
+            Total Score:
+            <b>${item.score}</b>
+          </p>
+        </div>
+      `;
     });
 
-    document.getElementById('resultsBox').innerHTML = html;
+    document.getElementById('resultsBox').innerHTML =
+      html;
   });
 }
-
 async function resetHub(){
   if(!checkTeacher()){
     alert('Wrong password.');
