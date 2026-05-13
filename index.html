@@ -852,6 +852,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button onclick="showTeacherSection('teacherTrackerCard')">📊 Live Tracker</button>
   <button onclick="showTeacherSection('teacherControlCard')">🎯 Station Control</button>
   <button onclick="showTeacherSection('teacherCreatorCard')">🛠 Lesson Builder</button>
+   <button onclick="showTeacherSection('skillClashBuilder')">
+  ⚔️ Skill Clash
+</button>
       
   <button onclick="showClassSummary()">📈 Class Summary</button>
 </div>
@@ -909,8 +912,86 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <div id="controlStatusWrap" style="margin-top:12px"></div>
     </div>
 
-    <div id="teacherCreatorCard" class="card hidden">
-      <hr>
+<div id="teacherCreatorCard" class="card hidden">
+</div>
+    <div id="skillClashBuilder" class="card hidden">
+
+  <h2>⚔️ Skill Clash</h2>
+
+  <p class="muted">
+    Generate a game automatically from today’s lesson.
+  </p>
+
+  <label>Game Type</label>
+  <select id="skillGameType">
+
+    <option value="auto">
+      🤖 Auto Choose
+    </option>
+
+    <option value="opinion">
+      Opinion Battle
+    </option>
+
+    <option value="evidence">
+      Evidence Hunt
+    </option>
+
+    <option value="wrongSentence">
+      Find the Wrong Sentence
+    </option>
+
+    <option value="vocab">
+      Vocabulary Trap
+    </option>
+
+  </select>
+
+  <label>Difficulty</label>
+  <select id="skillDifficulty">
+
+    <option value="Easy">
+      Easy
+    </option>
+
+    <option value="Medium" selected>
+      Medium
+    </option>
+
+    <option value="Hard">
+      Hard
+    </option>
+
+  </select>
+
+  <label>Time</label>
+  <select id="skillTime">
+
+    <option value="5">
+      5 Minutes
+    </option>
+
+    <option value="10" selected>
+      10 Minutes
+    </option>
+
+    <option value="15">
+      15 Minutes
+    </option>
+
+  </select>
+
+  <button onclick="generateSkillClashGame()">
+    🤖 Build Skill Clash
+  </button>
+
+  <div id="skillClashPreview"></div>
+
+  <button onclick="saveSkillClashStation()">
+    💾 Save Skill Clash Station
+  </button>
+
+</div>
 
 <h3>📘 Lesson Info (for all stations)</h3>
 
@@ -6044,6 +6125,310 @@ window.addEventListener('load', function(){
   loadSavedConfig();
   showOnly('homeRow');
 });
+  let generatedSkillClash = null;
+
+function getLessonDataForSkillClash(){
+  return {
+    title: document.getElementById('lessonTitleInput')?.value || 'Today’s Lesson',
+    objectives: document.getElementById('lessonObjectivesInput')?.value || '',
+    keywords: document.getElementById('lessonKeywordsInput')?.value || '',
+    text: collectSkillClashStationText()
+  };
+}
+
+function collectSkillClashStationText(){
+  let text = '';
+
+  if(window.stations && Array.isArray(window.stations)){
+    window.stations.forEach(function(st){
+      text += ' ' + (st.title || '');
+      text += ' ' + (st.objective || '');
+      text += ' ' + (st.details || '');
+      text += ' ' + (st.text || '');
+      text += ' ' + (st.sourceText || '');
+    });
+  }
+
+  return text.trim();
+}
+
+function generateSkillClashGame(){
+  const lesson = getLessonDataForSkillClash();
+
+  let type = document.getElementById('skillGameType').value;
+  const difficulty = document.getElementById('skillDifficulty').value;
+  const time = document.getElementById('skillTime').value;
+
+  if(type === 'auto'){
+    type = autoChooseSkillGame(lesson);
+  }
+
+  if(type === 'opinion'){
+    generatedSkillClash = buildOpinionBattle(lesson, difficulty, time);
+  }else if(type === 'evidence'){
+    generatedSkillClash = buildEvidenceHunt(lesson, difficulty, time);
+  }else if(type === 'wrongSentence'){
+    generatedSkillClash = buildWrongSentenceGame(lesson, difficulty, time);
+  }else{
+    generatedSkillClash = buildVocabularyTrap(lesson, difficulty, time);
+  }
+
+  renderSkillClashPreview();
+}
+
+function autoChooseSkillGame(lesson){
+  const text = (
+    lesson.title + ' ' +
+    lesson.objectives + ' ' +
+    lesson.keywords + ' ' +
+    lesson.text
+  ).toLowerCase();
+
+  if(text.includes('opinion') || text.includes('reason') || text.includes('argument')){
+    return 'opinion';
+  }
+
+  if(text.includes('evidence') || text.includes('supporting') || text.includes('detail')){
+    return 'evidence';
+  }
+
+  if(text.includes('vocabulary') || text.includes('context') || text.includes('meaning')){
+    return 'vocab';
+  }
+
+  return 'wrongSentence';
+}
+  function buildOpinionBattle(lesson, difficulty, time){
+  return {
+    stationTitle: '⚔️ Skill Clash',
+    gameTitle: 'Opinion Battle',
+    type: 'opinion',
+    time: time,
+    difficulty: difficulty,
+    instruction: 'Choose Agree or Disagree. Write your opinion, one reason, and one example.',
+    topic: createOpinionTopic(lesson),
+    points: [
+      'Clear opinion = 1 point',
+      'Strong reason = 2 points',
+      'Example or evidence = 2 points',
+      'Respectful reply = 1 point'
+    ],
+    stealRound: 'Challenge the other team’s idea. A strong challenge can steal 2 points.'
+  };
+}
+
+function createOpinionTopic(lesson){
+  const title = (lesson.title || '').toLowerCase();
+
+  if(title.includes('technology')){
+    return 'Technology helps students learn better.';
+  }
+
+  if(title.includes('dream')){
+    return 'Dreams can teach us something about our thoughts and feelings.';
+  }
+
+  if(title.includes('business')){
+    return 'Men and women can both be successful in business.';
+  }
+
+  return 'This lesson topic is important for students’ real life.';
+}
+
+function buildEvidenceHunt(lesson, difficulty, time){
+  const sentences = splitSkillSentences(lesson.text);
+
+  return {
+    stationTitle: '⚔️ Skill Clash',
+    gameTitle: 'Evidence Hunt',
+    type: 'evidence',
+    time: time,
+    difficulty: difficulty,
+    instruction: 'Choose the sentence that gives the best evidence from the lesson.',
+    questions: sentences.slice(0, 5).map(function(s){
+      return {
+        q: 'Which sentence gives clear evidence?',
+        answer: s,
+        choices: shuffleSkillChoices([
+          s,
+          'This is too general and does not give clear evidence.',
+          'This idea is not related to the lesson topic.',
+          'This is only an opinion without support.'
+        ])
+      };
+    }),
+    stealRound: 'If another team chooses weak evidence, explain why and steal 2 points.'
+  };
+}
+
+function buildWrongSentenceGame(lesson, difficulty, time){
+  const sentences = splitSkillSentences(lesson.text).slice(0, 3);
+
+  return {
+    stationTitle: '⚔️ Skill Clash',
+    gameTitle: 'Find the Wrong Sentence',
+    type: 'wrongSentence',
+    time: time,
+    difficulty: difficulty,
+    instruction: 'Read the sentences. Find the sentence that does NOT belong.',
+    questions: [
+      {
+        q: 'Which sentence does NOT belong?',
+        answer: 'Penguins live in cold places and swim well.',
+        choices: shuffleSkillChoices([
+          sentences[0] || 'The lesson explains an important idea.',
+          sentences[1] || 'Students can use examples to understand the topic.',
+          sentences[2] || 'This topic connects to real life.',
+          'Penguins live in cold places and swim well.'
+        ])
+      }
+    ],
+    stealRound: 'Explain why the wrong sentence does not belong to steal 2 points.'
+  };
+}
+
+function buildVocabularyTrap(lesson, difficulty, time){
+  const words = extractSkillKeywords(lesson);
+
+  return {
+    stationTitle: '⚔️ Skill Clash',
+    gameTitle: 'Vocabulary Trap',
+    type: 'vocab',
+    time: time,
+    difficulty: difficulty,
+    instruction: 'Choose the best meaning. Be careful: one answer is a trap.',
+    questions: words.slice(0, 5).map(function(word){
+      return {
+        q: 'What is the best meaning of "' + word + '" in the lesson?',
+        answer: 'The meaning used in the lesson',
+        choices: shuffleSkillChoices([
+          'The meaning used in the lesson',
+          'The opposite meaning',
+          'A funny but wrong meaning',
+          'An unrelated meaning'
+        ])
+      };
+    }),
+    stealRound: 'If another team chooses the trap answer, your team can steal 2 points.'
+  };
+}
+  function splitSkillSentences(text){
+  if(!text) return [];
+
+  return text
+    .replace(/\n/g, ' ')
+    .split(/[.!?]/)
+    .map(function(s){ return s.trim(); })
+    .filter(function(s){ return s.length > 20; });
+}
+
+function extractSkillKeywords(lesson){
+  let words = [];
+
+  if(lesson.keywords){
+    words = lesson.keywords
+      .split(',')
+      .map(function(w){ return w.trim(); })
+      .filter(Boolean);
+  }
+
+  if(words.length < 5 && lesson.text){
+    const common = ['the','and','because','students','lesson','this','that','with','from','they','their','about','which','there'];
+    const found = lesson.text.toLowerCase().match(/\b[a-z]{5,}\b/g) || [];
+    words = [...new Set(found.filter(function(w){ return !common.includes(w); }))];
+  }
+
+  return words.length ? words : ['opinion','reason','evidence','support','example'];
+}
+
+function shuffleSkillChoices(array){
+  return array
+    .map(function(value){ return { value:value, sort:Math.random() }; })
+    .sort(function(a,b){ return a.sort - b.sort; })
+    .map(function(item){ return item.value; });
+}
+
+function renderSkillClashPreview(){
+  const box = document.getElementById('skillClashPreview');
+  if(!box || !generatedSkillClash) return;
+
+  let html = `
+    <div class="skill-game-card">
+      <h3>${generatedSkillClash.stationTitle}</h3>
+      <h4>🎮 ${generatedSkillClash.gameTitle}</h4>
+      <p><b>Time:</b> ${generatedSkillClash.time} minutes</p>
+      <p><b>Difficulty:</b> ${generatedSkillClash.difficulty}</p>
+      <p><b>Instructions:</b> ${generatedSkillClash.instruction}</p>
+  `;
+
+  if(generatedSkillClash.topic){
+    html += `<p><b>Battle Topic:</b> ${generatedSkillClash.topic}</p>`;
+  }
+
+  if(generatedSkillClash.questions){
+    generatedSkillClash.questions.forEach(function(q, index){
+      html += `<div class="skill-question"><b>Q${index + 1}:</b> ${q.q}<br>`;
+      q.choices.forEach(function(c){
+        html += `• ${c}<br>`;
+      });
+      html += `<b>Answer:</b> ${q.answer}</div>`;
+    });
+  }
+
+  if(generatedSkillClash.points){
+    html += `<p><b>Points:</b><br>${generatedSkillClash.points.join('<br>')}</p>`;
+  }
+
+  html += `<p><b>🔥 Steal Round:</b> ${generatedSkillClash.stealRound}</p>`;
+  html += `</div>`;
+
+  box.innerHTML = html;
+}
+
+function saveSkillClashStation(){
+  if(!generatedSkillClash){
+    alert('Please generate a Skill Clash game first.');
+    return;
+  }
+
+  const station = {
+    id: 'skill_clash',
+    title: '⚔️ Skill Clash',
+    objective: 'Use lesson skills in a fun challenge game.',
+    details: generatedSkillClash.instruction,
+    time: Number(generatedSkillClash.time),
+    marks: 10,
+    type: 'skillClash',
+    game: generatedSkillClash,
+    locked: true,
+    visible: true,
+    questions: []
+  };
+
+  if(!window.stations || !Array.isArray(window.stations)){
+    window.stations = [];
+  }
+
+  const oldIndex = window.stations.findIndex(function(s){
+    return s.id === 'skill_clash';
+  });
+
+  if(oldIndex >= 0){
+    window.stations[oldIndex] = station;
+  }else{
+    window.stations.push(station);
+  }
+
+  if(typeof renderStationList === 'function') renderStationList();
+  if(typeof renderTeacherStations === 'function') renderTeacherStations();
+  if(typeof renderStations === 'function') renderStations();
+
+  if(typeof saveLessonData === 'function'){
+    saveLessonData();
+  }
+
+  alert('⚔️ Skill Clash station saved!');
+}
   
 </script>
 
