@@ -182,7 +182,7 @@ Submit Team Answer
 
 <div id="evaluationPage" class="hidden">
 
-<div id="stage2" class="card hidden">
+<div id="stage2" class="card">
   <h2>⚔️ Peer Evaluation Stage</h2>
 
 <div id="battleDisplay"></div>
@@ -221,8 +221,7 @@ function joinTeam(){
 
   currentTeam = team;
 
-  document.getElementById('writingStage').classList.remove('hidden');
-
+showPage('writingPage');
   let opponent = '';
 
   if(team == 1) opponent = 2;
@@ -278,12 +277,15 @@ gameRef.on('value', function(snapshot){
     || 'writing';
 
   if(stage === 'evaluation'){
-    document.getElementById('stage2')
-      .classList.remove('hidden');
+  showPage('evaluationPage');
+  document.getElementById('stage2').classList.remove('hidden');
+}else{
+  if(currentTeam){
+    showPage('writingPage');
   }else{
-    document.getElementById('stage2')
-      .classList.add('hidden');
+    showPage('joinPage');
   }
+}
 
   let html = '';
 
