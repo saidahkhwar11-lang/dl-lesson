@@ -111,6 +111,7 @@ button{
 
 <div class="container">
 
+<div id="joinPage">
 <div class="card">
 
 <h2>Join Your Team</h2>
@@ -134,6 +135,7 @@ Join Battle
 </button>
 
 </div>
+  </div>
 <div class="card">
   <h2>👩‍🏫 Teacher Control</h2>
 
@@ -151,8 +153,9 @@ Join Battle
   <div id="teacherMsg" class="msg"></div>
 </div>
 
-<div id="writingStage" class="card hidden">
+<div id="writingPage" class="hidden">
 
+<div id="writingStage">  
 <h2 id="battleTitle"></h2>
 
 <div class="topic" id="battleTopic">
@@ -175,9 +178,10 @@ Submit Team Answer
 
 </div>
 
-<div id="stage2" class="card hidden">
+<div id="evaluationPage" class="hidden">
 
-<h2>⚔️ Peer Evaluation Stage</h2>
+<div id="stage2" class="card hidden">
+  <h2>⚔️ Peer Evaluation Stage</h2>
 
 <div id="battleDisplay"></div>
 
@@ -442,6 +446,30 @@ async function resetOpinionBattle(){
 
     document.getElementById('battleDisplay').innerHTML = html;
   });
+}
+
+  function showPage(pageId){
+
+  const pages = [
+    'joinPage',
+    'writingPage',
+    'evaluationPage'
+  ];
+
+  pages.forEach(function(id){
+
+    const el = document.getElementById(id);
+
+    if(el){
+      el.classList.add('hidden');
+    }
+  });
+
+  const target = document.getElementById(pageId);
+
+  if(target){
+    target.classList.remove('hidden');
+  }
 }
 
 </script>
