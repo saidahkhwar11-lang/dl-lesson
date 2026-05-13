@@ -230,6 +230,17 @@ const db = firebase.database();
 const gameRef = db.ref('opinionBattleGame');
 
 let currentTeam = '';
+  const battleTopics = {
+  '1_2': 'Should students have to wear uniforms?',
+
+  '3_4': 'Should we ban homework: does homework promote learning?',
+
+  '5_6': 'Should fast food be allowed in schools?',
+
+  '7_8': 'Should parents decide which career their children will pursue?',
+
+  '9_10': 'The impact of social media on the development of teenage social skills.'
+};
 
 function joinTeam(){
 
@@ -265,6 +276,17 @@ if(team == 8) opponent = 7;
 if(team == 9) opponent = 10;
 if(team == 10) opponent = 9;
 
+  const pairKey =
+  Number(team) < Number(opponent)
+  ? team + '_' + opponent
+  : opponent + '_' + team;
+
+const topic =
+  battleTopics[pairKey] ||
+  'Opinion Battle Topic';
+
+document.getElementById('battleTopic').innerHTML =
+  topic;
   document.getElementById('battleTitle').innerHTML =
     '⚔️ Team ' + team + ' VS Team ' + opponent;
 
