@@ -251,6 +251,7 @@ async function submitBattleAnswer(){
     answer: answer,
     submittedAt: Date.now()
   });
+  loadEvaluationBattles();
 
   const msg = document.getElementById('submitMsg');
 
@@ -336,7 +337,8 @@ function escapeHtml(text){
   }
 
   await gameRef.child('settings/stage').set('evaluation');
-
+loadEvaluationBattles();
+    
   const msg = document.getElementById('teacherMsg');
 
   msg.style.display = 'block';
@@ -425,6 +427,21 @@ async function resetOpinionBattle(){
 
     </div>
   `;
+}
+  function loadEvaluationBattles(){
+
+  gameRef.child('teams').once('value', function(snapshot){
+
+    const data = snapshot.val() || {};
+
+    let html = '';
+
+    html += createBattleEvaluationHtml(data,1,2);
+    html += createBattleEvaluationHtml(data,3,4);
+    html += createBattleEvaluationHtml(data,5,6);
+
+    document.getElementById('battleDisplay').innerHTML = html;
+  });
 }
 
 </script>
