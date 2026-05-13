@@ -42,6 +42,20 @@ h2{
   margin-top:0;
   color:#243b6b;
 }
+  .answerBox{
+  background:#f8fbff;
+  border:1px solid #d6e3fa;
+  border-radius:12px;
+  padding:12px;
+  margin-top:10px;
+
+  max-height:220px;
+  overflow:auto;
+
+  white-space:pre-wrap;
+  word-break:break-word;
+  line-height:1.5;
+}
 
 input, textarea, select{
   width:100%;
@@ -483,9 +497,9 @@ async function resetOpinionBattle(){
             ${escapeHtml(teamA.members || '')}
           </p>
 
-          <p>
-            ${escapeHtml(teamA.answer || '')}
-          </p>
+         <div class="answerBox">
+  ${escapeHtml(teamA.answer || '')}
+</div>
 
           <label>
             <input type="checkbox"
@@ -520,9 +534,9 @@ async function resetOpinionBattle(){
             ${escapeHtml(teamB.members || '')}
           </p>
 
-          <p>
-            ${escapeHtml(teamB.answer || '')}
-          </p>
+         <div class="answerBox">
+  ${escapeHtml(teamB.answer || '')}
+</div>
 
           <label>
             <input type="checkbox"
