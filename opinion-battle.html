@@ -171,8 +171,18 @@ Join Battle
     🗑 Reset Game
   </button>
 
-  <div id="teacherMsg" class="msg"></div>
+ <div id="teacherMsg" class="msg"></div>
+
+<button onclick="showEvaluationResults()">
+  📊 Show Evaluation Results
+</button>
+
+<div id="resultsBox" class="battleBox"></div>
+
 </div>
+  
+
+<div id="resultsBox" class="battleBox"></div>
 
 <div id="writingPage" class="hidden">
 
@@ -740,6 +750,80 @@ function showTeacherControl(){
     msg.style.display = 'block';
     msg.innerHTML = '✅ Evaluation submitted successfully!';
   }
+}
+  function showEvaluationResults(){
+
+  gameRef.child('evaluations').once('value', function(snapshot){
+
+    const data = snapshot.val() || {};
+
+    const totals = {};
+    let voteCount = 0;
+
+    for(let i=1; i<=10; i++){
+      totals[i] = 0;
+    }
+
+    Object.keys(data).forEach(function(battleKey){
+
+      const battle = data[battleKey] || {};
+
+      Object.keys(battle).forEach(function(evalKey){
+
+        const ev = battle[evalKey];
+          voteCount++;
+
+
+        totals[ev.teamA] += Number(ev.scoreA || 0);
+        totals[ev.teamB] += Number(ev.scoreB || 0);
+
+      });
+    });
+
+    let html = `
+      <h3>🏆 Team Results</h3>
+    `;
+
+    const ranking = Object.keys(totals)
+  .map(function(team){
+    return {
+      team: team,
+      score: totals[team]
+    };
+  })
+  .sort(function(a,b){
+    return b.score - a.score;
+  });
+html += `
+  <p>
+    <b>Total Evaluations Submitted:</b>
+    ${voteCount}
+  </p>
+`;
+ranking.forEach(function(item,index){
+
+  let medal = '';
+
+  if(index === 0) medal = '🥇';
+  else if(index === 1) medal = '🥈';
+  else if(index === 2) medal = '🥉';
+
+  html += `
+    <div class="battleBox">
+      <h3>
+        ${medal} Team ${item.team}
+      </h3>
+
+      <p>
+        Total Points:
+        <b>${item.score}</b>
+      </p>
+    </div>
+  `;
+});
+    document.getElementById('resultsBox').innerHTML =
+      html;
+  });
 }
   
 </script>
