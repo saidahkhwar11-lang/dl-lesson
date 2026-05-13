@@ -163,6 +163,12 @@ Join Battle
   <label>Teacher Password</label>
   <input id="teacherPass" type="password" placeholder="Enter teacher password">
 
+  <button onclick="showTeacherPreview()">
+  👀 Preview Team Answers
+</button>
+
+<div id="teacherPreviewBox" class="battleBox"></div>
+  
   <button onclick="openPeerEvaluationStage()">
     🔓 Open Peer Evaluation Stage
   </button>
@@ -823,6 +829,33 @@ ranking.forEach(function(item,index){
 });
     document.getElementById('resultsBox').innerHTML =
       html;
+  });
+}
+  function showTeacherPreview(){
+
+  gameRef.child('teams').once('value', function(snapshot){
+
+    const data = snapshot.val() || {};
+    let html = '<h3>👀 Team Answers Preview</h3>';
+
+    for(let i = 1; i <= 10; i++){
+
+      const team = data['team' + i];
+
+      html += '<div class="battleBox">';
+      html += '<h3>Team ' + i + '</h3>';
+
+      if(team){
+        html += '<p><b>Members:</b> ' + escapeHtml(team.members || '') + '</p>';
+        html += '<div class="answerBox">' + escapeHtml(team.answer || '') + '</div>';
+      }else{
+        html += '<p>❌ Not submitted yet</p>';
+      }
+
+      html += '</div>';
+    }
+
+    document.getElementById('teacherPreviewBox').innerHTML = html;
   });
 }
   
