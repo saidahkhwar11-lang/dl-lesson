@@ -98,7 +98,9 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   <div id="teacherPreview" class="groupGrid"></div>
 
   <h3>🏆 Results</h3>
-  <button onclick="showResults()">📊 Show Results</button>
+<button onclick="startLiveResults()">
+  📊 Show Live Results
+</button>
   <div id="resultsBox"></div>
 </div>
 
@@ -414,6 +416,16 @@ async function submitVote(a,b){
     return;
   }
 
+  const votePath =
+    `votes/battle_${a}_${b}/group${myGroup}`;
+
+  const oldVote = await hubRef.child(votePath).once('value');
+
+  if(oldVote.exists()){
+    alert('✅ Your group already evaluated this battle.');
+    return;
+  }
+
   const winner = document.querySelector(
     'input[name="winner_' + a + '_' + b + '"]:checked'
   );
@@ -442,19 +454,17 @@ async function submitVote(a,b){
     checked('restate_' + a + '_' + b + '_' + b) +
     (Number(winner.value) === b ? 2 : 0);
 
-  await hubRef
-    .child(`votes/battle_${a}_${b}/group${myGroup}`)
-    .set({
-      voterGroup: myGroup,
-      teamA: a,
-      teamB: b,
-      scoreA: scoreA,
-      scoreB: scoreB,
-      winner: Number(winner.value),
-      submittedAt: Date.now()
-    });
+  await hubRef.child(votePath).set({
+    voterGroup: myGroup,
+    teamA: a,
+    teamB: b,
+    scoreA: scoreA,
+    scoreB: scoreB,
+    winner: Number(winner.value),
+    submittedAt: Date.now()
+  });
 
-  alert('✅ Evaluation submitted successfully!');
+  alert('✅ Evaluation submitted successfully! Your vote is now locked.');
 }
 function showResults(){
 
@@ -519,6 +529,7 @@ function showResults(){
       html;
   });
 }
+  
 async function resetHub(){
   if(!checkTeacher()){
     alert('Wrong password.');
@@ -540,6 +551,12 @@ function escapeHtml(text){
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
+}
+
+  function startLiveResults(){
+  hubRef.child('votes').on('value', function(){
+    showResults();
+  });
 }
 </script>
 
