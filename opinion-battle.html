@@ -676,14 +676,16 @@ function showTeacherControl(){
 
   async function submitPeerEvaluation(a, b){
 
-  if(!currentTeam){
+  const myTeam = Number(
+    currentTeam || sessionStorage.getItem('opinionBattleTeam')
+  );
+
+  if(!myTeam){
     alert('Join as a team first.');
     return;
   }
 
-  const myTeam = Number(currentTeam);
-
-  if(myTeam === a || myTeam === b){
+  if(myTeam === Number(a) || myTeam === Number(b)){
     alert('⚠️ Your team cannot evaluate its own battle.');
     return;
   }
@@ -707,14 +709,14 @@ function showTeacherControl(){
     checked('reason_' + a + '_' + b + '_' + a) +
     checked('evidence_' + a + '_' + b + '_' + a) +
     checked('restate_' + a + '_' + b + '_' + a) +
-    (Number(stronger.value) === a ? 2 : 0);
+    (Number(stronger.value) === Number(a) ? 2 : 0);
 
   const scoreB =
     checked('opinion_' + a + '_' + b + '_' + b) +
     checked('reason_' + a + '_' + b + '_' + b) +
     checked('evidence_' + a + '_' + b + '_' + b) +
     checked('restate_' + a + '_' + b + '_' + b) +
-    (Number(stronger.value) === b ? 2 : 0);
+    (Number(stronger.value) === Number(b) ? 2 : 0);
 
   await gameRef
     .child('evaluations/battle_' + a + '_' + b + '/team' + myTeam)
