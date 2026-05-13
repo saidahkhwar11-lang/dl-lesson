@@ -239,6 +239,8 @@ function joinTeam(){
   document.getElementById('battleTitle').innerHTML =
     '⚔️ Team ' + team + ' VS Team ' + opponent;
 
+  document.getElementById('battleAnswer').value = '';
+
   showPage('writingPage');
 }
 async function submitBattleAnswer(){
