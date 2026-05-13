@@ -213,30 +213,34 @@ let currentTeam = '';
 function joinTeam(){
 
   const team = document.getElementById('teamSelect').value;
+  const members = document.getElementById('groupMembers').value.trim();
 
   if(!team){
     alert('Choose your team first.');
     return;
   }
 
+  if(!members){
+    alert('Write group members first.');
+    return;
+  }
+
   currentTeam = team;
 
-showPage('writingPage');
   let opponent = '';
 
   if(team == 1) opponent = 2;
   if(team == 2) opponent = 1;
-
   if(team == 3) opponent = 4;
   if(team == 4) opponent = 3;
-
   if(team == 5) opponent = 6;
   if(team == 6) opponent = 5;
 
   document.getElementById('battleTitle').innerHTML =
     '⚔️ Team ' + team + ' VS Team ' + opponent;
-}
 
+  showPage('writingPage');
+}
 async function submitBattleAnswer(){
 
   const members =
@@ -276,15 +280,15 @@ gameRef.on('value', function(snapshot){
     (game.settings && game.settings.stage)
     || 'writing';
 
-  if(stage === 'evaluation'){
+  if(stage === 'evaluation' && currentTeam){
   showPage('evaluationPage');
   document.getElementById('stage2').classList.remove('hidden');
-}else{
-  if(currentTeam){
-    showPage('writingPage');
-  }else{
-    showPage('joinPage');
-  }
+}
+else if(currentTeam){
+  showPage('writingPage');
+}
+else{
+  showPage('joinPage');
 }
 
   let html = '';
