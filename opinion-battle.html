@@ -134,6 +134,22 @@ Join Battle
 </button>
 
 </div>
+<div class="card">
+  <h2>👩‍🏫 Teacher Control</h2>
+
+  <label>Teacher Password</label>
+  <input id="teacherPass" type="password" placeholder="Enter teacher password">
+
+  <button onclick="openPeerEvaluationStage()">
+    🔓 Open Peer Evaluation Stage
+  </button>
+
+  <button onclick="resetOpinionBattle()" style="background:#b42318;">
+    🗑 Reset Game
+  </button>
+
+  <div id="teacherMsg" class="msg"></div>
+</div>
 
 <div id="writingStage" class="card hidden">
 
@@ -244,17 +260,32 @@ async function submitBattleAnswer(){
     '✅ Team ' + currentTeam + ' submitted successfully!';
 }
 
-gameRef.child('teams').on('value', function(snapshot){
+gameRef.on('value', function(snapshot){
 
-  const data = snapshot.val() || {};
+  const game = snapshot.val() || {};
+
+  const data = game.teams || {};
+
+  const stage =
+    (game.settings && game.settings.stage)
+    || 'writing';
+
+  if(stage === 'evaluation'){
+    document.getElementById('stage2')
+      .classList.remove('hidden');
+  }else{
+    document.getElementById('stage2')
+      .classList.add('hidden');
+  }
 
   let html = '';
 
-  html += createBattleHtml(data,1,2);
-  html += createBattleHtml(data,3,4);
-  html += createBattleHtml(data,5,6);
+  html += createBattleEvaluationHtml(data,1,2);
+  html += createBattleEvaluationHtml(data,3,4);
+  html += createBattleEvaluationHtml(data,5,6);
 
-  document.getElementById('battleDisplay').innerHTML = html;
+  document.getElementById('battleDisplay')
+    .innerHTML = html;
 });
 
 function createBattleHtml(data,a,b){
@@ -292,6 +323,108 @@ function escapeHtml(text){
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
+}
+
+  async function openPeerEvaluationStage(){
+
+  const pass =
+    document.getElementById('teacherPass').value;
+
+  if(pass !== '1234'){
+    alert('Wrong teacher password.');
+    return;
+  }
+
+  await gameRef.child('settings/stage').set('evaluation');
+
+  const msg = document.getElementById('teacherMsg');
+
+  msg.style.display = 'block';
+
+  msg.innerHTML =
+    '✅ Peer Evaluation Stage opened.';
+}
+
+async function resetOpinionBattle(){
+
+  const pass =
+    document.getElementById('teacherPass').value;
+
+  if(pass !== '1234'){
+    alert('Wrong teacher password.');
+    return;
+  }
+
+  if(!confirm('Reset the whole game?')) return;
+
+  await gameRef.set({
+    settings:{
+      stage:'writing'
+    }
+  });
+
+  alert('Game reset.');
+
+  location.reload();
+}
+  function createBattleEvaluationHtml(data,a,b){
+
+  const teamA = data['team' + a];
+  const teamB = data['team' + b];
+
+  if(!teamA || !teamB){
+
+    return `
+      <div class="battleBox">
+        <h3>⚔️ Team ${a} VS Team ${b}</h3>
+        <p>Waiting for both teams...</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="battleBox">
+
+      <h3>
+        ⚔️ Team ${a} VS Team ${b}
+      </h3>
+
+      <div style="
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:15px;
+      ">
+
+        <div>
+          <h4>🔵 Team ${a}</h4>
+
+          <p>
+            <b>Members:</b>
+            ${escapeHtml(teamA.members || '')}
+          </p>
+
+          <p>
+            ${escapeHtml(teamA.answer || '')}
+          </p>
+        </div>
+
+        <div>
+          <h4>🔴 Team ${b}</h4>
+
+          <p>
+            <b>Members:</b>
+            ${escapeHtml(teamB.members || '')}
+          </p>
+
+          <p>
+            ${escapeHtml(teamB.answer || '')}
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+  `;
 }
 
 </script>
