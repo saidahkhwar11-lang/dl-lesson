@@ -3368,9 +3368,16 @@ else{
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
 
-  const skillClashHtml = st.type === 'skillClash'
-  ? renderSkillClashStudentGame(st)
+ const skillClashHtml = st.type === 'skillClash'
+  ? renderSkillClashStudentGame({
+      id: st.id,
+      game: (ct && ct.skillClashGame) ? ct.skillClashGame : st.game
+    })
   : '';
+
+if(st.type === 'skillClash'){
+  questionsHtml = '';
+}
   
   if(st.type === 'skillClash'){
   questionsHtml = '';
@@ -6401,8 +6408,8 @@ async function saveSkillClashStation(){
   }
 
   const station = {
-  id: 'skill_clash',
-  title: '⚔️ Skill Clash',
+id: 'skill_clash_v2',
+    title: '⚔️ Skill Clash',
   objective: 'Use lesson skills in a fun challenge game.',
   details: generatedSkillClash.instruction,
   time: Number(generatedSkillClash.time),
@@ -6426,7 +6433,7 @@ async function saveSkillClashStation(){
   }
 
   const oldIndex = lessonStations.findIndex(function(s){
-    return s.id === 'skill_clash';
+return s.id === 'skill_clash_v2';
   });
 
   if(oldIndex >= 0){
@@ -6438,14 +6445,15 @@ async function saveSkillClashStation(){
   await dbRef(configPath()).set(lessonStations);
   
   if(typeof contentPath === 'function'){
-  await dbRef(contentPath('skill_clash')).set({
+  await dbRef(contentPath('skill_clash_v2')).set({
     sourceText: '',
     questions: [],
     imageUrl: '',
     audioUrl: '',
     videoUrl: '',
     linkUrl: '',
-    links: []
+    links: [],
+    skillClashGame: generatedSkillClash
   });
 }
 
