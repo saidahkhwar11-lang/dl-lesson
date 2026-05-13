@@ -488,6 +488,69 @@ function showTeacherControl(){
   document.getElementById('teacherControl')
     .classList.remove('hidden');
 }
+
+  async function submitPeerEvaluation(a, b){
+
+  if(!currentTeam){
+    alert('Join as a team first.');
+    return;
+  }
+
+  const myTeam = Number(currentTeam);
+
+  if(myTeam === a || myTeam === b){
+    alert('⚠️ Your team cannot evaluate its own battle.');
+    return;
+  }
+
+  const stronger = document.querySelector(
+    'input[name="stronger_' + a + '_' + b + '"]:checked'
+  );
+
+  if(!stronger){
+    alert('Choose the stronger argument.');
+    return;
+  }
+
+  function checked(id){
+    const el = document.getElementById(id);
+    return el && el.checked ? 1 : 0;
+  }
+
+  const scoreA =
+    checked('opinion_' + a + '_' + b + '_' + a) +
+    checked('reason_' + a + '_' + b + '_' + a) +
+    checked('evidence_' + a + '_' + b + '_' + a) +
+    checked('restate_' + a + '_' + b + '_' + a) +
+    (Number(stronger.value) === a ? 2 : 0);
+
+  const scoreB =
+    checked('opinion_' + a + '_' + b + '_' + b) +
+    checked('reason_' + a + '_' + b + '_' + b) +
+    checked('evidence_' + a + '_' + b + '_' + b) +
+    checked('restate_' + a + '_' + b + '_' + b) +
+    (Number(stronger.value) === b ? 2 : 0);
+
+  await gameRef
+    .child('evaluations/battle_' + a + '_' + b + '/team' + myTeam)
+    .set({
+      evaluatorTeam: myTeam,
+      battle: a + '_vs_' + b,
+      teamA: a,
+      teamB: b,
+      scoreA: scoreA,
+      scoreB: scoreB,
+      stronger: Number(stronger.value),
+      submittedAt: Date.now()
+    });
+
+  const msg = document.getElementById('evalMsg_' + a + '_' + b);
+
+  if(msg){
+    msg.style.display = 'block';
+    msg.innerHTML = '✅ Evaluation submitted successfully!';
+  }
+}
   
 </script>
 
