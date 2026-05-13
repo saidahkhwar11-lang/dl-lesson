@@ -137,11 +137,15 @@ button{
 <select id="teamSelect">
   <option value="">Choose Team</option>
   <option value="1">Team 1</option>
-  <option value="2">Team 2</option>
-  <option value="3">Team 3</option>
-  <option value="4">Team 4</option>
-  <option value="5">Team 5</option>
-  <option value="6">Team 6</option>
+<option value="2">Team 2</option>
+<option value="3">Team 3</option>
+<option value="4">Team 4</option>
+<option value="5">Team 5</option>
+<option value="6">Team 6</option>
+<option value="7">Team 7</option>
+<option value="8">Team 8</option>
+<option value="9">Team 9</option>
+<option value="10">Team 10</option>
 </select>
 
 <label>Group Members</label>
@@ -247,11 +251,19 @@ function joinTeam(){
   let opponent = '';
 
   if(team == 1) opponent = 2;
-  if(team == 2) opponent = 1;
-  if(team == 3) opponent = 4;
-  if(team == 4) opponent = 3;
-  if(team == 5) opponent = 6;
-  if(team == 6) opponent = 5;
+if(team == 2) opponent = 1;
+
+if(team == 3) opponent = 4;
+if(team == 4) opponent = 3;
+
+if(team == 5) opponent = 6;
+if(team == 6) opponent = 5;
+
+if(team == 7) opponent = 8;
+if(team == 8) opponent = 7;
+
+if(team == 9) opponent = 10;
+if(team == 10) opponent = 9;
 
   document.getElementById('battleTitle').innerHTML =
     '⚔️ Team ' + team + ' VS Team ' + opponent;
@@ -313,8 +325,10 @@ else{
   let html = '';
 
   html += createBattleEvaluationHtml(data,1,2);
-  html += createBattleEvaluationHtml(data,3,4);
-  html += createBattleEvaluationHtml(data,5,6);
+html += createBattleEvaluationHtml(data,3,4);
+html += createBattleEvaluationHtml(data,5,6);
+html += createBattleEvaluationHtml(data,7,8);
+html += createBattleEvaluationHtml(data,9,10);
 
   document.getElementById('battleDisplay')
     .innerHTML = html;
