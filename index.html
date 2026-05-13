@@ -3371,17 +3371,14 @@ else{
  const skillClashHtml = st.type === 'skillClash'
   ? renderSkillClashStudentGame({
       id: st.id,
-      game: (ct && ct.skillClashGame) ? ct.skillClashGame : st.game
+      game: ct.skillClashGame
     })
   : '';
 
 if(st.type === 'skillClash'){
   questionsHtml = '';
 }
-  
-  if(st.type === 'skillClash'){
-  questionsHtml = '';
-}
+
   
   byId('stationContent').innerHTML =
    '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">' +
@@ -6407,45 +6404,33 @@ async function saveSkillClashStation(){
     return;
   }
 
-  const station = {
-id: 'skill_clash_v2',
-    title: '⚔️ Skill Clash',
-  objective: 'Use lesson skills in a fun challenge game.',
-  details: generatedSkillClash.instruction,
-  time: Number(generatedSkillClash.time),
-  marks: 10,
-  type: 'skillClash',
-  game: generatedSkillClash,
-  locked: true,
-  visible: true,
-  questions: [],
-  sourceText: '',
-  imageUrl: '',
-  audioUrl: '',
-  videoUrl: '',
-  linkUrl: '',
-  links: []
-};
+  const skillId = 'skill_clash';
 
-  if(typeof lessonStations === 'undefined' || !Array.isArray(lessonStations)){
-    alert('I could not find lessonStations.');
-    return;
+  const station = {
+    id: skillId,
+    title: '⚔️ Skill Clash',
+    objective: 'Use lesson skills in a fun challenge game.',
+    details: generatedSkillClash.instruction,
+    time: Number(generatedSkillClash.time),
+    marks: 10,
+    type: 'skillClash',
+    locked: false,
+    visible: true
+  };
+
+  if(!Array.isArray(lessonStations)){
+    lessonStations = [];
   }
 
-  const oldIndex = lessonStations.findIndex(function(s){
-return s.id === 'skill_clash_v2';
+  lessonStations = lessonStations.filter(function(s){
+    return s.id !== skillId;
   });
 
-  if(oldIndex >= 0){
-    lessonStations[oldIndex] = station;
-  }else{
-    lessonStations.push(station);
-  }
+  lessonStations.push(station);
 
   await dbRef(configPath()).set(lessonStations);
-  
-  if(typeof contentPath === 'function'){
-  await dbRef(contentPath('skill_clash_v2')).set({
+
+  await dbRef(contentPath(skillId)).set({
     sourceText: '',
     questions: [],
     imageUrl: '',
@@ -6455,17 +6440,13 @@ return s.id === 'skill_clash_v2';
     links: [],
     skillClashGame: generatedSkillClash
   });
-}
 
-  if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
-  if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
-  if(typeof renderControlStatus === 'function') renderControlStatus();
-  if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
-  if(typeof renderStudentNav === 'function') renderStudentNav();
+  fillTeacherSelects();
+  renderTeacherOverview();
+  renderControlStatus();
+  renderStudentNav();
 
-  currentOpenStation = '';
-
-  alert('⚔️ Skill Clash station saved!');
+  alert('⚔️ Skill Clash saved!');
 }
 </script>
 
