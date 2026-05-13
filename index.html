@@ -3372,6 +3372,10 @@ else{
   ? renderSkillClashStudentGame(st)
   : '';
   
+  if(st.type === 'skillClash'){
+  questionsHtml = '';
+}
+  
   byId('stationContent').innerHTML =
    '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">' +
   '<h2 style="margin:0; flex:1;">' + escapeHtml(st.title) + '</h2>' +
