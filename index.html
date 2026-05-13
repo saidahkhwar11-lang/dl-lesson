@@ -6401,17 +6401,24 @@ async function saveSkillClashStation(){
   }
 
   const station = {
-    id: 'skill_clash',
-    title: '⚔️ Skill Clash',
-    objective: 'Use lesson skills in a fun challenge game.',
-    details: generatedSkillClash.instruction,
-    time: Number(generatedSkillClash.time),
-    marks: 10,
-    type: 'skillClash',
-    game: generatedSkillClash,
-    locked: true,
-    visible: true
-  };
+  id: 'skill_clash',
+  title: '⚔️ Skill Clash',
+  objective: 'Use lesson skills in a fun challenge game.',
+  details: generatedSkillClash.instruction,
+  time: Number(generatedSkillClash.time),
+  marks: 10,
+  type: 'skillClash',
+  game: generatedSkillClash,
+  locked: true,
+  visible: true,
+  questions: [],
+  sourceText: '',
+  imageUrl: '',
+  audioUrl: '',
+  videoUrl: '',
+  linkUrl: '',
+  links: []
+};
 
   if(typeof lessonStations === 'undefined' || !Array.isArray(lessonStations)){
     alert('I could not find lessonStations.');
@@ -6429,6 +6436,18 @@ async function saveSkillClashStation(){
   }
 
   await dbRef(configPath()).set(lessonStations);
+  
+  if(typeof contentPath === 'function'){
+  await dbRef(contentPath('skill_clash')).set({
+    sourceText: '',
+    questions: [],
+    imageUrl: '',
+    audioUrl: '',
+    videoUrl: '',
+    linkUrl: '',
+    links: []
+  });
+}
 
   if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
   if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
