@@ -3368,6 +3368,10 @@ else{
     ? '<div class="notice good">This station has already been submitted. Answers are saved and cannot be changed.</div>'
     : '';
 
+  const skillClashHtml = st.type === 'skillClash'
+  ? renderSkillClashStudentGame(st)
+  : '';
+  
   byId('stationContent').innerHTML =
    '<div style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:8px;">' +
   '<h2 style="margin:0; flex:1;">' + escapeHtml(st.title) + '</h2>' +
@@ -3379,8 +3383,9 @@ studentLessonBox +
     imageBlock +
     audioBlock +
     videoBlock +
-    linkBlock +
-    '<div class="station-result">Your result in this station: ' + resultText + '</div>' +
+   linkBlock +
+skillClashHtml +
+'<div class="station-result">Your result in this station: ' + resultText + '</div>' +
     submittedNote +
 questionsHtml +
 actionBtns;
