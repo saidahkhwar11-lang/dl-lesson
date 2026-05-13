@@ -108,6 +108,9 @@ button{
 <div class="topbar">
 ⚔️ Opinion Battle
 </div>
+<button onclick="showTeacherControl()" style="width:auto;margin:15px;">
+  👩‍🏫 Teacher
+</button>
 
 <div class="container">
 
@@ -136,7 +139,7 @@ Join Battle
 
 </div>
   </div>
-<div class="card">
+<div id="teacherControl" class="card hidden">
   <h2>👩‍🏫 Teacher Control</h2>
 
   <label>Teacher Password</label>
@@ -481,7 +484,11 @@ async function resetOpinionBattle(){
     target.classList.remove('hidden');
   }
 }
-
+function showTeacherControl(){
+  document.getElementById('teacherControl')
+    .classList.remove('hidden');
+}
+  
 </script>
 
 </body>
