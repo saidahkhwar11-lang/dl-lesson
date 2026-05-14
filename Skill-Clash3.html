@@ -757,8 +757,76 @@ if(studentResults){
   if(released){
 
     studentResults.classList.remove('hidden');
-    studentResults.innerHTML =
-      '🏆 Results have been released by the teacher.';
+
+    const votes =
+  classData.votes || {};
+
+const scores = {};
+
+for(let i=1;i<=10;i++){
+  scores[i] = 0;
+}
+
+Object.keys(votes).forEach(battleKey=>{
+
+  const battle = votes[battleKey] || {};
+
+  Object.keys(battle).forEach(voteKey=>{
+
+    const v = battle[voteKey];
+
+    scores[v.teamA] += Number(v.scoreA || 0);
+    scores[v.teamB] += Number(v.scoreB || 0);
+
+  });
+});
+
+const ranking =
+  Object.keys(scores)
+    .map(team=>({
+      team: team,
+      score: scores[team]
+    }))
+    .sort((a,b)=>b.score-a.score);
+
+let html =
+  '<h3>🏆 Final Ranking</h3>';
+
+ranking.slice(0,3).forEach((item,index)=>{
+
+  let medal = '🏅';
+
+  if(index === 0) medal = '🥇';
+  else if(index === 1) medal = '🥈';
+  else if(index === 2) medal = '🥉';
+
+  html += `
+    <div class="soft">
+      <h3>
+        ${medal} Group ${item.team}
+      </h3>
+
+      <p>
+        Total Votes:
+        <b>${item.score}</b>
+      </p>
+    </div>
+  `;
+});
+
+const myRank =
+  ranking.findIndex(r =>
+    String(r.team) === String(currentGroup)
+  ) + 1;
+
+html += `
+  <div class="soft">
+    🎯 Your Group Rank:
+    <b>#${myRank}</b>
+  </div>
+`;
+
+studentResults.innerHTML = html;
 
   } else {
 
