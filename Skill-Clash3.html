@@ -1309,6 +1309,16 @@ function escapeHtml(text){
 });
 
   function leaveGroup(){
+  goToStudentLogin();
+}
+
+  function leaveTeacher(){
+
+  document.getElementById('teacherPass').value = '';
+
+  goToStudentLogin();
+}
+  function goToStudentLogin(){
 
   sessionStorage.removeItem('skillClashGroup');
   sessionStorage.removeItem('skillClashStudent');
@@ -1318,11 +1328,9 @@ function escapeHtml(text){
   currentStudent = '';
   currentClass = '';
 
-  location.reload();
-}
-  function leaveTeacher(){
-
-  document.getElementById('teacherPass').value = '';
+  if(currentGroupRef){
+    currentGroupRef.off();
+  }
 
   showPage('studentPage');
 }
