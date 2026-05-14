@@ -88,7 +88,27 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   align-items:center;
   flex-wrap:wrap;
 }
+.resultPopup{
+  position:fixed;
+  top:90px;
+  right:30px;
+  width:330px;
+  max-height:75vh;
+  overflow:auto;
+  background:white;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.18);
+  z-index:999;
+}
 
+.resultMini{
+  background:#eef4ff;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+  font-size:14px;
+}
   .myBox{
   border:2px solid #247a3d;
   background:#f0fff4;
@@ -1177,7 +1197,7 @@ const percent =
   Math.round((item.score / maxScore) * 100);
 
       html += `
-        <div class="soft">
+<div class="resultMini">
           <h3>
             ${medal} Group ${item.team}
           </h3>
@@ -1198,8 +1218,11 @@ const percent =
       `;
     });
 
-    document.getElementById('resultsBox').innerHTML =
-      html;
+   document.getElementById('resultsBox').innerHTML =
+  '<div class="resultPopup">' +
+  '<button onclick="document.getElementById(\'resultsBox\').innerHTML=\'\'" class="red">✖ Close</button>' +
+  html +
+  '</div>';
   });
 }
 
