@@ -60,9 +60,75 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <div class="container">
 
-<div class="btnRow">
-  <button onclick="showPage('studentPage')">🎮 Student</button>
-  <button onclick="showPage('teacherPage')">👩‍🏫 Teacher Dashboard</button>
+<div class="groupGrid">
+
+  <div class="soft">
+    <h3>⚙️ Activity Controls</h3>
+
+    <button onclick="saveActivitySettings()">
+      💾 Save Activity
+    </button>
+
+    <button onclick="showTeacherPreview()">
+      👀 Preview Group Work
+    </button>
+  </div>
+
+  <div class="soft">
+    <h3>🚦 Stage Controls</h3>
+
+    <button onclick="openWorkStage()" class="green">
+      ✍️ Open Work Stage
+    </button>
+
+    <button onclick="openVotingStage()">
+      🗳 Open Voting Stage
+    </button>
+  </div>
+
+  <div class="soft">
+    <h3>⏱ Timer Controls</h3>
+
+    <button onclick="startActivityTimer()" class="green">
+      ⏱ Start Timer
+    </button>
+
+    <button onclick="stopActivityTimer()" class="red">
+      ⏹ Stop Timer
+    </button>
+
+    <div class="soft">
+      ⏱ Teacher Timer:
+      <b id="teacherTimerDisplay">Not started</b>
+    </div>
+  </div>
+
+  <div class="soft">
+
+    <h3>🏆 Results</h3>
+
+<button onclick="startLiveResults()">
+  📊 Show Live Results
+</button>
+
+<button onclick="showResults()">
+  🏅 Refresh Results
+</button>
+
+<button onclick="releaseResults()" class="green">
+  🏆 Release Results to Students
+</button>
+    
+  </div>
+
+  <div class="soft">
+    <h3>⚠️ Danger Zone</h3>
+
+    <button onclick="resetHub()" class="red">
+      🗑 Reset Class
+    </button>
+  </div>
+
 </div>
 
 <div id="studentPage" class="card">
@@ -98,6 +164,9 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <div id="workPage" class="card hidden">
   <h2 id="workTitle">Group Work</h2>
+  <div class="soft" id="studentGroupInfo">
+  Group info will appear here.
+</div>
   <div class="soft" id="groupTopic">Topic will appear here.</div>
 
   <div class="soft">
@@ -121,6 +190,9 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 <textarea id="groupAnswer" placeholder="Final group answer will appear here..." readonly></textarea>
 
 <div id="submitMsg" class="soft hidden"></div>
+  <div id="studentResultsBox" class="soft hidden">
+  🏆 Results not released yet.
+</div>
 </div>
 
 <div id="votePage" class="card hidden">
@@ -433,6 +505,17 @@ currentGroupRef = hubRef.child(
 
     if(data){
       window.groupFinalSubmitted = data.finalSubmitted === true;
+      const names = data.members || '';
+
+const totalVotes = data.totalVotes || 0;
+
+document.getElementById('studentGroupInfo').innerHTML =
+  '<b>Group ' + currentGroup + '</b> | ' +
+  'Total Votes: <b>' + totalVotes + '</b> | Members: ' +
+  names.replace(
+    currentStudent,
+    '<span style="color:red;font-weight:bold;">' + currentStudent + '</span>'
+  );
 
   document.getElementById('groupMembers').value = data.members || '';
   document.getElementById('groupAnswer').value = data.answer || '';
@@ -663,10 +746,40 @@ hubRef.on('value', snap=>{
   const stage =
     classData.settings?.stage || 'work';
 
-  if(currentGroup && stage === 'voting'){
+  const released =
+  classData.settings?.resultsReleased === true;
+
+const studentResults =
+  document.getElementById('studentResultsBox');
+
+if(studentResults){
+
+  if(released){
+
+    studentResults.classList.remove('hidden');
+    studentResults.innerHTML =
+      '🏆 Results have been released by the teacher.';
+
+  } else {
+
+    studentResults.classList.add('hidden');
+
+  }
+}
+
+ if(currentGroup){
+
+  if(stage === 'voting'){
+
     buildVoting(classData.groups || {});
     showPage('votePage');
+
+  } else {
+
+    showPage('workPage');
+
   }
+}
 });
 
 function buildVoting(groups){
@@ -971,6 +1084,25 @@ const percent =
       html;
   });
 }
+
+async function releaseResults(){
+
+  if(!checkTeacherPassword()) return;
+
+  const className =
+    document.getElementById('teacherClassName').value;
+
+  if(!className){
+    alert('Choose class first.');
+    return;
+  }
+
+  await hubRef.child(
+    'classes/' + className + '/settings/resultsReleased'
+  ).set(true);
+
+  alert('Results released to students.');
+}
   
 async function resetHub(){
 
@@ -1030,6 +1162,39 @@ function escapeHtml(text){
     showResults();
   });
 }
+
+  window.addEventListener('load', function(){
+
+  if(currentClass){
+    const classSelect =
+      document.getElementById('className');
+
+    if(classSelect){
+      classSelect.value = currentClass;
+    }
+  }
+
+  if(currentGroup){
+    const groupSelect =
+      document.getElementById('studentGroup');
+
+    if(groupSelect){
+      groupSelect.value = currentGroup;
+    }
+  }
+
+  if(currentStudent){
+
+    const studentInput =
+      document.getElementById('studentName');
+
+    if(studentInput){
+      studentInput.value = currentStudent;
+    }
+  }
+
+});
+  
 </script>
 
 </body>
