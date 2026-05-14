@@ -125,6 +125,19 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
   <label>Activity Instructions</label>
   <textarea id="activityInstructions">Write a clear opinion paragraph. Remember: opinion, reason, evidence/example, and restated opinion.</textarea>
+  <label>Group Topics</label>
+<textarea id="activityTopics">
+1: Should students have to wear uniforms?
+2: Should students have to wear uniforms?
+3: Should we ban homework?
+4: Should we ban homework?
+5: Should fast food be allowed in schools?
+6: Should fast food be allowed in schools?
+7: Should parents decide their children’s career?
+8: Should parents decide their children’s career?
+9: The impact of social media on teenage social skills.
+10: The impact of social media on teenage social skills.
+</textarea>
 
   <div class="btnRow">
     <button onclick="saveActivitySettings()">💾 Save Activity</button>
@@ -165,7 +178,7 @@ let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
   let currentStudent =
   sessionStorage.getItem('skillClashStudent') || '';
 
-const topics = {
+let topics = {
   1:'Should students have to wear uniforms?',
   2:'Should students have to wear uniforms?',
   3:'Should we ban homework?',
@@ -177,6 +190,22 @@ const topics = {
   9:'The impact of social media on teenage social skills.',
   10:'The impact of social media on teenage social skills.'
 };
+
+  function parseTopics(text){
+  const next = {};
+
+  String(text || '').split('\n').forEach(line=>{
+    const parts = line.split(':');
+    const num = parts.shift()?.trim();
+    const topic = parts.join(':').trim();
+
+    if(num && topic){
+      next[num] = topic;
+    }
+  });
+
+  return next;
+}
 
 function showPage(id){
   ['studentPage','workPage','votePage','teacherPage'].forEach(p=>{
@@ -377,10 +406,21 @@ async function saveMyStudentWork(){
 async function saveActivitySettings(){
   if(!checkTeacherPassword()) return;
 
-  await hubRef.child('settings').update({
-    title: document.getElementById('activityTitle').value,
-    instructions: document.getElementById('activityInstructions').value
-  });
+ topics = parseTopics(
+  document.getElementById('activityTopics').value
+);
+
+await hubRef.child('settings').update({
+
+  title:
+    document.getElementById('activityTitle').value,
+
+  instructions:
+    document.getElementById('activityInstructions').value,
+
+  topics: topics
+
+});
 
   alert('Activity saved.');
 }
@@ -429,6 +469,9 @@ function showTeacherPreview(){
 hubRef.on('value', snap=>{
   const game = snap.val() || {};
   const stage = game.settings?.stage || 'work';
+  if(game.settings && game.settings.topics){
+  topics = game.settings.topics;
+}
 
   if(currentGroup && stage === 'voting'){
     buildVoting(game.groups || {});
