@@ -25,6 +25,21 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 .groupGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
 .answerBox{background:#f8fbff;border:1px solid #d6e3fa;border-radius:12px;padding:12px;margin-top:10px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}
 .badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:6px 10px;margin:4px}
+  .resultBar{
+  width:100%;
+  height:18px;
+  background:#dbe6f8;
+  border-radius:999px;
+  overflow:hidden;
+  margin-top:8px;
+}
+
+.resultFill{
+  height:100%;
+  background:#243b6b;
+  border-radius:999px;
+  transition:0.3s;
+}
 </style>
 </head>
 
@@ -53,9 +68,12 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   </select>
 
   <label>Group Members</label>
-  <input id="groupMembers" placeholder="Write group members">
+<input id="groupMembers" placeholder="Write group members">
 
-  <button onclick="joinGroup()">Join Activity</button>
+<label>Student Name</label>
+<input id="studentName" placeholder="Write your name">
+
+<button onclick="joinGroup()">Join Activity</button>
 </div>
 
 <div id="workPage" class="card hidden">
@@ -122,6 +140,8 @@ const hubRef = db.ref('skillClashHub_1');
   let currentGroupRef = null;
   
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
+  let currentStudent =
+  sessionStorage.getItem('skillClashStudent') || '';
 
 const topics = {
   1:'Should students have to wear uniforms?',
@@ -162,14 +182,21 @@ function joinGroup(){
 
   const group = document.getElementById('studentGroup').value;
   const members = document.getElementById('groupMembers').value.trim();
+  const studentName =
+  document.getElementById('studentName').value.trim();
 
-  if(!group || !members){
-    alert('Choose group and write members.');
+if(!group || !members || !studentName){
+  alert('Choose group and write members.');
     return;
   }
 
   currentGroup = group;
+currentStudent = studentName;
 
+sessionStorage.setItem(
+  'skillClashStudent',
+  studentName
+);
   sessionStorage.setItem('skillClashGroup', group);
 
   loadGroupWork();
@@ -278,7 +305,12 @@ function showTeacherPreview(){
         ${g ? `
           <p><b>Members:</b> ${escapeHtml(g.members || '')}</p>
           <p><b>Topic:</b> ${escapeHtml(g.topic || topics[i] || '')}</p>
-          <div class="answerBox">${escapeHtml(g.answer || 'Not submitted yet')}</div>
+<div class="answerBox">${escapeHtml(g.answer || 'Not submitted yet')}</div>
+
+<p>
+  🤖 AI Feedback:
+  <b>${generateFeedback(g.answer || '')}</b>
+</p>
         ` : `<p>❌ Not joined yet</p>`}
       </div>`;
     }
@@ -347,6 +379,11 @@ function buildVoting(groups){
               ${escapeHtml(ga.answer)}
             </div>
 
+            <p>
+  🤖 AI Feedback:
+  <b>${generateFeedback(ga.answer)}</b>
+</p>
+
             <label>
               <input type="checkbox"
               id="opinion_${a}_${b}_${a}">
@@ -378,6 +415,11 @@ function buildVoting(groups){
             <div class="answerBox">
               ${escapeHtml(gb.answer)}
             </div>
+
+            <p>
+  🤖 AI Feedback:
+  <b>${generateFeedback(ga.answer)}</b>
+</p>
 
             <label>
               <input type="checkbox"
@@ -455,7 +497,7 @@ async function submitVote(a,b){
   }
 
   const votePath =
-    `votes/battle_${a}_${b}/group${myGroup}`;
+  `votes/battle_${a}_${b}/${currentStudent}`;
 
   const oldVote = await hubRef.child(votePath).once('value');
 
@@ -549,16 +591,29 @@ function showResults(){
       else if(index === 1) medal = '🥈';
       else if(index === 2) medal = '🥉';
 
+      const maxScore = ranking[0]?.score || 1;
+
+const percent =
+  Math.round((item.score / maxScore) * 100);
+
       html += `
         <div class="soft">
           <h3>
             ${medal} Group ${item.team}
           </h3>
 
-          <p>
-            Total Score:
-            <b>${item.score}</b>
-          </p>
+         <p>
+  Total Score:
+  <b>${item.score}</b>
+</p>
+
+<div class="resultBar">
+  <div class="resultFill"
+       style="width:${percent}%">
+  </div>
+</div>
+
+<p>${percent}%</p>
         </div>
       `;
     });
@@ -587,6 +642,28 @@ function escapeHtml(text){
     .replace(/&/g,'&amp;')
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
+}
+  function generateFeedback(text){
+
+  text = String(text || '').toLowerCase();
+
+  let score = 0;
+
+  if(text.includes('because')) score++;
+  if(text.includes('for example')) score++;
+  if(text.includes('i think')) score++;
+  if(text.includes('in my opinion')) score++;
+  if(text.length > 180) score++;
+
+  if(score <= 1){
+    return '⚠️ Try adding clearer reasons and examples.';
+  }
+
+  if(score <= 3){
+    return '👍 Good argument. Try improving explanation depth.';
+  }
+
+  return '🔥 Strong opinion paragraph with clear support and explanation!';
 }
 
   function startLiveResults(){
