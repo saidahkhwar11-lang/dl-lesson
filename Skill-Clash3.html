@@ -533,9 +533,7 @@ currentGroupRef = hubRef.child(
 
     if(data){
       window.groupFinalSubmitted = data.finalSubmitted === true;
-      const badge = window.groupFinalSubmitted
-  ? ' <span style="background:#d1fae5;color:#065f46;padding:5px 10px;border-radius:999px;font-weight:bold;">✅ Final Submitted</span>'
-  : ' <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:999px;font-weight:bold;">✍️ In Progress</span>';
+     
       const names = data.members || '';
 
 const totalVotes = data.totalVotes || 0;
@@ -1334,6 +1332,22 @@ function escapeHtml(text){
   }
 
   showPage('studentPage');
+}
+  let teacherLoggedIn = false;
+
+function loginTeacher(){
+
+  const pass = document.getElementById('teacherLoginPass').value;
+
+  if(pass !== 'Welcome@2020'){
+    alert('Incorrect teacher password.');
+    return;
+  }
+
+  teacherLoggedIn = true;
+  document.getElementById('teacherPass').value = pass;
+
+  showPage('teacherPage');
 }
   
 </script>
