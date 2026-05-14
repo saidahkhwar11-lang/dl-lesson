@@ -868,13 +868,30 @@ studentResults.innerHTML = html;
 }
 
 if(currentGroup && currentClass){
-  
+
   if(stage === 'voting'){
 
     buildVoting(classData.groups || {});
+
+    if(!document.getElementById('studentPage').classList.contains('hidden')){
+      return;
+    }
+
+    if(!document.getElementById('teacherLoginPage').classList.contains('hidden')){
+      return;
+    }
+
+    if(!document.getElementById('teacherPage').classList.contains('hidden')){
+      return;
+    }
+
     showPage('votePage');
 
   } else {
+
+    if(!document.getElementById('studentPage').classList.contains('hidden')){
+      return;
+    }
 
     showPage('workPage');
 
@@ -917,15 +934,16 @@ function buildVoting(groups){
     }
 
     html += `
-      <div class="card">
+      <div class="battleCard">
 
         <h3>
           ⚔️ Group ${a} VS Group ${b}
         </h3>
 
-        <div class="groupGrid">
+        <div class="battleGrid">
 
           <div>
+
             <h3>🔵 Group ${a}</h3>
 
             <div class="answerBox">
@@ -933,46 +951,54 @@ function buildVoting(groups){
             </div>
 
             <p>
-  🤖 AI Feedback:
-  <b>${generateFeedback(ga.answer)}</b>
-</p>
+              🤖 AI Feedback:
+              <b>${generateFeedback(ga.answer)}</b>
+            </p>
 
-           <div class="voteSection">
+            <div class="voteSection">
 
-  <div class="voteCriteria">
-    <label>
-      <input type="checkbox"
-      id="opinion_${a}_${b}_${a}">
-      Opinion
-    </label>
-  </div>
+              <div class="voteCriteria">
+                <label>
+                  Opinion
+                  <input type="checkbox"
+                  id="opinion_${a}_${b}_${a}">
+                </label>
+              </div>
 
-  <div class="voteCriteria">
-    <label>
-      <input type="checkbox"
-      id="reason_${a}_${b}_${a}">
-      Reason
-    </label>
-  </div>
+              <div class="voteCriteria">
+                <label>
+                  Reason
+                  <input type="checkbox"
+                  id="reason_${a}_${b}_${a}">
+                </label>
+              </div>
 
-  <div class="voteCriteria">
-    <label>
-      <input type="checkbox"
-      id="example_${a}_${b}_${a}">
-      Example / Evidence
-    </label>
-  </div>
+              <div class="voteCriteria">
+                <label>
+                  Example / Evidence
+                  <input type="checkbox"
+                  id="example_${a}_${b}_${a}">
+                </label>
+              </div>
 
-  <div class="voteCriteria">
-    <label>
-      <input type="checkbox"
-      id="restate_${a}_${b}_${a}">
-      Restated Opinion
-    </label>
-  </div>
+              <div class="voteCriteria">
+                <label>
+                  Restated Opinion
+                  <input type="checkbox"
+                  id="restate_${a}_${b}_${a}">
+                </label>
+              </div>
 
-</div>
+            </div>
+
+          </div>
+
+          <div class="vsBox">
+            VS
+          </div>
+
           <div>
+
             <h3>🔴 Group ${b}</h3>
 
             <div class="answerBox">
@@ -980,62 +1006,77 @@ function buildVoting(groups){
             </div>
 
             <p>
-  🤖 AI Feedback:
-  <b>${generateFeedback(ga.answer)}</b>
-</p>
+              🤖 AI Feedback:
+              <b>${generateFeedback(gb.answer)}</b>
+            </p>
 
-            <label>
-              <input type="checkbox"
-              id="opinion_${a}_${b}_${b}">
-              Opinion
-            </label><br>
+            <div class="voteSection">
 
-            <label>
-              <input type="checkbox"
-              id="reason_${a}_${b}_${b}">
-              Reason
-            </label><br>
+              <div class="voteCriteria">
+                <label>
+                  Opinion
+                  <input type="checkbox"
+                  id="opinion_${a}_${b}_${b}">
+                </label>
+              </div>
 
-            <label>
-              <input type="checkbox"
-              id="example_${a}_${b}_${b}">
-              Example / Evidence
-            </label><br>
+              <div class="voteCriteria">
+                <label>
+                  Reason
+                  <input type="checkbox"
+                  id="reason_${a}_${b}_${b}">
+                </label>
+              </div>
 
-            <label>
-              <input type="checkbox"
-              id="restate_${a}_${b}_${b}">
-              Restated Opinion
-            </label>
+              <div class="voteCriteria">
+                <label>
+                  Example / Evidence
+                  <input type="checkbox"
+                  id="example_${a}_${b}_${b}">
+                </label>
+              </div>
+
+              <div class="voteCriteria">
+                <label>
+                  Restated Opinion
+                  <input type="checkbox"
+                  id="restate_${a}_${b}_${b}">
+                </label>
+              </div>
+
+            </div>
+
           </div>
 
         </div>
 
-        <hr>
+        <div class="voteWinner">
 
-       <h3>💪 Stronger Group</h3>
+          <b>💪 Stronger Group:</b>
 
-<div class="voteWinner">
+          <label>
+            <input type="radio"
+            name="winner_${a}_${b}"
+            value="${a}">
+            🔵 Group ${a}
+          </label>
 
-  <label>
-    <input type="radio"
-    name="winner_${a}_${b}"
-    value="${a}">
-    🟦 Group ${a}
-  </label>
+          <label>
+            <input type="radio"
+            name="winner_${a}_${b}"
+            value="${b}">
+            🔴 Group ${b}
+          </label>
 
-  <label>
-    <input type="radio"
-    name="winner_${a}_${b}"
-    value="${b}">
-    🟥 Group ${b}
-  </label>
+        </div>
 
-</div>
+        <div style="text-align:center;margin-top:18px;">
 
-        <button onclick="submitVote(${a},${b})">
-          Submit Evaluation
-        </button>
+          <button onclick="submitVote(${a},${b})">
+            Submit Evaluation
+          </button>
+
+        </div>
 
       </div>
     `;
@@ -1044,6 +1085,7 @@ function buildVoting(groups){
   document.getElementById('voteArea').innerHTML =
     html || '<p>No battles ready yet.</p>';
 }
+  
 async function submitVote(a,b){
 
   const myGroup = Number(
