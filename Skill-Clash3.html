@@ -323,6 +323,7 @@ let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
 
   let timerInterval = null;
 let timerEndTime = 0;
+  let currentBattleIndex = 0;
 
 let topics = {
   1:'Should students have to wear uniforms?',
@@ -907,11 +908,7 @@ function buildVoting(groups){
     [5,6],
     [7,8],
     [9,10]
-  ];
-
-  let html = '';
-
-  battles.forEach(pair=>{
+  ].filter(pair=>{
 
     const a = pair[0];
     const b = pair[1];
@@ -920,170 +917,195 @@ function buildVoting(groups){
       Number(currentGroup) === a ||
       Number(currentGroup) === b
     ){
-      return;
+      return false;
     }
 
     const ga = groups['group'+a];
     const gb = groups['group'+b];
 
-    if(
-      !ga || !gb ||
-      !ga.answer || !gb.answer
-    ){
-      return;
-    }
+    return ga && gb && ga.answer && gb.answer;
+  });
 
-    html += `
-      <div class="battleCard">
+  if(!battles.length){
+    document.getElementById('voteArea').innerHTML =
+      '<p>No battles ready yet.</p>';
+    return;
+  }
 
-        <h3>
-          ⚔️ Group ${a} VS Group ${b}
-        </h3>
+  if(currentBattleIndex >= battles.length){
+    currentBattleIndex = 0;
+  }
 
-        <div class="battleGrid">
+  const pair = battles[currentBattleIndex];
 
-          <div>
+  const a = pair[0];
+  const b = pair[1];
 
-            <h3>🔵 Group ${a}</h3>
+  const ga = groups['group'+a];
+  const gb = groups['group'+b];
 
-            <div class="answerBox">
-              ${escapeHtml(ga.answer)}
-            </div>
+  let html = `
+    <div class="battleCard">
 
-            <p>
-              🤖 AI Feedback:
-              <b>${generateFeedback(ga.answer)}</b>
-            </p>
+      <h3>
+        ⚔️ Battle ${currentBattleIndex + 1}
+        of ${battles.length}
+      </h3>
 
-            <div class="voteSection">
+      <h2>
+        Group ${a} VS Group ${b}
+      </h2>
 
-              <div class="voteCriteria">
-                <label>
-                  Opinion
-                  <input type="checkbox"
-                  id="opinion_${a}_${b}_${a}">
-                </label>
-              </div>
+      <div class="battleGrid">
 
-              <div class="voteCriteria">
-                <label>
-                  Reason
-                  <input type="checkbox"
-                  id="reason_${a}_${b}_${a}">
-                </label>
-              </div>
+        <div>
 
-              <div class="voteCriteria">
-                <label>
-                  Example / Evidence
-                  <input type="checkbox"
-                  id="example_${a}_${b}_${a}">
-                </label>
-              </div>
+          <h3>🔵 Group ${a}</h3>
 
-              <div class="voteCriteria">
-                <label>
-                  Restated Opinion
-                  <input type="checkbox"
-                  id="restate_${a}_${b}_${a}">
-                </label>
-              </div>
-
-            </div>
-
+          <div class="answerBox">
+            ${escapeHtml(ga.answer)}
           </div>
 
-          <div class="vsBox">
-            VS
-          </div>
+          <p>
+            🤖 AI Feedback:
+            <b>${generateFeedback(ga.answer)}</b>
+          </p>
 
-          <div>
+          <div class="voteSection">
 
-            <h3>🔴 Group ${b}</h3>
-
-            <div class="answerBox">
-              ${escapeHtml(gb.answer)}
+            <div class="voteCriteria">
+              <label>
+                Opinion
+                <input type="checkbox"
+                id="opinion_${a}_${b}_${a}">
+              </label>
             </div>
 
-            <p>
-              🤖 AI Feedback:
-              <b>${generateFeedback(gb.answer)}</b>
-            </p>
+            <div class="voteCriteria">
+              <label>
+                Reason
+                <input type="checkbox"
+                id="reason_${a}_${b}_${a}">
+              </label>
+            </div>
 
-            <div class="voteSection">
+            <div class="voteCriteria">
+              <label>
+                Example / Evidence
+                <input type="checkbox"
+                id="example_${a}_${b}_${a}">
+              </label>
+            </div>
 
-              <div class="voteCriteria">
-                <label>
-                  Opinion
-                  <input type="checkbox"
-                  id="opinion_${a}_${b}_${b}">
-                </label>
-              </div>
-
-              <div class="voteCriteria">
-                <label>
-                  Reason
-                  <input type="checkbox"
-                  id="reason_${a}_${b}_${b}">
-                </label>
-              </div>
-
-              <div class="voteCriteria">
-                <label>
-                  Example / Evidence
-                  <input type="checkbox"
-                  id="example_${a}_${b}_${b}">
-                </label>
-              </div>
-
-              <div class="voteCriteria">
-                <label>
-                  Restated Opinion
-                  <input type="checkbox"
-                  id="restate_${a}_${b}_${b}">
-                </label>
-              </div>
-
+            <div class="voteCriteria">
+              <label>
+                Restated Opinion
+                <input type="checkbox"
+                id="restate_${a}_${b}_${a}">
+              </label>
             </div>
 
           </div>
 
         </div>
 
-        <div class="voteWinner">
-
-          <b>💪 Stronger Group:</b>
-
-          <label>
-            <input type="radio"
-            name="winner_${a}_${b}"
-            value="${a}">
-            🔵 Group ${a}
-          </label>
-
-          <label>
-            <input type="radio"
-            name="winner_${a}_${b}"
-            value="${b}">
-            🔴 Group ${b}
-          </label>
-
+        <div class="vsBox">
+          VS
         </div>
 
-        <div style="text-align:center;margin-top:18px;">
+        <div>
 
-          <button onclick="submitVote(${a},${b})">
-            Submit Evaluation
-          </button>
+          <h3>🔴 Group ${b}</h3>
+
+          <div class="answerBox">
+            ${escapeHtml(gb.answer)}
+          </div>
+
+          <p>
+            🤖 AI Feedback:
+            <b>${generateFeedback(gb.answer)}</b>
+          </p>
+
+          <div class="voteSection">
+
+            <div class="voteCriteria">
+              <label>
+                Opinion
+                <input type="checkbox"
+                id="opinion_${a}_${b}_${b}">
+              </label>
+            </div>
+
+            <div class="voteCriteria">
+              <label>
+                Reason
+                <input type="checkbox"
+                id="reason_${a}_${b}_${b}">
+              </label>
+            </div>
+
+            <div class="voteCriteria">
+              <label>
+                Example / Evidence
+                <input type="checkbox"
+                id="example_${a}_${b}_${b}">
+              </label>
+            </div>
+
+            <div class="voteCriteria">
+              <label>
+                Restated Opinion
+                <input type="checkbox"
+                id="restate_${a}_${b}_${b}">
+              </label>
+            </div>
+
+          </div>
 
         </div>
 
       </div>
-    `;
-  });
 
-  document.getElementById('voteArea').innerHTML =
-    html || '<p>No battles ready yet.</p>';
+      <div class="voteWinner">
+
+        <b>💪 Stronger Group:</b>
+
+        <label>
+          <input type="radio"
+          name="winner_${a}_${b}"
+          value="${a}">
+          🔵 Group ${a}
+        </label>
+
+        <label>
+          <input type="radio"
+          name="winner_${a}_${b}"
+          value="${b}">
+          🔴 Group ${b}
+        </label>
+
+      </div>
+
+      <div class="actionBar">
+
+        <button onclick="previousBattle()">
+          ⬅ Previous
+        </button>
+
+        <button onclick="submitVote(${a},${b})">
+          ✅ Submit Evaluation
+        </button>
+
+        <button onclick="nextBattle()">
+          Next ➡
+        </button>
+
+      </div>
+
+    </div>
+  `;
+
+  document.getElementById('voteArea').innerHTML = html;
 }
   
 async function submitVote(a,b){
@@ -1390,6 +1412,28 @@ function loginTeacher(){
   document.getElementById('teacherPass').value = pass;
 
   showPage('teacherPage');
+}
+
+  function nextBattle(){
+  currentBattleIndex++;
+  hubRef.child(
+    'classes/' + currentClass + '/groups'
+  ).once('value', snap=>{
+    buildVoting(snap.val() || {});
+  });
+}
+
+function previousBattle(){
+
+  if(currentBattleIndex > 0){
+    currentBattleIndex--;
+  }
+
+  hubRef.child(
+    'classes/' + currentClass + '/groups'
+  ).once('value', snap=>{
+    buildVoting(snap.val() || {});
+  });
 }
   
 </script>
