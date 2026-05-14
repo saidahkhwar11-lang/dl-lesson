@@ -119,7 +119,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const hubRef = db.ref('skillClashHub_1');
-  let currentGroup = "";
   let currentGroupRef = null;
   
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
@@ -570,10 +569,8 @@ function showResults(){
 }
   
 async function resetHub(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
+
+  if(!checkTeacherPassword()) return;
 
   if(!confirm('Reset all hub data?')) return;
 
@@ -582,9 +579,9 @@ async function resetHub(){
   });
 
   alert('Reset done.');
+
   location.reload();
 }
-
 function escapeHtml(text){
   return String(text || '')
     .replace(/&/g,'&amp;')
