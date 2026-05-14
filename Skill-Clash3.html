@@ -592,6 +592,9 @@ await hubRef.child(
   'classes/' + className + '/settings/stage'
 ).set('work');
 
+  alert('Work stage opened.');
+}
+
 async function openVotingStage(){
   if(!checkTeacherPassword()) return;
   
@@ -649,23 +652,19 @@ hubRef.child('classes/' + currentClass + '/groups').once('value', snap=>{
 
 hubRef.on('value', snap=>{
   const game = snap.val() || {};
- const classData =
-  game.classes?.[currentClass] || {};
-
-if(classData.settings?.timerEndTime){
-  startLiveTimer(
-    classData.settings.timerEndTime
-  );
-}
 
   const classData =
-  game.classes?.[currentClass] || {};
+    game.classes?.[currentClass] || {};
 
-const stage =
-  classData.settings?.stage || 'work';
+  if(classData.settings?.timerEndTime){
+    startLiveTimer(classData.settings.timerEndTime);
+  }
+
+  const stage =
+    classData.settings?.stage || 'work';
 
   if(currentGroup && stage === 'voting'){
-buildVoting(classData.groups || {});
+    buildVoting(classData.groups || {});
     showPage('votePage');
   }
 });
