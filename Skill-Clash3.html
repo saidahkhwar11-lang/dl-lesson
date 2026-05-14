@@ -60,6 +60,26 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   gap:10px;
   align-items:center;
 }
+  .answerVoteCard{
+  display:grid;
+  grid-template-columns:1fr 180px;
+  gap:14px;
+  align-items:start;
+}
+
+.voteMiniBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+}
+
+.voteMiniBox label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:8px 0;
+}
 
 .voteWinner{
   display:flex;
@@ -944,168 +964,80 @@ function buildVoting(groups){
   const ga = groups['group'+a];
   const gb = groups['group'+b];
 
-  let html = `
-    <div class="battleCard">
+ let html = `
+  <div class="battleCard">
 
-      <h3>
-        ⚔️ Battle ${currentBattleIndex + 1}
-        of ${battles.length}
-      </h3>
+    <h3>⚔️ Battle ${currentBattleIndex + 1} of ${battles.length}</h3>
+    <h2>Group ${a} VS Group ${b}</h2>
 
-      <h2>
-        Group ${a} VS Group ${b}
-      </h2>
+    <div class="battleGrid">
 
-      <div class="battleGrid">
+      <div>
+        <h3>🔵 Group ${a}</h3>
 
-        <div>
-
-          <h3>🔵 Group ${a}</h3>
-
-          <div class="answerBox">
-            ${escapeHtml(ga.answer)}
+        <div class="answerVoteCard">
+          <div>
+            <div class="answerBox">${escapeHtml(ga.answer)}</div>
+            <p>🤖 AI Feedback: <b>${generateFeedback(ga.answer)}</b></p>
           </div>
 
-          <p>
-            🤖 AI Feedback:
-            <b>${generateFeedback(ga.answer)}</b>
-          </p>
-
-          <div class="voteSection">
-
-            <div class="voteCriteria">
-              <label>
-                Opinion
-                <input type="checkbox"
-                id="opinion_${a}_${b}_${a}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Reason
-                <input type="checkbox"
-                id="reason_${a}_${b}_${a}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Example / Evidence
-                <input type="checkbox"
-                id="example_${a}_${b}_${a}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Restated Opinion
-                <input type="checkbox"
-                id="restate_${a}_${b}_${a}">
-              </label>
-            </div>
-
+          <div class="voteMiniBox">
+            <h4>Evaluate</h4>
+            <label>Opinion <input type="checkbox" id="opinion_${a}_${b}_${a}"></label>
+            <label>Reason <input type="checkbox" id="reason_${a}_${b}_${a}"></label>
+            <label>Example <input type="checkbox" id="example_${a}_${b}_${a}"></label>
+            <label>Restate <input type="checkbox" id="restate_${a}_${b}_${a}"></label>
           </div>
-
         </div>
-
-        <div class="vsBox">
-          VS
-        </div>
-
-        <div>
-
-          <h3>🔴 Group ${b}</h3>
-
-          <div class="answerBox">
-            ${escapeHtml(gb.answer)}
-          </div>
-
-          <p>
-            🤖 AI Feedback:
-            <b>${generateFeedback(gb.answer)}</b>
-          </p>
-
-          <div class="voteSection">
-
-            <div class="voteCriteria">
-              <label>
-                Opinion
-                <input type="checkbox"
-                id="opinion_${a}_${b}_${b}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Reason
-                <input type="checkbox"
-                id="reason_${a}_${b}_${b}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Example / Evidence
-                <input type="checkbox"
-                id="example_${a}_${b}_${b}">
-              </label>
-            </div>
-
-            <div class="voteCriteria">
-              <label>
-                Restated Opinion
-                <input type="checkbox"
-                id="restate_${a}_${b}_${b}">
-              </label>
-            </div>
-
-          </div>
-
-        </div>
-
       </div>
 
-      <div class="voteWinner">
+      <div class="vsBox">VS</div>
 
-        <b>💪 Stronger Group:</b>
+      <div>
+        <h3>🔴 Group ${b}</h3>
 
-        <label>
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${a}">
-          🔵 Group ${a}
-        </label>
+        <div class="answerVoteCard">
+          <div>
+            <div class="answerBox">${escapeHtml(gb.answer)}</div>
+            <p>🤖 AI Feedback: <b>${generateFeedback(gb.answer)}</b></p>
+          </div>
 
-        <label>
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${b}">
-          🔴 Group ${b}
-        </label>
-
-      </div>
-
-      <div class="actionBar">
-
-        <button onclick="previousBattle()">
-          ⬅ Previous
-        </button>
-
-        <button onclick="submitVote(${a},${b})">
-          ✅ Submit Evaluation
-        </button>
-
-        <button onclick="nextBattle()">
-          Next ➡
-        </button>
-
+          <div class="voteMiniBox">
+            <h4>Evaluate</h4>
+            <label>Opinion <input type="checkbox" id="opinion_${a}_${b}_${b}"></label>
+            <label>Reason <input type="checkbox" id="reason_${a}_${b}_${b}"></label>
+            <label>Example <input type="checkbox" id="example_${a}_${b}_${b}"></label>
+            <label>Restate <input type="checkbox" id="restate_${a}_${b}_${b}"></label>
+          </div>
+        </div>
       </div>
 
     </div>
-  `;
 
-  document.getElementById('voteArea').innerHTML = html;
+    <div class="voteWinner">
+      <b>💪 Stronger Group:</b>
+
+      <label>
+        <input type="radio" name="winner_${a}_${b}" value="${a}">
+        🔵 Group ${a}
+      </label>
+
+      <label>
+        <input type="radio" name="winner_${a}_${b}" value="${b}">
+        🔴 Group ${b}
+      </label>
+    </div>
+
+    <div class="actionBar">
+      <button onclick="previousBattle()">⬅ Previous</button>
+      <button onclick="submitVote(${a},${b})">✅ Submit Evaluation</button>
+      <button onclick="nextBattle()">Next ➡</button>
+    </div>
+
+  </div>
+`;
+  
+    document.getElementById('voteArea').innerHTML = html;
 }
   
 async function submitVote(a,b){
