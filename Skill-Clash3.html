@@ -34,6 +34,31 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   margin-top:8px;
 }
 
+  .voteCriteria{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+}
+
+.voteWinner{
+  display:flex;
+  gap:30px;
+  margin-top:18px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+
+.voteWinner label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.voteSection{
+  margin-top:12px;
+}
 .resultFill{
   height:100%;
   background:#243b6b;
@@ -157,8 +182,8 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 <input id="groupMembers" placeholder="Write group members">
 
 <label>Student Name</label>
-<input id="studentName" placeholder="Write your name">
-
+<input id="studentName" placeholder="Write your name exactly the same next time">
+  
 <button onclick="joinGroup()">Join Activity</button>
 </div>
 
@@ -184,6 +209,9 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <button onclick="submitCombinedGroupWork()">
   📌 Submit Final Group Answer
+</button>
+  <button onclick="leaveGroup()" class="red">
+  🚪 Leave Group
 </button>
 
 <h3>Final Group Answer</h3>
@@ -251,7 +279,12 @@ Restated Opinion
     <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
     <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
     <button onclick="resetHub()" class="red">🗑 Reset</button>
-  </div>
+
+    <button onclick="leaveTeacher()" class="red">
+    🚪 Leave Teacher Dashboard
+  </button>
+</div>
+  
 
   <div class="soft">
   ⏱ Teacher Timer:
@@ -835,8 +868,8 @@ studentResults.innerHTML = html;
   }
 }
 
- if(currentGroup){
-
+if(currentGroup && currentClass){
+  
   if(stage === 'voting'){
 
     buildVoting(classData.groups || {});
@@ -905,31 +938,41 @@ function buildVoting(groups){
   <b>${generateFeedback(ga.answer)}</b>
 </p>
 
-            <label>
-              <input type="checkbox"
-              id="opinion_${a}_${b}_${a}">
-              Opinion
-            </label><br>
+           <div class="voteSection">
 
-            <label>
-              <input type="checkbox"
-              id="reason_${a}_${b}_${a}">
-              Reason
-            </label><br>
+  <div class="voteCriteria">
+    <label>
+      <input type="checkbox"
+      id="opinion_${a}_${b}_${a}">
+      Opinion
+    </label>
+  </div>
 
-            <label>
-              <input type="checkbox"
-              id="example_${a}_${b}_${a}">
-              Example / Evidence
-            </label><br>
+  <div class="voteCriteria">
+    <label>
+      <input type="checkbox"
+      id="reason_${a}_${b}_${a}">
+      Reason
+    </label>
+  </div>
 
-            <label>
-              <input type="checkbox"
-              id="restate_${a}_${b}_${a}">
-              Restated Opinion
-            </label>
-          </div>
+  <div class="voteCriteria">
+    <label>
+      <input type="checkbox"
+      id="example_${a}_${b}_${a}">
+      Example / Evidence
+    </label>
+  </div>
 
+  <div class="voteCriteria">
+    <label>
+      <input type="checkbox"
+      id="restate_${a}_${b}_${a}">
+      Restated Opinion
+    </label>
+  </div>
+
+</div>
           <div>
             <h3>🔴 Group ${b}</h3>
 
@@ -971,23 +1014,25 @@ function buildVoting(groups){
 
         <hr>
 
-        <h3>
-          💪 Stronger Group
-        </h3>
+       <h3>💪 Stronger Group</h3>
 
-        <label>
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${a}">
-          Group ${a}
-        </label>
+<div class="voteWinner">
 
-        <label style="margin-left:20px;">
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${b}">
-          Group ${b}
-        </label>
+  <label>
+    <input type="radio"
+    name="winner_${a}_${b}"
+    value="${a}">
+    🟦 Group ${a}
+  </label>
+
+  <label>
+    <input type="radio"
+    name="winner_${a}_${b}"
+    value="${b}">
+    🟥 Group ${b}
+  </label>
+
+</div>
 
         <button onclick="submitVote(${a},${b})">
           Submit Evaluation
@@ -1262,6 +1307,25 @@ function escapeHtml(text){
   }
 
 });
+
+  function leaveGroup(){
+
+  sessionStorage.removeItem('skillClashGroup');
+  sessionStorage.removeItem('skillClashStudent');
+  sessionStorage.removeItem('skillClashClass');
+
+  currentGroup = '';
+  currentStudent = '';
+  currentClass = '';
+
+  location.reload();
+}
+  function leaveTeacher(){
+
+  document.getElementById('teacherPass').value = '';
+
+  showPage('studentPage');
+}
   
 </script>
 
