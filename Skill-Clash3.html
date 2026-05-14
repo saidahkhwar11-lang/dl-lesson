@@ -134,6 +134,15 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   <label>Password</label>
   <input id="teacherPass" type="password" placeholder="Enter password">
 
+  <label>Class</label>
+<select id="teacherClassName">
+  <option value="">Choose class</option>
+  <option value="9-1">9/1</option>
+  <option value="9-2">9/2</option>
+  <option value="9-3">9/3</option>
+  <option value="9-4">9/4</option>
+</select>
+
   <label>Activity Title</label>
   <input id="activityTitle" value="Opinion Battle">
 
@@ -267,9 +276,19 @@ function showPage(id){
   timerEndTime =
     Date.now() + (mins * 60 * 1000);
 
-  await hubRef.child('settings').update({
-    timerEndTime: timerEndTime
-  });
+ const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className + '/settings'
+).update({
+  timerEndTime: timerEndTime
+});
 
   startLiveTimer(timerEndTime);
 }
@@ -561,21 +580,50 @@ await hubRef.child('settings').update({
 async function openWorkStage(){
   if(!checkTeacherPassword()) return;
  
-  await hubRef.child('settings/stage').set('work');
-  alert('Work stage opened.');
+  const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
 }
+
+await hubRef.child(
+  'classes/' + className + '/settings/stage'
+).set('work');
 
 async function openVotingStage(){
   if(!checkTeacherPassword()) return;
   
-  await hubRef.child('settings/stage').set('voting');
-  alert('Voting stage opened.');
+ const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className + '/settings/stage'
+).set('voting');
+
+alert('Voting stage opened.');
 }
 
 function showTeacherPreview(){
   if(!checkTeacherPassword()) return;
-  hubRef.child('groups').once('value', snap=>{
-    const data = snap.val() || {};
+
+  if(!currentClass){
+  currentClass = document.getElementById('teacherClassName').value;
+}
+
+if(!currentClass){
+  alert('Choose class first.');
+  return;
+}
+
+hubRef.child('classes/' + currentClass + '/groups').once('value', snap=>{
+  const data = snap.val() || {};
     let html = '';
 
     for(let i=1;i<=10;i++){
@@ -601,16 +649,23 @@ function showTeacherPreview(){
 
 hubRef.on('value', snap=>{
   const game = snap.val() || {};
-  if(game.settings?.timerEndTime){
-  startLiveTimer(game.settings.timerEndTime);
-}
-  const stage = game.settings?.stage || 'work';
-  if(game.settings && game.settings.topics){
-  topics = game.settings.topics;
+ const classData =
+  game.classes?.[currentClass] || {};
+
+if(classData.settings?.timerEndTime){
+  startLiveTimer(
+    classData.settings.timerEndTime
+  );
 }
 
+  const classData =
+  game.classes?.[currentClass] || {};
+
+const stage =
+  classData.settings?.stage || 'work';
+
   if(currentGroup && stage === 'voting'){
-    buildVoting(game.groups || {});
+buildVoting(classData.groups || {});
     showPage('votePage');
   }
 });
@@ -782,8 +837,8 @@ async function submitVote(a,b){
     return;
   }
 
-  const votePath =
-  `votes/battle_${a}_${b}/${currentStudent}`;
+ const votePath =
+  `classes/${currentClass}/votes/battle_${a}_${b}/${currentStudent}`;
 
   const oldVote = await hubRef.child(votePath).once('value');
 
@@ -834,8 +889,17 @@ async function submitVote(a,b){
 }
 function showResults(){
 
-  hubRef.child('votes').once('value', snap=>{
+const className =
+  document.getElementById('teacherClassName').value;
 
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+hubRef.child(
+  'classes/' + className + '/votes'
+).once('value', snap=>{
     const data = snap.val() || {};
 
     const scores = {};
@@ -915,9 +979,19 @@ async function resetHub(){
 
   if(!confirm('Reset all hub data?')) return;
 
-  await hubRef.set({
-    settings:{stage:'work'}
-  });
+  const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className
+).set({
+  settings:{stage:'work'}
+});
 
   alert('Reset done.');
 
