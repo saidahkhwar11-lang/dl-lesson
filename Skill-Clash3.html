@@ -40,6 +40,17 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   border-radius:999px;
   transition:0.3s;
 }
+  .studentBox{
+  background:#f8fbff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:14px;
+  margin-top:12px;
+}
+
+.studentBox textarea{
+  min-height:120px;
+}
 </style>
 </head>
 
@@ -80,11 +91,22 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   <h2 id="workTitle">Group Work</h2>
   <div class="soft" id="groupTopic">Topic will appear here.</div>
 
-  <p><b>Task:</b> Write your group answer in one box.</p>
-  <textarea id="groupAnswer" placeholder="Write your group answer here..."></textarea>
+  <p><b>Task:</b> Write your own answer first. Then submit the final group answer together.</p>
 
-  <button onclick="submitGroupWork()">Submit Group Work</button>
-  <div id="submitMsg" class="soft hidden"></div>
+<div id="studentWorkArea"></div>
+
+<button onclick="saveMyStudentWork()" class="green">
+  💾 Save My Answer
+</button>
+
+<button onclick="submitCombinedGroupWork()">
+  📌 Submit Final Group Answer
+</button>
+
+<h3>Final Group Answer</h3>
+<textarea id="groupAnswer" placeholder="Final group answer will appear here..." readonly></textarea>
+
+<div id="submitMsg" class="soft hidden"></div>
 </div>
 
 <div id="votePage" class="card hidden">
@@ -201,9 +223,17 @@ sessionStorage.setItem(
 
   loadGroupWork();
 
-  hubRef.child('groups/group' + group).update({
-    group: group,
-    members: members,
+ hubRef.child('groups/group' + group).update({
+  group: group,
+  members: members,
+  joinedAt: Date.now()
+});
+
+hubRef
+  .child('groups/group' + group + '/students/' + studentName)
+  .update({
+    name: studentName,
+    answer: '',
     joinedAt: Date.now()
   });
 
@@ -233,38 +263,114 @@ sessionStorage.setItem(
 
     if(data){
 
-      document.getElementById('groupMembers').value = data.members || '';
-      document.getElementById('groupAnswer').value = data.answer || '';
+  document.getElementById('groupMembers').value = data.members || '';
+  document.getElementById('groupAnswer').value = data.answer || '';
 
-    }
+  renderStudentBoxes(data.students || {});
+
+}
 
   });
 
 }
-async function submitGroupWork(){
-  const answer = document.getElementById('groupAnswer').value.trim();
-  const members = document.getElementById('groupMembers').value.trim();
+  function renderStudentBoxes(students){
+
+  const area =
+    document.getElementById('studentWorkArea');
+
+  let html = '';
+
+  Object.keys(students || {}).forEach(name=>{
+
+    const s = students[name] || {};
+
+const groupLocked =
+  document.getElementById('groupAnswer').value.trim() !== '';
+
+const mine =
+  name === currentStudent && !groupLocked;
+    
+    html += `
+      <div class="studentBox">
+
+        <h3>
+          👤 ${escapeHtml(name)}
+        </h3>
+
+        <textarea
+          id="studentBox_${name}"
+          ${mine ? '' : 'readonly'}
+          placeholder="Write your answer..."
+        >${escapeHtml(s.answer || '')}</textarea>
+
+      </div>
+    `;
+  });
+
+  area.innerHTML = html;
+}
+
+async function saveMyStudentWork(){
+
+  if(!currentGroup || !currentStudent){
+    alert('Join group first.');
+    return;
+  }
+
+  const box =
+    document.getElementById(
+      'studentBox_' + currentStudent
+    );
+
+  if(!box) return;
+
+  const answer = box.value.trim();
+
+  await hubRef
+    .child('groups/group' + currentGroup + '/students/' + currentStudent)
+    .update({
+      answer: answer,
+      updatedAt: Date.now()
+    });
+
+  document.getElementById('submitMsg')
+    .classList.remove('hidden');
+
+  document.getElementById('submitMsg')
+    .innerHTML =
+      '✅ Your answer was saved.';
+}
+  async function submitCombinedGroupWork(){
 
   if(!currentGroup){
-    alert('Join a group first.');
+    alert('Join group first.');
     return;
   }
 
-  if(!answer){
-    alert('Write your answer first.');
-    return;
-  }
+  const snap = await hubRef
+    .child('groups/group' + currentGroup + '/students')
+    .once('value');
+
+  const students = snap.val() || {};
+
+  let finalAnswer = '';
+
+  Object.keys(students).forEach(name=>{
+    finalAnswer += name + ':\n';
+    finalAnswer += (students[name].answer || 'No answer yet') + '\n\n';
+  });
 
   await hubRef.child('groups/group' + currentGroup).update({
-    answer: answer,
-    members: members,
-    topic: topics[currentGroup] || '',
+    answer: finalAnswer,
+    finalSubmitted: true,
     submittedAt: Date.now()
   });
 
-  const msg = document.getElementById('submitMsg');
-  msg.classList.remove('hidden');
-msg.innerHTML = '✅ Saved. Your group members can now see the latest version.';
+  document.getElementById('groupAnswer').value = finalAnswer;
+
+  document.getElementById('submitMsg').classList.remove('hidden');
+  document.getElementById('submitMsg').innerHTML =
+    '✅ Final group answer submitted. Student boxes are now locked.';
 }
 
 async function saveActivitySettings(){
