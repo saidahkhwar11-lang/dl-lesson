@@ -91,6 +91,11 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   <h2 id="workTitle">Group Work</h2>
   <div class="soft" id="groupTopic">Topic will appear here.</div>
 
+  <div class="soft">
+  ⏱ Time Left:
+  <b id="workTimerDisplay">Not started</b>
+</div>
+
   <p><b>Task:</b> Write your own answer first. Then submit the final group answer together.</p>
 
 <div id="studentWorkArea"></div>
@@ -139,12 +144,40 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 10: The impact of social media on teenage social skills.
 </textarea>
 
+  <label>Voting Criteria</label>
+<textarea id="voteCriteria">
+Opinion
+Reason
+Evidence / Example
+Restated Opinion
+</textarea>
+
+<label>Timer Minutes</label>
+<input id="timerMinutes" type="number" value="20" min="1">
+
+  <label>Voting Criteria</label>
+<textarea id="voteCriteria">
+Opinion
+Reason
+Evidence / Example
+Restated Opinion
+</textarea>
+
+<label>Timer Minutes</label>
+<input id="timerMinutes" type="number" value="20" min="1">
+
   <div class="btnRow">
     <button onclick="saveActivitySettings()">💾 Save Activity</button>
     <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
     <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
+    <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
     <button onclick="resetHub()" class="red">🗑 Reset</button>
   </div>
+
+  <div class="soft">
+  ⏱ Teacher Timer:
+  <b id="teacherTimerDisplay">Not started</b>
+</div>
 
   <h3>📌 Live Groups</h3>
   <button onclick="showTeacherPreview()">👀 Preview Group Work</button>
@@ -177,6 +210,9 @@ const hubRef = db.ref('skillClashHub_1');
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
   let currentStudent =
   sessionStorage.getItem('skillClashStudent') || '';
+
+  let timerInterval = null;
+let timerEndTime = 0;
 
 let topics = {
   1:'Should students have to wear uniforms?',
@@ -213,6 +249,75 @@ function showPage(id){
     if(el) el.classList.add('hidden');
   });
   document.getElementById(id).classList.remove('hidden');
+}
+
+  async function startActivityTimer(){
+
+  if(!checkTeacherPassword()) return;
+
+  const mins =
+    Number(document.getElementById('timerMinutes').value || 0);
+
+  if(mins <= 0){
+    alert('Enter valid timer minutes.');
+    return;
+  }
+
+  timerEndTime =
+    Date.now() + (mins * 60 * 1000);
+
+  await hubRef.child('settings').update({
+    timerEndTime: timerEndTime
+  });
+
+  startLiveTimer(timerEndTime);
+}
+
+function startLiveTimer(endTime){
+
+  if(timerInterval){
+    clearInterval(timerInterval);
+  }
+
+  function update(){
+
+    const left =
+      Math.max(0, endTime - Date.now());
+
+    const mins =
+      Math.floor(left / 60000);
+
+    const secs =
+      Math.floor((left % 60000) / 1000);
+
+    const text =
+      mins + ':' + String(secs).padStart(2,'0');
+
+    const teacher =
+      document.getElementById('teacherTimerDisplay');
+
+    const student =
+      document.getElementById('workTimerDisplay');
+
+    if(teacher) teacher.innerHTML = text;
+    if(student) student.innerHTML = text;
+
+    if(left <= 0){
+
+      clearInterval(timerInterval);
+
+      if(teacher)
+        teacher.innerHTML = '⛔ Time Finished';
+
+      if(student)
+        student.innerHTML = '⛔ Time Finished';
+    }
+  }
+
+  update();
+
+  timerInterval =
+    setInterval(update, 1000);
 }
 
   function checkTeacherPassword(){
@@ -468,6 +573,9 @@ function showTeacherPreview(){
 
 hubRef.on('value', snap=>{
   const game = snap.val() || {};
+  if(game.settings?.timerEndTime){
+  startLiveTimer(game.settings.timerEndTime);
+}
   const stage = game.settings?.stage || 'work';
   if(game.settings && game.settings.topics){
   topics = game.settings.topics;
