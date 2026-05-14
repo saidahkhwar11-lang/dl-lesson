@@ -967,10 +967,20 @@ function buildVoting(groups){
  let html = `
   <div class="battleCard">
 
-    <h3>⚔️ Battle ${currentBattleIndex + 1} of ${battles.length}</h3>
-    <h2>Group ${a} VS Group ${b}</h2>
+    <div class="soft"
+style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
 
-    <div class="battleGrid">
+  <div style="font-size:26px;font-weight:bold;color:#243b6b;">
+    ⚔️ Group ${a} VS Group ${b}
+  </div>
+
+  <div class="badge">
+    Battle ${currentBattleIndex + 1} / ${battles.length}
+  </div>
+
+</div>
+
+<div class="battleGrid">
 
       <div>
         <h3>🔵 Group ${a}</h3>
