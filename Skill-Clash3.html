@@ -34,6 +34,25 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   margin-top:8px;
 }
 
+  .actionBar{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.actionBar button{
+  flex:1;
+  min-width:180px;
+}
+
+  .stickyTimer{
+  position:sticky;
+  top:10px;
+  z-index:10;
+  background:#eef4ff;
+}
+
   .voteCriteria{
   margin-top:14px;
   display:grid;
@@ -48,6 +67,11 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   margin-top:18px;
   align-items:center;
   flex-wrap:wrap;
+}
+
+  .myBox{
+  border:2px solid #247a3d;
+  background:#f0fff4;
 }
 
 .voteWinner label{
@@ -85,74 +109,15 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <div class="container">
 
-<div class="groupGrid">
+  <div class="btnRow">
 
-  <div class="soft">
-    <h3>⚙️ Activity Controls</h3>
+  <button onclick="goToStudentLogin()">
+    🎮 Student Login
+  </button>
 
-    <button onclick="saveActivitySettings()">
-      💾 Save Activity
-    </button>
-
-    <button onclick="showTeacherPreview()">
-      👀 Preview Group Work
-    </button>
-  </div>
-
-  <div class="soft">
-    <h3>🚦 Stage Controls</h3>
-
-    <button onclick="openWorkStage()" class="green">
-      ✍️ Open Work Stage
-    </button>
-
-    <button onclick="openVotingStage()">
-      🗳 Open Voting Stage
-    </button>
-  </div>
-
-  <div class="soft">
-    <h3>⏱ Timer Controls</h3>
-
-    <button onclick="startActivityTimer()" class="green">
-      ⏱ Start Timer
-    </button>
-
-    <button onclick="stopActivityTimer()" class="red">
-      ⏹ Stop Timer
-    </button>
-
-    <div class="soft">
-      ⏱ Teacher Timer:
-      <b id="teacherTimerDisplay">Not started</b>
-    </div>
-  </div>
-
-  <div class="soft">
-
-    <h3>🏆 Results</h3>
-
-<button onclick="startLiveResults()">
-  📊 Show Live Results
-</button>
-
-<button onclick="showResults()">
-  🏅 Refresh Results
-</button>
-
-<button onclick="releaseResults()" class="green">
-  🏆 Release Results to Students
-</button>
-    
-  </div>
-
-  <div class="soft">
-    <h3>⚠️ Danger Zone</h3>
-
-    <button onclick="resetHub()" class="red">
-      🗑 Reset Class
-    </button>
-  </div>
+  <button onclick="showPage('teacherLoginPage')">
+    👩‍🏫 Teacher Login
+  </button>
 
 </div>
 
@@ -194,7 +159,7 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 </div>
   <div class="soft" id="groupTopic">Topic will appear here.</div>
 
-  <div class="soft">
+ <div class="soft stickyTimer">
   ⏱ Time Left:
   <b id="workTimerDisplay">Not started</b>
 </div>
@@ -203,19 +168,34 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <div id="studentWorkArea"></div>
 
-<button onclick="saveMyStudentWork()" class="green">
-  💾 Save My Answer
-</button>
+<div class="actionBar">
 
-<button onclick="submitCombinedGroupWork()">
-  📌 Submit Final Group Answer
-</button>
+  <button onclick="saveMyStudentWork()" class="green">
+    💾 Save My Answer
+  </button>
+
+  <button onclick="submitCombinedGroupWork()">
+    📌 Submit Final Group Answer
+  </button>
+
   <button onclick="leaveGroup()" class="red">
-  🚪 Leave Group
-</button>
+    🚪 Leave Group
+  </button>
 
-<h3>Final Group Answer</h3>
-<textarea id="groupAnswer" placeholder="Final group answer will appear here..." readonly></textarea>
+</div>
+
+<details class="soft">
+  <summary style="cursor:pointer;font-weight:bold;">
+    📌 View Final Group Answer
+  </summary>
+
+  <textarea
+    id="groupAnswer"
+    placeholder="Final group answer will appear here..."
+    readonly
+  ></textarea>
+</details>
+  
 
 <div id="submitMsg" class="soft hidden"></div>
   <div id="studentResultsBox" class="soft hidden">
@@ -228,6 +208,21 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   <div id="voteArea"></div>
 </div>
 
+<div id="teacherLoginPage" class="card hidden">
+  <h2>👩‍🏫 Teacher Login</h2>
+
+  <label>Password</label>
+  <input id="teacherLoginPass" type="password" placeholder="Enter teacher password">
+
+  <button onclick="loginTeacher()" class="green">
+    Login
+  </button>
+
+  <button onclick="goToStudentLogin()">
+    Back to Student Login
+  </button>
+</div>
+  
 <div id="teacherPage" class="card hidden">
   <h2>👩‍🏫 Teacher Dashboard</h2>
 
@@ -359,7 +354,7 @@ let topics = {
 }
 
 function showPage(id){
-  ['studentPage','workPage','votePage','teacherPage'].forEach(p=>{
+  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage'].forEach(p=>{
     const el=document.getElementById(p);
     if(el) el.classList.add('hidden');
   });
@@ -538,12 +533,19 @@ currentGroupRef = hubRef.child(
 
     if(data){
       window.groupFinalSubmitted = data.finalSubmitted === true;
+      const badge = window.groupFinalSubmitted
+  ? ' <span style="background:#d1fae5;color:#065f46;padding:5px 10px;border-radius:999px;font-weight:bold;">✅ Final Submitted</span>'
+  : ' <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:999px;font-weight:bold;">✍️ In Progress</span>';
       const names = data.members || '';
 
 const totalVotes = data.totalVotes || 0;
 
+const badge = window.groupFinalSubmitted
+  ? ' <span style="background:#d1fae5;color:#065f46;padding:5px 10px;border-radius:999px;font-weight:bold;">✅ Final Submitted</span>'
+  : ' <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:999px;font-weight:bold;">✍️ In Progress</span>';
+
 document.getElementById('studentGroupInfo').innerHTML =
-  '<b>Group ' + currentGroup + '</b> | ' +
+  '<b>Group ' + currentGroup + '</b> ' + badge + ' | ' +
   'Total Votes: <b>' + totalVotes + '</b> | Members: ' +
   names.replace(
     currentStudent,
@@ -578,8 +580,7 @@ const mine =
   name === currentStudent && !groupLocked;
     
     html += `
-      <div class="studentBox">
-
+<div class="studentBox ${mine ? 'myBox' : ''}">
         <h3>
           👤 ${escapeHtml(name)}
         </h3>
