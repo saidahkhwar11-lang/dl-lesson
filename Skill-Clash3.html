@@ -119,6 +119,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const hubRef = db.ref('skillClashHub_1');
+  let currentGroup = "";
   
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
 
@@ -148,6 +149,14 @@ function checkTeacher(){
 }
 
 function joinGroup(){
+  currentGroup = document.getElementById("studentGroup").value;
+
+if(!currentGroup){
+  alert("Please choose your group number.");
+  return;
+}
+
+loadGroupWork();
   const group = document.getElementById('studentGroup').value;
   const members = document.getElementById('groupMembers').value.trim();
 
@@ -169,7 +178,25 @@ function joinGroup(){
   document.getElementById('groupTopic').innerHTML = topics[group] || 'Group topic';
   showPage('workPage');
 }
+  function loadGroupWork(){
 
+  if(!currentGroup) return;
+
+  hubRef.child('groups/group' + currentGroup).once('value', function(snapshot){
+
+    const data = snapshot.val();
+
+    if(data){
+
+      document.getElementById('groupMembers').value = data.members || '';
+
+      document.getElementById('groupAnswer').value = data.answer || '';
+
+    }
+
+  });
+
+}
 async function submitGroupWork(){
   const answer = document.getElementById('groupAnswer').value.trim();
   const members = document.getElementById('groupMembers').value.trim();
@@ -193,7 +220,7 @@ async function submitGroupWork(){
 
   const msg = document.getElementById('submitMsg');
   msg.classList.remove('hidden');
-  msg.innerHTML = '✅ Submitted successfully. Wait for teacher.';
+msg.innerHTML = '✅ Saved successfully. You can come back later and continue editing anytime.';
 }
 
 async function saveActivitySettings(){
