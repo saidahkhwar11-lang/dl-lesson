@@ -120,6 +120,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const hubRef = db.ref('skillClashHub_1');
   let currentGroup = "";
+  let currentGroupRef = null;
   
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
 
@@ -144,9 +145,19 @@ function showPage(id){
   document.getElementById(id).classList.remove('hidden');
 }
 
-function checkTeacher(){
-  return document.getElementById('teacherPass').value === '1234';
+  function checkTeacherPassword(){
+
+  const pass = document.getElementById('teacherPass').value;
+
+  if(pass !== 'Welcome@2020'){
+    alert('Incorrect teacher password.');
+    return false;
+  }
+
+  return true;
 }
+
+
 
 function joinGroup(){
   currentGroup = document.getElementById("studentGroup").value;
@@ -182,14 +193,19 @@ loadGroupWork();
 
   if(!currentGroup) return;
 
-  hubRef.child('groups/group' + currentGroup).once('value', function(snapshot){
+  if(currentGroupRef){
+    currentGroupRef.off();
+  }
+
+  currentGroupRef = hubRef.child('groups/group' + currentGroup);
+
+  currentGroupRef.on('value', function(snapshot){
 
     const data = snapshot.val();
 
     if(data){
 
       document.getElementById('groupMembers').value = data.members || '';
-
       document.getElementById('groupAnswer').value = data.answer || '';
 
     }
@@ -220,14 +236,11 @@ async function submitGroupWork(){
 
   const msg = document.getElementById('submitMsg');
   msg.classList.remove('hidden');
-msg.innerHTML = '✅ Saved successfully. You can come back later and continue editing anytime.';
+msg.innerHTML = '✅ Saved. Your group members can now see the latest version.';
 }
 
 async function saveActivitySettings(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
+  if(!checkTeacherPassword()) return;
 
   await hubRef.child('settings').update({
     title: document.getElementById('activityTitle').value,
@@ -238,24 +251,21 @@ async function saveActivitySettings(){
 }
 
 async function openWorkStage(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
+  if(!checkTeacherPassword()) return;
+ 
   await hubRef.child('settings/stage').set('work');
   alert('Work stage opened.');
 }
 
 async function openVotingStage(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
+  if(!checkTeacherPassword()) return;
+  
   await hubRef.child('settings/stage').set('voting');
   alert('Voting stage opened.');
 }
 
 function showTeacherPreview(){
+  if(!checkTeacherPassword()) return;
   hubRef.child('groups').once('value', snap=>{
     const data = snap.val() || {};
     let html = '';
