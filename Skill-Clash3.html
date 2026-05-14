@@ -68,6 +68,15 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 <div id="studentPage" class="card">
   <h2>🎮 Join Group Activity</h2>
 
+  <label>Class</label>
+<select id="className">
+  <option value="">Choose class</option>
+  <option value="9-1">9/1</option>
+  <option value="9-2">9/2</option>
+  <option value="9-3">9/3</option>
+  <option value="9-4">9/4</option>
+</select>
+
   <label>Group Number</label>
   <select id="studentGroup">
     <option value="">Choose group</option>
@@ -144,18 +153,7 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 10: The impact of social media on teenage social skills.
 </textarea>
 
-  <label>Voting Criteria</label>
-<textarea id="voteCriteria">
-Opinion
-Reason
-Evidence / Example
-Restated Opinion
-</textarea>
-
-<label>Timer Minutes</label>
-<input id="timerMinutes" type="number" value="20" min="1">
-
-  <label>Voting Criteria</label>
+ <label>Voting Criteria</label>
 <textarea id="voteCriteria">
 Opinion
 Reason
@@ -206,6 +204,9 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const hubRef = db.ref('skillClashHub_1');
   let currentGroupRef = null;
+
+  let currentClass =
+  sessionStorage.getItem('skillClashClass') || '';
   
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
   let currentStudent =
@@ -337,11 +338,13 @@ function startLiveTimer(endTime){
 function joinGroup(){
 
   const group = document.getElementById('studentGroup').value;
+  const className =
+  document.getElementById('className').value;
   const members = document.getElementById('groupMembers').value.trim();
   const studentName =
   document.getElementById('studentName').value.trim();
 
-if(!group || !members || !studentName){
+if(!className || !group || !members || !studentName){
   alert('Choose group and write members.');
     return;
   }
@@ -353,18 +356,30 @@ sessionStorage.setItem(
   'skillClashStudent',
   studentName
 );
+  currentClass = className;
+
+sessionStorage.setItem(
+  'skillClashClass',
+  className
+);
   sessionStorage.setItem('skillClashGroup', group);
 
   loadGroupWork();
 
- hubRef.child('groups/group' + group).update({
+hubRef.child(
+  'classes/' + currentClass + '/groups/group' + group
+).update({
   group: group,
   members: members,
   joinedAt: Date.now()
 });
 
 hubRef
-  .child('groups/group' + group + '/students/' + studentName)
+  .child(
+    'classes/' + currentClass +
+    '/groups/group' + group +
+    '/students/' + studentName
+  )
   .update({
     name: studentName,
     answer: '',
@@ -389,8 +404,10 @@ hubRef
     currentGroupRef.off();
   }
 
-  currentGroupRef = hubRef.child('groups/group' + currentGroup);
-
+currentGroupRef = hubRef.child(
+  'classes/' + currentClass +
+  '/groups/group' + currentGroup
+);
   currentGroupRef.on('value', function(snapshot){
 
     const data = snapshot.val();
@@ -461,12 +478,16 @@ async function saveMyStudentWork(){
 
   const answer = box.value.trim();
 
-  await hubRef
-    .child('groups/group' + currentGroup + '/students/' + currentStudent)
-    .update({
-      answer: answer,
-      updatedAt: Date.now()
-    });
+ await hubRef
+  .child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/students/' + currentStudent
+  )
+  .update({
+    answer: answer,
+    updatedAt: Date.now()
+  });
 
   document.getElementById('submitMsg')
     .classList.remove('hidden');
@@ -482,9 +503,13 @@ async function saveMyStudentWork(){
     return;
   }
 
-  const snap = await hubRef
-    .child('groups/group' + currentGroup + '/students')
-    .once('value');
+ const snap = await hubRef
+  .child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/students'
+  )
+  .once('value');
 
   const students = snap.val() || {};
 
@@ -495,11 +520,14 @@ async function saveMyStudentWork(){
     finalAnswer += (students[name].answer || 'No answer yet') + '\n\n';
   });
 
-  await hubRef.child('groups/group' + currentGroup).update({
-    answer: finalAnswer,
-    finalSubmitted: true,
-    submittedAt: Date.now()
-  });
+  await hubRef.child(
+  'classes/' + currentClass +
+  '/groups/group' + currentGroup
+).update({
+  answer: finalAnswer,
+  finalSubmitted: true,
+  submittedAt: Date.now()
+});
 
   document.getElementById('groupAnswer').value = finalAnswer;
 
