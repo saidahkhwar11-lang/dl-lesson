@@ -1077,23 +1077,23 @@ async function submitVote(a,b){
   }
 
   function checked(id){
-    const el = document.getElementById(id);
-    return el && el.checked ? 1 : 0;
-  }
+  const el = document.getElementById(id);
+  return el && el.checked ? 1 : 0;
+}
 
-  const scoreA =
-    checked('opinion_' + a + '_' + b + '_' + a) +
-    checked('reason_' + a + '_' + b + '_' + a) +
-    checked('example_' + a + '_' + b + '_' + a) +
-    checked('restate_' + a + '_' + b + '_' + a) +
-    (Number(winner.value) === a ? 2 : 0);
+const scoreA =
+  checked('opinion_' + a + '_' + b + '_' + a) +
+  checked('reason_' + a + '_' + b + '_' + a) +
+  checked('example_' + a + '_' + b + '_' + a) +
+  checked('restate_' + a + '_' + b + '_' + a) +
+  (Number(winner.value) === a ? 3 : 0);
 
-  const scoreB =
-    checked('opinion_' + a + '_' + b + '_' + b) +
-    checked('reason_' + a + '_' + b + '_' + b) +
-    checked('example_' + a + '_' + b + '_' + b) +
-    checked('restate_' + a + '_' + b + '_' + b) +
-    (Number(winner.value) === b ? 2 : 0);
+const scoreB =
+  checked('opinion_' + a + '_' + b + '_' + b) +
+  checked('reason_' + a + '_' + b + '_' + b) +
+  checked('example_' + a + '_' + b + '_' + b) +
+  checked('restate_' + a + '_' + b + '_' + b) +
+  (Number(winner.value) === b ? 3 : 0);
 
   await hubRef.child(votePath).set({
     voterGroup: myGroup,
