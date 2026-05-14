@@ -262,6 +262,7 @@ hubRef
     const data = snapshot.val();
 
     if(data){
+      window.groupFinalSubmitted = data.finalSubmitted === true;
 
   document.getElementById('groupMembers').value = data.members || '';
   document.getElementById('groupAnswer').value = data.answer || '';
@@ -285,7 +286,7 @@ hubRef
     const s = students[name] || {};
 
 const groupLocked =
-  document.getElementById('groupAnswer').value.trim() !== '';
+  window.groupFinalSubmitted === true;
 
 const mine =
   name === currentStudent && !groupLocked;
@@ -298,7 +299,7 @@ const mine =
         </h3>
 
         <textarea
-          id="studentBox_${name}"
+id="studentBox_${name.replace(/\s+/g,'_')}"
           ${mine ? '' : 'readonly'}
           placeholder="Write your answer..."
         >${escapeHtml(s.answer || '')}</textarea>
@@ -319,7 +320,7 @@ async function saveMyStudentWork(){
 
   const box =
     document.getElementById(
-      'studentBox_' + currentStudent
+'studentBox_' + currentStudent.replace(/\s+/g,'_')
     );
 
   if(!box) return;
