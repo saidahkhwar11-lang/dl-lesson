@@ -1749,9 +1749,10 @@ function renderBattleVoting(){
   const startHiddenClass = battleVotingStarted ? 'hidden' : '';
 
   const html = `<div class="card cleanBattleCard" style="grid-column:1/-1">
-    <div class="battleVoteMainTitle compactTitle">
+    <div class="battleVoteMainTitle compactTitle" style="background:#ec4899;color:white;">
+    
       <h2>⚔️ Group ${a} VS Group ${b}</h2>
-      <p>Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
+<p style="color:white;">Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
     </div>
 
     <div class="battleReadGrid compactReadGrid">
