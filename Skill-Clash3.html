@@ -434,9 +434,36 @@ button:hover{filter:brightness(.96)}
 }
 
 .votingHeader{background:linear-gradient(135deg,#243b6b,#4f7dd8)}
-.votingLayout{
+.topVotingRules{
+  margin-top:12px;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:16px;
+  padding:12px;
   display:grid;
   grid-template-columns:1.2fr .8fr;
+  gap:12px;
+  align-items:start;
+}
+.topVotingRules h3{color:white;margin:0 0 6px}
+.topVotingRules p{color:white;margin:0;line-height:1.45}
+.topMyAnswer{
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:14px;
+  padding:10px;
+  color:white;
+}
+.topMyAnswer summary{cursor:pointer;font-weight:800}
+.topMyAnswer .voteFinal{
+  background:white;
+  color:#10233f;
+  margin-top:8px;
+  max-height:120px;
+}
+.votingLayout{
+  display:grid;
+  grid-template-columns:1fr;
   gap:14px;
 }
 .voteMainCard,.voteSideCard{margin-bottom:14px}
@@ -500,7 +527,7 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
   color:#92400e;
 }
-@media(max-width:900px){.votingLayout,.battleGrid{grid-template-columns:1fr}}
+@media(max-width:900px){.votingLayout,.battleGrid,.topVotingRules{grid-template-columns:1fr}}
 
 .winnerBox{
   background:#ecfdf5;
@@ -683,6 +710,17 @@ button:hover{filter:brightness(.96)}
         <span id="voteInfoGroup"></span>
         <span id="voteInfoYou"></span>
       </div>
+
+      <div class="topVotingRules">
+        <div>
+          <h3>📌 Voting Rules</h3>
+          <p id="votingRuleText">You cannot vote for your own group. Your group will not appear in the peer assessment list.</p>
+        </div>
+        <details class="topMyAnswer">
+          <summary>👥 My Group Answer</summary>
+          <div id="myGroupFinalPreview" class="voteFinal">No final answer submitted yet.</div>
+        </details>
+      </div>
     </div>
 
     <div class="votingLayout">
@@ -719,11 +757,6 @@ button:hover{filter:brightness(.96)}
         <div id="battleVoteMsg" class="note hidden"></div>
       </div>
 
-      <div class="card voteSideCard">
-        <h2>📌 Voting Rules</h2>
-        <p id="votingRuleText">You cannot vote for your own group. Your group will not appear in the peer assessment list.</p>
-        <div id="myGroupFinalPreview" class="voteFinal">No final answer submitted yet.</div>
-      </div>
     </div>
 
     <div id="studentResultsPanel" class="votePanel hidden">
@@ -903,6 +936,7 @@ let latestClassGroups = {};
 let latestClassVotes = {};
 let currentStage = 'work';
 let currentVoteSystem = 'peer';
+let selectedBattleKey = '';
 let latestAssignedActivity = {};
 let teacherLoggedIn = false;
 
@@ -1180,60 +1214,114 @@ function renderVoteCriteria(){
   box.innerHTML = html;
 }
 
+function getAvailableBattlePairs(){
+  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  return pairs.filter(pair => !pair.map(String).includes(String(currentGroup)));
+}
+function selectBattlePair(key){
+  selectedBattleKey = key || '';
+  renderBattleVoting();
+}
+function goToNextBattle(){
+  const availablePairs = getAvailableBattlePairs();
+  const votes = latestClassVotes || {};
+  const notVoted = availablePairs.find(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+  });
+  if(notVoted){
+    selectedBattleKey = `${notVoted[0]}vs${notVoted[1]}`;
+  }else if(availablePairs.length){
+    selectedBattleKey = `${availablePairs[0][0]}vs${availablePairs[0][1]}`;
+  }
+  renderBattleVoting();
+}
+
 function renderBattleVoting(){
   const title = document.getElementById('battlePairTitle');
   const box = document.getElementById('battleVoteContent');
   if(!title || !box) return;
 
-  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
-  const availablePairs = pairs.filter(pair => !pair.map(String).includes(String(currentGroup)));
+  const availablePairs = getAvailableBattlePairs();
   const items = getVotingCriteria();
+  const votes = latestClassVotes || {};
 
-  title.innerHTML = `<b>Available battles:</b> You can vote on ${availablePairs.length} battle(s). Your own battle is hidden.`;
+  if(!availablePairs.length){
+    title.innerHTML = `<b>No available battle:</b> Your group is part of the only active battle, so voting is locked for your group.`;
+    box.innerHTML = `<div class="card" style="grid-column:1/-1"><h2>No available battle to vote on.</h2><p>Your own battle is hidden for fairness.</p></div>`;
+    return;
+  }
 
-  let html = '';
+  const validKeys = availablePairs.map(pair=>`${pair[0]}vs${pair[1]}`);
+  if(!selectedBattleKey || !validKeys.includes(selectedBattleKey)){
+    const firstNotVoted = availablePairs.find(pair=>{
+      const key = `${pair[0]}vs${pair[1]}`;
+      return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    });
+    selectedBattleKey = firstNotVoted ? `${firstNotVoted[0]}vs${firstNotVoted[1]}` : validKeys[0];
+  }
+
+  let chooser = `
+    <div class="battleChooser">
+      <b>Choose battle to vote:</b>
+      <select id="battlePairSelect" onchange="selectBattlePair(this.value)">`;
 
   availablePairs.forEach(pair=>{
-    const a = pair[0];
-    const b = pair[1];
-    const battleKey = `${a}vs${b}`;
-    const existing = ((((latestClassVotes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudent]) || null;
-    const g1 = latestClassGroups['group'+a] || {};
-    const g2 = latestClassGroups['group'+b] || {};
+    const key = `${pair[0]}vs${pair[1]}`;
+    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    const selected = key === selectedBattleKey ? 'selected' : '';
+    chooser += `<option value="${key}" ${selected}>Group ${pair[0]} VS Group ${pair[1]} ${voted ? '✅ saved' : ''}</option>`;
+  });
 
-    html += `<div class="card" style="grid-column:1/-1">
-      <h2>⚔️ Group ${a} VS Group ${b}</h2>
-      <p class="smallNote">Evaluate both groups, then choose the stronger group. Each checked criterion = 1 point. Best group = 5 bonus points.</p>
-      <div class="battleGrid">`;
+  chooser += `</select><div class="battleStepBar">`;
+  availablePairs.forEach(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    const cls = key === selectedBattleKey ? 'battleStep active' : (voted ? 'battleStep done' : 'battleStep');
+    chooser += `<span class="${cls}">Group ${pair[0]} VS ${pair[1]} ${voted ? '✓' : ''}</span>`;
+  });
+  chooser += `</div><p class="smallNote">Vote one battle, click Submit, then choose the next battle. Your saved battles are marked ✅.</p></div>`;
 
-    pair.forEach(num=>{
-      const g = latestClassGroups['group'+num] || {};
-      const checkedMap = (existing && existing.groupScores && existing.groupScores['group'+num] && existing.groupScores['group'+num].criteriaChecked) || {};
-      const bestChecked = existing && String(existing.winnerGroup) === String(num) ? 'checked' : '';
-      html += `<div class="battleAnswerCard">
-        <h3>Group ${num}</h3>
-        <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>
-        <h3>✅ Checklist for Group ${num}</h3>`;
-      items.forEach((c,i)=>{
-        const checked = checkedMap[i] ? 'checked' : '';
-        html += `<label class="voteCriteriaItem"><input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked}> ${escapeHtml(c)} <span style="margin-left:auto;color:#64748b">1 pt</span></label>`;
-      });
-      html += `<label class="bestGroupBox"><input type="radio" name="battleWinner_${battleKey}" value="${num}" ${bestChecked}> ⭐ Choose Group ${num} as Best Group = 5 points</label>
-      </div>`;
+  const completed = availablePairs.filter(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+  }).length;
+
+  title.innerHTML = `${chooser}<b>Progress:</b> ${completed} / ${availablePairs.length} battles saved. Your own battle is hidden.`;
+
+  const [a,b] = selectedBattleKey.split('vs').map(Number);
+  const battleKey = selectedBattleKey;
+  const existing = ((((votes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudent]) || null;
+
+  let html = `<div class="card" style="grid-column:1/-1">
+    <h2>⚔️ Group ${a} VS Group ${b}</h2>
+    <p class="smallNote">Evaluate both groups, then choose the stronger group. Each checked criterion = 1 point. Best group = 5 bonus points. Click submit to save before moving to another battle.</p>
+    <div class="battleGrid">`;
+
+  [a,b].forEach(num=>{
+    const g = latestClassGroups['group'+num] || {};
+    const checkedMap = (existing && existing.groupScores && existing.groupScores['group'+num] && existing.groupScores['group'+num].criteriaChecked) || {};
+    const bestChecked = existing && String(existing.winnerGroup) === String(num) ? 'checked' : '';
+    html += `<div class="battleAnswerCard">
+      <h3>Group ${num}</h3>
+      <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>
+      <h3>✅ Checklist for Group ${num}</h3>`;
+    items.forEach((c,i)=>{
+      const checked = checkedMap[i] ? 'checked' : '';
+      html += `<label class="voteCriteriaItem"><input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked}> ${escapeHtml(c)} <span style="margin-left:auto;color:#64748b">1 pt</span></label>`;
     });
-
-    const comment = existing ? (existing.comment || '') : '';
-    html += `</div>
-      <label>Positive comment about this battle</label>
-      <textarea id="battleComment_${battleKey}" placeholder="Write one positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
-      <button class="green" style="width:100%" onclick="submitBattleVote(${a},${b})">✅ Submit Vote for Group ${a} VS Group ${b}</button>
-      <div id="battleMsg_${battleKey}" class="note ${existing ? '' : 'hidden'}">${existing ? '✅ You already voted on this battle. You can update your vote before results are released.' : ''}</div>
+    html += `<label class="bestGroupBox"><input type="radio" name="battleWinner_${battleKey}" value="${num}" ${bestChecked}> ⭐ Choose Group ${num} as Best Group = 5 points</label>
     </div>`;
   });
 
-  if(!availablePairs.length){
-    html = `<div class="card"><h2>No available battle to vote on.</h2><p>Your group is part of the only active battle, so voting is locked for your group.</p></div>`;
-  }
+  const comment = existing ? (existing.comment || '') : '';
+  html += `</div>
+    <label>Positive comment about this battle</label>
+    <textarea id="battleComment_${battleKey}" placeholder="Write one positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
+    <button class="green" style="width:100%" onclick="submitBattleVote(${a},${b})">✅ Submit and Save Vote for Group ${a} VS Group ${b}</button>
+    <button class="nextBattleBtn" onclick="goToNextBattle()">➡️ Go to Next Unsaved Battle</button>
+    <div id="battleMsg_${battleKey}" class="note ${existing ? '' : 'hidden'}">${existing ? '✅ Your vote for this battle is already saved. You can update it before results are released.' : ''}</div>
+  </div>`;
 
   box.innerHTML = html;
 
@@ -1392,9 +1480,26 @@ async function submitBattleVote(a,b){
   const msg = document.getElementById(`battleMsg_${battleKey}`);
   if(msg){
     msg.classList.remove('hidden');
-    msg.innerHTML = `✅ Vote submitted for <b>Group ${a} VS Group ${b}</b>. Winner: <b>Group ${escapeHtml(winnerGroup)}</b>. Winner score from you: <b>${winnerScore}</b> points.`;
+    msg.innerHTML = `✅ Vote saved for <b>Group ${a} VS Group ${b}</b>. Winner: <b>Group ${escapeHtml(winnerGroup)}</b>. Winner score from you: <b>${winnerScore}</b> points.`;
   }
-  alert('✅ Your battle vote has been submitted.');
+
+  alert('✅ Your vote is saved. Now choose the next battle.');
+
+  const availablePairs = getAvailableBattlePairs();
+  const snap = await hubRef.child(`classes/${currentClass}/battleVotes`).once('value');
+  const freshVotes = snap.val() || {};
+  const nextPair = availablePairs.find(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !((((freshVotes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+  });
+
+  if(nextPair){
+    selectedBattleKey = `${nextPair[0]}vs${nextPair[1]}`;
+  }else{
+    selectedBattleKey = battleKey;
+  }
+
+  renderBattleVoting();
 }
 
 function calculateVotingResults(classData){
