@@ -415,6 +415,232 @@ function downloadAchievementCertificate(){
     </div>
   </div>
 </div>
+
+
+<!-- === FINAL POLISH PATCH: compact zoom + styled dashboard + builder navigation === -->
+<style>
+  html{font-size:14px!important;}
+  body{font-size:14px!important;line-height:1.35!important;}
+  .container{max-width:1180px!important;padding:14px!important;}
+  .topbar{font-size:24px!important;padding:12px 14px!important;}
+  .card{border-radius:18px!important;padding:16px!important;margin-bottom:14px!important;}
+  h1{font-size:24px!important;line-height:1.15!important;}
+  h2{font-size:20px!important;line-height:1.2!important;}
+  h3{font-size:16px!important;line-height:1.2!important;}
+  p{font-size:14px!important;}
+  label{font-size:13px!important;}
+  input,textarea,select{font-size:13px!important;padding:9px 10px!important;border-radius:12px!important;}
+  button{font-size:13px!important;padding:9px 12px!important;border-radius:12px!important;margin-top:8px!important;}
+
+  /* Student page less zoomed */
+  #workPage .cleanGroupHeader,
+  #workPage .workHero{padding:14px 16px!important;border-radius:22px!important;margin-bottom:12px!important;}
+  #workPage .cleanGroupName,
+  #workPage h1{font-size:28px!important;}
+  #workPage .cleanStatusBadge,
+  #workPage .statusBadge{font-size:13px!important;padding:6px 11px!important;}
+  #workPage .cleanInfoLine span{font-size:13px!important;padding:6px 9px!important;}
+  #workPage .cleanMembersLine{font-size:13px!important;margin-top:7px!important;}
+  #workPage .workLayout{gap:12px!important;grid-template-columns:minmax(0,1.35fr) minmax(280px,.85fr)!important;}
+  #workPage .myWorkCard,
+  #workPage .sideCuteCard,
+  #workPage .cutePanel{padding:14px!important;border-radius:18px!important;margin-bottom:12px!important;}
+  #workPage .myWorkCard h3,
+  #workPage .sideCuteCard h3,
+  #workPage .cutePanel h3{font-size:16px!important;}
+  #workPage #myStudentAnswer{min-height:165px!important;font-size:13px!important;}
+  #workPage .cuteActions{gap:9px!important;}
+  #workPage .cuteActions button{font-size:12px!important;min-height:38px!important;padding:8px 9px!important;}
+  #workPage .achievementCard{padding:12px!important;border-radius:16px!important;}
+  #workPage .achievementBtn{font-size:13px!important;padding:10px!important;}
+
+  /* Teacher dashboard compact */
+  #teacherPage{max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;}
+  .teacherHero{padding:14px!important;border-radius:18px!important;margin-bottom:12px!important;}
+  .teacherHeroTitleRow h2{font-size:20px!important;margin-bottom:6px!important;}
+  .teacherHeroTitleRow p{font-size:14px!important;margin:0!important;}
+  .teacherTopActions{gap:9px!important;margin:10px 0!important;}
+  .teacherTopActions button{min-width:120px!important;flex:1!important;}
+  .teacherClassGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:12px!important;}
+  .classCard{padding:14px!important;border-radius:16px!important;}
+  .classCard h3{font-size:20px!important;margin:0 0 7px!important;}
+  .statusPill{font-size:11px!important;padding:4px 7px!important;}
+
+  /* Pretty current activity details */
+  .currentActivityDashboardBox{
+    background:linear-gradient(135deg,#fff7ed 0%,#eff6ff 100%)!important;
+    border:1px solid #fed7aa!important;
+    border-radius:20px!important;
+    padding:14px!important;
+    margin:14px 0!important;
+    box-shadow:0 8px 22px rgba(36,59,107,.08)!important;
+  }
+  .currentActivityDashboardBox h3{
+    font-size:18px!important;
+    margin:0 0 10px!important;
+    color:#1e3a8a!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:7px!important;
+  }
+  .currentActivityGrid{
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:10px!important;
+  }
+  .currentActivityMini{
+    background:white!important;
+    border:1px solid #dbeafe!important;
+    border-radius:16px!important;
+    padding:11px!important;
+    min-height:82px!important;
+    box-shadow:0 3px 10px rgba(36,59,107,.05)!important;
+  }
+  .currentActivityMini b{
+    display:block!important;
+    color:#1e3a8a!important;
+    font-size:12px!important;
+    margin-bottom:6px!important;
+  }
+  .currentActivityMini span{
+    display:block!important;
+    font-size:13px!important;
+    line-height:1.4!important;
+    color:#243044!important;
+    word-break:break-word!important;
+  }
+  .assignedToLine{
+    margin-top:9px!important;
+    background:white!important;
+    border:1px solid #dbeafe!important;
+    color:#475569!important;
+    border-radius:999px!important;
+    padding:7px 10px!important;
+    display:inline-block!important;
+    font-size:12px!important;
+  }
+
+  /* Activity builder shortcut becomes a real button-card */
+  .teacherBuilderShortcut{
+    padding:16px!important;
+    border-radius:18px!important;
+    background:linear-gradient(135deg,#ffffff,#f8fbff)!important;
+  }
+  .teacherBuilderShortcut:after{
+    content:'Open Activity Builder';
+    display:inline-block;
+    margin-top:10px;
+    background:#243b6b;
+    color:white;
+    padding:9px 14px;
+    border-radius:12px;
+    font-weight:700;
+    font-size:13px;
+  }
+
+  /* Builder page neat and not zoomed */
+  #teacherBuilderPage{max-width:1180px!important;margin:auto!important;padding:16px!important;border-radius:18px!important;}
+  #teacherBuilderPage .backBtn{margin:0 0 12px 0!important;background:#64748b!important;}
+  #teacherBuilderPage > .backBtn:last-of-type{display:none!important;}
+  #teacherBuilderPage h2{font-size:22px!important;margin-bottom:10px!important;}
+  .libraryPanel,.builderSection,.assignPanel{padding:14px!important;border-radius:16px!important;margin-top:12px!important;}
+  .builderTwoCol{grid-template-columns:1fr 230px!important;gap:10px!important;}
+  .differentTaskGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:9px!important;}
+  .groupTaskMini{padding:9px!important;border-radius:12px!important;}
+  .groupTaskMini textarea{min-height:75px!important;font-size:12px!important;}
+  .taskPanel textarea{min-height:95px!important;}
+  .instructionTextarea{min-height:75px!important;}
+  #builderSuccessCriteria{min-height:115px!important;}
+  .builderHelpBox{font-size:13px!important;padding:10px!important;}
+  .builderSaveRow{margin-top:8px!important;}
+  .wideBtn{margin-top:10px!important;}
+  .groupAssignBox{grid-template-columns:repeat(5,minmax(0,1fr))!important;}
+
+  @media(max-width:900px){
+    .teacherClassGrid,.currentActivityGrid,.differentTaskGrid{grid-template-columns:1fr 1fr!important;}
+    #workPage .workLayout{grid-template-columns:1fr!important;}
+    .builderTwoCol{grid-template-columns:1fr!important;}
+  }
+  @media(max-width:600px){
+    .teacherClassGrid,.currentActivityGrid,.differentTaskGrid,.groupAssignBox{grid-template-columns:1fr!important;}
+  }
+</style>
+
+<script>
+(function(){
+  function safeText(x){
+    return String(x || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.renderTeacherCurrentActivitySummary = function(classes){
+    var box = document.getElementById('teacherCurrentActivityBox');
+    if(!box) return;
+
+    var classList = (typeof getClassOptions === 'function') ? getClassOptions() : ['9-1','9-2','9-3','9-4'];
+    var active = classList.map(function(cls){
+      return {cls:cls, activity: ((classes || {})[cls] || {}).currentActivity};
+    }).filter(function(item){ return item.activity; });
+
+    if(!active.length){
+      box.innerHTML = '<h3>🌟 Current Activity Details</h3>' +
+        '<div class="currentActivityEmpty">No activity assigned yet. Open the Activity Builder, create/load an activity, then assign it to your class or selected groups.</div>';
+      return;
+    }
+
+    active.sort(function(a,b){
+      return Number((b.activity || {}).assignedAt || (b.activity || {}).updatedAt || 0) -
+             Number((a.activity || {}).assignedAt || (a.activity || {}).updatedAt || 0);
+    });
+
+    var activity = active[0].activity || {};
+    var assignedClasses = active.map(function(x){
+      return (typeof classDisplayName === 'function') ? classDisplayName(x.cls) : x.cls;
+    }).join(', ');
+
+    var instructions = activity.instructions || 'No instructions written yet.';
+    var shortInstruction = instructions.length > 145 ? instructions.slice(0,145) + '...' : instructions;
+    var criteriaCount = Array.isArray(activity.successCriteria) ? activity.successCriteria.length : 0;
+    var modeText = activity.taskMode === 'different'
+      ? 'Groups have different assigned tasks. Students complete their own part, save work, check the criteria, and the leader submits.'
+      : 'All groups complete the same task. Students complete their own part, save work, check the criteria, and the leader submits.';
+    if(criteriaCount) modeText += ' Criteria: ' + criteriaCount + ' items.';
+
+    var timeText = 'Recently assigned';
+    try{
+      var t = activity.assignedAt || activity.updatedAt || activity.createdAt;
+      if(t) timeText = new Date(t).toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'});
+    }catch(e){}
+
+    box.innerHTML =
+      '<h3>🌟 Current Activity Details</h3>' +
+      '<div class="currentActivityGrid">' +
+        '<div class="currentActivityMini"><b>📌 Activity Name</b><span>' + safeText(activity.name || 'Group Activity') + '</span></div>' +
+        '<div class="currentActivityMini"><b>⏰ Time</b><span>' + safeText(timeText) + '</span></div>' +
+        '<div class="currentActivityMini"><b>📋 Instructions</b><span>' + safeText(shortInstruction) + '</span></div>' +
+        '<div class="currentActivityMini"><b>🤖 AI Short Description</b><span>' + safeText(modeText) + '</span></div>' +
+      '</div>' +
+      '<div class="assignedToLine">📚 Assigned to: ' + safeText(assignedClasses) + '</div>';
+  };
+
+  window.addEventListener('load', function(){
+    var shortcut = document.querySelector('.teacherBuilderShortcut');
+    if(shortcut){
+      shortcut.setAttribute('role','button');
+      shortcut.setAttribute('title','Open Activity Builder');
+    }
+
+    var builder = document.getElementById('teacherBuilderPage');
+    if(builder){
+      var buttons = builder.querySelectorAll('.backBtn');
+      if(buttons.length > 1){
+        buttons[buttons.length - 1].style.display = 'none';
+      }
+    }
+  });
+})();
+</script>
+<!-- === END FINAL POLISH PATCH === -->
+
 </body>
 </html>`;
 
