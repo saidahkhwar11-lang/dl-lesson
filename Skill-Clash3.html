@@ -1398,6 +1398,19 @@ async function joinGroup(){
     return;
   }
 
+  const groupPath = `classes/${currentClass}/groups/group${currentGroup}/students`;
+  const studentsSnap = await hubRef.child(groupPath).once('value');
+  const existingStudents = studentsSnap.val() || {};
+  const existingLeader = Object.keys(existingStudents).find(name => {
+    return existingStudents[name] && existingStudents[name].role === 'leader' && name !== currentStudent;
+  });
+
+  if(currentRole === 'leader' && existingLeader){
+    currentRole = 'member';
+    document.getElementById('studentRole').value = 'member';
+    alert('This group already has a leader: ' + existingLeader + '. You will join as a group member.');
+  }
+
   sessionStorage.setItem('skillClass',currentClass);
   sessionStorage.setItem('skillGroup',currentGroup);
   sessionStorage.setItem('skillStudent',currentStudent);
@@ -2191,44 +2204,264 @@ function checkWholeClassAchievement(){
   }
 }
 
+function getMyGroupMembersForCertificate(){
+  const g = (latestClassGroups || {})['group' + currentGroup] || {};
+  const students = g.students || latestStudents || {};
+  return Object.keys(students).filter(Boolean);
+}
+
 function downloadCertificate(info){
-  const safeStudent = escapeHtml(currentStudent || 'Student');
   const safeGroup = escapeHtml(currentGroup || '');
-  const dateText = new Date().toLocaleDateString();
-  const fileName = `${(info.title || 'Skill Clash Certificate').replace(/[^a-z0-9]+/gi,'_')}_Group_${safeGroup}_${(currentStudent || 'student').replace(/[^a-z0-9]+/gi,'_')}.html`;
+  const members = getMyGroupMembersForCertificate();
+  const memberList = members.length ? members : [currentStudent || 'Student'];
+  const dateText = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'});
+  const fileName = `${(info.title || 'Skill Clash Certificate').replace(/[^a-z0-9]+/gi,'_')}_Group_${safeGroup}.html`;
+
+  const memberHtml = memberList.map(name => `<span>${escapeHtml(name)}</span>`).join('');
 
   const certHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(info.title)}</title>
   <style>
-    body{margin:0;background:#eef4fb;font-family:Arial,sans-serif;color:#10233f;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:30px;}
-    .cert{width:1000px;max-width:100%;background:white;border:12px solid #f7c948;border-radius:28px;padding:52px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.16);position:relative;}
-    .cert:before{content:"";position:absolute;inset:18px;border:3px solid #1f4f99;border-radius:18px;pointer-events:none;}
-    .school{font-size:22px;font-weight:800;color:#1f4f99;letter-spacing:2px;text-transform:uppercase;}
-    h1{font-size:54px;margin:28px 0 8px;color:#b45309;}
-    h2{font-size:34px;margin:10px 0;color:#0f2f66;}
-    .presented{font-size:20px;margin-top:30px;color:#475569;}
-    .name{font-size:46px;font-weight:900;color:#0f2f66;margin:12px 0;border-bottom:3px solid #dbeafe;display:inline-block;padding:0 35px 10px;}
-    .group{font-size:28px;font-weight:800;color:#15803d;margin:10px 0;}
-    .detail{background:#eff6ff;border:1px solid #bfdbfe;border-radius:18px;padding:18px;margin:28px auto;max-width:760px;font-size:22px;font-weight:700;}
-    .note{font-size:20px;line-height:1.55;max-width:760px;margin:20px auto;color:#334155;}
-    .bottom{display:flex;justify-content:space-between;margin-top:55px;text-align:center;color:#334155;font-weight:700;}
-    .line{border-top:2px solid #94a3b8;width:240px;margin:8px auto;}
-    .print{position:fixed;top:15px;right:15px;background:#1d4ed8;color:white;border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;}
-    @media print{.print{display:none}body{background:white;padding:0}.cert{box-shadow:none;width:100%;min-height:90vh}}
+    @page{size:A4 portrait;margin:0}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:#e9eef7;
+      color:#071f4a;
+      font-family:Georgia,'Times New Roman',serif;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:22px;
+    }
+    .printBtn{
+      position:fixed;
+      top:14px;
+      right:14px;
+      z-index:20;
+      background:#0b3b82;
+      color:#fff;
+      border:0;
+      border-radius:12px;
+      padding:12px 18px;
+      font-family:Arial,sans-serif;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.18);
+    }
+    .cert{
+      width:900px;
+      min-height:1250px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.96), rgba(255,248,236,.96) 45%, rgba(255,255,255,.97)),
+        linear-gradient(135deg,#fffdf7,#fff7e8);
+      border:10px solid #08285f;
+      border-radius:8px;
+      padding:44px 54px 38px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 24px 80px rgba(0,0,0,.2);
+    }
+    .cert:before{
+      content:"";
+      position:absolute;
+      inset:24px;
+      border:3px solid #c9962d;
+      border-radius:4px;
+      pointer-events:none;
+      z-index:1;
+    }
+    .cert:after{
+      content:"";
+      position:absolute;
+      width:420px;height:420px;
+      right:-160px;bottom:-135px;
+      border-radius:50%;
+      border:55px solid #08285f;
+      box-shadow:0 0 0 16px #d6a33b, 0 0 0 28px #08285f;
+      opacity:.96;
+      z-index:0;
+    }
+    .goldSweep{
+      position:absolute;
+      left:-100px;top:-92px;
+      width:520px;height:220px;
+      background:linear-gradient(135deg,#09265b 0%,#09265b 45%,#d9aa45 46%,#ffe3a4 54%,#09265b 55%);
+      transform:rotate(-22deg);
+      border-radius:0 0 70% 0;
+      z-index:0;
+    }
+    .content{position:relative;z-index:2}
+    .crest{
+      width:150px;height:150px;
+      margin:6px auto 12px;
+      border-radius:50%;
+      background:linear-gradient(145deg,#09265b,#0b3b82);
+      border:6px solid #d6a33b;
+      color:#ffd773;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      box-shadow:0 12px 22px rgba(0,0,0,.16);
+    }
+    .crest .cup{font-size:52px;line-height:1}
+    .crest .brand{font-family:Arial,sans-serif;font-size:13px;color:white;font-weight:900;letter-spacing:1px;margin-top:6px}
+    .titleMain{
+      font-size:76px;
+      letter-spacing:7px;
+      line-height:.9;
+      color:#061e4c;
+      margin:20px 0 12px;
+      text-shadow:0 3px 0 rgba(0,0,0,.06);
+      font-weight:700;
+    }
+    .titleSub{
+      font-size:35px;
+      letter-spacing:8px;
+      color:#a36a0a;
+      margin-bottom:22px;
+      font-weight:700;
+    }
+    .flourish{color:#c9962d;font-size:28px;margin:8px 0 16px}
+    .presented{font-family:Arial,sans-serif;font-size:20px;color:#1f2937;margin:14px 0 10px}
+    .groupName{
+      font-size:68px;
+      color:#061e4c;
+      font-weight:800;
+      letter-spacing:4px;
+      margin:8px 0 8px;
+    }
+    .awardLine{font-family:Arial,sans-serif;font-size:21px;color:#1f2937;margin:8px 0}
+    .subtitle{
+      font-family:Arial,sans-serif;
+      color:#061e4c;
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:2px;
+      margin:8px 0 14px;
+      text-transform:uppercase;
+    }
+    .memberTitle{
+      display:inline-block;
+      margin:12px auto 10px;
+      background:#09265b;
+      color:white;
+      border:2px solid #d6a33b;
+      padding:8px 28px;
+      border-radius:999px;
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:1px;
+    }
+    .membersBox{
+      width:76%;
+      margin:0 auto 18px;
+      border:2px solid #d6a33b;
+      border-radius:14px;
+      padding:14px 22px;
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:10px 16px;
+      background:rgba(255,255,255,.72);
+      font-family:Arial,sans-serif;
+      font-size:18px;
+      color:#071f4a;
+      line-height:1.35;
+    }
+    .membersBox span{border-right:1px solid rgba(201,150,45,.45);padding:2px 8px;font-weight:700}
+    .membersBox span:nth-child(3n){border-right:0}
+    .note{
+      font-family:Arial,sans-serif;
+      max-width:690px;
+      margin:16px auto 8px;
+      font-size:21px;
+      line-height:1.55;
+      color:#1f2937;
+    }
+    .congrats{
+      font-size:30px;
+      color:#a36a0a;
+      font-style:italic;
+      margin:12px 0 24px;
+      font-weight:700;
+    }
+    .seal{
+      width:112px;height:112px;
+      margin:8px auto 20px;
+      border-radius:50%;
+      background:radial-gradient(circle,#ffe9a6 0%,#d5a13a 50%,#9b6a10 100%);
+      border:6px double #fff0bd;
+      display:flex;align-items:center;justify-content:center;
+      color:#7a4b05;
+      font-size:48px;
+      box-shadow:0 9px 20px rgba(0,0,0,.17);
+    }
+    .signatures{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-top:24px;
+      gap:34px;
+      font-family:Arial,sans-serif;
+    }
+    .sig{width:38%;text-align:center;color:#071f4a}
+    .sig .script{
+      font-family:'Brush Script MT','Segoe Script',cursive;
+      font-size:28px;
+      color:#08285f;
+      margin-bottom:7px;
+    }
+    .sig .line{border-top:2px solid #c9962d;margin:0 auto 8px;width:86%}
+    .sig .name{font-size:19px;font-weight:700;margin-bottom:5px}
+    .sig .role{font-size:17px;color:#8a5b0d}
+    .date{
+      font-family:Arial,sans-serif;
+      margin-top:34px;
+      font-size:18px;
+      color:#1f2937;
+    }
+    @media(max-width:700px){
+      body{padding:0}.cert{width:100%;min-height:100vh;border-radius:0;padding:28px 24px}.cert:before{inset:12px}.titleMain{font-size:48px}.titleSub{font-size:24px}.groupName{font-size:42px}.membersBox{width:100%;grid-template-columns:1fr;font-size:16px}.membersBox span{border-right:0}.signatures{gap:10px}.sig{width:48%}.sig .script{font-size:22px}
+    }
+    @media print{
+      body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    }
   </style></head><body>
-  <button class="print" onclick="window.print()">Print / Save PDF</button>
+  <button class="printBtn" onclick="window.print()">Print / Save PDF</button>
   <div class="cert">
-    <div class="school">Al Reyada School · Skill Clash Hub</div>
-    <h1>🏆 ${escapeHtml(info.certType)}</h1>
-    <h2>${escapeHtml(info.title)}</h2>
-    <div class="presented">This certificate is proudly awarded to</div>
-    <div class="name">${safeStudent}</div>
-    <div class="group">Group ${safeGroup}</div>
-    <div class="detail">${escapeHtml(info.subtitle)}<br>${escapeHtml(info.detail)}</div>
-    <div class="note">${escapeHtml(info.note)} Thank you for your teamwork, effort, and active participation.</div>
-    <div class="bottom">
-      <div><div class="line"></div>Teacher</div>
-      <div>Date: ${escapeHtml(dateText)}</div>
-      <div><div class="line"></div>School</div>
+    <div class="goldSweep"></div>
+    <div class="content">
+      <div class="crest"><div class="cup">🏆</div><div class="brand">SKILL CLASH HUB</div></div>
+      <div class="titleMain">CERTIFICATE</div>
+      <div class="titleSub">OF ACHIEVEMENT</div>
+      <div class="flourish">──── ✦ ────</div>
+      <div class="presented">This certificate is proudly presented to</div>
+      <div class="groupName">GROUP ${safeGroup}</div>
+      <div class="awardLine">for being the</div>
+      <div class="subtitle">${escapeHtml(info.title)}</div>
+      <div class="awardLine">${escapeHtml(info.subtitle)}</div>
+      <div class="memberTitle">GROUP MEMBERS</div>
+      <div class="membersBox">${memberHtml}</div>
+      <div class="note">Your outstanding teamwork, strong performance, and excellent collaboration have led your group to victory.</div>
+      <div class="congrats">Congratulations on your achievement!</div>
+      <div class="seal">★</div>
+      <div class="signatures">
+        <div class="sig">
+          <div class="script">Ms. Shawqeya Al hosani</div>
+          <div class="line"></div>
+          <div class="name">Ms. Shawqeya Al hosani</div>
+          <div class="role">School Principal</div>
+        </div>
+        <div class="sig">
+          <div class="script">Ms. Saidah Khwar</div>
+          <div class="line"></div>
+          <div class="name">Ms. Saidah Khwar</div>
+          <div class="role">English Teacher</div>
+        </div>
+      </div>
+      <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
   </div></body></html>`;
 
@@ -2243,6 +2476,7 @@ function downloadCertificate(info){
     a.remove();
   }, 500);
 }
+
 
 
 
