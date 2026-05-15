@@ -2217,6 +2217,7 @@ function downloadCertificate(info){
   const dateText = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'});
   const fileName = `${(info.title || 'Skill Clash Certificate').replace(/[^a-z0-9]+/gi,'_')}_Group_${safeGroup}.html`;
 
+  const memberClass = memberList.length === 1 ? 'oneMember' : (memberList.length === 2 ? 'twoMembers' : 'manyMembers');
   const memberHtml = memberList.map(name => `<span>${escapeHtml(name)}</span>`).join('');
 
   const certHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(info.title)}</title>
@@ -2362,16 +2363,45 @@ function downloadCertificate(info){
       border-radius:14px;
       padding:14px 22px;
       display:grid;
-      grid-template-columns:repeat(3,1fr);
       gap:10px 16px;
       background:rgba(255,255,255,.72);
       font-family:Arial,sans-serif;
       font-size:18px;
       color:#071f4a;
       line-height:1.35;
+      align-items:center;
+      justify-content:center;
     }
-    .membersBox span{border-right:1px solid rgba(201,150,45,.45);padding:2px 8px;font-weight:700}
-    .membersBox span:nth-child(3n){border-right:0}
+    .membersBox.oneMember{
+      grid-template-columns:minmax(220px, 1fr);
+      max-width:520px;
+      text-align:center;
+    }
+    .membersBox.twoMembers{
+      grid-template-columns:repeat(2, minmax(180px, 1fr));
+      max-width:640px;
+      text-align:center;
+    }
+    .membersBox.manyMembers{
+      grid-template-columns:repeat(3,1fr);
+      text-align:center;
+    }
+    .membersBox span{
+      padding:8px 14px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+    }
+    .membersBox.twoMembers span:first-child,
+    .membersBox.manyMembers span:not(:nth-child(3n)){
+      border-right:1px solid rgba(201,150,45,.45);
+    }
+    .membersBox.oneMember span{
+      border-right:0;
+      font-size:22px;
+    }
     .note{
       font-family:Arial,sans-serif;
       max-width:690px;
@@ -2423,7 +2453,7 @@ function downloadCertificate(info){
       color:#1f2937;
     }
     @media(max-width:700px){
-      body{padding:0}.cert{width:100%;min-height:100vh;border-radius:0;padding:28px 24px}.cert:before{inset:12px}.titleMain{font-size:48px}.titleSub{font-size:24px}.groupName{font-size:42px}.membersBox{width:100%;grid-template-columns:1fr;font-size:16px}.membersBox span{border-right:0}.signatures{gap:10px}.sig{width:48%}.sig .script{font-size:22px}
+      body{padding:0}.cert{width:100%;min-height:100vh;border-radius:0;padding:28px 24px}.cert:before{inset:12px}.titleMain{font-size:48px}.titleSub{font-size:24px}.groupName{font-size:42px}.membersBox{width:100%;grid-template-columns:1fr!important;font-size:16px}.membersBox.oneMember,.membersBox.twoMembers{max-width:100%}.membersBox span{border-right:0!important}.signatures{gap:10px}.sig{width:48%}.sig .script{font-size:22px}
     }
     @media print{
       body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
@@ -2443,7 +2473,7 @@ function downloadCertificate(info){
       <div class="subtitle">${escapeHtml(info.title)}</div>
       <div class="awardLine">${escapeHtml(info.subtitle)}</div>
       <div class="memberTitle">GROUP MEMBERS</div>
-      <div class="membersBox">${memberHtml}</div>
+      <div class="membersBox ${memberClass}">${memberHtml}</div>
       <div class="note">Your outstanding teamwork, strong performance, and excellent collaboration have led your group to victory.</div>
       <div class="congrats">Congratulations on your achievement!</div>
       <div class="seal">★</div>
