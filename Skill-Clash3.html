@@ -974,49 +974,120 @@ button:hover{filter:brightness(.96)}
 }
 .timerControlRow{
   display:flex;
-  gap:10px;
+  gap:8px;
   justify-content:center;
   flex-wrap:wrap;
-  margin-top:14px;
+  margin-top:12px;
 }
-.timerControlRow button{min-width:135px;margin:0}
+
+.timerControlRow button{
+  min-width:115px;
+  margin:0;
+  padding:10px 14px;
+  border-radius:12px;
+}
+
 .activityPopupGrid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:14px;
-  padding:0 18px 18px;
+  gap:10px;
+  padding:0 14px 14px;
 }
+
 .activityPopupCard{
   background:white;
   border:1px solid #d8e5f6;
-  border-radius:18px;
-  padding:14px;
+  border-radius:16px;
+  padding:12px;
+  overflow:hidden;
 }
-.activityPopupCard.full{grid-column:1/-1}
-.activityPopupCard h3{font-size:16px;margin-bottom:8px;color:#18376b}
+
+.activityPopupCard.full{
+  grid-column:1/-1;
+}
+
+.activityPopupCard h3{
+  font-size:14px;
+  margin-bottom:6px;
+  color:#18376b;
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
 .activityPopupText{
   background:#f8fbff;
   border:1px solid #d8e5f6;
-  border-radius:14px;
-  padding:12px;
-  min-height:58px;
+  border-radius:12px;
+  padding:10px;
+  min-height:48px;
+  max-height:140px;
+  overflow:auto;
   white-space:pre-wrap;
-  line-height:1.5;
+  line-height:1.45;
+  font-size:13px;
+  color:#334155;
 }
+
+.bigTimerTime{
+  font-size:56px;
+  font-weight:900;
+  text-align:center;
+  margin:10px 0;
+  color:#ec4899;
+}
+
+.timerPopupContent{
+  max-height:78vh;
+  overflow:auto;
+}
+
 @media(max-width:760px){
-  .activityPopupGrid{grid-template-columns:1fr}
-  .bigTimerTime{font-size:46px}
+
+  .activityPopupGrid{
+    grid-template-columns:1fr;
+  }
+
+  .bigTimerTime{
+    font-size:42px;
+  }
+
 }
 
 @media(max-width:900px){
-  .studentLayout,.builderGrid{grid-template-columns:1fr}
-  .classGrid,.groupCards,.groupTaskGrid,.currentGrid{grid-template-columns:1fr 1fr}
-  .teacherTopActions,.actions{grid-template-columns:1fr 1fr}
-}
-@media(max-width:560px){
-  .loginGrid,.classGrid,.groupCards,.groupTaskGrid,.currentGrid,.teacherTopActions,.actions{grid-template-columns:1fr}
+
+  .studentLayout,
+  .builderGrid{
+    grid-template-columns:1fr;
+  }
+
+  .classGrid,
+  .groupCards,
+  .groupTaskGrid,
+  .currentGrid{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .teacherTopActions,
+  .actions{
+    grid-template-columns:1fr 1fr;
+  }
+
 }
 
+@media(max-width:560px){
+
+  .loginGrid,
+  .classGrid,
+  .groupCards,
+  .groupTaskGrid,
+  .currentGrid,
+  .teacherTopActions,
+  .actions{
+    grid-template-columns:1fr;
+  }
+
+}
 /* Clean compact battle voting update */
 .compactChooser{
   display:grid;
@@ -1514,6 +1585,7 @@ Grammar and spelling are checked"></textarea>
       </div>
       <button class="timerCloseBtn" onclick="closeTimerPopup()">✖ Close</button>
     </div>
+    <div class="timerPopupContent">
 
     <div class="bigTimerBox">
       <div id="bigTeacherTimer" class="bigTimerTime">00:00</div>
@@ -1525,29 +1597,36 @@ Grammar and spelling are checked"></textarea>
         <button class="red" onclick="resetTeacherTimer()">↺ Reset</button>
       </div>
     </div>
+      </div>
 
     <div class="activityPopupGrid">
-      <div class="activityPopupCard">
-        <h3>📌 Activity Name</h3>
-        <div id="popupActivityName" class="activityPopupText">No activity assigned yet.</div>
-      </div>
-      <div class="activityPopupCard">
-        <h3>👥 Assigned To</h3>
-        <div id="popupAssignedTo" class="activityPopupText">-</div>
-      </div>
-      <div class="activityPopupCard full">
-        <h3>📋 Instructions</h3>
-        <div id="popupInstructions" class="activityPopupText">No instructions.</div>
-      </div>
-      <div class="activityPopupCard">
-        <h3>📝 Activity Details</h3>
-        <div id="popupActivityDetails" class="activityPopupText">Students write, save, review group work, and submit final answer.</div>
-      </div>
-      <div class="activityPopupCard">
-        <h3>✅ Success Criteria</h3>
-        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
-      </div>
-    </div>
+
+  <div class="activityPopupCard">
+    <h3>📌 Activity</h3>
+    <div class="activityPopupText" id="popupActivityTitle"></div>
+  </div>
+
+  <div class="activityPopupCard">
+    <h3>👥 Current Class</h3>
+    <div class="activityPopupText" id="popupActivityClass"></div>
+  </div>
+
+  <div class="activityPopupCard full">
+    <h3>📋 Instructions</h3>
+    <div class="activityPopupText" id="popupActivityInstructions"></div>
+  </div>
+
+  <div class="activityPopupCard">
+    <h3>⚔️ Voting System</h3>
+    <div class="activityPopupText" id="popupActivityVoting"></div>
+  </div>
+
+  <div class="activityPopupCard">
+    <h3>✅ Success Criteria</h3>
+    <div class="activityPopupText" id="popupActivityCriteria"></div>
+  </div>
+
+</div>
   </div>
 </div>
 
@@ -1693,6 +1772,7 @@ function listenGroup(){
   listenAssignedActivity();
   listenClassSettings();
   listenChat();
+  listenStudentTimer();
 }
 
 function listenAssignedActivity(){
@@ -3293,15 +3373,19 @@ function getTeacherTimerClass(){
   return '';
 }
 
-async function saveTimerToFirebase(state){
+async function saveTimerToFirebase(status){
   const cls = getTeacherTimerClass();
   if(!cls) return;
+
   await hubRef.child(`classes/${cls}/settings/timer`).set({
-    state,
-    remaining: Math.max(0, Number(teacherTimerSeconds || 0)),
-    duration: Math.max(0, Number(teacherTimerLastSetSeconds || teacherTimerSeconds || 0)),
-    updatedAt: Date.now(),
-    updatedBy: 'Ms. Saidah Khwar'
+    duration: teacherTimerLastSetSeconds,
+    remaining: teacherTimerSeconds,
+    startedAt: Date.now() - ((teacherTimerLastSetSeconds - teacherTimerSeconds) * 1000),
+    running: status === 'running',
+    paused: status === 'paused',
+    finished: status === 'finished',
+    status: status,
+    updatedAt: Date.now()
   });
 }
 
@@ -3392,21 +3476,29 @@ function closeTimerPopup(){
 }
 function updateTimerPopupActivity(){
   const a = latestTeacherActivityForPopup || {};
-  const name = document.getElementById('popupActivityName');
-  const assigned = document.getElementById('popupAssignedTo');
-  const instructions = document.getElementById('popupInstructions');
-  const details = document.getElementById('popupActivityDetails');
-  const criteria = document.getElementById('popupSuccessCriteria');
-  if(name) name.innerText = a.title || 'No activity assigned yet.';
-  if(assigned) assigned.innerText = latestTeacherAssignedTo || '-';
-  if(instructions) instructions.innerText = a.instructions || 'No instructions.';
-  const detailText = a.taskType === 'different'
-    ? 'Different tasks are assigned to groups. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.'
-    : 'All groups complete the same task. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.';
-  if(details) details.innerText = detailText;
+
+  const title = document.getElementById('popupActivityTitle');
+  const cls = document.getElementById('popupActivityClass');
+  const instructions = document.getElementById('popupActivityInstructions');
+  const voting = document.getElementById('popupActivityVoting');
+  const criteria = document.getElementById('popupActivityCriteria');
+
+  if(title) title.innerText = a.title || 'No activity assigned';
+  if(cls) cls.innerText = latestTeacherAssignedTo || '-';
+  if(instructions) instructions.innerText = a.instructions || 'No instructions';
+
+  if(voting){
+    voting.innerText =
+      a.votingSystem === 'battle'
+        ? '⚔️ Group VS Group'
+        : '📋 Peer Assessment';
+  }
+
   if(criteria){
     const list = (a.criteria || []).filter(Boolean);
-    criteria.innerHTML = list.length ? list.map(x=>'✅ '+escapeHtml(x)).join('<br>') : 'No criteria assigned.';
+    criteria.innerHTML = list.length
+      ? list.map(x => '✅ ' + escapeHtml(x)).join('<br>')
+      : 'No success criteria';
   }
 }
 function finishActivity(){
@@ -3444,6 +3536,50 @@ async function resetSelectedClass(){
   if(!confirm('Reset this class? This clears groups and assignments.')) return;
   await hubRef.child('classes/'+selectedTeacherClass).remove();
 }
+  let studentTimerInterval = null;
+
+function listenStudentTimer(){
+  hubRef.child(`classes/${currentClass}/settings/timer`).on('value', snap=>{
+    const t = snap.val() || {};
+    const box = document.getElementById('studentHeaderTimer');
+    if(!box) return;
+
+    if(studentTimerInterval) clearInterval(studentTimerInterval);
+
+    function render(){
+      if(!t.running && !t.paused){
+        box.innerHTML = `
+          <div class="timerIcon">⏱</div>
+          <div class="timerBig">Not started</div>
+          <div class="timerSmall">Teacher timer</div>
+        `;
+        return;
+      }
+
+      let remaining = Number(t.remaining || t.duration || 0);
+
+      if(t.running && t.startedAt){
+        const passed = Math.floor((Date.now() - Number(t.startedAt)) / 1000);
+        remaining = Math.max(0, Number(t.duration || 0) - passed);
+      }
+
+      const min = Math.floor(remaining / 60);
+      const sec = remaining % 60;
+
+      box.innerHTML = `
+        <div class="timerIcon">⏱</div>
+        <div class="timerBig">${min}:${String(sec).padStart(2,'0')}</div>
+        <div class="timerSmall">${t.running ? 'Timer running' : 'Timer paused'}</div>
+      `;
+    }
+
+    render();
+    if(t.running){
+      studentTimerInterval = setInterval(render, 1000);
+    }
+  });
+}
+
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
   buildAssignGroupChecks();
