@@ -1554,7 +1554,11 @@ function switchVotingModeUI(){
     if(peer) peer.classList.add('hidden');
     if(battle) battle.classList.remove('hidden');
     if(rule) rule.innerText = 'System 1 is open: Group Work VS Group Work. You can see both answers, but you only score the other group.';
-    if(badge) badge.innerText = '⚔️ Group VS Group';
+if(badge){
+  badge.innerText = '⚔️ Group VS Group';
+  badge.style.background = '#dc2626';
+  badge.style.color = '#fff';
+}
   }else{
     if(peer) peer.classList.remove('hidden');
     if(battle) battle.classList.add('hidden');
