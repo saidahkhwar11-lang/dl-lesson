@@ -354,6 +354,88 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 .questionList li{margin-bottom:6px}
 .smallHint{font-size:13px;color:#64748b;margin-top:6px}
 
+
+
+/* ===== FINAL CLEAN STUDENT HEADER FIX ===== */
+#mainLoginButtons{margin-bottom:12px}
+.workHero{
+  padding:18px 20px !important;
+  border-radius:24px !important;
+  margin-bottom:14px !important;
+}
+.workHero > h2{
+  display:none !important;
+}
+#studentGroupInfo.soft{
+  background:transparent !important;
+  border:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+.cleanGroupHeader{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:20px;
+  padding:14px 16px;
+  color:white;
+}
+.cleanTitleLine{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.cleanGroupName{
+  font-size:30px;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.cleanInfoLine{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+  line-height:1.2;
+}
+.cleanInfoLine span{
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  padding:8px 12px;
+  white-space:nowrap;
+}
+.cleanInfoLine em{
+  font-style:normal;
+  background:#fff0f6;
+  color:#9d174d;
+  padding:4px 9px;
+  border-radius:999px;
+  font-weight:800;
+  margin-left:4px;
+}
+.cleanMembersLine{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+  font-size:15px;
+}
+.cleanMembersLine .badge{
+  background:rgba(255,255,255,.22) !important;
+  color:white !important;
+  border:1px solid rgba(255,255,255,.25);
+  padding:5px 10px;
+  margin:0;
+  border-radius:999px;
+}
+@media(max-width:700px){
+  .cleanGroupName{font-size:24px}
+  .cleanInfoLine span{white-space:normal}
+}
+
 </style>
 </head>
 
@@ -730,7 +812,14 @@ function showPage(id){
     const el=document.getElementById(p);
     if(el) el.classList.add('hidden');
   });
-  document.getElementById(id).classList.remove('hidden');
+  const target = document.getElementById(id);
+  if(target) target.classList.remove('hidden');
+
+  /* Hide the top Student/Teacher login buttons after students or teacher enter a page. */
+  const loginBtns = document.getElementById('mainLoginButtons');
+  if(loginBtns){
+    loginBtns.style.display = (id === 'studentPage' || id === 'teacherLoginPage') ? 'flex' : 'none';
+  }
 }
 
   async function startActivityTimer(){
@@ -837,6 +926,8 @@ function makeStudentId(name){
 
 async function joinGroup(){
 
+  teacherLoggedIn = false;
+
   const group = document.getElementById('studentGroup').value;
   const className = document.getElementById('className').value;
   const studentName = document.getElementById('studentName').value.trim();
@@ -935,14 +1026,19 @@ const memberBadges = members.length
 const myRoleText = currentRole === 'leader' ? 'Group Leader' : 'Group Member';
 
 document.getElementById('studentGroupInfo').innerHTML =
-  '<div class="compactInfoGrid">' +
-    '<div class="compactInfoItem"><span class="infoLabel">Class:</span><span class="infoValue">' + escapeHtml(currentClass) + '</span></div>' +
-    '<div class="compactInfoItem"><span class="infoLabel">Group:</span><span class="infoValue">' + currentGroup + '</span></div>' +
-    '<div class="compactInfoItem"><span class="infoLabel">Leader:</span><span class="infoValue">' + escapeHtml(leaderText) + '</span></div>' +
-    '<div class="compactInfoItem"><span class="infoLabel">You:</span><span class="infoValue">' + escapeHtml(currentStudent) + '</span><span class="roleBadge">' + myRoleText + '</span></div>' +
-    '<div class="compactInfoItem"><span class="infoLabel">Votes:</span><span class="infoValue">' + totalVotes + '</span></div>' +
-    '<div class="compactInfoItem"><span class="infoLabel">Status:</span>' + badge + '</div>' +
-    '<div class="compactInfoItem wide"><span class="infoLabel">Members:</span><div class="compactMembers">' + memberBadges + '</div></div>' +
+  '<div class="cleanGroupHeader">' +
+    '<div class="cleanTitleLine">' +
+      '<span class="cleanGroupName">Group ' + currentGroup + ' Work</span>' +
+      badge +
+    '</div>' +
+    '<div class="cleanInfoLine">' +
+      '<span>📚 <b>Class:</b> ' + escapeHtml(currentClass) + '</span>' +
+      '<span>👥 <b>Group:</b> ' + currentGroup + '</span>' +
+      '<span>👑 <b>Leader:</b> ' + escapeHtml(leaderText) + '</span>' +
+      '<span>⭐ <b>You:</b> ' + escapeHtml(currentStudent) + ' <em>' + myRoleText + '</em></span>' +
+      '<span>❤️ <b>Votes:</b> ' + totalVotes + '</span>' +
+    '</div>' +
+    '<div class="cleanMembersLine">👥 <b>Members:</b> ' + memberBadges + '</div>' +
   '</div>';
 
   document.getElementById('groupAnswer').value = data.answer || '';
@@ -1408,7 +1504,7 @@ studentResults.innerHTML = html;
   }
 }
 
-if(currentGroup && currentClass){
+if(currentGroup && currentClass && !teacherLoggedIn){
 
   if(stage === 'voting'){
 
@@ -1423,6 +1519,15 @@ if(currentGroup && currentClass){
     }
 
     if(!document.getElementById('teacherPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherClassPage') && !document.getElementById('teacherClassPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherGroupReviewPage') && !document.getElementById('teacherGroupReviewPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherVotingResultsPage') && !document.getElementById('teacherVotingResultsPage').classList.contains('hidden')){
       return;
     }
 
