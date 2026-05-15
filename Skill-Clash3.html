@@ -5,6 +5,146 @@
 <title>⚔️ Skill Clash Hub</title>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+</script>
+<script>
 
 let lastAchievementCertificate = null;
 
@@ -161,6 +301,22 @@ function downloadAchievementCertificate(){
 
 .activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
 .instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
+
+.teacherHeroClean{background:linear-gradient(135deg,#f8fbff,#eef4ff);border:1px solid #d6e3fa;color:#12244a}
+.teacherHeroTitleRow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.teacherBadge{background:#d1fae5;color:#065f46;border-radius:999px;padding:9px 14px;font-weight:bold}
+.compactTimer{padding:10px 12px;margin-top:8px}
+.teacherBuilderPanel{background:#f8fbff;border:1px solid #dbe6f8}
+.builderHelpBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px;margin:12px 0;color:#7c2d12}
+.libraryPanel,.builderSection,.assignPanel{background:white;border:1px solid #dbe6f8;border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.builderRow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.builderSaveRow{display:flex;justify-content:flex-end;margin-top:12px}
+.wideBtn{width:100%;margin-top:12px}
+.compactAssignBox label{min-width:90px;text-align:center}
+.advancedPanel{margin-top:14px;background:#eef4ff;border-radius:16px;padding:12px}
+.sameTaskSection{display:block}
+@media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
+
 </style>
 </head>
 <body>
@@ -198,8 +354,286 @@ function downloadAchievementCertificate(){
   win.document.close();
 }
 
+
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
 </script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js">
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+</script>
 
 <style>
 body{margin:0;font-family:Arial;background:#f4f7fb;color:#1f2937}
@@ -380,6 +814,12 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   line-height:1.4;
 }
 .chatBubble b{color:#243b6b}
+
+.chatMeta{font-size:12px;color:#64748b;margin-top:3px}
+.chatActions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.chatActions button{font-size:12px;padding:6px 9px;border-radius:10px;margin-top:0}
+.chatActions .editChatBtn{background:#2563eb}
+.chatActions .deleteChatBtn{background:#dc2626}
 .chatInputArea{padding:10px;background:white}
 .chatInputArea textarea{min-height:70px}
 
@@ -729,6 +1169,22 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 
 .activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
 .instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
+
+.teacherHeroClean{background:linear-gradient(135deg,#f8fbff,#eef4ff);border:1px solid #d6e3fa;color:#12244a}
+.teacherHeroTitleRow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.teacherBadge{background:#d1fae5;color:#065f46;border-radius:999px;padding:9px 14px;font-weight:bold}
+.compactTimer{padding:10px 12px;margin-top:8px}
+.teacherBuilderPanel{background:#f8fbff;border:1px solid #dbe6f8}
+.builderHelpBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px;margin:12px 0;color:#7c2d12}
+.libraryPanel,.builderSection,.assignPanel{background:white;border:1px solid #dbe6f8;border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.builderRow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.builderSaveRow{display:flex;justify-content:flex-end;margin-top:12px}
+.wideBtn{width:100%;margin-top:12px}
+.compactAssignBox label{min-width:90px;text-align:center}
+.advancedPanel{margin-top:14px;background:#eef4ff;border-radius:16px;padding:12px}
+.sameTaskSection{display:block}
+@media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
+
 </style>
 </head>
 
@@ -899,20 +1355,23 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 </div>
   
 <div id="teacherPage" class="card hidden">
-  <div class="teacherHero">
-    <h2>👩‍🏫 Teacher Dashboard</h2>
-    <p>Choose a class to check all group work, mark points, open voting, and release results.</p>
+  <div class="teacherHero teacherHeroClean">
+    <div class="teacherHeroTitleRow">
+      <div>
+        <h2>👩‍🏫 Teacher Dashboard</h2>
+        <p><b>Ms. Saidah Khwar</b> · Build activities, assign them to classes, check group work, mark points, and release results.</p>
+      </div>
+      <div class="teacherBadge">Logged in</div>
+    </div>
 
-    <label>Password</label>
-    <input id="teacherPass" type="password" placeholder="Enter password">
+    <input id="teacherPass" type="hidden" value="Welcome@2020">
 
     <div class="teacherTopActions">
-      <button onclick="saveActivitySettings()">💾 Save Activity Settings</button>
       <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
       <button onclick="leaveTeacher()" class="red">🚪 Leave Dashboard</button>
     </div>
 
-    <div class="soft">
+    <div class="soft compactTimer">
       ⏱ Teacher Timer: <b id="teacherTimerDisplay">Not started</b>
     </div>
   </div>
@@ -920,63 +1379,34 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
   <h3>📚 Classes</h3>
   <div id="teacherClassGrid" class="teacherClassGrid"></div>
 
-  <details class="soft" style="margin-top:18px;">
-    <summary style="cursor:pointer;font-weight:bold;">⚙️ Activity Settings</summary>
+  <details class="soft teacherBuilderPanel" style="margin-top:18px;" open>
+    <summary style="cursor:pointer;font-weight:bold;font-size:18px;">🧩 Activity Library + Builder</summary>
 
-    <label>Class for timer/stage controls</label>
-    <select id="teacherClassName">
-      <option value="">Choose class</option>
-      <option value="9-1">9/1</option>
-      <option value="9-2">9/2</option>
-      <option value="9-3">9/3</option>
-      <option value="9-4">9/4</option>
-    </select>
+    <div class="builderHelpBox">
+      <b>Simple steps:</b> 1) Build or load an activity → 2) Save it to your library → 3) Choose classes → 4) Assign it.
+    </div>
 
-    <label>Activity Title</label>
-    <input id="activityTitle" value="Opinion Battle">
+    <div class="libraryPanel">
+      <h3>📚 Saved Activities Library</h3>
+      <p class="smallHint">Save activities here so you can use them again later. Choose one, load it, then assign it to your classes.</p>
+      <div class="builderRow">
+        <select id="savedActivitySelect">
+          <option value="">Loading saved activities...</option>
+        </select>
+        <button onclick="loadSelectedBuiltActivity()">📥 Load Activity</button>
+        <button onclick="deleteSelectedBuiltActivity()" class="red">🗑 Delete</button>
+      </div>
+    </div>
 
-    <label>Activity Instructions</label>
-    <textarea id="activityInstructions">Write a clear opinion paragraph. Remember: opinion, reason, evidence/example, and restated opinion.</textarea>
-
-    <label>Group Topics</label>
-<textarea id="activityTopics">
-1: Should students have to wear uniforms?
-2: Should students have to wear uniforms?
-3: Should we ban homework?
-4: Should we ban homework?
-5: Should fast food be allowed in schools?
-6: Should fast food be allowed in schools?
-7: Should parents decide their children’s career?
-8: Should parents decide their children’s career?
-9: The impact of social media on teenage social skills.
-10: The impact of social media on teenage social skills.
-</textarea>
-
-    <label>Voting Criteria</label>
-<textarea id="voteCriteria">
-Opinion
-Reason
-Evidence / Example
-Restated Opinion
-</textarea>
-
-    <div class="activityCard">
-      <h3>🧩 Build & Assign Group Activity</h3>
-      <p class="smallHint">Build the activity here, then assign it to one or more classes. Students will see the task inside their group page.</p>
+    <div class="builderSection">
+      <h3>✍️ Build Activity</h3>
+      <input id="editingActivityId" type="hidden" value="">
 
       <label>Activity Name</label>
       <input id="builderActivityName" value="Opinion Group Challenge">
 
-      <label>Activity Instructions</label>
+      <label>Instructions students will read</label>
       <textarea id="builderActivityInstructions" placeholder="Write clear instructions students will see after you assign the activity.">Read your group task carefully. Each student should complete her own part, save her work, then the leader combines the answers and submits the final group work.</textarea>
-
-      <label>Assign to Classes</label>
-      <div class="classAssignBox">
-        <label><input type="checkbox" class="assignClassCheck" value="9-1"> 9/1</label>
-        <label><input type="checkbox" class="assignClassCheck" value="9-2"> 9/2</label>
-        <label><input type="checkbox" class="assignClassCheck" value="9-3"> 9/3</label>
-        <label><input type="checkbox" class="assignClassCheck" value="9-4"> 9/4</label>
-      </div>
 
       <label>Task Type</label>
       <select id="builderTaskMode" onchange="toggleDifferentTasksBuilder()">
@@ -984,18 +1414,24 @@ Restated Opinion
         <option value="different">Different task for each group</option>
       </select>
 
-      <label>Same Task for All Groups</label>
-      <textarea id="builderSameTask" placeholder="Example: Write an opinion paragraph about whether students should wear uniforms.">Write a clear opinion paragraph using opinion, reason, evidence/example, and restated opinion.</textarea>
+      <div id="sameTaskSection">
+        <label>Task for All Groups</label>
+        <textarea id="builderSameTask" placeholder="Example: Write an opinion paragraph about whether students should wear uniforms.">Write a clear opinion paragraph using opinion, reason, evidence/example, and restated opinion.</textarea>
+      </div>
 
       <div id="differentTasksSection" class="hidden">
         <label>Different Activity for Each Group</label>
-        <p class="smallHint">Write a different task for each group. Leave any group empty if you do not want to assign a special task.</p>
+        <p class="smallHint">Write a different task for each group. Students will only see the task for their own group.</p>
         <div id="differentGroupTaskGrid" class="differentTaskGrid"></div>
         <textarea id="builderGroupTasks" class="hidden" placeholder="Auto-filled from group task boxes"></textarea>
       </div>
 
       <label>Each Student's Question / Job inside the Group</label>
-      <textarea id="builderStudentQuestions" placeholder="Example:\nOpinion Writer: What is your clear opinion?\nReason Writer: What is your reason?\nEvidence Writer: What example supports your reason?\nChecker: Check grammar and spelling.">Opinion Writer: Write the clear opinion sentence.
+      <textarea id="builderStudentQuestions" placeholder="Example:
+Opinion Writer: What is your clear opinion?
+Reason Writer: What is your reason?
+Evidence Writer: What example supports your reason?
+Checker: Check grammar and spelling.">Opinion Writer: Write the clear opinion sentence.
 Reason Writer: Write one strong reason.
 Evidence Writer: Add an example or evidence.
 Checker: Check grammar, spelling, and OREO parts.
@@ -1008,17 +1444,43 @@ Relevant evidence or example
 Restated opinion
 Correct grammar and spelling</textarea>
 
-      <button onclick="saveBuiltActivityAndAssign()" class="green">💾 Save Activity & Assign to Classes</button>
+      <div class="builderSaveRow">
+        <button onclick="saveBuiltActivityOnly()" class="green">💾 Save Activity to Library</button>
+      </div>
     </div>
 
-    <label>Timer Minutes</label>
-    <input id="timerMinutes" type="number" value="20" min="1">
-
-    <div class="btnRow">
-      <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
-      <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
-      <button onclick="resetHub()" class="red">🗑 Reset Selected Class</button>
+    <div class="assignPanel">
+      <h3>📤 Assign Activity to Classes</h3>
+      <p class="smallHint">After saving or loading an activity, choose the classes and assign. Students will see the activity instantly in their group page.</p>
+      <div class="classAssignBox compactAssignBox">
+        <label><input type="checkbox" class="assignClassCheck" value="9-1"> 9/1</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-2"> 9/2</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-3"> 9/3</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-4"> 9/4</label>
+      </div>
+      <button onclick="assignCurrentBuiltActivity()" class="green wideBtn">✅ Assign Current Activity</button>
     </div>
+
+    <details class="advancedPanel">
+      <summary>⚙️ Advanced: timer/stage controls</summary>
+      <label>Class for timer/stage controls</label>
+      <select id="teacherClassName">
+        <option value="">Choose class</option>
+        <option value="9-1">9/1</option>
+        <option value="9-2">9/2</option>
+        <option value="9-3">9/3</option>
+        <option value="9-4">9/4</option>
+      </select>
+
+      <label>Timer Minutes</label>
+      <input id="timerMinutes" type="number" value="20" min="1">
+
+      <div class="btnRow">
+        <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
+        <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
+        <button onclick="resetHub()" class="red">🗑 Reset Selected Class</button>
+      </div>
+    </details>
   </details>
 </div>
 
@@ -1564,7 +2026,7 @@ function renderChatMessages(chat, chatOpen){
   }
 
   const messages = Object.keys(chat || {})
-    .map(id=>chat[id])
+    .map(id=>Object.assign({id:id}, chat[id] || {}))
     .sort((a,b)=>Number(a.time || 0) - Number(b.time || 0));
 
   let html = '';
@@ -1572,12 +2034,35 @@ function renderChatMessages(chat, chatOpen){
     html += '<div class="chatClosedNotice">🔒 Chat is closed by your teacher.</div>';
   }
 
-  html += messages.map(m=>`
-    <div class="chatBubble">
-      <b>${escapeHtml(m.name || 'Student')}:</b><br>
-      ${escapeHtml(m.text || '')}
-    </div>
-  `).join('') || '<p>No messages yet.</p>';
+  if(!messages.length){
+    html += '<p>No messages yet.</p>';
+  } else {
+    html += messages.map(m=>{
+      const isMine =
+        (m.studentId && currentStudentId && m.studentId === currentStudentId) ||
+        (!m.studentId && m.name === currentStudent);
+
+      const time = m.time
+        ? new Date(Number(m.time)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+        : '';
+
+      const edited = m.editedAt ? ' · edited' : '';
+
+      return `
+        <div class="chatBubble">
+          <b>${escapeHtml(m.name || 'Student')}:</b><br>
+          ${escapeHtml(m.text || '')}
+          <div class="chatMeta">${escapeHtml(time + edited)}</div>
+          ${isMine && chatOpen ? `
+            <div class="chatActions">
+              <button class="editChatBtn" onclick="editChatMessage('${m.id}')">✏️ Edit</button>
+              <button class="deleteChatBtn" onclick="deleteChatMessage('${m.id}')">🗑 Delete</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
 
   box.innerHTML = html;
   box.scrollTop = box.scrollHeight;
@@ -1620,6 +2105,85 @@ async function sendChatMessage(){
   textBox.value = '';
 }
 
+async function editChatMessage(messageId){
+  if(!currentClass || !currentGroup || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
+
+  const path =
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat/' + messageId;
+
+  const snap = await hubRef.child(path).once('value');
+  const msg = snap.val();
+
+  if(!msg){
+    alert('Message not found.');
+    return;
+  }
+
+  if(msg.studentId !== currentStudentId && msg.name !== currentStudent){
+    alert('You can edit only your own message.');
+    return;
+  }
+
+  const chatStatusSnap = await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chatOpen'
+  ).once('value');
+
+  if(chatStatusSnap.val() === false){
+    alert('Chat is closed by your teacher.');
+    return;
+  }
+
+  const newText = prompt('Edit your message:', msg.text || '');
+  if(newText === null) return;
+
+  const cleanText = newText.trim();
+  if(!cleanText){
+    alert('Message cannot be empty. Use Delete if you want to remove it.');
+    return;
+  }
+
+  await hubRef.child(path).update({
+    text: cleanText,
+    editedAt: Date.now()
+  });
+}
+
+async function deleteChatMessage(messageId){
+  if(!currentClass || !currentGroup || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
+
+  const path =
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat/' + messageId;
+
+  const snap = await hubRef.child(path).once('value');
+  const msg = snap.val();
+
+  if(!msg){
+    alert('Message not found.');
+    return;
+  }
+
+  if(msg.studentId !== currentStudentId && msg.name !== currentStudent){
+    alert('You can delete only your own message.');
+    return;
+  }
+
+  if(!confirm('Delete this chat message?')) return;
+
+  await hubRef.child(path).remove();
+}
+
 
 function parseLines(text){
   return String(text || '')
@@ -1657,7 +2221,7 @@ function buildDifferentTaskInputs(){
 function toggleDifferentTasksBuilder(){
   const mode = document.getElementById('builderTaskMode')?.value || 'same';
   const section = document.getElementById('differentTasksSection');
-  const sameBox = document.getElementById('builderSameTask');
+  const sameSection = document.getElementById('sameTaskSection');
   if(section){
     if(mode === 'different'){
       section.classList.remove('hidden');
@@ -1666,8 +2230,8 @@ function toggleDifferentTasksBuilder(){
       section.classList.add('hidden');
     }
   }
-  if(sameBox){
-    sameBox.closest('label');
+  if(sameSection){
+    sameSection.classList.toggle('hidden', mode === 'different');
   }
 }
 
@@ -2435,6 +2999,7 @@ function showTeacherDashboard(){
   }
   showPage('teacherPage');
   renderTeacherDashboard();
+  loadBuiltActivitiesLibrary();
 }
 
 function renderTeacherDashboard(){
@@ -2690,7 +3255,7 @@ function renderTeacherChatControl(cls){
 
       const messageHtml = messages.length ? messages.map(m=>{
         const time = m.time ? new Date(Number(m.time)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-        return '<div class="chatBubble"><b>' + escapeHtml(m.name || 'Student') + '</b> <small>' + escapeHtml(time) + '</small><br>' + escapeHtml(m.text || '') + '</div>';
+        return '<div class="chatBubble"><b>' + escapeHtml(m.name || 'Student') + '</b> <small>' + escapeHtml(time + (m.editedAt ? ' · edited' : '')) + '</small><br>' + escapeHtml(m.text || '') + '</div>';
       }).join('') : '<p>No chat messages yet.</p>';
 
       html += `
@@ -3011,6 +3576,7 @@ function loginTeacher(){
 
   showPage('teacherPage');
   renderTeacherDashboard();
+  loadBuiltActivitiesLibrary();
 }
 
 
@@ -3036,6 +3602,145 @@ function previousBattle(){
   });
 }
   
+
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
 </script>
 
 </body>
