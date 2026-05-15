@@ -140,6 +140,72 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 .studentBox textarea{
   min-height:120px;
 }
+
+.memberPanel{display:none;margin-top:14px}
+.memberPanel.open{display:block}
+.chatPopup{
+  position:fixed;
+  right:24px;
+  bottom:24px;
+  width:340px;
+  max-width:calc(100vw - 48px);
+  background:white;
+  border-radius:18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.22);
+  border:1px solid #d6e3fa;
+  z-index:9999;
+  overflow:hidden;
+}
+.chatHeader{
+  background:#243b6b;
+  color:white;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:bold;
+}
+.chatHeader button{
+  margin:0;
+  padding:6px 10px;
+  font-size:14px;
+  background:#b42318;
+}
+.chatMessages{
+  height:230px;
+  overflow:auto;
+  padding:12px;
+  background:#f8fbff;
+}
+.chatBubble{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:12px;
+  padding:8px 10px;
+  margin-bottom:8px;
+  line-height:1.4;
+}
+.chatBubble b{color:#243b6b}
+.chatInputArea{padding:10px;background:white}
+.chatInputArea textarea{min-height:70px}
+.roleBadge{
+  display:inline-block;
+  background:#fff7ed;
+  color:#9a3412;
+  border:1px solid #fed7aa;
+  border-radius:999px;
+  padding:5px 10px;
+  margin-left:6px;
+  font-weight:bold;
+}
+.leaderOnlyNote{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin-top:12px;
+}
+
 </style>
 </head>
 
@@ -183,11 +249,19 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
     <option value="9">Group 9</option><option value="10">Group 10</option>
   </select>
 
-  <label>Group Members</label>
-<input id="groupMembers" placeholder="Write group members">
-
 <label>Student Name</label>
 <input id="studentName" placeholder="Write your name exactly the same next time">
+
+<label>Group Role</label>
+<select id="studentRole">
+  <option value="">Choose role</option>
+  <option value="leader">Group Leader</option>
+  <option value="member">Group Member</option>
+</select>
+
+<div class="soft">
+  Decide who is the leader before joining. Group member names will appear automatically after everyone joins.
+</div>
   
 <button onclick="joinGroup()">Join Activity</button>
 </div>
@@ -210,18 +284,27 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 <div class="actionBar">
 
+  <button onclick="toggleMemberWork()">
+    👀 View Group Members’ Work
+  </button>
+
   <button onclick="saveMyStudentWork()" class="green">
-    💾 Save My Answer
+    💾 Save My Work
   </button>
 
   <button onclick="submitCombinedGroupWork()">
-    📌 Submit Final Group Answer
+    📌 Submit Group Work
   </button>
 
-  <button onclick="leaveGroup()" class="red">
-    🚪 Leave Group
+  <button onclick="toggleChatRoom()">
+    💬 Chatroom
   </button>
 
+</div>
+
+<div id="memberWorkPanel" class="soft memberPanel">
+  <h3>👥 Group Members’ Work</h3>
+  <div id="memberWorkArea"></div>
 </div>
 
 <details class="soft">
@@ -235,6 +318,18 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
     readonly
   ></textarea>
 </details>
+
+<div id="chatRoom" class="chatPopup hidden">
+  <div class="chatHeader">
+    <span>💬 Group Chat</span>
+    <button onclick="toggleChatRoom()">Hide</button>
+  </div>
+  <div id="chatMessages" class="chatMessages"></div>
+  <div class="chatInputArea">
+    <textarea id="chatText" placeholder="Write a message to your group..."></textarea>
+    <button onclick="sendChatMessage()" class="green" style="width:100%;">Send Message</button>
+  </div>
+</div>
   
 
 <div id="submitMsg" class="soft hidden"></div>
@@ -360,6 +455,12 @@ const hubRef = db.ref('skillClashHub_1');
 let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
   let currentStudent =
   sessionStorage.getItem('skillClashStudent') || '';
+
+let currentRole =
+  sessionStorage.getItem('skillClashRole') || '';
+
+let currentStudentId =
+  sessionStorage.getItem('skillClashStudentId') || '';
 
   let timerInterval = null;
 let timerEndTime = 0;
@@ -495,56 +596,60 @@ function startLiveTimer(endTime){
 
 
 
+function makeStudentId(name){
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[.#$/\[\]]/g,'')
+    .replace(/\s+/g,'_')
+    .replace(/[^a-z0-9_\u0600-\u06FF-]/g,'') || ('student_' + Date.now());
+}
+
 function joinGroup(){
 
   const group = document.getElementById('studentGroup').value;
-  const className =
-  document.getElementById('className').value;
-  const members = document.getElementById('groupMembers').value.trim();
-  const studentName =
-  document.getElementById('studentName').value.trim();
+  const className = document.getElementById('className').value;
+  const studentName = document.getElementById('studentName').value.trim();
+  const role = document.getElementById('studentRole').value;
 
-if(!className || !group || !members || !studentName){
-  alert('Choose group and write members.');
+  if(!className || !group || !studentName || !role){
+    alert('Choose class, write your name, choose role, and choose group number.');
     return;
   }
 
   currentGroup = group;
-currentStudent = studentName;
-
-sessionStorage.setItem(
-  'skillClashStudent',
-  studentName
-);
+  currentStudent = studentName;
+  currentRole = role;
+  currentStudentId = makeStudentId(studentName);
   currentClass = className;
 
-sessionStorage.setItem(
-  'skillClashClass',
-  className
-);
+  sessionStorage.setItem('skillClashStudent', studentName);
+  sessionStorage.setItem('skillClashRole', role);
+  sessionStorage.setItem('skillClashStudentId', currentStudentId);
+  sessionStorage.setItem('skillClashClass', className);
   sessionStorage.setItem('skillClashGroup', group);
 
-  loadGroupWork();
-
-hubRef.child(
-  'classes/' + currentClass + '/groups/group' + group
-).update({
-  group: group,
-  members: members,
-  joinedAt: Date.now()
-});
-
-hubRef
-  .child(
-    'classes/' + currentClass +
-    '/groups/group' + group +
-    '/students/' + studentName
-  )
-  .update({
-    name: studentName,
-    answer: '',
+  hubRef.child(
+    'classes/' + currentClass + '/groups/group' + group
+  ).update({
+    group: group,
+    topic: topics[group] || '',
     joinedAt: Date.now()
   });
+
+  hubRef
+    .child(
+      'classes/' + currentClass +
+      '/groups/group' + group +
+      '/students/' + currentStudentId
+    )
+    .update({
+      id: currentStudentId,
+      name: studentName,
+      role: role,
+      answer: '',
+      joinedAt: Date.now()
+    });
 
   loadGroupWork();
 
@@ -558,7 +663,7 @@ hubRef
   
   function loadGroupWork(){
 
-  if(!currentGroup) return;
+  if(!currentGroup || !currentClass) return;
 
   if(currentGroupRef){
     currentGroupRef.off();
@@ -570,12 +675,14 @@ currentGroupRef = hubRef.child(
 );
   currentGroupRef.on('value', function(snapshot){
 
-    const data = snapshot.val();
+    const data = snapshot.val() || {};
 
-    if(data){
-      window.groupFinalSubmitted = data.finalSubmitted === true;
-     
-      const names = data.members || '';
+    window.groupFinalSubmitted = data.finalSubmitted === true;
+
+    const students = data.students || {};
+    const studentList = Object.keys(students).map(id=>students[id] || {});
+    const leaders = studentList.filter(s=>s.role === 'leader').map(s=>s.name).filter(Boolean);
+    const members = studentList.map(s=>s.name).filter(Boolean);
 
 const totalVotes = data.totalVotes || 0;
 
@@ -583,71 +690,91 @@ const badge = window.groupFinalSubmitted
   ? ' <span style="background:#d1fae5;color:#065f46;padding:5px 10px;border-radius:999px;font-weight:bold;">✅ Final Submitted</span>'
   : ' <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:999px;font-weight:bold;">✍️ In Progress</span>';
 
-document.getElementById('studentGroupInfo').innerHTML =
-  '<b>Group ' + currentGroup + '</b> ' + badge + ' | ' +
-  'Total Votes: <b>' + totalVotes + '</b> | Members: ' +
-  names.replace(
-    currentStudent,
-    '<span style="color:red;font-weight:bold;">' + currentStudent + '</span>'
-  );
+const leaderText = leaders.length ? leaders.join(', ') : 'Not chosen yet';
+const memberBadges = members.length
+  ? members.map(n => '<span class="badge">' + escapeHtml(n) + '</span>').join(' ')
+  : 'No members joined yet';
 
-  document.getElementById('groupMembers').value = data.members || '';
+const myRoleText = currentRole === 'leader' ? 'Group Leader' : 'Group Member';
+
+document.getElementById('studentGroupInfo').innerHTML =
+  '<b>Class:</b> ' + escapeHtml(currentClass) + ' | ' +
+  '<b>Group:</b> Group ' + currentGroup + ' ' + badge + '<br>' +
+  '<b>Leader:</b> ' + escapeHtml(leaderText) + '<br>' +
+  '<b>Members:</b> ' + memberBadges + '<br>' +
+  '<b>You:</b> ' + escapeHtml(currentStudent) +
+  '<span class="roleBadge">' + myRoleText + '</span>' +
+  ' | Total Votes: <b>' + totalVotes + '</b>';
+
   document.getElementById('groupAnswer').value = data.answer || '';
 
-  renderStudentBoxes(data.students || {});
-
-}
+  renderStudentBoxes(students);
+  renderChatMessages(data.chat || {});
 
   });
 
 }
-  function renderStudentBoxes(students){
 
-  const area =
-    document.getElementById('studentWorkArea');
+function renderStudentBoxes(students){
+
+  const area = document.getElementById('studentWorkArea');
+  const memberArea = document.getElementById('memberWorkArea');
+
+  const myData = students[currentStudentId] || {
+    name: currentStudent,
+    role: currentRole,
+    answer: ''
+  };
+
+const groupLocked = window.groupFinalSubmitted === true;
+
+  area.innerHTML = `
+<div class="studentBox myBox">
+  <h3>✍️ ${escapeHtml(myData.name || currentStudent)}’s Work</h3>
+  <textarea
+    id="myStudentAnswer"
+    ${groupLocked ? 'readonly' : ''}
+    placeholder="Write your part here... unlimited text is allowed."
+  >${escapeHtml(myData.answer || '')}</textarea>
+  ${groupLocked ? '<div class="leaderOnlyNote">🔒 Final group work was submitted. Answers are now locked.</div>' : ''}
+</div>`;
 
   let html = '';
 
-  Object.keys(students || {}).forEach(name=>{
+  Object.keys(students || {}).forEach(id=>{
 
-    const s = students[name] || {};
+    const s = students[id] || {};
+    const isMe = id === currentStudentId;
+    const roleText = s.role === 'leader' ? 'Group Leader' : 'Group Member';
 
-const groupLocked =
-  window.groupFinalSubmitted === true;
-
-const mine =
-  name === currentStudent && !groupLocked;
-    
     html += `
-<div class="studentBox ${mine ? 'myBox' : ''}">
-        <h3>
-          👤 ${escapeHtml(name)}
-        </h3>
-
-        <textarea
-id="studentBox_${name.replace(/\s+/g,'_')}"
-          ${mine ? '' : 'readonly'}
-          placeholder="Write your answer..."
-        >${escapeHtml(s.answer || '')}</textarea>
-
-      </div>
-    `;
+<div class="studentBox ${isMe ? 'myBox' : ''}">
+  <h3>👤 ${escapeHtml(s.name || id)} <span class="roleBadge">${roleText}</span></h3>
+  <div class="answerBox">${escapeHtml(s.answer || 'No saved work yet.')}</div>
+</div>`;
   });
 
-  area.innerHTML = html;
+  memberArea.innerHTML = html || '<p>No group work saved yet.</p>';
+}
+
+function toggleMemberWork(){
+  const panel = document.getElementById('memberWorkPanel');
+  panel.classList.toggle('open');
 }
 
 async function saveMyStudentWork(){
 
-  if(!currentGroup || !currentStudent){
+  if(!currentGroup || !currentStudent || !currentStudentId){
     alert('Join group first.');
     return;
   }
 
-  const box =
-    document.getElementById(
-'studentBox_' + currentStudent.replace(/\s+/g,'_')
-    );
+  if(window.groupFinalSubmitted === true){
+    alert('Final group work was already submitted. Answers are locked.');
+    return;
+  }
+
+  const box = document.getElementById('myStudentAnswer');
 
   if(!box) return;
 
@@ -657,9 +784,12 @@ async function saveMyStudentWork(){
   .child(
     'classes/' + currentClass +
     '/groups/group' + currentGroup +
-    '/students/' + currentStudent
+    '/students/' + currentStudentId
   )
   .update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
     answer: answer,
     updatedAt: Date.now()
   });
@@ -669,14 +799,24 @@ async function saveMyStudentWork(){
 
   document.getElementById('submitMsg')
     .innerHTML =
-      '✅ Your answer was saved.';
+      '✅ Your work was saved. Your group can view it now.';
 }
+
   async function submitCombinedGroupWork(){
 
-  if(!currentGroup){
+  if(!currentGroup || !currentStudentId){
     alert('Join group first.');
     return;
   }
+
+  if(currentRole !== 'leader'){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML =
+      '⚠️ Only the group leader can submit the final group work.';
+    return;
+  }
+
+  await saveMyStudentWork();
 
  const snap = await hubRef
   .child(
@@ -690,9 +830,10 @@ async function saveMyStudentWork(){
 
   let finalAnswer = '';
 
-  Object.keys(students).forEach(name=>{
-    finalAnswer += name + ':\n';
-    finalAnswer += (students[name].answer || 'No answer yet') + '\n\n';
+  Object.keys(students).forEach(id=>{
+    const s = students[id] || {};
+    finalAnswer += (s.name || id) + ' (' + (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+    finalAnswer += (s.answer || 'No answer yet') + '\n\n';
   });
 
   await hubRef.child(
@@ -701,6 +842,7 @@ async function saveMyStudentWork(){
 ).update({
   answer: finalAnswer,
   finalSubmitted: true,
+  submittedBy: currentStudent,
   submittedAt: Date.now()
 });
 
@@ -708,7 +850,55 @@ async function saveMyStudentWork(){
 
   document.getElementById('submitMsg').classList.remove('hidden');
   document.getElementById('submitMsg').innerHTML =
-    '✅ Final group answer submitted. Student boxes are now locked.';
+    '✅ Final group work submitted by the leader. Student boxes are now locked.';
+}
+
+function toggleChatRoom(){
+  const chat = document.getElementById('chatRoom');
+  chat.classList.toggle('hidden');
+}
+
+function renderChatMessages(chat){
+  const box = document.getElementById('chatMessages');
+  if(!box) return;
+
+  const messages = Object.keys(chat || {})
+    .map(id=>chat[id])
+    .sort((a,b)=>Number(a.time || 0) - Number(b.time || 0));
+
+  box.innerHTML = messages.map(m=>`
+    <div class="chatBubble">
+      <b>${escapeHtml(m.name || 'Student')}:</b><br>
+      ${escapeHtml(m.text || '')}
+    </div>
+  `).join('') || '<p>No messages yet.</p>';
+
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChatMessage(){
+  const textBox = document.getElementById('chatText');
+  const text = textBox.value.trim();
+
+  if(!text) return;
+
+  if(!currentClass || !currentGroup || !currentStudent){
+    alert('Join group first.');
+    return;
+  }
+
+  await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat'
+  ).push({
+    name: currentStudent,
+    role: currentRole,
+    text: text,
+    time: Date.now()
+  });
+
+  textBox.value = '';
 }
 
 async function saveActivitySettings(){
@@ -790,7 +980,7 @@ hubRef.child('classes/' + currentClass + '/groups').once('value', snap=>{
       html += `<div class="card">
         <h3>Group ${i}</h3>
         ${g ? `
-          <p><b>Members:</b> ${escapeHtml(g.members || '')}</p>
+          <p><b>Members:</b> ${escapeHtml(getGroupMemberNames(g.students || {}))}</p>
           <p><b>Topic:</b> ${escapeHtml(g.topic || topics[i] || '')}</p>
 <div class="answerBox">${escapeHtml(g.answer || 'Not submitted yet')}</div>
 
@@ -1301,6 +1491,12 @@ await hubRef.child(
 
   location.reload();
 }
+function getGroupMemberNames(students){
+  return Object.keys(students || {})
+    .map(id => (students[id] || {}).name || id)
+    .join(', ');
+}
+
 function escapeHtml(text){
   return String(text || '')
     .replace(/&/g,'&amp;')
@@ -1331,7 +1527,12 @@ function escapeHtml(text){
 }
 
   function startLiveResults(){
-  hubRef.child('votes').on('value', function(){
+  const className = document.getElementById('teacherClassName').value;
+  if(!className){
+    alert('Choose class first.');
+    return;
+  }
+  hubRef.child('classes/' + className + '/votes').on('value', function(){
     showResults();
   });
 }
@@ -1366,6 +1567,13 @@ function escapeHtml(text){
     }
   }
 
+  if(currentRole){
+    const roleSelect = document.getElementById('studentRole');
+    if(roleSelect){
+      roleSelect.value = currentRole;
+    }
+  }
+
 });
 
   function leaveGroup(){
@@ -1383,9 +1591,13 @@ function escapeHtml(text){
   sessionStorage.removeItem('skillClashGroup');
   sessionStorage.removeItem('skillClashStudent');
   sessionStorage.removeItem('skillClashClass');
+  sessionStorage.removeItem('skillClashRole');
+  sessionStorage.removeItem('skillClashStudentId');
 
   currentGroup = '';
   currentStudent = '';
+  currentRole = '';
+  currentStudentId = '';
   currentClass = '';
 
   if(currentGroupRef){
