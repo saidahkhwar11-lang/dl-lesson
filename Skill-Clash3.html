@@ -1950,7 +1950,6 @@ function listenGroup(){
     }
 
     renderMembersWork();
-    updateLeaderFinalArea();
     routeStudentStage();
   });
 
@@ -3063,16 +3062,36 @@ async function submitLeaderFinalWork(){
 
 function renderMembersWork(){
   let html = '<h3>👥 Group Members Work</h3>';
+
   Object.keys(latestStudents || {}).forEach(name=>{
     const s = latestStudents[name] || {};
     html += `<div class="workItem"><b>${escapeHtml(name)} ${s.role==='leader'?'👑':''}</b><br>${escapeHtml(s.answer || 'No saved work yet.')}</div>`;
   });
+
+  if(currentRole === 'leader'){
+    const groupData = latestClassGroups['group'+currentGroup] || {};
+    html += `
+      <div class="leaderFinalSection">
+        <h3>📌 Final Group Answer Submission</h3>
+        <p class="smallNote">
+          Review all members’ work together. When your group agrees on the final answer,
+          submit the final version here.
+        </p>
+        <textarea id="leaderFinalAnswerBox" placeholder="Write or combine the final agreed group answer here...">${escapeHtml(groupData.finalAnswer || '')}</textarea>
+        <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">✅ Submit Final Group Answer</button>
+      </div>`;
+  }else{
+    html += `
+      <div class="memberWaitingBox">
+        👑 Only the group leader can submit the final answer after discussion and agreement.
+      </div>`;
+  }
+
   document.getElementById('membersWorkBox').innerHTML = html;
 }
 function toggleMembersWork(){
   document.getElementById('membersWorkBox').classList.toggle('open');
   renderMembersWork();
-    updateLeaderFinalArea();
 }
 
 async function submitFinalWork(){
