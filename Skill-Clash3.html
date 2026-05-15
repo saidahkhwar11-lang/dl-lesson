@@ -1333,6 +1333,33 @@ button:hover{filter:brightness(.96)}
   overflow:auto !important;
 }
 
+
+/* ===== Final submission inside members work ===== */
+.leaderFinalSection{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:2px dashed #d8e5f6;
+}
+.leaderFinalSection textarea{
+  min-height:140px;
+  margin-top:10px;
+}
+.finalSubmitBtn{
+  width:100%;
+  margin-top:10px;
+  font-size:15px;
+  padding:13px;
+}
+.memberWaitingBox{
+  margin-top:14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:14px;
+  padding:12px;
+  font-weight:800;
+}
+
 </style>
 </head>
 
@@ -1437,7 +1464,7 @@ button:hover{filter:brightness(.96)}
           <div class="actions">
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
             <button class="green" onclick="saveMyWork()">💾 Save My Work</button>
-            <button class="blue" onclick="submitFinalWork()">📌 Submit Final</button>
+            
             <button class="purple" onclick="toggleChat()">💬 Chatroom</button>
           </div>
 
@@ -1445,7 +1472,30 @@ button:hover{filter:brightness(.96)}
             <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
           </div>
 
-          <div id="membersWorkBox" class="memberWorkBox"></div>
+          
+<div id="membersWorkBox" class="memberWorkBox">
+
+  <div id="leaderFinalSection" class="leaderFinalSection hidden">
+    <h3>📌 Final Group Answer Submission</h3>
+    <p class="smallNote">
+      Review all members’ work together. When your group agrees on the final answer,
+      the group leader can submit the final version here.
+    </p>
+
+    <textarea id="leaderFinalAnswerBox"
+      placeholder="Write or combine the final agreed group answer here..."></textarea>
+
+    <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">
+      ✅ Submit Final Group Answer
+    </button>
+  </div>
+
+  <div id="memberWaitingBox" class="memberWaitingBox hidden">
+    👑 Only the group leader can submit the final answer after discussion and agreement.
+  </div>
+
+</div>
+
         </div>
 
       </div>
@@ -1900,6 +1950,7 @@ function listenGroup(){
     }
 
     renderMembersWork();
+    updateLeaderFinalArea();
     routeStudentStage();
   });
 
@@ -2958,6 +3009,58 @@ async function saveMyWork(){
   alert('✅ Your work is saved.');
 }
 
+
+function updateLeaderFinalArea(){
+
+  const leaderBox = document.getElementById('leaderFinalSection');
+  const memberBox = document.getElementById('memberWaitingBox');
+  const finalBox = document.getElementById('leaderFinalAnswerBox');
+
+  if(!leaderBox || !memberBox) return;
+
+  if(currentRole === 'leader'){
+    leaderBox.classList.remove('hidden');
+    memberBox.classList.add('hidden');
+
+    const groupData = latestClassGroups['group'+currentGroup] || {};
+
+    if(finalBox && !document.activeElement.matches('#leaderFinalAnswerBox')){
+      finalBox.value = groupData.finalAnswer || '';
+    }
+
+  }else{
+    leaderBox.classList.add('hidden');
+    memberBox.classList.remove('hidden');
+  }
+}
+
+async function submitLeaderFinalWork(){
+
+  if(currentRole !== 'leader'){
+    alert('Only the group leader can submit the final answer.');
+    return;
+  }
+
+  const finalText = document.getElementById('leaderFinalAnswerBox').value.trim();
+
+  if(!finalText){
+    alert('Write the final group answer first.');
+    return;
+  }
+
+  await hubRef.child(
+    `classes/${currentClass}/groups/group${currentGroup}`
+  ).update({
+    finalAnswer: finalText,
+    finalSubmitted: true,
+    finalSubmittedAt: Date.now(),
+    finalSubmittedBy: currentStudent
+  });
+
+  alert('Final group answer submitted successfully.');
+}
+
+
 function renderMembersWork(){
   let html = '<h3>👥 Group Members Work</h3>';
   Object.keys(latestStudents || {}).forEach(name=>{
@@ -2969,6 +3072,7 @@ function renderMembersWork(){
 function toggleMembersWork(){
   document.getElementById('membersWorkBox').classList.toggle('open');
   renderMembersWork();
+    updateLeaderFinalArea();
 }
 
 async function submitFinalWork(){
