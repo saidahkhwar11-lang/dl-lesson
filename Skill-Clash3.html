@@ -4,1074 +4,2983 @@
 <meta charset="UTF-8">
 <title>⚔️ Skill Clash Hub</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+</script>
+<script>
+
+let lastAchievementCertificate = null;
+
+function calculateClassAchievement(classData, groupNumber){
+  const votes = (classData && classData.votes) || {};
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+
+  Object.keys(votes).forEach(battleKey=>{
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(voteKey=>{
+      const v = battle[voteKey] || {};
+      const a = Number(v.teamA);
+      const b = Number(v.teamB);
+      if(a) scores[a] = (scores[a] || 0) + Number(v.scoreA || 0);
+      if(b) scores[b] = (scores[b] || 0) + Number(v.scoreB || 0);
+    });
+  });
+
+  const group = Number(groupNumber);
+  const battles = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  const myBattle = battles.find(pair => pair[0] === group || pair[1] === group);
+  let isBattleWinner = false;
+  let battleTitle = '';
+
+  if(myBattle){
+    const a = myBattle[0];
+    const b = myBattle[1];
+    const scoreA = Number(scores[a] || 0);
+    const scoreB = Number(scores[b] || 0);
+    battleTitle = 'Group ' + a + ' VS Group ' + b;
+
+    if(scoreA > scoreB && group === a) isBattleWinner = true;
+    if(scoreB > scoreA && group === b) isBattleWinner = true;
+    if(scoreA === scoreB && scoreA > 0 && (group === a || group === b)) isBattleWinner = true;
+  }
+
+  const ranking = Object.keys(scores)
+    .map(team => ({team:Number(team), score:Number(scores[team] || 0)}))
+    .sort((a,b) => b.score - a.score || a.team - b.team);
+
+  const topScore = ranking.length ? Number(ranking[0].score || 0) : 0;
+  const isWholeClassWinner = topScore > 0 && Number(scores[group] || 0) === topScore;
+  const myRank = ranking.findIndex(r => Number(r.team) === group) + 1;
+
+  return {
+    scores,
+    ranking,
+    group,
+    myScore:Number(scores[group] || 0),
+    myRank,
+    battleTitle,
+    isBattleWinner,
+    isWholeClassWinner,
+    qualifies:isBattleWinner || isWholeClassWinner
+  };
+}
+
+async function checkMyAchievement(){
+  const box = document.getElementById('achievementMsg');
+  const btn = document.getElementById('downloadCertificateBtn');
+
+  if(box){
+    box.classList.remove('hidden');
+    box.innerHTML = 'Checking your achievement...';
+  }
+  if(btn) btn.classList.add('hidden');
+
+  if(!currentClass || !currentGroup || !currentStudent){
+    if(box) box.innerHTML = 'Please join your group first.';
+    return;
+  }
+
+  const classSnap = await hubRef.child('classes/' + currentClass).once('value');
+  const classData = classSnap.val() || {};
+
+  if(!classData.settings || classData.settings.resultsReleased !== true){
+    if(box) box.innerHTML = '🔒 Results are not released yet. Wait for your teacher to release the results.';
+    return;
+  }
+
+  const result = calculateClassAchievement(classData, currentGroup);
+  const groupData = (classData.groups || {})['group' + currentGroup] || {};
+
+  if(!result.qualifies){
+    if(box){
+      box.innerHTML =
+        '🌟 Great effort! Your group rank is <b>#' + result.myRank + '</b> with <b>' + result.myScore + '</b> points.<br>' +
+        'Certificate is available only for battle winners or the whole-class winner.';
+    }
+    return;
+  }
+
+  const awards = [];
+  if(result.isWholeClassWinner) awards.push('Whole Class Winner');
+  if(result.isBattleWinner) awards.push('Battle Winner');
+
+  lastAchievementCertificate = {
+    studentName: currentStudent,
+    className: currentClass,
+    group: currentGroup,
+    awards: awards,
+    rank: result.myRank,
+    score: result.myScore,
+    battleTitle: result.battleTitle,
+    teacherMark: groupData.teacherMark || '',
+    date: new Date().toLocaleDateString()
+  };
+
+  if(box){
+    box.innerHTML =
+      '🎉 Congratulations! Your group earned: <b>' + awards.join(' + ') + '</b>.<br>' +
+      'Group Rank: <b>#' + result.myRank + '</b> | Voting Points: <b>' + result.myScore + '</b><br>' +
+      'You can download your certificate now.';
+  }
+  if(btn) btn.classList.remove('hidden');
+}
+
+function downloadAchievementCertificate(){
+  if(!lastAchievementCertificate){
+    alert('Click Check My Achievement first.');
+    return;
+  }
+
+  const c = lastAchievementCertificate;
+  const awardText = c.awards.join(' & ');
+  const safeStudent = escapeHtml(c.studentName);
+  const safeClass = escapeHtml(c.className);
+  const safeGroup = escapeHtml(c.group);
+  const safeAward = escapeHtml(awardText);
+  const safeBattle = escapeHtml(c.battleTitle || 'Skill Clash Battle');
+
+  const certHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Skill Clash Certificate</title>
+<style>
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#f8fafc;color:#1e293b;}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;box-sizing:border-box;}
+  .cert{width:1050px;max-width:100%;background:linear-gradient(135deg,#fff7ed,#eff6ff,#fdf2f8);border:10px solid #f59e0b;border-radius:32px;padding:55px;text-align:center;box-shadow:0 18px 50px rgba(15,23,42,.18);position:relative;overflow:hidden;}
+  .cert:before,.cert:after{content:'★';position:absolute;font-size:110px;color:rgba(245,158,11,.18);}
+  .cert:before{top:30px;left:45px}.cert:after{bottom:30px;right:45px}
+  h1{font-size:54px;color:#1d4ed8;margin:10px 0 4px;letter-spacing:1px;}
+  .subtitle{font-size:24px;color:#92400e;font-weight:bold;margin-bottom:35px;}
+  .presented{font-size:22px;margin-top:25px;}
+  .name{font-size:56px;color:#be185d;font-weight:bold;margin:18px 0;border-bottom:3px solid #f59e0b;display:inline-block;padding:0 45px 10px;}
+  .award{font-size:31px;color:#166534;font-weight:bold;margin:25px 0;}
+  .details{font-size:22px;line-height:1.8;margin-top:25px;}
+  .footer{display:flex;justify-content:space-between;align-items:end;margin-top:55px;font-size:18px;gap:20px;}
+  .line{border-top:2px solid #334155;padding-top:8px;min-width:230px;}
+  .printBtn{position:fixed;top:16px;right:16px;border:0;background:#1d4ed8;color:white;border-radius:14px;padding:12px 18px;font-size:16px;cursor:pointer;}
+  @media print{.printBtn{display:none}.page{padding:0}.cert{box-shadow:none;border-radius:0;width:100%;min-height:100vh;box-sizing:border-box}}
+
+.activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
+.instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
+
+.teacherHeroClean{background:linear-gradient(135deg,#f8fbff,#eef4ff);border:1px solid #d6e3fa;color:#12244a}
+.teacherHeroTitleRow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.teacherBadge{background:#d1fae5;color:#065f46;border-radius:999px;padding:9px 14px;font-weight:bold}
+.compactTimer{padding:10px 12px;margin-top:8px}
+.teacherBuilderPanel{background:#f8fbff;border:1px solid #dbe6f8}
+.builderHelpBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px;margin:12px 0;color:#7c2d12}
+.libraryPanel,.builderSection,.assignPanel{background:white;border:1px solid #dbe6f8;border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.builderRow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.builderSaveRow{display:flex;justify-content:flex-end;margin-top:12px}
+.wideBtn{width:100%;margin-top:12px}
+.compactAssignBox label{min-width:90px;text-align:center}
+.advancedPanel{margin-top:14px;background:#eef4ff;border-radius:16px;padding:12px}
+.sameTaskSection{display:block}
+@media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
+
+</style>
+</head>
+<body>
+<button class="printBtn" onclick="window.print()">Print / Save PDF</button>
+<div class="page">
+  <div class="cert">
+    <div style="font-size:50px;">⚔️ 🏆 ⚔️</div>
+    <h1>Certificate of Achievement</h1>
+    <div class="subtitle">Skill Clash Hub</div>
+    <div class="presented">This certificate is proudly presented to</div>
+    <div class="name">${safeStudent}</div>
+    <div class="award">${safeAward}</div>
+    <div class="details">
+      For outstanding collaboration and achievement in <b>Group ${safeGroup}</b><br>
+      Class: <b>${safeClass}</b> | Rank: <b>#${c.rank}</b> | Voting Points: <b>${c.score}</b><br>
+      ${safeBattle}
+    </div>
+    <div class="footer">
+      <div class="line">Date: ${escapeHtml(c.date)}</div>
+      <div class="line">Al Reyada School</div>
+      <div class="line">Teacher Signature</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){
+    alert('Please allow popups to open the certificate.');
+    return;
+  }
+  win.document.open();
+  win.document.write(certHtml);
+  win.document.close();
+}
+
+
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+</script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js">
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
+
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+</script>
 
 <style>
-
-body{
-  margin:0;
-  font-family:Arial;
-  background:#f4f7fb;
-  color:#1f2937;
-}
-
-.topbar{
-  background:linear-gradient(135deg,#274690,#5b8def);
-  color:white;
-  padding:18px;
-  text-align:center;
-  font-size:38px;
-  font-weight:bold;
-  box-shadow:0 4px 18px rgba(0,0,0,.12);
-}
-
-.container{
-  max-width:1400px;
-  margin:auto;
-  padding:20px;
-}
-
-.hidden{
-  display:none;
-}
-
-.card{
-  background:white;
-  border-radius:24px;
-  padding:22px;
-  margin-bottom:20px;
-  box-shadow:0 4px 14px rgba(0,0,0,.08);
-}
-
-input,
-textarea,
-select{
+body{margin:0;font-family:Arial;background:#f4f7fb;color:#1f2937}
+.topbar{background:#243b6b;color:white;padding:18px;text-align:center;font-size:28px;font-weight:bold}
+.container{max-width:1200px;margin:auto;padding:20px}
+.card{background:white;border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
+.hidden{display:none}
+h2,h3{color:#243b6b;margin-top:0}
+input,textarea,select{width:100%;box-sizing:border-box;border:1px solid #ccd6e6;border-radius:12px;padding:12px;margin-top:8px;font-size:16px}
+textarea{min-height:170px}
+button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 16px;font-size:17px;cursor:pointer;margin-top:12px}
+.btnRow{display:flex;gap:10px;flex-wrap:wrap}
+.btnRow button{flex:1}
+.red{background:#b42318}
+.green{background:#247a3d}
+.soft{background:#eef4ff;border:1px solid #cdddf7;border-radius:14px;padding:14px;margin-top:12px}
+.groupGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.answerBox{background:#f8fbff;border:1px solid #d6e3fa;border-radius:12px;padding:12px;margin-top:10px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}
+.badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:6px 10px;margin:4px}
+  .resultBar{
   width:100%;
-  box-sizing:border-box;
-  border:1px solid #d7e2f3;
-  border-radius:16px;
-  padding:14px;
-  margin-top:8px;
-  font-size:16px;
-}
-
-textarea{
-  min-height:150px;
-  resize:vertical;
-}
-
-button{
-  border:0;
-  border-radius:16px;
-  padding:14px 18px;
-  font-size:17px;
-  cursor:pointer;
-  color:white;
-  font-weight:bold;
-  transition:.2s;
-}
-
-button:hover{
-  transform:translateY(-2px);
-}
-
-.green{
-  background:#259c46;
-}
-
-.blue{
-  background:#274690;
-}
-
-.red{
-  background:#cf2f21;
-}
-
-.purple{
-  background:#8b5cf6;
-}
-
-.orange{
-  background:#f59e0b;
-}
-
-.soft{
-  background:#f8fbff;
-  border:1px solid #d7e2f3;
-  border-radius:18px;
-  padding:16px;
-}
-
-.groupHeader{
-  background:linear-gradient(135deg,#274690,#5b8def);
-  border-radius:30px;
-  padding:26px;
-  color:white;
-  margin-bottom:18px;
-}
-
-.groupTitleRow{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  flex-wrap:wrap;
-  gap:12px;
-}
-
-.groupTitleRow h1{
-  margin:0;
-  font-size:56px;
-}
-
-.statusBadge{
-  background:#fff4c7;
-  color:#a85a00;
-  padding:10px 18px;
+  height:18px;
+  background:#dbe6f8;
   border-radius:999px;
-  font-size:22px;
-  font-weight:bold;
-}
-
-.groupInfoRow{
-  display:flex;
-  flex-wrap:wrap;
-  gap:14px;
-  margin-top:18px;
-}
-
-.groupInfoRow span{
-  background:rgba(255,255,255,.15);
-  padding:10px 16px;
-  border-radius:16px;
-  font-size:18px;
-}
-
-.memberRow{
-  margin-top:14px;
-  font-size:20px;
-}
-
-.layoutGrid{
-  display:grid;
-  grid-template-columns:1.5fr .9fr;
-  gap:18px;
-}
-
-.answerCard{
-  background:white;
-  border-radius:24px;
-  padding:20px;
-  border:2px solid #d7f0df;
-}
-
-.answerCard h2{
-  margin-top:0;
-  color:#1f3c88;
-}
-
-.answerBox{
-  border:2px solid #b8d6ff;
-  border-radius:20px;
-  padding:16px;
-  margin-top:14px;
-  background:#f8fbff;
-}
-
-.answerBox textarea{
-  min-height:240px;
-  border-radius:18px;
-}
-
-.actionButtons{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:12px;
-  margin-top:18px;
-}
-
-.activityBox{
-  background:white;
-  border-radius:24px;
-  padding:20px;
-  border:2px solid #f5e0a3;
-}
-
-.activityNameBox{
-  background:#ffffff;
-  border:1px solid #d6e3fa;
-  border-radius:16px;
-  padding:16px;
-  font-size:28px;
-  font-weight:bold;
-  color:#1f3c88;
-  margin-bottom:14px;
-}
-
-.blueInstructionBox{
-  background:#eef5ff;
-  border:1px solid #bfd4ff;
-  border-radius:18px;
-  padding:18px;
-  line-height:1.7;
-  margin-bottom:18px;
-  font-size:20px;
-}
-
-.groupDetailsTitle{
-  font-size:24px;
-  font-weight:bold;
-  margin-top:12px;
-  margin-bottom:10px;
-  color:#1f3c88;
-}
-
-.groupTaskBox{
-  background:#fff9ec;
-  border:1px solid #f3d27c;
-  border-radius:18px;
-  padding:18px;
-  line-height:1.7;
-  margin-bottom:18px;
-  font-size:20px;
-}
-
-.criteriaWrapper{
-  background:#f8fbff;
-  border:1px solid #d6e3fa;
-  border-radius:18px;
-  padding:18px;
-}
-
-.criteriaTitle{
-  font-size:24px;
-  font-weight:bold;
-  margin-bottom:14px;
-}
-
-.criteriaItem{
-  display:flex;
-  gap:12px;
-  margin-top:10px;
-  font-size:20px;
-}
-
-.criteriaItem input{
-  width:20px;
-  height:20px;
-}
-
-.chatPopup{
-  position:fixed;
-  right:20px;
-  bottom:20px;
-  width:340px;
-  background:white;
-  border-radius:24px;
-  box-shadow:0 8px 30px rgba(0,0,0,.18);
   overflow:hidden;
-  z-index:999;
+  margin-top:8px;
 }
 
-.chatHeader{
-  background:#8b5cf6;
-  color:white;
-  padding:14px;
-  font-size:20px;
-  font-weight:bold;
-}
-
-.chatMessages{
-  max-height:300px;
-  overflow:auto;
-  padding:14px;
-}
-
-.chatMsg{
-  background:#f3f7ff;
-  border-radius:14px;
-  padding:10px;
-  margin-bottom:10px;
-}
-
-.chatBottom{
+  .actionBar{
   display:flex;
-  gap:8px;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:16px;
+}
+
+.actionBar button{
+  flex:1;
+  min-width:180px;
+}
+
+  .stickyTimer{
+  position:sticky;
+  top:10px;
+  z-index:10;
+  background:#eef4ff;
+}
+
+  .voteCriteria{
+  margin-top:14px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:10px;
+  align-items:center;
+}
+  .answerVoteCard{
+  display:grid;
+  grid-template-columns:1fr 180px;
+  gap:14px;
+  align-items:start;
+}
+
+.voteMiniBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
   padding:12px;
 }
 
-.chatBottom input{
-  flex:1;
+.voteMiniBox label{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin:8px 0;
 }
 
-.achievementCard{
+.voteWinner{
+  display:flex;
+  gap:30px;
   margin-top:18px;
-  background:#fff6f7;
-  border:2px solid #ffd1d8;
-  border-radius:24px;
-  padding:20px;
-}
-
-.achievementBtn{
-  width:100%;
-  margin-top:16px;
-  background:linear-gradient(135deg,#f59e0b,#ec4899);
-  font-size:24px;
-  padding:18px;
-}
-
-.leaveBtnWrap{
-  display:flex;
-  justify-content:flex-end;
-  margin-top:14px;
-}
-
-.teacherGrid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:18px;
-}
-
-.groupTeacherCard{
-  background:white;
-  border:1px solid #d6e3fa;
-  border-radius:22px;
-  padding:18px;
-}
-
-.builderSection{
-  background:white;
-  border-radius:24px;
-  padding:22px;
-  margin-top:20px;
-}
-
-.groupTaskGrid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-  gap:14px;
-  margin-top:14px;
-}
-
-.assignGrid{
-  display:flex;
-  gap:12px;
+  align-items:center;
   flex-wrap:wrap;
+}
+.resultPopup{
+  position:fixed;
+  top:90px;
+  right:30px;
+  width:330px;
+  max-height:75vh;
+  overflow:auto;
+  background:white;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 8px 30px rgba(0,0,0,.18);
+  z-index:999;
+}
+
+.resultMini{
+  background:#eef4ff;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+  font-size:14px;
+}
+  .myBox{
+  border:2px solid #247a3d;
+  background:#f0fff4;
+}
+
+.voteWinner label{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.voteSection{
+  margin-top:12px;
+}
+.resultFill{
+  height:100%;
+  background:#243b6b;
+  border-radius:999px;
+  transition:0.3s;
+}
+  .studentBox{
+  background:#f8fbff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:14px;
   margin-top:12px;
 }
 
-.assignBox{
-  background:#f4f7ff;
-  border:1px solid #d6e3fa;
-  border-radius:16px;
-  padding:12px 18px;
+.studentBox textarea{
+  min-height:120px;
 }
 
+.memberPanel{display:none;margin-top:14px}
+.memberPanel.open{display:block}
+.chatPopup{
+  position:fixed;
+  right:24px;
+  bottom:24px;
+  width:340px;
+  max-width:calc(100vw - 48px);
+  background:white;
+  border-radius:18px;
+  box-shadow:0 8px 30px rgba(0,0,0,.22);
+  border:1px solid #d6e3fa;
+  z-index:9999;
+  overflow:hidden;
+}
+.chatHeader{
+  background:#243b6b;
+  color:white;
+  padding:12px 14px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:bold;
+}
+.chatHeader button{
+  margin:0;
+  padding:6px 10px;
+  font-size:14px;
+  background:#b42318;
+}
+.chatMessages{
+  height:230px;
+  overflow:auto;
+  padding:12px;
+  background:#f8fbff;
+}
+.chatBubble{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:12px;
+  padding:8px 10px;
+  margin-bottom:8px;
+  line-height:1.4;
+}
+.chatBubble b{color:#243b6b}
+
+.chatMeta{font-size:12px;color:#64748b;margin-top:3px}
+.chatActions{display:flex;gap:6px;margin-top:8px;justify-content:flex-end}
+.chatActions button{font-size:12px;padding:6px 9px;border-radius:10px;margin-top:0}
+.chatActions .editChatBtn{background:#2563eb}
+.chatActions .deleteChatBtn{background:#dc2626}
+.chatInputArea{padding:10px;background:white}
+.chatInputArea textarea{min-height:70px}
+
+.chatClosedNotice{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:14px;
+  padding:10px 12px;
+  margin:10px;
+  font-weight:bold;
+}
+.teacherChatGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.teacherChatCard{
+  background:#ffffff;
+  border:1px solid #d6e3fa;
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);
+}
+.teacherChatCard h3{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-top:0;
+}
+.teacherChatMessages{
+  background:#f8fbff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:10px;
+  max-height:180px;
+  overflow:auto;
+  line-height:1.45;
+}
+.chatOpenPill{background:#d1fae5;color:#065f46}
+.chatClosedPill{background:#fee2e2;color:#991b1b}
+.roleBadge{
+  display:inline-block;
+  background:#fff7ed;
+  color:#9a3412;
+  border:1px solid #fed7aa;
+  border-radius:999px;
+  padding:5px 10px;
+  margin-left:6px;
+  font-weight:bold;
+}
+.leaderOnlyNote{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin-top:12px;
+}
+
+
+.teacherHero{
+  background:linear-gradient(135deg,#eaf2ff,#ffffff);
+  border:1px solid #d6e3fa;
+  border-radius:22px;
+  padding:18px;
+  margin-bottom:18px;
+}
+.teacherClassGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.classCard{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:20px;
+  padding:18px;
+  box-shadow:0 4px 14px rgba(36,59,107,.08);
+  cursor:pointer;
+  transition:.2s;
+}
+.classCard:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(36,59,107,.14)}
+.classCard h3{font-size:28px;margin-bottom:8px}
+.statusPill{
+  display:inline-block;
+  border-radius:999px;
+  padding:6px 10px;
+  margin:4px 4px 4px 0;
+  font-weight:bold;
+  font-size:13px;
+}
+.pillProgress{background:#fef3c7;color:#92400e}
+.pillFinal{background:#d1fae5;color:#065f46}
+.pillEmpty{background:#f1f5f9;color:#475569}
+.pillMark{background:#ede9fe;color:#5b21b6}
+.teacherTopActions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.teacherTopActions button{min-width:170px;flex:1}
+.groupReviewGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.teacherGroupCard{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 3px 12px rgba(0,0,0,.06);
+}
+.teacherGroupCard h3{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.markBox{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-top:12px}
+.markBox input{margin-top:4px}
+.teacherAnswerWide{max-height:360px;overflow:auto;background:#f8fbff;border:1px solid #d6e3fa;border-radius:14px;padding:14px;white-space:pre-wrap;line-height:1.55}
+.backBtn{background:#64748b}
+
+
+
+/* ===== Cute Clean Student Design ===== */
+body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
+.topbar{background:linear-gradient(135deg,#243b6b,#4f7cc8);box-shadow:0 5px 18px rgba(36,59,107,.22)}
+.studentHero{
+  background:linear-gradient(135deg,#eaf4ff,#fff7fb);
+  border:1px solid #d7e7ff;
+  border-radius:28px;
+  padding:26px;
+  box-shadow:0 10px 30px rgba(36,59,107,.10);
+  overflow:hidden;
+  position:relative;
+}
+.studentHero:before{
+  content:"";
+  position:absolute;
+  width:160px;height:160px;
+  background:rgba(255,255,255,.55);
+  border-radius:50%;
+  right:-50px;top:-55px;
+}
+.studentHero h2{font-size:32px;margin-bottom:8px;color:#243b6b}
+.studentSub{color:#52627a;font-size:17px;margin:0 0 18px;line-height:1.5}
+.studentLoginGrid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;margin-top:12px}
+.studentField{background:rgba(255,255,255,.78);border:1px solid #dce9fb;border-radius:20px;padding:14px;box-shadow:0 3px 12px rgba(36,59,107,.05)}
+.studentField label{display:block;font-weight:bold;color:#243b6b;margin-bottom:4px}
+.studentNote{background:#fffdf5;border:1px solid #fdecc8;color:#77521a;border-radius:18px;padding:13px 15px;margin-top:16px;line-height:1.5}
+.bigJoinBtn{width:100%;font-size:20px;padding:16px;margin-top:18px;background:linear-gradient(135deg,#2f6db8,#7aa7e8);box-shadow:0 8px 18px rgba(47,109,184,.25)}
+.workShell{background:transparent;box-shadow:none;padding:0}
+.workHero{background:linear-gradient(135deg,#243b6b,#517fd1);color:white;border-radius:28px;padding:22px;box-shadow:0 12px 26px rgba(36,59,107,.20);margin-bottom:16px}
+.workHero h2{color:white;font-size:30px;margin:0 0 8px}
+.workHero .soft{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:white}
+.workLayout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.9fr);gap:18px;align-items:start}
+.myWorkCard,.sideCuteCard,.cutePanel{
+  background:white;border:1px solid #d9e8fb;border-radius:24px;padding:18px;box-shadow:0 8px 22px rgba(36,59,107,.08);margin-bottom:16px
+}
+.myWorkCard h3,.sideCuteCard h3,.cutePanel h3{font-size:22px;color:#243b6b;margin-bottom:8px}
+.myWorkHelp{color:#64748b;margin-top:0;line-height:1.5}
+#myStudentAnswer{min-height:260px;border:2px solid #cfe1fb;background:#fbfdff;border-radius:18px;font-size:17px;line-height:1.6}
+.cuteActions{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;margin-top:14px}
+.cuteActions button{margin:0;min-height:58px;border-radius:18px;box-shadow:0 5px 14px rgba(36,59,107,.10)}
+.cuteActions .green{background:linear-gradient(135deg,#247a3d,#45a563)}
+.cuteActions .chatBtn{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+.cuteActions .viewBtn{background:linear-gradient(135deg,#0f766e,#5eead4)}
+.cuteActions .submitBtn{background:linear-gradient(135deg,#243b6b,#4f7cc8)}
+.studentBox{border-radius:20px;background:#fbfdff;border:1px solid #d9e8fb}
+.myBox{border:2px solid #8bc7a0;background:#f6fff8}
+.memberPanel.open{display:block;animation:softOpen .18s ease-out}
+@keyframes softOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.chatPopup{border-radius:24px;border:1px solid #d9e8fb;box-shadow:0 14px 38px rgba(36,59,107,.22)}
+.chatHeader{background:linear-gradient(135deg,#7c3aed,#4f7cc8);padding:14px 16px}
+.chatMessages{background:#f8fbff}
+.chatBubble{border-radius:16px;background:white}
+.roleBadge{background:#fff0f6;color:#9d174d;border-color:#fbcfe8}
+@media(max-width:850px){.studentLoginGrid,.workLayout,.cuteActions{grid-template-columns:1fr}.studentHero h2,.workHero h2{font-size:26px}}
+
+
+/* ===== Compact Student Work Page Polish ===== */
+.workHero{padding:18px 20px;margin-bottom:14px}
+.workHero h2{font-size:26px;margin-bottom:10px}
+#studentGroupInfo.soft{padding:10px 12px;margin-top:8px}
+.compactInfoGrid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;align-items:stretch}
+.compactInfoItem{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:9px 10px;line-height:1.25;min-height:44px}
+.compactInfoItem .infoLabel{display:block;font-size:12px;opacity:.86;font-weight:bold;margin-bottom:3px}
+.compactInfoItem .infoValue{font-weight:bold;font-size:15px}
+.compactInfoItem.wide{grid-column:span 2}
+.compactMembers{max-height:58px;overflow:auto;padding-right:3px}
+.compactMembers .badge{background:rgba(255,255,255,.28);color:white;border:1px solid rgba(255,255,255,.28);margin:2px;padding:5px 8px;font-size:12px}
+.compactStatus{display:inline-block;margin-left:6px;vertical-align:middle}
+.myWorkCard{padding:16px 18px}
+.myWorkCard h3{margin-bottom:4px}
+.myWorkHelp{margin-bottom:10px}
+#myStudentAnswer{min-height:230px}
+.cuteActions{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px}
+.cuteActions button{min-height:50px;font-size:15px;padding:11px 12px}
+.leaveBottomRow{display:flex;justify-content:flex-end;margin-top:14px}
+.leaveBottomRow button{margin:0;min-width:170px;border-radius:18px;padding:11px 14px;font-size:15px;background:linear-gradient(135deg,#b42318,#ef4444)}
+.sideCuteCard{padding:15px 16px;margin-bottom:12px}
+.sideCuteCard h3{font-size:19px;margin-bottom:6px}
+@media(max-width:950px){.compactInfoGrid{grid-template-columns:repeat(2,minmax(140px,1fr))}.compactInfoItem.wide{grid-column:span 2}.cuteActions{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+@media(max-width:560px){.compactInfoGrid,.cuteActions{grid-template-columns:1fr}.compactInfoItem.wide{grid-column:span 1}.leaveBottomRow button{width:100%}}
+
+
+
+.activityBuilderGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
+.classAssignBox{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.classAssignBox label{background:#f8fbff;border:1px solid #dbe6f8;border-radius:14px;padding:10px 14px;font-weight:bold;color:#243b6b}
+.activityCard{background:#fffaf0;border:1px solid #fde68a;border-radius:16px;padding:14px;margin-top:12px}
+.activityTaskBox{background:#ffffff;border:1px dashed #f59e0b;border-radius:14px;padding:12px;line-height:1.6;white-space:pre-wrap}
+.criteriaChip{display:inline-block;background:#ecfdf5;border:1px solid #bbf7d0;color:#047857;border-radius:999px;padding:6px 10px;margin:4px;font-weight:bold;font-size:13px}
+.questionList{margin:8px 0 0 18px;line-height:1.7}
+.questionList li{margin-bottom:6px}
+.smallHint{font-size:13px;color:#64748b;margin-top:6px}
+
+
+
+/* ===== FINAL CLEAN STUDENT HEADER FIX ===== */
+#mainLoginButtons{margin-bottom:12px}
+.workHero{
+  padding:18px 20px !important;
+  border-radius:24px !important;
+  margin-bottom:14px !important;
+}
+.workHero > h2{
+  display:none !important;
+}
+#studentGroupInfo.soft{
+  background:transparent !important;
+  border:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+}
+.cleanGroupHeader{
+  background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:20px;
+  padding:14px 16px;
+  color:white;
+}
+.cleanTitleLine{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.cleanGroupName{
+  font-size:30px;
+  font-weight:800;
+  letter-spacing:.2px;
+}
+.cleanInfoLine{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+  line-height:1.2;
+}
+.cleanInfoLine span{
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:999px;
+  padding:8px 12px;
+  white-space:nowrap;
+}
+.cleanInfoLine em{
+  font-style:normal;
+  background:#fff0f6;
+  color:#9d174d;
+  padding:4px 9px;
+  border-radius:999px;
+  font-weight:800;
+  margin-left:4px;
+}
+.cleanMembersLine{
+  margin-top:10px;
+  display:flex;
+  align-items:center;
+  gap:7px;
+  flex-wrap:wrap;
+  font-size:15px;
+}
+.cleanMembersLine .badge{
+  background:rgba(255,255,255,.22) !important;
+  color:white !important;
+  border:1px solid rgba(255,255,255,.25);
+  padding:5px 10px;
+  margin:0;
+  border-radius:999px;
+}
+@media(max-width:700px){
+  .cleanGroupName{font-size:24px}
+  .cleanInfoLine span{white-space:normal}
+}
+
+
+.teacherNoteBox{
+  margin-top:14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#7c2d12;
+  border-radius:18px;
+  padding:16px;
+  font-size:17px;
+  line-height:1.5;
+}
+.teacherNoteBox b{color:#9a3412}
+.noteBtn{
+  background:#7c3aed;
+  color:white;
+  margin-top:10px;
+}
+.noteActionRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.noteActionRow button{flex:1;min-width:180px}
+
+
+.differentTaskGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+.groupTaskMini{background:#f8fbff;border:1px solid #d6e3fa;border-radius:14px;padding:12px}
+.groupTaskMini label{font-weight:bold;color:#243b6b}
+.groupTaskMini textarea{min-height:95px;font-size:14px}
+.teacherFeedbackBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:14px;margin-top:12px;color:#7c2d12}
+.teacherFeedbackBox b{color:#9a3412}
+
+.achievementBox{
+  margin-top:14px;
+  background:linear-gradient(135deg,#fff7ed,#fdf2f8);
+  border:1px solid #fed7aa;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 6px 16px rgba(124,45,18,.08);
+}
+.achievementBox h3{margin:0 0 8px;color:#9a3412;display:flex;align-items:center;gap:8px}
+.achievementActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.achievementActions button{flex:1;min-width:180px}
+.achievementMsg{
+  margin-top:10px;
+  background:white;
+  border:1px solid #fde68a;
+  border-radius:14px;
+  padding:12px;
+  color:#78350f;
+  line-height:1.5;
+}
+.certificateBtn{background:linear-gradient(135deg,#f59e0b,#ec4899)!important;color:white!important;font-weight:bold}
+
+
+.activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
+.instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
+
+.teacherHeroClean{background:linear-gradient(135deg,#f8fbff,#eef4ff);border:1px solid #d6e3fa;color:#12244a}
+.teacherHeroTitleRow{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.teacherBadge{background:#d1fae5;color:#065f46;border-radius:999px;padding:9px 14px;font-weight:bold}
+.compactTimer{padding:10px 12px;margin-top:8px}
+.teacherBuilderPanel{background:#f8fbff;border:1px solid #dbe6f8}
+.builderHelpBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:12px;margin:12px 0;color:#7c2d12}
+.libraryPanel,.builderSection,.assignPanel{background:white;border:1px solid #dbe6f8;border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.builderRow{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:end}
+.builderSaveRow{display:flex;justify-content:flex-end;margin-top:12px}
+.wideBtn{width:100%;margin-top:12px}
+.compactAssignBox label{min-width:90px;text-align:center}
+.advancedPanel{margin-top:14px;background:#eef4ff;border-radius:16px;padding:12px}
+.sameTaskSection{display:block}
+@media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
+
+
+.activityBuilderClean,.assignPanelClean{background:#ffffff;border:1px solid #dce8fb;border-radius:22px;padding:18px;margin-top:16px;box-shadow:0 8px 22px rgba(36,59,107,.06)}
+.builderTwoCol{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:end}
+.instructionTextarea{min-height:95px;background:#fbfdff;border:1.5px solid #cfdcf3}
+.taskPanel{background:#f8fbff;border:1px solid #dbe6f8;border-radius:16px;padding:14px;margin-top:12px}
+.taskPanel textarea{min-height:115px}
+.groupAssignBox{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:8px}
+.groupAssignBox label,.compactAssignBox label{background:#f8fbff;border:1px solid #dbe6f8;border-radius:14px;padding:10px;text-align:center;font-weight:bold;color:#243b6b}
+.studentCriteriaBox{background:#f8fbff;border:1px solid #dbe6f8;border-radius:16px;padding:14px;margin-top:12px}
+.studentCriteriaItem{display:flex;gap:10px;align-items:center;margin:8px 0;font-weight:bold;color:#243b6b}
+.studentCriteriaItem input{width:auto;margin:0;transform:scale(1.2)}
+.activityInstructionClean{background:#fffaf0;border:1px solid #f8d98b;border-radius:16px;padding:12px;margin-top:10px;line-height:1.5;white-space:pre-wrap}
+.activityTaskClean{background:#eef6ff;border:1px solid #bfd7ff;border-radius:16px;padding:14px;margin-top:10px;font-size:17px;line-height:1.5;white-space:pre-wrap}
+@media(max-width:800px){.builderTwoCol{grid-template-columns:1fr}.groupAssignBox{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-⚔️ Skill Clash Hub
-</div>
+<div class="topbar">⚔️ Skill Clash Hub</div>
 
 <div class="container">
 
+  <div class="btnRow" id="mainLoginButtons">
+
+  <button onclick="goToStudentLogin()">
+    🎮 Student Login
+  </button>
+
+  <button onclick="showPage('teacherLoginPage')">
+    👩‍🏫 Teacher Login
+  </button>
+
+</div>
+
+<div id="studentPage" class="studentHero card">
+  <h2>🎮 Join Skill Clash</h2>
+  <p class="studentSub">Choose your class, write your name, choose your role, and enter your group work page.</p>
+
+  <div class="studentLoginGrid">
+    <div class="studentField">
+      <label>📚 Class</label>
+      <select id="className">
+        <option value="">Choose class</option>
+        <option value="9-1">9/1</option>
+        <option value="9-2">9/2</option>
+        <option value="9-3">9/3</option>
+        <option value="9-4">9/4</option>
+      </select>
+    </div>
+
+    <div class="studentField">
+      <label>👥 Group Number</label>
+      <select id="studentGroup">
+        <option value="">Choose group</option>
+        <option value="1">Group 1</option><option value="2">Group 2</option>
+        <option value="3">Group 3</option><option value="4">Group 4</option>
+        <option value="5">Group 5</option><option value="6">Group 6</option>
+        <option value="7">Group 7</option><option value="8">Group 8</option>
+        <option value="9">Group 9</option><option value="10">Group 10</option>
+      </select>
+    </div>
+
+    <div class="studentField">
+      <label>🌸 Student Name</label>
+      <input id="studentName" placeholder="Write your name">
+    </div>
+
+    <div class="studentField">
+      <label>⭐ Group Role</label>
+      <select id="studentRole">
+        <option value="">Choose role</option>
+        <option value="leader">Group Leader</option>
+        <option value="member">Group Member</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="studentNote">
+    💡 Decide who is the leader before joining. Members will appear automatically after they join the same group.
+  </div>
   
-<div id="studentLoginPage" class="card">
-
-<h2>🎮 Student Login</h2>
-
-<label>Class</label>
-<select id="className">
-<option value="">Choose class</option>
-<option value="9-1">9/1</option>
-<option value="9-2">9/2</option>
-<option value="9-3">9/3</option>
-<option value="9-4">9/4</option>
-</select>
-
-<label>Group Number</label>
-<select id="studentGroup">
-<option value="">Choose group</option>
-<option value="1">Group 1</option>
-<option value="2">Group 2</option>
-<option value="3">Group 3</option>
-<option value="4">Group 4</option>
-<option value="5">Group 5</option>
-<option value="6">Group 6</option>
-<option value="7">Group 7</option>
-<option value="8">Group 8</option>
-<option value="9">Group 9</option>
-<option value="10">Group 10</option>
-</select>
-
-<label>Student Name</label>
-<input id="studentName">
-
-<label>Role</label>
-<select id="studentRole">
-<option value="member">Group Member</option>
-<option value="leader">Leader</option>
-</select>
-
-<button class="green" onclick="joinGroup()">
-Join Group
-</button>
-
+  <button onclick="joinGroup()" class="bigJoinBtn">✨ Join My Group Work</button>
 </div>
 
-<div id="workPage" class="hidden">
+<div id="workPage" class="workShell card hidden">
+  <div class="workHero">
+    <h2 id="workTitle">Group Work</h2>
+    <div class="soft" id="studentGroupInfo">Group info will appear here.</div>
+  </div>
 
-<div class="groupHeader">
+  <div class="workLayout">
+    <div>
+      <div class="myWorkCard">
+        <h3>✍️ My Answer</h3>
+        <p class="myWorkHelp">Write your own part here. Click <b>Save My Work</b> so your group can see it.</p>
+        <div id="studentWorkArea"></div>
 
-<div class="groupTitleRow">
+        <div class="cuteActions">
+          <button onclick="toggleMemberWork()" class="viewBtn">👀 Members’ Work</button>
+          <button onclick="saveMyStudentWork()" class="green">💾 Save My Work</button>
+          <button onclick="submitCombinedGroupWork()" class="submitBtn">📌 Submit Final</button>
+          <button onclick="toggleChatRoom()" class="chatBtn">💬 Chatroom</button>
+        </div>
 
-<h1 id="groupTitle">
-Group Work
-</h1>
+        <div class="leaveBottomRow">
+          <button onclick="leaveGroup()">🚪 Leave Group</button>
+        </div>
+      </div>
 
-<div class="statusBadge" id="groupStatus">
-✍️ In Progress
+      <div id="memberWorkPanel" class="cutePanel memberPanel">
+        <h3>👥 Group Members’ Work</h3>
+        <p class="myWorkHelp">These boxes show what each member saved.</p>
+        <div id="memberWorkArea"></div>
+      </div>
+
+      <div id="submitMsg" class="soft hidden"></div>
+      <div id="studentResultsBox" class="soft hidden">🏆 Results not released yet.</div>
+      <div id="teacherNoteBox" class="teacherNoteBox hidden">📝 Teacher note will appear here.</div>
+
+      <div id="achievementBox" class="achievementBox">
+        <h3>🏅 My Achievement</h3>
+        <div>Check if your group is a battle winner or the whole-class winner after teacher releases results.</div>
+        <div class="achievementActions">
+          <button onclick="checkMyAchievement()" class="certificateBtn">🏆 Check My Achievement</button>
+          <button id="downloadCertificateBtn" onclick="downloadAchievementCertificate()" class="green hidden">📄 Download Certificate</button>
+        </div>
+        <div id="achievementMsg" class="achievementMsg hidden"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sideCuteCard">
+        <h3>📌 Topic</h3>
+        <div id="groupTopic">Topic will appear here.</div>
+        <div id="studentActivityDetails" class="activityCard">Activity details will appear here after teacher assigns it.</div>
+      </div>
+
+      <div class="sideCuteCard stickyTimer">
+        <h3>⏱ Timer</h3>
+        Time Left: <b id="workTimerDisplay">Not started</b>
+      </div>
+
+      <details class="sideCuteCard">
+        <summary style="cursor:pointer;font-weight:bold;color:#243b6b;">📌 View Final Group Answer</summary>
+        <textarea id="groupAnswer" placeholder="Final group answer will appear here..." readonly></textarea>
+      </details>
+    </div>
+  </div>
+
+  <div id="chatRoom" class="chatPopup hidden">
+    <div class="chatHeader">
+      <span>💬 Group Chat</span>
+      <button onclick="toggleChatRoom()">Hide</button>
+    </div>
+    <div id="chatMessages" class="chatMessages"></div>
+    <div class="chatInputArea">
+      <textarea id="chatText" placeholder="Write a message to your group..."></textarea>
+      <button onclick="sendChatMessage()" class="green" style="width:100%;">Send Message</button>
+    </div>
+  </div>
 </div>
 
+<div id="votePage" class="card hidden">
+  <h2>🗳 Peer Voting</h2>
+  <div id="voteArea"></div>
 </div>
 
-<div class="groupInfoRow">
+<div id="teacherLoginPage" class="card hidden">
+  <h2>👩‍🏫 Teacher Login</h2>
 
-<span id="classInfo"></span>
+  <label>Password</label>
+  <input id="teacherLoginPass" type="password" placeholder="Enter teacher password">
 
-<span id="groupInfo"></span>
+  <button onclick="loginTeacher()" class="green">
+    Login
+  </button>
 
-<span id="leaderInfo"></span>
-
-<span id="studentInfo"></span>
-
-<span id="votesInfo"></span>
-
+  <button onclick="goToStudentLogin()">
+    Back to Student Login
+  </button>
 </div>
-
-<div class="memberRow" id="memberInfo"></div>
-
-</div>
-
-<div class="layoutGrid">
-
-<div>
-
-<div class="answerCard">
-
-<h2>✍️ My Answer</h2>
-
-<p>
-Write your own part here.
-Click <b>Save My Work</b> so your group can see it.
-</p>
-
-<div class="answerBox">
-
-<h2 id="myWorkTitle"></h2>
-
-<textarea id="myAnswerBox"></textarea>
-
-</div>
-
-<div class="actionButtons">
-
-<button class="blue" onclick="toggleMembersWork()">
-👀 Members’ Work
-</button>
-
-<button class="green" onclick="saveMyWork()">
-💾 Save My Work
-</button>
-
-<button class="blue" onclick="submitFinalWork()">
-📌 Submit Final
-</button>
-
-<button class="purple" onclick="toggleChat()">
-💬 Chatroom
-</button>
-
-</div>
-
-<div class="leaveBtnWrap">
-
-<button class="red" onclick="leaveGroup()">
-🚪 Leave Group
-</button>
-
-</div>
-
-</div>
-
-<div class="achievementCard">
-
-<h2>🏅 My Achievement</h2>
-
-<p>
-Check if your group is a battle winner or the whole-class winner after teacher releases results.
-</p>
-
-<button class="achievementBtn" onclick="checkAchievement()">
-🏆 Check My Achievement
-</button>
-
-</div>
-
-</div>
-
-<div>
-
-<div class="activityBox">
-
-<div id="groupTopic"></div>
-
-</div>
-
-<div class="soft" style="margin-top:18px;">
-
-<h2>⏱ Timer</h2>
-
-<div id="timerBox">
-Not started
-</div>
-
-</div>
-
-<details class="soft" style="margin-top:18px;">
-
-<summary>
-📌 View Final Group Answer
-</summary>
-
-<textarea id="finalAnswerBox" readonly></textarea>
-
-</details>
-
-</div>
-
-</div>
-
-</div>
-
+  
 <div id="teacherPage" class="card hidden">
+  <div class="teacherHero teacherHeroClean">
+    <div class="teacherHeroTitleRow">
+      <div>
+        <h2>👩‍🏫 Teacher Dashboard</h2>
+        <p><b>Ms. Saidah Khwar</b> · Build activities, assign them to classes, check group work, mark points, and release results.</p>
+      </div>
+      <div class="teacherBadge">Logged in</div>
+    </div>
 
-<h1>
-👩‍🏫 Teacher Dashboard
-</h1>
+    <input id="teacherPass" type="hidden" value="Welcome@2020">
 
-<p>
-Ms. Saidah Khwar
-</p>
+    <div class="teacherTopActions">
+      <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
+      <button onclick="leaveTeacher()" class="red">🚪 Leave Dashboard</button>
+      <button onclick="finishActivityFromDashboard()" class="red">🏁 Finish Activity + Excel</button>
+    </div>
 
-<div class="builderSection">
+    <div class="soft compactTimer">
+      ⏱ Teacher Timer: <b id="teacherTimerDisplay">Not started</b>
+    </div>
+  </div>
 
-<h2>
-🛠 Activity Library + Builder
-</h2>
+  <h3>📚 Classes</h3>
+  <div id="teacherClassGrid" class="teacherClassGrid"></div>
 
-<div class="soft">
+  <details class="soft teacherBuilderPanel" style="margin-top:18px;" open>
+    <summary style="cursor:pointer;font-weight:bold;font-size:18px;">🧩 Activity Library + Builder</summary>
 
-<b>Simple steps:</b>
+    <div class="builderHelpBox">
+      <b>Simple steps:</b> 1) Build or load an activity → 2) Save it to your library → 3) Choose classes → 4) Assign it.
+    </div>
 
-1) Build or load an activity →
-2) Save it to your library →
-3) Choose classes →
-4) Assign it.
+    <div class="libraryPanel">
+      <h3>📚 Saved Activities Library</h3>
+      <p class="smallHint">Save activities here so you can use them again later. Choose one, load it, then assign it to your classes.</p>
+      <div class="builderRow">
+        <select id="savedActivitySelect">
+          <option value="">Loading saved activities...</option>
+        </select>
+        <button onclick="loadSelectedBuiltActivity()">📥 Load Activity</button>
+        <button onclick="deleteSelectedBuiltActivity()" class="red">🗑 Delete</button>
+      </div>
+    </div>
 
+    <div class="builderSection activityBuilderClean">
+      <h3>✍️ Build Activity</h3>
+      <p class="smallHint">Create one activity, save it to your library, then assign it to a full class or selected groups only.</p>
+      <input id="editingActivityId" type="hidden" value="">
+
+      <div class="builderTwoCol">
+        <div>
+          <label>Activity Name</label>
+          <input id="builderActivityName" placeholder="Example: Opinion Paragraph Challenge" value="">
+        </div>
+        <div>
+          <label>Task Type</label>
+          <select id="builderTaskMode" onchange="toggleDifferentTasksBuilder()">
+            <option value="same">One task written once</option>
+            <option value="different">Different task for each group</option>
+          </select>
+        </div>
+      </div>
+
+      <label>Activity Instructions</label>
+      <textarea id="builderActivityInstructions" class="instructionTextarea" placeholder="Write the instructions students will read. Example: Read your task, write your part, save your work, check the success criteria, then the leader submits the final answer."></textarea>
+
+      <div id="sameTaskSection" class="taskPanel">
+        <label>Task / Question</label>
+        <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
+      </div>
+
+      <div id="differentTasksSection" class="taskPanel hidden">
+        <label>Different Task for Each Group</label>
+        <p class="smallHint">Write only the groups you want to use. Students see only their own group task.</p>
+        <div id="differentGroupTaskGrid" class="differentTaskGrid"></div>
+        <textarea id="builderGroupTasks" class="hidden" placeholder="Auto-filled from group task boxes"></textarea>
+      </div>
+
+      <label>Success Criteria Checklist</label>
+      <p class="smallHint">Write one criterion per line. Students must tick these before the leader submits final work.</p>
+      <textarea id="builderSuccessCriteria" placeholder="Example:
+Clear opinion
+Strong reason
+Relevant evidence/example
+Restated opinion
+Correct grammar and spelling"></textarea>
+
+      <div class="builderSaveRow">
+        <button onclick="saveBuiltActivityOnly()" class="green">💾 Save Activity to Library</button>
+      </div>
+    </div>
+
+    <div class="assignPanel assignPanelClean">
+      <h3>📤 Assign Activity</h3>
+      <p class="smallHint">Choose where this activity should appear. You can assign to a whole class or to selected groups only.</p>
+
+      <label>Assign To</label>
+      <select id="assignTargetMode" onchange="toggleAssignTargetMode()">
+        <option value="class">Whole class / all groups</option>
+        <option value="groups">Selected group(s) only</option>
+      </select>
+
+      <label>Choose Class(es)</label>
+      <div class="classAssignBox compactAssignBox">
+        <label><input type="checkbox" class="assignClassCheck" value="9-1"> 9/1</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-2"> 9/2</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-3"> 9/3</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-4"> 9/4</label>
+      </div>
+
+      <div id="assignGroupTargetBox" class="hidden">
+        <label>Choose Group(s)</label>
+        <div class="groupAssignBox">
+          <label><input type="checkbox" class="assignGroupCheck" value="1"> Group 1</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="2"> Group 2</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="3"> Group 3</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="4"> Group 4</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="5"> Group 5</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="6"> Group 6</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="7"> Group 7</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="8"> Group 8</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="9"> Group 9</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="10"> Group 10</label>
+        </div>
+      </div>
+
+      <button onclick="assignCurrentBuiltActivity()" class="green wideBtn">✅ Assign Current Activity</button>
+    </div>
+
+    <details class="advancedPanel">
+      <summary>⚙️ Advanced: timer/stage controls</summary>
+      <label>Class for timer/stage controls</label>
+      <select id="teacherClassName">
+        <option value="">Choose class</option>
+        <option value="9-1">9/1</option>
+        <option value="9-2">9/2</option>
+        <option value="9-3">9/3</option>
+        <option value="9-4">9/4</option>
+      </select>
+
+      <label>Timer Minutes</label>
+      <input id="timerMinutes" type="number" value="20" min="1">
+
+      <div class="btnRow">
+        <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
+        <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
+        <button onclick="resetHub()" class="red">🗑 Reset Selected Class</button>
+      </div>
+    </details>
+  </details>
 </div>
 
-<div class="soft" style="margin-top:18px;">
-
-<h2>📚 Saved Activities Library</h2>
-
-<select id="savedActivities"></select>
-
-<div class="actionButtons" style="margin-top:12px;">
-
-<button class="blue" onclick="loadActivity()">
-📥 Load Activity
-</button>
-
-<button class="red" onclick="deleteActivity()">
-🗑 Delete
-</button>
-
+<div id="teacherClassPage" class="card hidden">
+  <button onclick="showTeacherDashboard()" class="backBtn">⬅ Back to Dashboard</button>
+  <h2 id="teacherClassTitle">Class Groups</h2>
+  <div class="teacherTopActions">
+    <button onclick="openWorkStageForCurrentClass()" class="green">✍️ Open Work Stage</button>
+    <button onclick="openVotingStageForCurrentClass()">🗳 Voting Stage</button>
+    <button onclick="openTeacherVotingResults(currentTeacherClass)">📊 Voting Results</button>
+    <button onclick="openTeacherChatControl(currentTeacherClass)">💬 Chat Control</button>
+    <button onclick="finishActivityForCurrentClass()" class="red">🏁 Finish Activity + Excel</button>
+    <button onclick="resetCurrentTeacherClass()" class="red">🗑 Reset This Class</button>
+  </div>
+  <div id="teacherClassSummary" class="soft"></div>
+  <div id="teacherGroupsGrid" class="groupReviewGrid"></div>
 </div>
 
+<div id="teacherGroupReviewPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Class Groups</button>
+  <h2 id="teacherGroupReviewTitle">Group Work</h2>
+  <div id="teacherGroupReviewContent"></div>
 </div>
 
-<div class="soft" style="margin-top:18px;">
-
-<h2>✍️ Build Activity</h2>
-
-<label>Activity Name</label>
-<input id="builderActivityName">
-
-<label>Activity Instructions</label>
-<textarea id="builderInstructions"></textarea>
-
-<label>Task Type</label>
-
-<select id="taskType">
-
-<option value="same">
-Same task for all groups
-</option>
-
-<option value="different">
-Different task for each group
-</option>
-
-</select>
-
-<div id="sameTaskWrap">
-
-<label>Same Task for All Groups</label>
-
-<textarea id="sameTaskText"></textarea>
-
+<div id="teacherVotingResultsPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Dashboard</button>
+  <h2 id="teacherVotingTitle">Voting Results</h2>
+  <div class="teacherTopActions">
+    <button onclick="openVotingStageForCurrentClass()">🗳 Open Voting Stage for Students</button>
+    <button onclick="releaseResultsForCurrentClass()" class="green">📢 Release Results to Students</button>
+    <button onclick="hideResultsForCurrentClass()" class="red">🙈 Hide Results from Students</button>
+  </div>
+  <div id="teacherVotingResultsBox"></div>
 </div>
 
-<div id="differentTaskWrap" class="groupTaskGrid hidden">
-
-<div>
-<label>Group 1 Activity</label>
-<textarea id="groupTask_1"></textarea>
-</div>
-
-<div>
-<label>Group 2 Activity</label>
-<textarea id="groupTask_2"></textarea>
-</div>
-
-<div>
-<label>Group 3 Activity</label>
-<textarea id="groupTask_3"></textarea>
-</div>
-
-<div>
-<label>Group 4 Activity</label>
-<textarea id="groupTask_4"></textarea>
-</div>
-
-<div>
-<label>Group 5 Activity</label>
-<textarea id="groupTask_5"></textarea>
-</div>
-
-<div>
-<label>Group 6 Activity</label>
-<textarea id="groupTask_6"></textarea>
-</div>
-
-<div>
-<label>Group 7 Activity</label>
-<textarea id="groupTask_7"></textarea>
-</div>
-
-<div>
-<label>Group 8 Activity</label>
-<textarea id="groupTask_8"></textarea>
-</div>
-
-<div>
-<label>Group 9 Activity</label>
-<textarea id="groupTask_9"></textarea>
-</div>
-
-<div>
-<label>Group 10 Activity</label>
-<textarea id="groupTask_10"></textarea>
-</div>
-
-</div>
-
-<label style="margin-top:18px;">
-Success Criteria Checklist
-</label>
-
-<textarea id="successCriteria"></textarea>
-
-<button class="green" onclick="saveActivityToLibrary()">
-💾 Save Activity to Library
-</button>
-
-</div>
-
-  
-<div class="soft" style="margin-top:18px;">
-
-<h2>📤 Assign Activity</h2>
-
-<div class="assignGrid">
-
-<label class="assignBox">
-<input type="checkbox"
-class="assignClassCheck"
-value="9-1">
-9/1
-</label>
-
-<label class="assignBox">
-<input type="checkbox"
-class="assignClassCheck"
-value="9-2">
-9/2
-</label>
-
-<label class="assignBox">
-<input type="checkbox"
-class="assignClassCheck"
-value="9-3">
-9/3
-</label>
-
-<label class="assignBox">
-<input type="checkbox"
-class="assignClassCheck"
-value="9-4">
-9/4
-</label>
-
-</div>
-
-<button class="blue"
-onclick="assignCurrentActivity()"
-style="margin-top:16px;">
-✅ Assign Current Activity
-</button>
-
-<button class="orange"
-onclick="finishActivity()"
-style="margin-top:16px;">
-🏁 Finish Activity + Export Excel
-</button>
-
-</div>
-
-</div>
-
-<h2 style="margin-top:26px;">
-👥 Live Groups
-</h2>
-
-<div id="teacherGroups"
-class="teacherGrid"></div>
-
-</div>
-
-<div id="chatPopup"
-class="chatPopup hidden">
-
-<div class="chatHeader">
-
-💬 Group Chat
-
-<button
-style="float:right;background:none;border:0;color:white;font-size:22px;cursor:pointer;"
-onclick="toggleChat()">
-✖
-</button>
-
-</div>
-
-<div class="chatMessages"
-id="chatMessages"></div>
-
-<div class="chatBottom">
-
-<input id="chatInput">
-
-<button class="purple"
-onclick="sendChat()">
-Send
-</button>
-
-</div>
-
+<div id="teacherChatControlPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Class Groups</button>
+  <h2 id="teacherChatControlTitle">💬 Chat Control</h2>
+  <div class="teacherTopActions">
+    <button onclick="setAllChatsForCurrentClass(true)" class="green">✅ Open All Chats</button>
+    <button onclick="setAllChatsForCurrentClass(false)" class="red">🔒 Close All Chats</button>
+    <button onclick="clearAllChatsForCurrentClass()" class="red">🧹 Clear All Chats</button>
+  </div>
+  <div class="soft">Teacher can open/close each group chat, view live messages, or clear chat messages.</div>
+  <div id="teacherChatControlGrid" class="teacherChatGrid"></div>
 </div>
 
 </div>
 
 <script>
-
 const firebaseConfig = {
-
-apiKey: "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
-
-authDomain:
-"online-english-lesson-grade-9.firebaseapp.com",
-
-databaseURL:
-"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
-
-projectId:
-"online-english-lesson-grade-9",
-
-storageBucket:
-"online-english-lesson-grade-9.firebasestorage.app",
-
-appId:
-"1:542666648554:web:5190c68ea73b3536dae093"
-
+  apiKey: "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain: "online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL: "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId: "online-english-lesson-grade-9",
+  storageBucket: "online-english-lesson-grade-9.firebasestorage.app",
+  appId: "1:542666648554:web:5190c68ea73b3536dae093"
 };
 
 firebase.initializeApp(firebaseConfig);
-
 const db = firebase.database();
+const hubRef = db.ref('skillClashHub_1');
+  let currentGroupRef = null;
 
-const hubRef =
-db.ref('skillClashHubFinal');
+  let currentClass =
+  sessionStorage.getItem('skillClashClass') || '';
+  
+let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
+  let currentStudent =
+  sessionStorage.getItem('skillClashStudent') || '';
 
-let currentClass = '';
-let currentGroup = '';
-let currentStudent = '';
-let currentRole = '';
-let teacherLoggedIn = false;
+let currentRole =
+  sessionStorage.getItem('skillClashRole') || '';
+
+let currentStudentId =
+  sessionStorage.getItem('skillClashStudentId') || '';
+
+  let timerInterval = null;
+let timerEndTime = 0;
+  let currentBattleIndex = 0;
+let currentTeacherClass = sessionStorage.getItem('skillClashTeacherClass') || '';
+let currentActivity = null;
+let activeSuccessCriteria = ['Opinion','Reason','Evidence / Example','Restated Opinion'];
+
+let topics = {
+  1:'Should students have to wear uniforms?',
+  2:'Should students have to wear uniforms?',
+  3:'Should we ban homework?',
+  4:'Should we ban homework?',
+  5:'Should fast food be allowed in schools?',
+  6:'Should fast food be allowed in schools?',
+  7:'Should parents decide their children’s career?',
+  8:'Should parents decide their children’s career?',
+  9:'The impact of social media on teenage social skills.',
+  10:'The impact of social media on teenage social skills.'
+};
+
+  function parseTopics(text){
+  const next = {};
+
+  String(text || '').split('\n').forEach(line=>{
+    const parts = line.split(':');
+    const num = parts.shift()?.trim();
+    const topic = parts.join(':').trim();
+
+    if(num && topic){
+      next[num] = topic;
+    }
+  });
+
+  return next;
+}
 
 function showPage(id){
+  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage','teacherChatControlPage'].forEach(p=>{
+    const el=document.getElementById(p);
+    if(el) el.classList.add('hidden');
+  });
+  const target = document.getElementById(id);
+  if(target) target.classList.remove('hidden');
 
-[
-'studentLoginPage',
-'workPage',
-'teacherPage'
-].forEach(p=>{
-
-const el = document.getElementById(p);
-
-if(el){
-el.classList.add('hidden');
+  /* Hide the top Student/Teacher login buttons after students or teacher enter a page. */
+  const loginBtns = document.getElementById('mainLoginButtons');
+  if(loginBtns){
+    loginBtns.style.display = (id === 'studentPage' || id === 'teacherLoginPage') ? 'flex' : 'none';
+  }
 }
 
-});
+  async function startActivityTimer(){
 
-document
-.getElementById(id)
-.classList.remove('hidden');
+  if(!checkTeacherPassword()) return;
 
+  const mins =
+    Number(document.getElementById('timerMinutes').value || 0);
+
+  if(mins <= 0){
+    alert('Enter valid timer minutes.');
+    return;
+  }
+
+  timerEndTime =
+    Date.now() + (mins * 60 * 1000);
+
+ const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
 }
 
-function joinGroup(){
-
-currentClass =
-document.getElementById('className').value;
-
-currentGroup =
-document.getElementById('studentGroup').value;
-
-currentStudent =
-document.getElementById('studentName').value.trim();
-
-currentRole =
-document.getElementById('studentRole').value;
-
-if(
-!currentClass ||
-!currentGroup ||
-!currentStudent
-){
-alert('Complete all fields.');
-return;
-}
-
-sessionStorage.setItem(
-'skillClass',
-currentClass
-);
-
-sessionStorage.setItem(
-'skillGroup',
-currentGroup
-);
-
-sessionStorage.setItem(
-'skillStudent',
-currentStudent
-);
-
-sessionStorage.setItem(
-'skillRole',
-currentRole
-);
-
-hubRef.child(
-'classes/' + currentClass +
-'/groups/group' + currentGroup +
-'/students/' + currentStudent
+await hubRef.child(
+  'classes/' + className + '/settings'
 ).update({
-
-name: currentStudent,
-role: currentRole,
-joinedAt: Date.now()
-
+  timerEndTime: timerEndTime
 });
 
-loadGroup();
+  startLiveTimer(timerEndTime);
+}
 
-showPage('workPage');
+function startLiveTimer(endTime){
+
+  if(timerInterval){
+    clearInterval(timerInterval);
+  }
+
+  function update(){
+
+    const left =
+      Math.max(0, endTime - Date.now());
+
+    const mins =
+      Math.floor(left / 60000);
+
+    const secs =
+      Math.floor((left % 60000) / 1000);
+
+    const text =
+      mins + ':' + String(secs).padStart(2,'0');
+
+    const teacher =
+      document.getElementById('teacherTimerDisplay');
+
+    const student =
+      document.getElementById('workTimerDisplay');
+
+    if(teacher) teacher.innerHTML = text;
+    if(student) student.innerHTML = text;
+
+    if(left <= 0){
+
+      clearInterval(timerInterval);
+
+      if(teacher)
+        teacher.innerHTML = '⛔ Time Finished';
+
+      if(student)
+        student.innerHTML = '⛔ Time Finished';
+    }
+  }
+
+  update();
+
+  timerInterval =
+    setInterval(update, 1000);
+}
+
+  function checkTeacherPassword(){
+
+  const pass = document.getElementById('teacherPass').value;
+
+  if(pass !== 'Welcome@2020'){
+    alert('Incorrect teacher password.');
+    return false;
+  }
+
+  return true;
+}
+
+
+
+function makeStudentId(name){
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[.#$/\[\]]/g,'')
+    .replace(/\s+/g,'_')
+    .replace(/[^a-z0-9_\u0600-\u06FF-]/g,'') || ('student_' + Date.now());
+}
+
+async function joinGroup(){
+
+  teacherLoggedIn = false;
+
+  const group = document.getElementById('studentGroup').value;
+  const className = document.getElementById('className').value;
+  const studentName = document.getElementById('studentName').value.trim();
+  const role = document.getElementById('studentRole').value;
+
+  if(!className || !group || !studentName || !role){
+    alert('Choose class, write your name, choose role, and choose group number.');
+    return;
+  }
+
+  currentGroup = group;
+  currentStudent = studentName;
+  currentRole = role;
+  currentStudentId = makeStudentId(studentName);
+  currentClass = className;
+
+  sessionStorage.setItem('skillClashStudent', studentName);
+  sessionStorage.setItem('skillClashRole', role);
+  sessionStorage.setItem('skillClashStudentId', currentStudentId);
+  sessionStorage.setItem('skillClashClass', className);
+  sessionStorage.setItem('skillClashGroup', group);
+
+  const groupPath =
+    'classes/' + currentClass + '/groups/group' + group;
+
+  const studentPath =
+    groupPath + '/students/' + currentStudentId;
+
+  /* IMPORTANT:
+     Do not set answer:'' here.
+     This keeps the student's saved work after refresh, closing the page,
+     or rejoining the same class/group with the same name. */
+  const oldStudentSnap = await hubRef.child(studentPath).once('value');
+  const oldStudent = oldStudentSnap.val() || {};
+
+  await hubRef.child(groupPath).update({
+    group: group,
+    topic: topics[group] || '',
+    status: oldStudent.answer ? 'inProgress' : 'joined',
+    joinedAt: Date.now()
+  });
+
+  await hubRef.child(studentPath).update({
+    id: currentStudentId,
+    name: studentName,
+    role: role,
+    answer: oldStudent.answer || '',
+    joinedAt: oldStudent.joinedAt || Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  loadGroupWork();
+
+  document.getElementById('workTitle').innerHTML = 'Group ' + group + ' Work';
+
+  document.getElementById('groupTopic').innerHTML =
+    topics[group] || 'Group topic';
+
+  showPage('workPage');
+}
+  
+  function loadGroupWork(){
+
+  if(!currentGroup || !currentClass) return;
+
+  if(currentGroupRef){
+    currentGroupRef.off();
+  }
+
+currentGroupRef = hubRef.child(
+  'classes/' + currentClass +
+  '/groups/group' + currentGroup
+);
+  currentGroupRef.on('value', function(snapshot){
+
+    const data = snapshot.val() || {};
+
+    window.groupFinalSubmitted = data.finalSubmitted === true;
+
+    const students = data.students || {};
+    const studentList = Object.keys(students).map(id=>students[id] || {});
+    const leaders = studentList.filter(s=>s.role === 'leader').map(s=>s.name).filter(Boolean);
+    const members = studentList.map(s=>s.name).filter(Boolean);
+
+const totalVotes = data.totalVotes || 0;
+
+const badge = window.groupFinalSubmitted
+  ? ' <span style="background:#d1fae5;color:#065f46;padding:5px 10px;border-radius:999px;font-weight:bold;">✅ Final Submitted</span>'
+  : ' <span style="background:#fef3c7;color:#92400e;padding:5px 10px;border-radius:999px;font-weight:bold;">✍️ In Progress</span>';
+
+const leaderText = leaders.length ? leaders.join(', ') : 'Not chosen yet';
+const memberBadges = members.length
+  ? members.map(n => '<span class="badge">' + escapeHtml(n) + '</span>').join(' ')
+  : 'No members joined yet';
+
+const myRoleText = currentRole === 'leader' ? 'Group Leader' : 'Group Member';
+
+document.getElementById('studentGroupInfo').innerHTML =
+  '<div class="cleanGroupHeader">' +
+    '<div class="cleanTitleLine">' +
+      '<span class="cleanGroupName">Group ' + currentGroup + ' Work</span>' +
+      badge +
+    '</div>' +
+    '<div class="cleanInfoLine">' +
+      '<span>📚 <b>Class:</b> ' + escapeHtml(currentClass) + '</span>' +
+      '<span>👥 <b>Group:</b> ' + currentGroup + '</span>' +
+      '<span>👑 <b>Leader:</b> ' + escapeHtml(leaderText) + '</span>' +
+      '<span>⭐ <b>You:</b> ' + escapeHtml(currentStudent) + ' <em>' + myRoleText + '</em></span>' +
+      '<span>❤️ <b>Votes:</b> ' + totalVotes + '</span>' +
+    '</div>' +
+    '<div class="cleanMembersLine">👥 <b>Members:</b> ' + memberBadges + '</div>' +
+  '</div>';
+
+  document.getElementById('groupAnswer').value = data.answer || '';
+
+  const teacherNoteBox = document.getElementById('teacherNoteBox');
+  if(teacherNoteBox){
+    const hasNote = String(data.teacherNote || '').trim();
+    const hasMark = data.teacherMark !== undefined && data.teacherMark !== null && String(data.teacherMark).trim() !== '';
+    if(hasNote || hasMark){
+      teacherNoteBox.classList.remove('hidden');
+      teacherNoteBox.className = 'teacherFeedbackBox';
+      teacherNoteBox.innerHTML =
+        (hasMark ? '⭐ <b>Teacher Points:</b> ' + escapeHtml(data.teacherMark) + '<br>' : '') +
+        (hasNote ? '📝 <b>Teacher Comment:</b><br>' + escapeHtml(data.teacherNote) : '');
+    }else{
+      teacherNoteBox.classList.add('hidden');
+      teacherNoteBox.innerHTML = '';
+    }
+  }
+
+  renderStudentBoxes(students);
+  renderChatMessages(data.chat || {}, data.chatOpen !== false);
+  loadCurrentActivityForStudent();
+
+  });
 
 }
 
-function loadGroup(){
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  hubRef.child('classes/' + currentClass + '/currentActivity').once('value', snap=>{
+    currentActivity = snap.val();
+    renderActivityDetails(currentActivity, currentGroup);
+  });
+}
 
-hubRef.child(
-'classes/' + currentClass +
-'/groups/group' + currentGroup
-).on('value', snap=>{
+function renderStudentBoxes(students){
 
-const data = snap.val() || {};
+  const area = document.getElementById('studentWorkArea');
+  const memberArea = document.getElementById('memberWorkArea');
 
-const students =
-data.students || {};
+  const myData = students[currentStudentId] || {
+    name: currentStudent,
+    role: currentRole,
+    answer: ''
+  };
 
-const names =
-Object.keys(students);
+const groupLocked = window.groupFinalSubmitted === true;
 
-const leader =
-names.find(n=>
-students[n].role === 'leader'
-) || '-';
+  area.innerHTML = `
+<div class="studentBox myBox">
+  <h3>✍️ ${escapeHtml(myData.name || currentStudent)}’s Work</h3>
+  <textarea
+    id="myStudentAnswer"
+    ${groupLocked ? 'readonly' : ''}
+    placeholder="Write your part here... unlimited text is allowed."
+  >${escapeHtml(myData.answer || '')}</textarea>
+  ${groupLocked ? '<div class="leaderOnlyNote">🔒 Final group work was submitted. Answers are now locked.</div>' : ''}
+</div>`;
 
-document.getElementById(
-'groupTitle'
-).innerHTML =
-'Group ' + currentGroup + ' Work';
+  let html = '';
 
-document.getElementById(
-'classInfo'
-).innerHTML =
-'📚 Class: ' + currentClass;
+  Object.keys(students || {}).forEach(id=>{
 
-document.getElementById(
-'groupInfo'
-).innerHTML =
-'👥 Group: ' + currentGroup;
+    const s = students[id] || {};
+    const isMe = id === currentStudentId;
+    const roleText = s.role === 'leader' ? 'Group Leader' : 'Group Member';
 
-document.getElementById(
-'leaderInfo'
-).innerHTML =
-'👑 Leader: ' + leader;
+    html += `
+<div class="studentBox ${isMe ? 'myBox' : ''}">
+  <h3>👤 ${escapeHtml(s.name || id)} <span class="roleBadge">${roleText}</span></h3>
+  <div class="answerBox">${escapeHtml(s.answer || 'No saved work yet.')}</div>
+</div>`;
+  });
 
-document.getElementById(
-'studentInfo'
-).innerHTML =
-'⭐ You: ' +
-currentStudent +
-' (' + currentRole + ')';
+  memberArea.innerHTML = html || '<p>No group work saved yet.</p>';
+}
 
-document.getElementById(
-'votesInfo'
-).innerHTML =
-'❤️ Votes: ' +
-(data.votes || 0);
+function toggleMemberWork(){
+  const panel = document.getElementById('memberWorkPanel');
+  panel.classList.toggle('open');
+}
 
-document.getElementById(
-'memberInfo'
-).innerHTML =
-'👥 Members: ' +
-names.join(' • ');
+async function saveMyStudentWork(){
 
-const myData =
-students[currentStudent] || {};
+  if(!currentGroup || !currentStudent || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
 
-document.getElementById(
-'myWorkTitle'
-).innerHTML =
-currentStudent;
+  if(window.groupFinalSubmitted === true){
+    alert('Final group work was already submitted. Answers are locked.');
+    return;
+  }
 
-document.getElementById(
-'myAnswerBox'
-).value =
-myData.answer || '';
+  const box = document.getElementById('myStudentAnswer');
 
-document.getElementById(
-'finalAnswerBox'
-).value =
-data.finalAnswer || '';
+  if(!box) return;
 
-renderAssignedActivity();
+  const answer = box.value.trim();
 
-renderMembersWork(students);
+ await hubRef
+  .child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/students/' + currentStudentId
+  )
+  .update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    answer: answer,
+    saved: true,
+    updatedAt: Date.now()
+  });
 
-loadChat();
+  // Mark the whole group as in progress for the teacher dashboard.
+  await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup
+  ).update({
+    status: 'inProgress',
+    hasSavedWork: true,
+    lastSavedBy: currentStudent,
+    lastSavedAt: Date.now()
+  });
+
+  document.getElementById('submitMsg')
+    .classList.remove('hidden');
+
+  document.getElementById('submitMsg')
+    .innerHTML =
+      '✅ Your work was saved. Your group can view it now.';
+}
+
+  async function submitCombinedGroupWork(){
+
+  if(!currentGroup || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
+
+  if(currentRole !== 'leader'){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML =
+      '⚠️ Only the group leader can submit the final group work.';
+    return;
+  }
+
+  await saveMyStudentWork();
+
+ const snap = await hubRef
+  .child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/students'
+  )
+  .once('value');
+
+  const students = snap.val() || {};
+
+  let finalAnswer = '';
+
+  Object.keys(students).forEach(id=>{
+    const s = students[id] || {};
+    finalAnswer += (s.name || id) + ' (' + (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+    finalAnswer += (s.answer || 'No answer yet') + '\n\n';
+  });
+
+  await hubRef.child(
+  'classes/' + currentClass +
+  '/groups/group' + currentGroup
+).update({
+  answer: finalAnswer,
+  finalSubmitted: true,
+  submittedBy: currentStudent,
+  submittedAt: Date.now()
+});
+
+  document.getElementById('groupAnswer').value = finalAnswer;
+
+  document.getElementById('submitMsg').classList.remove('hidden');
+  document.getElementById('submitMsg').innerHTML =
+    '✅ Final group work submitted by the leader. Student boxes are now locked.';
+}
+
+function toggleChatRoom(){
+  const chat = document.getElementById('chatRoom');
+  chat.classList.toggle('hidden');
+}
+
+function renderChatMessages(chat, chatOpen){
+  const box = document.getElementById('chatMessages');
+  if(!box) return;
+
+  const inputArea = document.querySelector('.chatInputArea');
+  if(inputArea){
+    inputArea.style.display = chatOpen ? 'block' : 'none';
+  }
+
+  const messages = Object.keys(chat || {})
+    .map(id=>Object.assign({id:id}, chat[id] || {}))
+    .sort((a,b)=>Number(a.time || 0) - Number(b.time || 0));
+
+  let html = '';
+  if(!chatOpen){
+    html += '<div class="chatClosedNotice">🔒 Chat is closed by your teacher.</div>';
+  }
+
+  if(!messages.length){
+    html += '<p>No messages yet.</p>';
+  } else {
+    html += messages.map(m=>{
+      const isMine =
+        (m.studentId && currentStudentId && m.studentId === currentStudentId) ||
+        (!m.studentId && m.name === currentStudent);
+
+      const time = m.time
+        ? new Date(Number(m.time)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+        : '';
+
+      const edited = m.editedAt ? ' · edited' : '';
+
+      return `
+        <div class="chatBubble">
+          <b>${escapeHtml(m.name || 'Student')}:</b><br>
+          ${escapeHtml(m.text || '')}
+          <div class="chatMeta">${escapeHtml(time + edited)}</div>
+          ${isMine && chatOpen ? `
+            <div class="chatActions">
+              <button class="editChatBtn" onclick="editChatMessage('${m.id}')">✏️ Edit</button>
+              <button class="deleteChatBtn" onclick="deleteChatMessage('${m.id}')">🗑 Delete</button>
+            </div>
+          ` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  box.innerHTML = html;
+  box.scrollTop = box.scrollHeight;
+}
+
+async function sendChatMessage(){
+  const textBox = document.getElementById('chatText');
+  const text = textBox.value.trim();
+
+  if(!text) return;
+
+  if(!currentClass || !currentGroup || !currentStudent){
+    alert('Join group first.');
+    return;
+  }
+
+  const chatStatusSnap = await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chatOpen'
+  ).once('value');
+
+  if(chatStatusSnap.val() === false){
+    alert('Chat is closed by your teacher.');
+    return;
+  }
+
+  await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat'
+  ).push({
+    studentId: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    text: text,
+    time: Date.now()
+  });
+
+  textBox.value = '';
+}
+
+async function editChatMessage(messageId){
+  if(!currentClass || !currentGroup || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
+
+  const path =
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat/' + messageId;
+
+  const snap = await hubRef.child(path).once('value');
+  const msg = snap.val();
+
+  if(!msg){
+    alert('Message not found.');
+    return;
+  }
+
+  if(msg.studentId !== currentStudentId && msg.name !== currentStudent){
+    alert('You can edit only your own message.');
+    return;
+  }
+
+  const chatStatusSnap = await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chatOpen'
+  ).once('value');
+
+  if(chatStatusSnap.val() === false){
+    alert('Chat is closed by your teacher.');
+    return;
+  }
+
+  const newText = prompt('Edit your message:', msg.text || '');
+  if(newText === null) return;
+
+  const cleanText = newText.trim();
+  if(!cleanText){
+    alert('Message cannot be empty. Use Delete if you want to remove it.');
+    return;
+  }
+
+  await hubRef.child(path).update({
+    text: cleanText,
+    editedAt: Date.now()
+  });
+}
+
+async function deleteChatMessage(messageId){
+  if(!currentClass || !currentGroup || !currentStudentId){
+    alert('Join group first.');
+    return;
+  }
+
+  const path =
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chat/' + messageId;
+
+  const snap = await hubRef.child(path).once('value');
+  const msg = snap.val();
+
+  if(!msg){
+    alert('Message not found.');
+    return;
+  }
+
+  if(msg.studentId !== currentStudentId && msg.name !== currentStudent){
+    alert('You can delete only your own message.');
+    return;
+  }
+
+  if(!confirm('Delete this chat message?')) return;
+
+  await hubRef.child(path).remove();
+}
+
+
+function parseLines(text){
+  return String(text || '')
+    .split('\n')
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
+function parseGroupTasks(text){
+  const tasks = {};
+  String(text || '').split('\n').forEach(line => {
+    const parts = line.split(':');
+    const num = (parts.shift() || '').trim().replace(/group/ig,'').trim();
+    const task = parts.join(':').trim();
+    if(num && task) tasks[String(num)] = task;
+  });
+  return tasks;
+}
+
+function buildDifferentTaskInputs(){
+  const grid = document.getElementById('differentGroupTaskGrid');
+  if(!grid) return;
+  if(grid.dataset.ready === 'yes') return;
+  let html = '';
+  for(let i=1;i<=10;i++){
+    html += `<div class="groupTaskMini">
+      <label>Group ${i} Activity</label>
+      <textarea id="groupTask_${i}" placeholder="Write Group ${i} task here..."></textarea>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  grid.dataset.ready = 'yes';
+}
+
+function toggleDifferentTasksBuilder(){
+  const mode = document.getElementById('builderTaskMode')?.value || 'same';
+  const section = document.getElementById('differentTasksSection');
+  const sameSection = document.getElementById('sameTaskSection');
+  if(section){
+    if(mode === 'different'){
+      section.classList.remove('hidden');
+      buildDifferentTaskInputs();
+    }else{
+      section.classList.add('hidden');
+    }
+  }
+  if(sameSection){
+    sameSection.classList.toggle('hidden', mode === 'different');
+  }
+}
+
+function collectDifferentGroupTasks(){
+  buildDifferentTaskInputs();
+  const tasks = {};
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box && box.value.trim()) tasks[String(i)] = box.value.trim();
+  }
+  // fallback for old pasted format
+  const oldBox = document.getElementById('builderGroupTasks');
+  if(oldBox && oldBox.value.trim()){
+    Object.assign(tasks, parseGroupTasks(oldBox.value));
+  }
+  return tasks;
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  const groupKey = String(groupNumber || '');
+  if(activity.taskMode === 'different'){
+    return (activity.groupTasks && activity.groupTasks[groupKey]) || activity.sameTask || 'No task assigned for this group yet.';
+  }
+  return activity.sameTask || 'No task assigned yet.';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const box = document.getElementById('studentActivityDetails');
+  const topic = document.getElementById('groupTopic');
+
+  if(!box) return;
+
+  if(!activity){
+    if(topic) topic.innerHTML = 'No activity assigned yet.';
+    box.innerHTML = 'Activity details and instructions will appear here after the teacher assigns the activity.';
+    return;
+  }
+
+  const taskText = getAssignedTask(activity, groupNumber);
+  const instructions = activity.instructions || 'Follow the task, save your own work, and let the leader submit the final group work.';
+  const studentParts = (activity.studentQuestions || [])
+    .map(q => '<span class="criteriaChip">' + escapeHtml(q) + '</span>')
+    .join(' ');
+  const criteria = (activity.successCriteria || [])
+    .map(c => '<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>')
+    .join(' ');
+
+  if(topic){
+    topic.innerHTML =
+      '<div class="activityTitleLine">' + escapeHtml(activity.name || 'Group Activity') + '</div>' +
+      '<div class="activityTaskBox">' + escapeHtml(taskText) + '</div>';
+  }
+
+  box.innerHTML =
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="instructionBox">' + escapeHtml(instructions) + '</div>' +
+    '<p><b>Each student job/question:</b></p>' + (studentParts || '<p>No student questions added.</p>') +
+    '<p><b>Success criteria for peer voting:</b></p>' + (criteria || '<p>No criteria added.</p>');
+}
+
+async function saveBuiltActivityAndAssign(){
+  if(!checkTeacherPassword()) return;
+
+  const selected = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selected.length){ alert('Choose at least one class to assign the activity.'); return; }
+
+  const activity = {
+    id: 'activity_' + Date.now(),
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions') ? document.getElementById('builderActivityInstructions').value.trim() : (document.getElementById('activityInstructions') ? document.getElementById('activityInstructions').value.trim() : ''),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    assignedClasses: selected,
+    createdAt: Date.now()
+  };
+
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write group tasks like 1: task, 2: task.');
+    return;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+
+  const updates = {};
+  selected.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity saved and assigned to: ' + selected.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
+async function saveActivitySettings(){
+  if(!checkTeacherPassword()) return;
+
+ topics = parseTopics(
+  document.getElementById('activityTopics').value
+);
+
+await hubRef.child('settings').update({
+
+  title:
+    document.getElementById('activityTitle').value,
+
+  instructions:
+    document.getElementById('activityInstructions').value,
+
+  topics: topics
 
 });
 
+  alert('Activity saved.');
 }
 
-function renderAssignedActivity(){
+async function openWorkStage(){
+  if(!checkTeacherPassword()) return;
+ 
+  const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className + '/settings/stage'
+).set('work');
+
+  alert('Work stage opened.');
+}
+
+async function openVotingStage(){
+  if(!checkTeacherPassword()) return;
+  
+ const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className + '/settings/stage'
+).set('voting');
+
+alert('Voting stage opened.');
+}
+
+function showTeacherPreview(){
+  if(!checkTeacherPassword()) return;
+
+  if(!currentClass){
+  currentClass = document.getElementById('teacherClassName').value;
+}
+
+if(!currentClass){
+  alert('Choose class first.');
+  return;
+}
+
+hubRef.child('classes/' + currentClass + '/groups').once('value', snap=>{
+  const data = snap.val() || {};
+    let html = '';
+
+    for(let i=1;i<=10;i++){
+      const g = data['group'+i];
+      html += `<div class="card">
+        <h3>Group ${i}</h3>
+        ${g ? `
+          <p><b>Members:</b> ${escapeHtml(getGroupMemberNames(g.students || {}))}</p>
+          <p><b>Topic:</b> ${escapeHtml(g.topic || topics[i] || '')}</p>
+<div class="answerBox">${escapeHtml(g.answer || 'Not submitted yet')}</div>
+
+<p>
+  🤖 AI Feedback:
+  <b>${generateFeedback(g.answer || '')}</b>
+</p>
+        ` : `<p>❌ Not joined yet</p>`}
+      </div>`;
+    }
+
+    document.getElementById('teacherPreview').innerHTML = html;
+  });
+}
+
+hubRef.on('value', snap=>{
+  const game = snap.val() || {};
+
+  const classData =
+    game.classes?.[currentClass] || {};
+
+  if(classData.settings?.timerEndTime){
+    startLiveTimer(classData.settings.timerEndTime);
+  }
+
+  if(classData.currentActivity){
+    currentActivity = classData.currentActivity;
+    if(currentActivity.successCriteria && currentActivity.successCriteria.length){
+      activeSuccessCriteria = currentActivity.successCriteria;
+    }
+  }
+
+  const stage =
+    classData.settings?.stage || 'work';
+
+  const released =
+  classData.settings?.resultsReleased === true;
+
+const studentResults =
+  document.getElementById('studentResultsBox');
+
+if(studentResults){
+
+  if(released){
+
+    studentResults.classList.remove('hidden');
+
+    const votes =
+  classData.votes || {};
+
+const scores = {};
+
+for(let i=1;i<=10;i++){
+  scores[i] = 0;
+}
+
+Object.keys(votes).forEach(battleKey=>{
+
+  const battle = votes[battleKey] || {};
+
+  Object.keys(battle).forEach(voteKey=>{
+
+    const v = battle[voteKey];
+
+    scores[v.teamA] += Number(v.scoreA || 0);
+    scores[v.teamB] += Number(v.scoreB || 0);
+
+  });
+});
+
+const ranking =
+  Object.keys(scores)
+    .map(team=>({
+      team: team,
+      score: scores[team]
+    }))
+    .sort((a,b)=>b.score-a.score);
+
+let html =
+  '<h3>🏆 Final Ranking</h3>';
+
+ranking.slice(0,3).forEach((item,index)=>{
+
+  let medal = '🏅';
+
+  if(index === 0) medal = '🥇';
+  else if(index === 1) medal = '🥈';
+  else if(index === 2) medal = '🥉';
+
+  html += `
+    <div class="soft">
+      <h3>
+        ${medal} Group ${item.team}
+      </h3>
+
+      <p>
+        Total Votes:
+        <b>${item.score}</b>
+      </p>
+    </div>
+  `;
+});
+
+const myRank =
+  ranking.findIndex(r =>
+    String(r.team) === String(currentGroup)
+  ) + 1;
+
+html += `
+  <div class="soft">
+    🎯 Your Group Rank:
+    <b>#${myRank}</b>
+  </div>
+`;
+
+studentResults.innerHTML = html;
+
+  } else {
+
+    studentResults.classList.add('hidden');
+
+  }
+}
+
+if(currentGroup && currentClass && !teacherLoggedIn){
+
+  if(stage === 'voting'){
+
+    buildVoting(classData.groups || {});
+
+    if(!document.getElementById('studentPage').classList.contains('hidden')){
+      return;
+    }
+
+    if(!document.getElementById('teacherLoginPage').classList.contains('hidden')){
+      return;
+    }
+
+    if(!document.getElementById('teacherPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherClassPage') && !document.getElementById('teacherClassPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherGroupReviewPage') && !document.getElementById('teacherGroupReviewPage').classList.contains('hidden')){
+      return;
+    }
+    if(document.getElementById('teacherVotingResultsPage') && !document.getElementById('teacherVotingResultsPage').classList.contains('hidden')){
+      return;
+    }
+
+    showPage('votePage');
+
+  } else {
+
+    if(!document.getElementById('studentPage').classList.contains('hidden')){
+      return;
+    }
+
+    showPage('workPage');
+
+  }
+}
+});
+
+function renderCriteriaChecks(a,b,team){
+  const criteria = activeSuccessCriteria && activeSuccessCriteria.length ? activeSuccessCriteria : ['Opinion','Reason','Evidence / Example','Restated Opinion'];
+  return criteria.map((c,idx)=>
+    '<label>' + escapeHtml(c) + ' <input type="checkbox" id="crit_' + a + '_' + b + '_' + team + '_' + idx + '"></label>'
+  ).join('');
+}
+
+function countCriteriaScore(a,b,team){
+  const criteria = activeSuccessCriteria && activeSuccessCriteria.length ? activeSuccessCriteria : ['Opinion','Reason','Evidence / Example','Restated Opinion'];
+  let total = 0;
+  criteria.forEach((c,idx)=>{
+    const el = document.getElementById('crit_' + a + '_' + b + '_' + team + '_' + idx);
+    if(el && el.checked) total++;
+  });
+  return total;
+}
+
+function buildVoting(groups){
+
+  const battles = [
+    [1,2],
+    [3,4],
+    [5,6],
+    [7,8],
+    [9,10]
+  ].filter(pair=>{
+
+    const a = pair[0];
+    const b = pair[1];
+
+    if(
+      Number(currentGroup) === a ||
+      Number(currentGroup) === b
+    ){
+      return false;
+    }
+
+    const ga = groups['group'+a];
+    const gb = groups['group'+b];
+
+    return ga && gb && ga.answer && gb.answer;
+  });
+
+  if(!battles.length){
+    document.getElementById('voteArea').innerHTML =
+      '<p>No battles ready yet.</p>';
+    return;
+  }
+
+  if(currentBattleIndex >= battles.length){
+    currentBattleIndex = 0;
+  }
+
+  const pair = battles[currentBattleIndex];
+
+  const a = pair[0];
+  const b = pair[1];
+
+  const ga = groups['group'+a];
+  const gb = groups['group'+b];
+
+ let html = `
+  <div class="battleCard">
+
+    <div class="soft"
+style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+
+  <div style="font-size:26px;font-weight:bold;color:#243b6b;">
+    ⚔️ Group ${a} VS Group ${b}
+  </div>
+
+  <div class="badge">
+    Battle ${currentBattleIndex + 1} / ${battles.length}
+  </div>
+
+</div>
+
+<div class="battleGrid">
+
+      <div>
+        <h3>🟢 Group ${a}</h3>
+
+        <div class="answerVoteCard">
+          <div>
+            <div class="answerBox">${escapeHtml(ga.answer)}</div>
+            <p>🤖 AI Feedback: <b>${generateFeedback(ga.answer)}</b></p>
+          </div>
+
+          <div class="voteMiniBox">
+            <h4>Success Criteria</h4>
+            ${renderCriteriaChecks(a,b,a)}
+          </div>
+        </div>
+      </div>
+
+      <div class="vsBox">VS</div>
+
+      <div>
+        <h3>🔴 Group ${b}</h3>
+
+        <div class="answerVoteCard">
+          <div>
+            <div class="answerBox">${escapeHtml(gb.answer)}</div>
+            <p>🤖 AI Feedback: <b>${generateFeedback(gb.answer)}</b></p>
+          </div>
+
+          <div class="voteMiniBox">
+            <h4>Success Criteria</h4>
+            ${renderCriteriaChecks(a,b,b)}
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="voteWinner">
+      <b>💪 Stronger Group:</b>
+
+      <label>
+        <input type="radio" name="winner_${a}_${b}" value="${a}">
+        🟢 Group ${a}
+      </label>
+
+      <label>
+        <input type="radio" name="winner_${a}_${b}" value="${b}">
+        🔴 Group ${b}
+      </label>
+    </div>
+
+    <div class="actionBar">
+      <button onclick="previousBattle()">⬅ Previous</button>
+      <button onclick="submitVote(${a},${b})">✅ Submit Evaluation</button>
+      <button onclick="nextBattle()">Next ➡</button>
+    </div>
+
+  </div>
+`;
+  
+    document.getElementById('voteArea').innerHTML = html;
+}
+  
+async function submitVote(a,b){
+
+  const myGroup = Number(
+    currentGroup ||
+    sessionStorage.getItem('skillClashGroup')
+  );
+
+  if(!myGroup){
+    alert('Join a group first.');
+    return;
+  }
+
+  if(myGroup === a || myGroup === b){
+    alert('⚠️ Your group cannot evaluate its own battle.');
+    return;
+  }
+
+ const votePath =
+  `classes/${currentClass}/votes/battle_${a}_${b}/${currentStudent}`;
+
+  const oldVote = await hubRef.child(votePath).once('value');
+
+  if(oldVote.exists()){
+    alert('✅ Your group already evaluated this battle.');
+    return;
+  }
+
+  const winner = document.querySelector(
+    'input[name="winner_' + a + '_' + b + '"]:checked'
+  );
+
+  if(!winner){
+    alert('Choose the stronger group.');
+    return;
+  }
+
+  function checked(id){
+  const el = document.getElementById(id);
+  return el && el.checked ? 1 : 0;
+}
+
+const scoreA = countCriteriaScore(a,b,a) + (Number(winner.value) === a ? 3 : 0);
+const scoreB = countCriteriaScore(a,b,b) + (Number(winner.value) === b ? 3 : 0);
+
+  await hubRef.child(votePath).set({
+    voterGroup: myGroup,
+    teamA: a,
+    teamB: b,
+    scoreA: scoreA,
+    scoreB: scoreB,
+    winner: Number(winner.value),
+    criteria: activeSuccessCriteria || [],
+    submittedAt: Date.now()
+  });
+
+  alert('✅ Evaluation submitted successfully! Your vote is now locked.');
+}
+function showResults(){
+
+const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
 
 hubRef.child(
-'classes/' + currentClass +
-'/assignedActivities/group' +
-currentGroup
+  'classes/' + className + '/votes'
 ).once('value', snap=>{
+    const data = snap.val() || {};
 
-const activity =
-snap.val() || {};
+    const scores = {};
 
-const criteria =
-activity.criteria || [];
+    for(let i=1;i<=10;i++){
+      scores[i] = 0;
+    }
 
-let criteriaHtml = '';
+    Object.keys(data).forEach(battleKey=>{
 
-criteria.forEach((c,index)=>{
+      const battle = data[battleKey] || {};
 
-criteriaHtml += `
+      Object.keys(battle).forEach(voteKey=>{
 
-<label class="criteriaItem">
+        const v = battle[voteKey];
 
-<input type="checkbox"
-id="criteria_${index}">
+        scores[v.teamA] += Number(v.scoreA || 0);
+        scores[v.teamB] += Number(v.scoreB || 0);
 
-${c}
+      });
+    });
 
-</label>
+    const ranking = Object.keys(scores)
+      .map(team=>({
+        team: team,
+        score: scores[team]
+      }))
+      .sort((a,b)=>b.score-a.score);
 
+    let html = `
+  <h3>⚔️ Battle Results</h3>
 `;
 
+  const battles = [
+  [1,2],
+  [3,4],
+  [5,6],
+  [7,8],
+  [9,10]
+];
+
+battles.forEach(pair=>{
+
+  const a = pair[0];
+  const b = pair[1];
+
+  const scoreA = scores[a] || 0;
+  const scoreB = scores[b] || 0;
+
+  let winner = 'Tie';
+
+  if(scoreA > scoreB) winner = 'Group ' + a;
+  if(scoreB > scoreA) winner = 'Group ' + b;
+
+  html += `
+    <div class="resultMini">
+      <b>Group ${a} VS Group ${b}</b><br>
+      Group ${a}: ${scoreA} | Group ${b}: ${scoreB}<br>
+      🏆 Winner: <b>${winner}</b>
+    </div>
+  `;
 });
 
-document.getElementById(
-'groupTopic'
-).innerHTML = `
+html += `<h3>🏆 Whole Class Ranking</h3>`;
 
-<div class="activityNameBox">
-${activity.title || 'No activity assigned'}
+    ranking.forEach((item,index)=>{
+
+      let medal = '';
+
+      if(index === 0) medal = '🥇';
+      else if(index === 1) medal = '🥈';
+      else if(index === 2) medal = '🥉';
+
+      const maxScore = ranking[0]?.score || 1;
+
+const percent =
+  Math.round((item.score / maxScore) * 100);
+
+      html += `
+<div class="resultMini">
+          <h3>
+            ${medal} Group ${item.team}
+          </h3>
+
+         <p>
+  Total Score:
+  <b>${item.score}</b>
+</p>
+
+<div class="resultBar">
+  <div class="resultFill"
+       style="width:${percent}%">
+  </div>
 </div>
 
-<div class="blueInstructionBox">
-${activity.instructions || 'No instructions'}
-</div>
+<p>${percent}%</p>
+        </div>
+      `;
+    });
 
-<div class="groupDetailsTitle">
-📋 Group Activity Details
-</div>
-
-<div class="groupTaskBox">
-${activity.groupTask || 'No group task'}
-</div>
-
-<div class="criteriaWrapper">
-
-<div class="criteriaTitle">
-✅ Success Criteria Checklist
-</div>
-
-${criteriaHtml}
-
-</div>
-
-`;
-
-});
-
+   document.getElementById('resultsBox').innerHTML =
+  '<div class="resultPopup">' +
+  '<button onclick="document.getElementById(\'resultsBox\').innerHTML=\'\'" class="red">✖ Close</button>' +
+  html +
+  '</div>';
+  });
 }
 
+async function releaseResults(){
+
+  if(!checkTeacherPassword()) return;
+
+  const className =
+    document.getElementById('teacherClassName').value;
+
+  if(!className){
+    alert('Choose class first.');
+    return;
+  }
+
+  await hubRef.child(
+    'classes/' + className + '/settings/resultsReleased'
+  ).set(true);
+
+  alert('Results released to students.');
+}
+  
+async function resetHub(){
+
+  if(!checkTeacherPassword()) return;
+
+  if(!confirm('Reset all hub data?')) return;
+
+  const className =
+  document.getElementById('teacherClassName').value;
+
+if(!className){
+  alert('Choose class first.');
+  return;
+}
+
+await hubRef.child(
+  'classes/' + className
+).set({
+  settings:{stage:'work'}
+});
+
+  alert('Reset done.');
+
+  location.reload();
+}
+function getGroupMemberNames(students){
+  return Object.keys(students || {})
+    .map(id => (students[id] || {}).name || id)
+    .join(', ');
+}
 
 function escapeHtml(text){
   return String(text || '')
@@ -1079,436 +2988,1377 @@ function escapeHtml(text){
     .replace(/</g,'&lt;')
     .replace(/>/g,'&gt;');
 }
+  function generateFeedback(text){
 
-function renderMembersWork(students){
-  window.latestStudents = students || {};
+  text = String(text || '').toLowerCase();
+
+  let score = 0;
+
+  if(text.includes('because')) score++;
+  if(text.includes('for example')) score++;
+  if(text.includes('i think')) score++;
+  if(text.includes('in my opinion')) score++;
+  if(text.length > 180) score++;
+
+  if(score <= 1){
+    return '⚠️ Try adding clearer reasons and examples.';
+  }
+
+  if(score <= 3){
+    return '👍 Good argument. Try improving explanation depth.';
+  }
+
+  return '🔥 Strong opinion paragraph with clear support and explanation!';
 }
 
-function toggleMembersWork(){
-  const students = window.latestStudents || {};
-  let html = '👥 Group Members Work:\n\n';
-
-  Object.keys(students).forEach(name=>{
-    html += name + ':\n';
-    html += (students[name].answer || 'No saved work yet.') + '\n\n';
+  function startLiveResults(){
+  const className = document.getElementById('teacherClassName').value;
+  if(!className){
+    alert('Choose class first.');
+    return;
+  }
+  hubRef.child('classes/' + className + '/votes').on('value', function(){
+    showResults();
   });
-
-  alert(html);
 }
 
-async function saveMyWork(){
-  const answer = document.getElementById('myAnswerBox').value.trim();
 
-  await hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup +
-    '/students/' + currentStudent
-  ).update({
-    answer: answer,
-    status: 'in progress',
-    updatedAt: Date.now()
+function getClassOptions(){
+  return ['9-1','9-2','9-3','9-4'];
+}
+
+function classDisplayName(cls){
+  return String(cls || '').replace('-', '/');
+}
+
+function showTeacherDashboard(){
+  if(!teacherLoggedIn && !document.getElementById('teacherPass').value){
+    // allow after login only
+  }
+  showPage('teacherPage');
+  renderTeacherDashboard();
+  loadBuiltActivitiesLibrary();
+}
+
+function renderTeacherDashboard(){
+  const grid = document.getElementById('teacherClassGrid');
+  if(!grid) return;
+
+  hubRef.child('classes').once('value', snap=>{
+    const classes = snap.val() || {};
+    let html = '';
+
+    getClassOptions().forEach(cls=>{
+      const classObj = classes[cls] || {};
+      const groups = classObj.groups || {};
+      const actName = classObj.currentActivity?.name || 'No activity assigned';
+      let joined = 0;
+      let final = 0;
+      let marked = 0;
+
+      for(let i=1;i<=10;i++){
+        const g = groups['group'+i];
+        if(g && g.students) joined++;
+        if(g && g.finalSubmitted) final++;
+        if(g && g.teacherMark !== undefined && g.teacherMark !== '') marked++;
+      }
+
+      html += `
+        <div class="classCard" onclick="openTeacherClass('${cls}')">
+          <h3>Class ${classDisplayName(cls)}</h3>
+          <span class="statusPill pillProgress">${joined} joined groups</span>
+          <span class="statusPill pillFinal">${final} final submitted</span>
+          <span class="statusPill pillMark">${marked} marked</span>
+          <p><b>Activity:</b> ${escapeHtml(actName)}</p><p>Click to view all groups.</p>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
   });
-
-  alert('✅ Your work is saved.');
 }
 
-async function submitFinalWork(){
-  if(currentRole !== 'leader'){
-    alert('Only the group leader can submit final work.');
+function openTeacherClass(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  const teacherClassSelect = document.getElementById('teacherClassName');
+  if(teacherClassSelect) teacherClassSelect.value = cls;
+  showPage('teacherClassPage');
+  renderTeacherClassGroups(cls);
+}
+
+function renderTeacherClassGroups(cls){
+  document.getElementById('teacherClassTitle').innerHTML = '📚 Class ' + classDisplayName(cls) + ' Groups';
+
+  hubRef.child('classes/' + cls).once('value', snap=>{
+    const classData = snap.val() || {};
+    const groups = classData.groups || {};
+    const stage = classData.settings?.stage || 'work';
+    const released = classData.settings?.resultsReleased === true;
+    const classActivity = classData.currentActivity || null;
+    window.teacherOpenClassActivity = classActivity;
+
+    let joined = 0, final = 0, progress = 0;
+    let html = '';
+
+    for(let i=1;i<=10;i++){
+      const g = groups['group'+i] || {};
+      const students = g.students || {};
+      const names = getGroupMemberNames(students) || 'No students joined yet';
+      const hasWork = Object.keys(students).some(id => String(students[id]?.answer || '').trim());
+      const status = g.finalSubmitted ? '✅ Final Submitted' : (hasWork ? '✍️ In Progress' : 'Empty');
+      const pill = g.finalSubmitted ? 'pillFinal' : (hasWork ? 'pillProgress' : 'pillEmpty');
+
+      if(Object.keys(students).length) joined++;
+      if(g.finalSubmitted) final++;
+      if(hasWork && !g.finalSubmitted) progress++;
+
+      html += `
+      <div class="teacherGroupCard">
+        <h3>Group ${i} <span class="statusPill ${pill}">${status}</span></h3>
+        <p><b>Members:</b> ${escapeHtml(names)}</p>
+        <p><b>Teacher Points:</b> ${escapeHtml(g.teacherMark ?? 'Not marked')}</p>
+        <p><b>Chat:</b> ${g.chatOpen === false ? '🔒 Closed' : '✅ Open'}</p>
+        <button onclick="openTeacherGroupReview('${cls}',${i})">👀 Check Group Work</button>
+      </div>`;
+    }
+
+    document.getElementById('teacherClassSummary').innerHTML =
+      '<b>Activity:</b> ' + escapeHtml(classActivity?.name || 'No activity assigned') +
+      ' | <b>Stage:</b> ' + escapeHtml(stage) +
+      ' | <b>Results released:</b> ' + (released ? 'Yes ✅' : 'No') +
+      ' | <b>Joined:</b> ' + joined +
+      ' | <b>In progress:</b> ' + progress +
+      ' | <b>Final submitted:</b> ' + final;
+
+    document.getElementById('teacherGroupsGrid').innerHTML = html;
+  });
+}
+
+function openTeacherGroupReview(cls, groupNumber){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherGroupReviewPage');
+  document.getElementById('teacherGroupReviewTitle').innerHTML = '📝 Class ' + classDisplayName(cls) + ' — Group ' + groupNumber;
+
+  hubRef.child('classes/' + cls + '/groups/group' + groupNumber).once('value', snap=>{
+    const g = snap.val() || {};
+    const students = g.students || {};
+    const hasSavedWork = Object.keys(students).some(id => String(students[id]?.answer || '').trim());
+    const status = g.finalSubmitted ? '✅ Final Submitted' : (hasSavedWork ? '✍️ In Progress / Saved Work' : 'No saved work yet');
+
+    let studentWorkHtml = '';
+    Object.keys(students).forEach(id=>{
+      const s = students[id] || {};
+      studentWorkHtml += `
+        <div class="studentBox">
+          <h3>👤 ${escapeHtml(s.name || id)} <span class="roleBadge">${s.role === 'leader' ? 'Leader' : 'Member'}</span></h3>
+          <div class="answerBox">${escapeHtml(s.answer || 'No saved work yet.')}</div>
+        </div>`;
+    });
+
+    if(!studentWorkHtml) studentWorkHtml = '<div class="soft">No students joined this group yet.</div>';
+
+    const finalAnswer = g.answer || 'Final group work not submitted yet.';
+    const groupActivity = window.teacherOpenClassActivity || null;
+
+    document.getElementById('teacherGroupReviewContent').innerHTML = `
+      <div class="soft">
+        <b>Status:</b> ${status}<br>
+        <b>Members:</b> ${escapeHtml(getGroupMemberNames(students) || 'No members')}<br>
+        <b>Submitted by:</b> ${escapeHtml(g.submittedBy || '-')}
+      </div>
+
+      <h3>🧩 Assigned Activity</h3>
+      <div class="activityCard">
+        <b>${escapeHtml(groupActivity?.name || 'No activity assigned')}</b><br><br>
+        <div class="activityTaskBox">${escapeHtml(groupActivity ? getAssignedTask(groupActivity, groupNumber) : 'No task assigned.')}</div>
+        <p><b>Student parts/questions:</b></p>
+        ${(groupActivity?.studentQuestions || []).map(q=>'<span class="criteriaChip">' + escapeHtml(q) + '</span>').join('') || 'No student questions.'}
+        <p><b>Success criteria:</b></p>
+        ${(groupActivity?.successCriteria || []).map(c=>'<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>').join('') || 'No criteria.'}
+      </div>
+
+      <h3>💾 Saved Individual Work</h3>
+      ${studentWorkHtml}
+
+      <h3>📌 Final Submitted Group Work</h3>
+      <div class="teacherAnswerWide">${escapeHtml(finalAnswer)}</div>
+
+      <div class="soft">
+        <h3>⭐ Teacher Mark</h3>
+        <div class="markBox">
+          <div>
+            <label>Points for Group ${groupNumber}</label>
+            <input id="teacherMarkInput" type="number" min="0" value="${escapeHtml(g.teacherMark ?? '')}" placeholder="Write points">
+          </div>
+          <button onclick="saveTeacherGroupMark('${cls}',${groupNumber})" class="green">Save Points</button>
+        </div>
+        <label>Teacher Note / Comment to Students</label>
+        <textarea id="teacherNoteInput" placeholder="Write teacher comment for this group...">${escapeHtml(g.teacherNote || '')}</textarea>
+        <div class="noteActionRow">
+          <button onclick="saveTeacherNoteOnly('${cls}',${groupNumber})" class="noteBtn">📝 Post Teacher Comment</button>
+          <button onclick="clearTeacherNote('${cls}',${groupNumber})" class="red">🗑 Clear Comment</button>
+        </div>
+      </div>`;
+  });
+}
+
+async function saveTeacherGroupMark(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  const mark = document.getElementById('teacherMarkInput').value;
+  const note = document.getElementById('teacherNoteInput').value;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    teacherMark: mark,
+    teacherNote: note,
+    markedAt: Date.now(),
+    teacherNoteUpdatedAt: Date.now()
+  });
+  alert('✅ Points and teacher comment saved for Group ' + groupNumber + '.');
+}
+
+async function saveTeacherNoteOnly(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  const noteBox = document.getElementById('teacherNoteInput');
+  const note = noteBox ? noteBox.value.trim() : '';
+
+  if(!note){
+    alert('Write a teacher comment first.');
     return;
   }
 
-  const snap = await hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup +
-    '/students'
-  ).once('value');
-
-  const students = snap.val() || {};
-  let finalText = '';
-
-  Object.keys(students).forEach(name=>{
-    finalText += name + ':\n';
-    finalText += (students[name].answer || 'No saved work.') + '\n\n';
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    teacherNote: note,
+    teacherNoteUpdatedAt: Date.now()
   });
 
-  await hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup
-  ).update({
-    finalAnswer: finalText,
-    finalSubmitted: true,
-    submittedAt: Date.now()
-  });
-
-  alert('✅ Final group work submitted.');
+  alert('✅ Teacher comment posted to Group ' + groupNumber + '.');
 }
 
-function toggleChat(){
-  document.getElementById('chatPopup').classList.toggle('hidden');
+async function clearTeacherNote(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  if(!confirm('Clear teacher comment for Group ' + groupNumber + '?')) return;
+
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/teacherNote').remove();
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/teacherNoteUpdatedAt').remove();
+
+  const noteBox = document.getElementById('teacherNoteInput');
+  if(noteBox) noteBox.value = '';
+
+  alert('Teacher comment cleared.');
 }
 
-function sendChat(){
-  const input = document.getElementById('chatInput');
-  const text = input.value.trim();
-
-  if(!text) return;
-
-  hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup +
-    '/chat'
-  ).push({
-    name: currentStudent,
-    text: text,
-    time: Date.now()
-  });
-
-  input.value = '';
+async function openWorkStageForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/stage').set('work');
+  alert('Work stage opened for Class ' + classDisplayName(currentTeacherClass) + '.');
+  renderTeacherClassGroups(currentTeacherClass);
 }
 
-function loadChat(){
-  hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup +
-    '/chat'
-  ).off();
+async function openVotingStageForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/stage').set('voting');
+  openTeacherVotingResults(currentTeacherClass);
+}
 
-  hubRef.child(
-    'classes/' + currentClass +
-    '/groups/group' + currentGroup +
-    '/chat'
-  ).on('value', snap=>{
-    const data = snap.val() || {};
+
+function openTeacherChatControl(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherChatControlPage');
+  const title = document.getElementById('teacherChatControlTitle');
+  if(title) title.innerHTML = '💬 Class ' + classDisplayName(cls) + ' Chat Control';
+  renderTeacherChatControl(cls);
+}
+
+function renderTeacherChatControl(cls){
+  const grid = document.getElementById('teacherChatControlGrid');
+  if(!grid) return;
+
+  hubRef.child('classes/' + cls + '/groups').on('value', snap=>{
+    const groups = snap.val() || {};
     let html = '';
 
-    Object.keys(data).forEach(id=>{
-      const msg = data[id];
+    for(let i=1;i<=10;i++){
+      const g = groups['group'+i] || {};
+      const students = g.students || {};
+      const names = getGroupMemberNames(students) || 'No students joined yet';
+      const chatOpen = g.chatOpen !== false;
+      const chat = g.chat || {};
+      const messages = Object.keys(chat).map(id=>chat[id]).sort((a,b)=>Number(a.time || 0)-Number(b.time || 0));
+
+      const messageHtml = messages.length ? messages.map(m=>{
+        const time = m.time ? new Date(Number(m.time)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+        return '<div class="chatBubble"><b>' + escapeHtml(m.name || 'Student') + '</b> <small>' + escapeHtml(time + (m.editedAt ? ' · edited' : '')) + '</small><br>' + escapeHtml(m.text || '') + '</div>';
+      }).join('') : '<p>No chat messages yet.</p>';
 
       html += `
-        <div class="chatMsg">
-          <b>${escapeHtml(msg.name)}</b><br>
-          ${escapeHtml(msg.text)}
-        </div>
-      `;
-    });
+        <div class="teacherChatCard">
+          <h3>
+            Group ${i}
+            <span class="statusPill ${chatOpen ? 'chatOpenPill' : 'chatClosedPill'}">${chatOpen ? 'Open' : 'Closed'}</span>
+          </h3>
+          <p><b>Members:</b> ${escapeHtml(names)}</p>
+          <div class="teacherTopActions">
+            <button onclick="setGroupChatOpen('${cls}',${i},true)" class="green">✅ Open</button>
+            <button onclick="setGroupChatOpen('${cls}',${i},false)" class="red">🔒 Close</button>
+            <button onclick="clearGroupChat('${cls}',${i})" class="red">🧹 Clear</button>
+          </div>
+          <div class="teacherChatMessages">${messageHtml}</div>
+        </div>`;
+    }
 
-    document.getElementById('chatMessages').innerHTML = html;
+    grid.innerHTML = html;
   });
 }
 
-function leaveGroup(){
-  sessionStorage.removeItem('skillClass');
-  sessionStorage.removeItem('skillGroup');
-  sessionStorage.removeItem('skillStudent');
-  sessionStorage.removeItem('skillRole');
+async function setGroupChatOpen(cls, groupNumber, isOpen){
+  if(!checkTeacherPassword()) return;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    chatOpen: isOpen,
+    chatControlledAt: Date.now()
+  });
+}
 
-  currentClass = '';
+async function clearGroupChat(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  if(!confirm('Clear chat messages for Group ' + groupNumber + '?')) return;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/chat').remove();
+}
+
+async function setAllChatsForCurrentClass(isOpen){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chatOpen'] = isOpen;
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chatControlledAt'] = Date.now();
+  }
+  await hubRef.update(updates);
+}
+
+async function clearAllChatsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  if(!confirm('Clear chat messages for all groups in this class?')) return;
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chat'] = null;
+  }
+  await hubRef.update(updates);
+}
+
+function openTeacherVotingResults(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherVotingResultsPage');
+  document.getElementById('teacherVotingTitle').innerHTML = '🗳 Class ' + classDisplayName(cls) + ' Voting Results';
+  renderTeacherVotingResults(cls);
+}
+
+function calculateVotingScores(votes){
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+  Object.keys(votes || {}).forEach(battleKey=>{
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(voteKey=>{
+      const v = battle[voteKey] || {};
+      if(v.teamA) scores[v.teamA] += Number(v.scoreA || 0);
+      if(v.teamB) scores[v.teamB] += Number(v.scoreB || 0);
+    });
+  });
+  return scores;
+}
+
+function renderTeacherVotingResults(cls){
+  hubRef.child('classes/' + cls).once('value', snap=>{
+    const classData = snap.val() || {};
+    const votes = classData.votes || {};
+    const groups = classData.groups || {};
+    const released = classData.settings?.resultsReleased === true;
+    const classActivity = classData.currentActivity || null;
+    window.teacherOpenClassActivity = classActivity;
+    const scores = calculateVotingScores(votes);
+    const ranking = Object.keys(scores).map(team=>({team, score:scores[team]})).sort((a,b)=>b.score-a.score);
+
+    let html = `<div class="soft"><b>Results released to students:</b> ${released ? 'Yes ✅' : 'No'}</div>`;
+    html += '<h3>⚔️ Competitive Team Results</h3>';
+
+    [[1,2],[3,4],[5,6],[7,8],[9,10]].forEach(pair=>{
+      const a = pair[0], b = pair[1];
+      const scoreA = scores[a] || 0;
+      const scoreB = scores[b] || 0;
+      let winner = 'Tie';
+      if(scoreA > scoreB) winner = 'Group ' + a;
+      if(scoreB > scoreA) winner = 'Group ' + b;
+      html += `
+        <div class="resultMini">
+          <b>Group ${a} VS Group ${b}</b><br>
+          Group ${a}: ${scoreA} | Group ${b}: ${scoreB}<br>
+          🏆 Battle Winner: <b>${winner}</b>
+        </div>`;
+    });
+
+    html += '<h3>🏆 Whole Class Ranking</h3>';
+    ranking.forEach((item,index)=>{
+      const g = groups['group'+item.team] || {};
+      const teacherMark = Number(g.teacherMark || 0);
+      const totalWithTeacher = Number(item.score || 0) + teacherMark;
+      let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅';
+      html += `
+        <div class="resultMini">
+          <h3>${medal} Group ${item.team}</h3>
+          Student Voting Score: <b>${item.score}</b><br>
+          Teacher Points: <b>${teacherMark}</b><br>
+          Total: <b>${totalWithTeacher}</b>
+        </div>`;
+    });
+
+    document.getElementById('teacherVotingResultsBox').innerHTML = html;
+  });
+}
+
+async function releaseResultsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/resultsReleased').set(true);
+  alert('✅ Results released to students.');
+  renderTeacherVotingResults(currentTeacherClass);
+}
+
+async function hideResultsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/resultsReleased').set(false);
+  alert('Results are hidden from students.');
+  renderTeacherVotingResults(currentTeacherClass);
+}
+
+async function resetCurrentTeacherClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  if(!confirm('Reset Class ' + classDisplayName(currentTeacherClass) + '?')) return;
+  await hubRef.child('classes/' + currentTeacherClass).set({settings:{stage:'work',resultsReleased:false}});
+  alert('Reset done.');
+  renderTeacherClassGroups(currentTeacherClass);
+}
+
+  window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+
+  if(currentClass){
+    const classSelect =
+      document.getElementById('className');
+
+    if(classSelect){
+      classSelect.value = currentClass;
+    }
+  }
+
+  if(currentGroup){
+    const groupSelect =
+      document.getElementById('studentGroup');
+
+    if(groupSelect){
+      groupSelect.value = currentGroup;
+    }
+  }
+
+  if(currentStudent){
+
+    const studentInput =
+      document.getElementById('studentName');
+
+    if(studentInput){
+      studentInput.value = currentStudent;
+    }
+  }
+
+  if(currentRole){
+    const roleSelect = document.getElementById('studentRole');
+    if(roleSelect){
+      roleSelect.value = currentRole;
+    }
+  }
+
+});
+
+async function leaveGroup(){
+
+  if(!currentClass || !currentGroup || !currentStudentId){
+    goToStudentLogin();
+    return;
+  }
+
+  if(!confirm('Leave this group? Your saved work and chat messages will be deleted from the group page.')){
+    return;
+  }
+
+  const groupPath =
+    'classes/' + currentClass + '/groups/group' + currentGroup;
+
+  try{
+
+    if(currentGroupRef){
+      currentGroupRef.off();
+    }
+
+    // 1) Delete this student record and saved work.
+    await hubRef.child(
+      groupPath + '/students/' + currentStudentId
+    ).remove();
+
+    // 2) Delete this student chat messages from the group chat.
+    const chatSnap = await hubRef.child(groupPath + '/chat').once('value');
+    const chat = chatSnap.val() || {};
+    const updates = {};
+
+    Object.keys(chat).forEach(function(key){
+      const msg = chat[key] || {};
+      if(msg.studentId === currentStudentId || msg.name === currentStudent){
+        updates[key] = null;
+      }
+    });
+
+    if(Object.keys(updates).length){
+      await hubRef.child(groupPath + '/chat').update(updates);
+    }
+
+    // 3) Rebuild the group final answer without this student.
+    const studentSnap = await hubRef.child(groupPath + '/students').once('value');
+    const students = studentSnap.val() || {};
+    const ids = Object.keys(students);
+
+    if(!ids.length){
+      // If the group is empty, remove the whole group page.
+      await hubRef.child(groupPath).remove();
+    } else {
+      let hasSavedWork = false;
+      let finalAnswer = '';
+
+      ids.forEach(function(id){
+        const s = students[id] || {};
+        if((s.answer || '').trim()) hasSavedWork = true;
+
+        finalAnswer += (s.name || id) + ' (' +
+          (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+        finalAnswer += (s.answer || 'No answer yet') + '\n\n';
+      });
+
+      const groupSnap = await hubRef.child(groupPath).once('value');
+      const groupData = groupSnap.val() || {};
+
+      await hubRef.child(groupPath).update({
+        status: groupData.finalSubmitted ? 'finalSubmitted' : (hasSavedWork ? 'inProgress' : 'joined'),
+        hasSavedWork: hasSavedWork,
+        answer: groupData.finalSubmitted ? finalAnswer : (groupData.answer || ''),
+        lastLeftBy: currentStudent,
+        lastLeftAt: Date.now()
+      });
+    }
+
+    alert('✅ You left the group. Your saved work was deleted from the group page.');
+    goToStudentLogin();
+
+  } catch(err){
+    console.error(err);
+    alert('Could not leave the group. Please try again.');
+  }
+}
+
+  function leaveTeacher(){
+
+  document.getElementById('teacherPass').value = '';
+
+  goToStudentLogin();
+}
+  function goToStudentLogin(){
+
+  sessionStorage.removeItem('skillClashGroup');
+  sessionStorage.removeItem('skillClashStudent');
+  sessionStorage.removeItem('skillClashClass');
+  sessionStorage.removeItem('skillClashRole');
+  sessionStorage.removeItem('skillClashStudentId');
+
   currentGroup = '';
   currentStudent = '';
   currentRole = '';
+  currentStudentId = '';
+  currentClass = '';
 
-  showPage('studentLoginPage');
+  if(currentGroupRef){
+    currentGroupRef.off();
+  }
+
+  showPage('studentPage');
 }
+  let teacherLoggedIn = false;
 
 function loginTeacher(){
-  const pass = prompt('Enter teacher password');
+
+  const pass = document.getElementById('teacherLoginPass').value;
 
   if(pass !== 'Welcome@2020'){
-    alert('Incorrect password.');
+    alert('Incorrect teacher password.');
     return;
   }
 
   teacherLoggedIn = true;
+  document.getElementById('teacherPass').value = pass;
+
   showPage('teacherPage');
-  loadLibrary();
-  loadTeacherGroups();
+  renderTeacherDashboard();
+  loadBuiltActivitiesLibrary();
 }
 
-function saveActivityToLibrary(){
-  const title = document.getElementById('builderActivityName').value.trim();
 
-  if(!title){
-    alert('Write activity name.');
-    return;
+  function nextBattle(){
+  currentBattleIndex++;
+  hubRef.child(
+    'classes/' + currentClass + '/groups'
+  ).once('value', snap=>{
+    buildVoting(snap.val() || {});
+  });
+}
+
+function previousBattle(){
+
+  if(currentBattleIndex > 0){
+    currentBattleIndex--;
   }
 
-  const instructions = document.getElementById('builderInstructions').value.trim();
-  const taskType = document.getElementById('taskType').value;
-  const sameTask = document.getElementById('sameTaskText').value.trim();
+  hubRef.child(
+    'classes/' + currentClass + '/groups'
+  ).once('value', snap=>{
+    buildVoting(snap.val() || {});
+  });
+}
+  
 
-  const criteria = document.getElementById('successCriteria')
-    .value
-    .split('\n')
-    .map(x=>x.trim())
-    .filter(Boolean);
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
 
-  const groupTasks = {};
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
 
-  for(let i=1;i<=10;i++){
-    const el = document.getElementById('groupTask_' + i);
-    if(el){
-      groupTasks['group' + i] = el.value.trim();
-    }
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task for all groups.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write at least one group task.');
+    return null;
   }
 
-  const id = 'activity_' + Date.now();
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library. You can assign it now or use it later.');
+  return activity;
+}
 
-  hubRef.child('activityLibrary/' + id).set({
-    id: id,
-    title: title,
-    instructions: instructions,
-    taskType: taskType,
-    sameTask: sameTask,
-    groupTasks: groupTasks,
-    criteria: criteria,
-    createdBy: 'Ms. Saidah Khwar',
-    createdAt: Date.now()
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  return {
+    id,
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions').value.trim(),
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: collectDifferentGroupTasks(),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class to assign.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }
+
+  activity.assignedClasses = selectedClasses;
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
   });
 
-  alert('✅ Activity saved to library.');
-  loadLibrary();
+  await hubRef.update(updates);
+  alert('✅ Activity assigned to: ' + selectedClasses.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
 }
 
-function loadLibrary(){
-  hubRef.child('activityLibrary').once('value', snap=>{
-    const data = snap.val() || {};
-    const select = document.getElementById('savedActivities');
+async function loadBuiltActivitiesLibrary(selectedId){
+  const sel = document.getElementById('savedActivitySelect');
+  if(!sel) return;
+  const snap = await hubRef.child('builtActivities').once('value');
+  const data = snap.val() || {};
+  const list = Object.values(data).filter(Boolean).sort((a,b)=>(b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0));
+  if(!list.length){
+    sel.innerHTML = '<option value="">No saved activities yet</option>';
+    return;
+  }
+  sel.innerHTML = '<option value="">Choose saved activity</option>' + list.map(a=>{
+    const date = a.updatedAt || a.createdAt ? new Date(a.updatedAt || a.createdAt).toLocaleDateString() : '';
+    return '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name || 'Group Activity') + (date ? ' · ' + date : '') + '</option>';
+  }).join('');
+  if(selectedId) sel.value = selectedId;
+}
 
-    select.innerHTML = '<option value="">Choose saved activity</option>';
+async function loadSelectedBuiltActivity(){
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity first.'); return; }
+  const snap = await hubRef.child('builtActivities/' + id).once('value');
+  const activity = snap.val();
+  if(!activity){ alert('Activity not found.'); return; }
+  fillActivityBuilder(activity);
+  alert('✅ Activity loaded. You can edit, save, or assign it.');
+}
 
-    Object.keys(data).forEach(id=>{
-      const a = data[id];
-      select.innerHTML += `
-        <option value="${id}">
-          ${escapeHtml(a.title)}
-        </option>
-      `;
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderStudentQuestions').value = (activity.studentQuestions || []).join('\n');
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  toggleDifferentTasksBuilder();
+  buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+}
+
+async function deleteSelectedBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const id = document.getElementById('savedActivitySelect')?.value || '';
+  if(!id){ alert('Choose an activity to delete.'); return; }
+  if(!confirm('Delete this saved activity from the library?')) return;
+  await hubRef.child('builtActivities/' + id).remove();
+  document.getElementById('editingActivityId').value = '';
+  await loadBuiltActivitiesLibrary();
+  alert('Deleted.');
+}
+
+// Keep old button name working if any older button remains.
+async function saveBuiltActivityAndAssign(){
+  await assignCurrentBuiltActivity();
+}
+
+
+window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
+  loadBuiltActivitiesLibrary();
+});
+
+
+/* ===== FINAL PATCH: clear activity builder, group/class assignment, criteria checklist ===== */
+function toggleAssignTargetMode(){
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const box = document.getElementById('assignGroupTargetBox');
+  if(box) box.classList.toggle('hidden', mode !== 'groups');
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  const taskMode = document.getElementById('builderTaskMode')?.value || 'same';
+  return {
+    id,
+    name: document.getElementById('builderActivityName')?.value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions')?.value.trim() || '',
+    taskMode,
+    sameTask: document.getElementById('builderSameTask')?.value.trim() || '',
+    groupTasks: collectDifferentGroupTasks ? collectDifferentGroupTasks() : {},
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria')?.value || ''),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(!activity.instructions){ alert('Write activity instructions.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task/question.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks || {}).length){
+    alert('Write at least one group task.'); return null;
+  }
+  await hubRef.child('builtActivities/' + activity.id).update(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library.');
+  return activity;
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  if(typeof toggleDifferentTasksBuilder === 'function') toggleDifferentTasksBuilder();
+  if(typeof buildDifferentTaskInputs === 'function') buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+  const targetMode = activity.assignmentMode || 'class';
+  const targetEl = document.getElementById('assignTargetMode');
+  if(targetEl) targetEl.value = targetMode;
+  document.querySelectorAll('.assignGroupCheck').forEach(ch=>{
+    ch.checked = (activity.assignedGroups || []).map(String).includes(String(ch.value));
+  });
+  toggleAssignTargetMode();
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity = null;
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }else{
+    activity = collectBuiltActivityFromForm(activity.id);
+    await hubRef.child('builtActivities/' + activity.id).update(activity);
+  }
+
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const selectedGroups = Array.from(document.querySelectorAll('.assignGroupCheck:checked')).map(x=>String(x.value));
+  if(mode === 'groups' && !selectedGroups.length){ alert('Choose at least one group.'); return; }
+
+  activity.assignmentMode = mode;
+  activity.assignedClasses = selectedClasses;
+  activity.assignedGroups = mode === 'groups' ? selectedGroups : [];
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    if(mode === 'class'){
+      updates['classes/' + cls + '/currentActivity'] = activity;
+    }else{
+      selectedGroups.forEach(g=>{
+        updates['classes/' + cls + '/groupActivities/group' + g] = activity;
+      });
+    }
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  const where = mode === 'class'
+    ? selectedClasses.map(classDisplayName).join(', ')
+    : selectedClasses.map(classDisplayName).join(', ') + ' · Groups ' + selectedGroups.join(', ');
+  alert('✅ Activity assigned to ' + where);
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  if(activity.taskMode === 'different'){
+    return (activity.groupTasks && (activity.groupTasks[String(groupNumber)] || activity.groupTasks['group' + groupNumber])) || activity.sameTask || '';
+  }
+  return activity.sameTask || '';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const box = document.getElementById('studentActivityDetails');
+  const topic = document.getElementById('groupTopic');
+  if(!box) return;
+  if(!activity){
+    if(topic) topic.innerHTML = 'No activity assigned yet.';
+    box.innerHTML = '<div class="activityInstructionClean">Activity instructions will appear here after the teacher assigns an activity.</div>';
+    return;
+  }
+  const taskText = getAssignedTask(activity, groupNumber);
+  const instructions = activity.instructions || 'Follow the task, save your own work, check the success criteria, then the leader submits the final answer.';
+  if(topic){
+    topic.innerHTML = '<div class="activityTitleLine">' + escapeHtml(activity.name || 'Group Activity') + '</div>' +
+      '<div class="activityTaskClean">' + escapeHtml(taskText || 'No task written for this group yet.') + '</div>';
+  }
+  const criteria = (activity.successCriteria || []).map((c,i)=>
+    '<label class="studentCriteriaItem"><input type="checkbox" class="studentCriteriaCheck" data-index="' + i + '"> <span>' + escapeHtml(c) + '</span></label>'
+  ).join('');
+  box.innerHTML =
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="activityInstructionClean">' + escapeHtml(instructions) + '</div>' +
+    '<div class="studentCriteriaBox"><h3>✅ Success Criteria Checklist</h3>' +
+    '<p class="smallHint">Tick each item before the group leader submits the final work.</p>' +
+    (criteria || '<p>No success criteria added.</p>') + '</div>';
+}
+
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  const groupKey = 'group' + currentGroup;
+  hubRef.child('classes/' + currentClass).once('value', snap=>{
+    const classData = snap.val() || {};
+    const groupActivity = classData.groupActivities && classData.groupActivities[groupKey];
+    currentActivity = groupActivity || classData.currentActivity || null;
+    renderActivityDetails(currentActivity, currentGroup);
+  });
+}
+
+async function submitCombinedGroupWork(){
+  if(!currentGroup || !currentStudentId){ alert('Join group first.'); return; }
+  if(currentRole !== 'leader'){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML = '⚠️ Only the group leader can submit the final group work.';
+    return;
+  }
+  const checks = Array.from(document.querySelectorAll('.studentCriteriaCheck'));
+  if(checks.length && checks.some(ch=>!ch.checked)){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML = '⚠️ Please tick all success criteria before submitting final work.';
+    return;
+  }
+  await saveMyStudentWork();
+  const snap = await hubRef.child('classes/' + currentClass + '/groups/group' + currentGroup + '/students').once('value');
+  const students = snap.val() || {};
+  let finalAnswer = '';
+  Object.keys(students).forEach(id=>{
+    const s = students[id] || {};
+    finalAnswer += (s.name || id) + ' (' + (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+    finalAnswer += (s.answer || 'No answer yet') + '\n\n';
+  });
+  await hubRef.child('classes/' + currentClass + '/groups/group' + currentGroup).update({
+    answer: finalAnswer,
+    finalSubmitted: true,
+    submittedBy: currentStudent,
+    submittedAt: Date.now(),
+    checkedCriteria: checks.map(ch=>ch.nextElementSibling ? ch.nextElementSibling.textContent : '').filter(Boolean)
+  });
+  document.getElementById('groupAnswer').value = finalAnswer;
+  document.getElementById('submitMsg').classList.remove('hidden');
+  document.getElementById('submitMsg').innerHTML = '✅ Final group answer submitted. Student boxes are now locked.';
+}
+
+window.addEventListener('load', function(){
+  toggleAssignTargetMode();
+});
+
+
+/* ===== FINAL EDIT: safe leave + finish activity archive/export ===== */
+function csvSafe(value){
+  value = String(value == null ? '' : value);
+  return '"' + value.replace(/"/g,'""').replace(/\r?\n/g,'\n') + '"';
+}
+
+function downloadTextFile(filename, text){
+  const blob = new Blob(['\ufeff' + text], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildActivityCSV(className, classData){
+  const rows = [];
+  rows.push(['Class','Group','Status','Activity','Task','Members','Leader','Student Name','Role','Saved Work','Final Group Work','Teacher Points','Teacher Comment','Votes Score','Final Submitted At'].map(csvSafe).join(','));
+
+  const groups = (classData && classData.groups) || {};
+  const votes = (classData && classData.votes) || {};
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+
+  Object.keys(votes).forEach(function(battleKey){
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(function(voteKey){
+      const v = battle[voteKey] || {};
+      if(v.teamA) scores[v.teamA] = (scores[v.teamA] || 0) + Number(v.scoreA || 0);
+      if(v.teamB) scores[v.teamB] = (scores[v.teamB] || 0) + Number(v.scoreB || 0);
     });
   });
-}
-
-async function loadActivity(){
-  const id = document.getElementById('savedActivities').value;
-
-  if(!id){
-    alert('Choose an activity.');
-    return;
-  }
-
-  const snap = await hubRef.child('activityLibrary/' + id).once('value');
-  const a = snap.val();
-
-  if(!a) return;
-
-  document.getElementById('builderActivityName').value = a.title || '';
-  document.getElementById('builderInstructions').value = a.instructions || '';
-  document.getElementById('taskType').value = a.taskType || 'same';
-  document.getElementById('sameTaskText').value = a.sameTask || '';
-  document.getElementById('successCriteria').value = (a.criteria || []).join('\n');
 
   for(let i=1;i<=10;i++){
-    const el = document.getElementById('groupTask_' + i);
-    if(el){
-      el.value = a.groupTasks?.['group' + i] || '';
+    const groupKey = 'group' + i;
+    const g = groups[groupKey] || {};
+    const students = g.students || {};
+    const activity = ((classData.groupActivities || {})[groupKey]) || classData.currentActivity || {};
+    const task = (typeof getAssignedTask === 'function') ? getAssignedTask(activity, i) : (activity.sameTask || '');
+    const ids = Object.keys(students);
+    const members = ids.map(id => (students[id] && students[id].name) || id).join(' | ');
+    const leader = ids.map(id => students[id] || {}).find(s => s.role === 'leader') || {};
+    const teacherFeedback = g.teacherFeedback || {};
+    const teacherPoints = g.teacherPoints || teacherFeedback.points || '';
+    const teacherComment = g.teacherComment || teacherFeedback.comment || (g.teacherNote && g.teacherNote.text) || '';
+    const status = g.finalSubmitted ? 'Final Submitted' : (g.hasSavedWork ? 'In Progress' : (ids.length ? 'Joined' : 'Empty'));
+    const finalSubmittedAt = g.submittedAt ? new Date(g.submittedAt).toLocaleString() : '';
+
+    if(ids.length){
+      ids.forEach(function(id){
+        const st = students[id] || {};
+        rows.push([
+          classDisplayName ? classDisplayName(className) : className,
+          'Group ' + i,
+          status,
+          activity.name || '',
+          task || '',
+          members,
+          leader.name || '',
+          st.name || id,
+          st.role || '',
+          st.answer || '',
+          g.answer || '',
+          teacherPoints,
+          teacherComment,
+          scores[i] || 0,
+          finalSubmittedAt
+        ].map(csvSafe).join(','));
+      });
+    }else{
+      rows.push([
+        classDisplayName ? classDisplayName(className) : className,
+        'Group ' + i,
+        'Empty', activity.name || '', task || '', '', '', '', '', '', '', teacherPoints, teacherComment, scores[i] || 0, ''
+      ].map(csvSafe).join(','));
     }
   }
-
-  toggleTaskType();
+  return rows.join('\n');
 }
 
-function deleteActivity(){
-  const id = document.getElementById('savedActivities').value;
+async function finishActivityForClass(className){
+  if(!checkTeacherPassword()) return;
+  if(!className){ alert('Choose a class first.'); return; }
 
-  if(!id){
-    alert('Choose an activity.');
+  const prettyClass = (typeof classDisplayName === 'function') ? classDisplayName(className) : className;
+  if(!confirm('Finish activity for ' + prettyClass + '? Results will download as an Excel/CSV sheet and the class workspace will be cleared for a new activity. Saved activity library will stay.')) return;
+
+  const snap = await hubRef.child('classes/' + className).once('value');
+  const classData = snap.val() || {};
+  const finishedAt = Date.now();
+  const archiveId = 'finished_' + finishedAt;
+  const csv = buildActivityCSV(className, classData);
+
+  await hubRef.child('activityArchives/' + className + '/' + archiveId).set({
+    className: className,
+    finishedAt: finishedAt,
+    finishedBy: 'Ms. Saidah Khwar',
+    csv: csv,
+    data: classData
+  });
+
+  downloadTextFile('Skill-Clash-' + prettyClass.replace(/\W+/g,'-') + '-' + new Date(finishedAt).toISOString().slice(0,10) + '.csv', csv);
+
+  await hubRef.child('classes/' + className).set({
+    settings:{
+      stage:'work',
+      resultsReleased:false,
+      activityFinished:false,
+      lastFinishedAt: finishedAt
+    },
+    currentActivity:null,
+    groupActivities:null
+  });
+
+  alert('✅ Activity finished. Excel/CSV downloaded and results archived. You can now assign a new activity.');
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+  if(currentTeacherClass === className && typeof renderTeacherClassGroups === 'function') renderTeacherClassGroups(className);
+}
+
+async function finishActivityForCurrentClass(){
+  await finishActivityForClass(currentTeacherClass);
+}
+
+async function finishActivityFromDashboard(){
+  if(!checkTeacherPassword()) return;
+  let className = currentTeacherClass || (document.getElementById('teacherClassName') && document.getElementById('teacherClassName').value) || '';
+  if(!className){
+    className = prompt('Which class do you want to finish? Write: 9-1, 9-2, 9-3, or 9-4') || '';
+    className = className.trim();
+  }
+  await finishActivityForClass(className);
+}
+
+// Leaving should only exit the page/session. It must NOT delete saved work, chat, groups, or system data.
+function leaveGroup(){
+  if(currentGroupRef){ currentGroupRef.off(); }
+  sessionStorage.removeItem('skillClashGroup');
+  sessionStorage.removeItem('skillClashStudent');
+  sessionStorage.removeItem('skillClashClass');
+  sessionStorage.removeItem('skillClashRole');
+  sessionStorage.removeItem('skillClashStudentId');
+  currentGroup = '';
+  currentStudent = '';
+  currentRole = '';
+  currentStudentId = '';
+  currentClass = '';
+  currentGroupRef = null;
+  showPage('studentPage');
+}
+
+function leaveTeacher(){
+  teacherLoggedIn = false;
+  sessionStorage.removeItem('skillClashTeacherClass');
+  currentTeacherClass = '';
+  const pass = document.getElementById('teacherPass');
+  if(pass) pass.value = 'Welcome@2020';
+  showPage('teacherLoginPage');
+}
+
+
+/* =========================================================
+   FINAL FIX: Activity Builder is the ONLY source for student task.
+   - Removes old hardcoded group topics from student view.
+   - Whole-class assignment clears old group-specific assignments.
+   - Selected-group assignment writes only to those groups.
+   - Student page always reads latest assigned activity from Firebase.
+   ========================================================= */
+
+function safeEscape(text){
+  if(typeof escapeHtml === 'function') return escapeHtml(text);
+  return String(text || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+function getGroupAssignedActivity(classData, groupNumber){
+  const groupKey = 'group' + String(groupNumber || '');
+  const groupActivity = classData && classData.groupActivities && classData.groupActivities[groupKey];
+  const classActivity = classData && classData.currentActivity;
+  return groupActivity || classActivity || null;
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  const g = String(groupNumber || '');
+  if(activity.taskMode === 'different'){
+    return (
+      (activity.groupTasks && activity.groupTasks[g]) ||
+      (activity.groupTasks && activity.groupTasks['group' + g]) ||
+      activity.sameTask ||
+      ''
+    );
+  }
+  return activity.sameTask || '';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const topic = document.getElementById('groupTopic');
+  const box = document.getElementById('studentActivityDetails');
+  if(!topic || !box) return;
+
+  if(!activity){
+    topic.innerHTML = '<div class="activityTitleLine">No activity assigned yet</div>';
+    box.innerHTML = '<div class="activityInstructionClean">Your teacher has not assigned an activity to this class/group yet.</div>';
     return;
   }
 
-  if(!confirm('Delete this saved activity?')) return;
+  const taskText = getAssignedTask(activity, groupNumber) || 'No task written for this group yet.';
+  const instructions = activity.instructions || 'Read your task carefully. Save your work, then the leader submits the final group work.';
+  const criteriaList = Array.isArray(activity.successCriteria)
+    ? activity.successCriteria
+    : String(activity.successCriteria || '').split('\n').map(x=>x.trim()).filter(Boolean);
 
-  hubRef.child('activityLibrary/' + id).remove();
-  alert('Deleted.');
-  loadLibrary();
+  topic.innerHTML =
+    '<div class="activityTitleLine">' + safeEscape(activity.name || 'Group Activity') + '</div>' +
+    '<div class="activityTaskClean">' + safeEscape(taskText) + '</div>';
+
+  box.innerHTML =
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="activityInstructionClean">' + safeEscape(instructions) + '</div>' +
+    '<div class="studentCriteriaBox">' +
+      '<h3>✅ Success Criteria Checklist</h3>' +
+      '<p class="smallHint">Tick each item before the group leader submits the final work.</p>' +
+      (criteriaList.length
+        ? criteriaList.map((c,i)=>
+            '<label class="studentCriteriaItem">' +
+              '<input type="checkbox" class="studentCriteriaCheck" data-index="' + i + '"> ' +
+              '<span>' + safeEscape(c) + '</span>' +
+            '</label>'
+          ).join('')
+        : '<p>No success criteria added.</p>') +
+    '</div>';
 }
 
-async function assignCurrentActivity(){
-  const classes = [];
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  hubRef.child('classes/' + currentClass).once('value', function(snap){
+    const classData = snap.val() || {};
+    currentActivity = getGroupAssignedActivity(classData, currentGroup);
+    renderActivityDetails(currentActivity, currentGroup);
+  });
+}
 
-  document.querySelectorAll('.assignClassCheck:checked')
-    .forEach(el=>classes.push(el.value));
+async function joinGroup(){
+  teacherLoggedIn = false;
 
-  if(!classes.length){
+  const group = document.getElementById('studentGroup').value;
+  const className = document.getElementById('className').value;
+  const studentName = document.getElementById('studentName').value.trim();
+  const role = document.getElementById('studentRole').value;
+
+  if(!className || !group || !studentName || !role){
+    alert('Choose class, write your name, choose role, and choose group number.');
+    return;
+  }
+
+  currentGroup = group;
+  currentStudent = studentName;
+  currentRole = role;
+  currentStudentId = makeStudentId(studentName);
+  currentClass = className;
+
+  sessionStorage.setItem('skillClashStudent', studentName);
+  sessionStorage.setItem('skillClashRole', role);
+  sessionStorage.setItem('skillClashStudentId', currentStudentId);
+  sessionStorage.setItem('skillClashClass', className);
+  sessionStorage.setItem('skillClashGroup', group);
+
+  const groupPath = 'classes/' + currentClass + '/groups/group' + group;
+  const studentPath = groupPath + '/students/' + currentStudentId;
+
+  const oldStudentSnap = await hubRef.child(studentPath).once('value');
+  const oldStudent = oldStudentSnap.val() || {};
+
+  /* Do NOT write any fixed topic here. Activity Builder controls the task. */
+  await hubRef.child(groupPath).update({
+    group: group,
+    status: oldStudent.answer ? 'inProgress' : 'joined',
+    joinedAt: Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  await hubRef.child(studentPath).update({
+    id: currentStudentId,
+    name: studentName,
+    role: role,
+    answer: oldStudent.answer || '',
+    joinedAt: oldStudent.joinedAt || Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  document.getElementById('workTitle').innerHTML = 'Group ' + group + ' Work';
+  loadGroupWork();
+  loadCurrentActivityForStudent();
+  showPage('workPage');
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){
     alert('Choose at least one class.');
     return;
   }
 
-  const title = document.getElementById('builderActivityName').value.trim();
-  const instructions = document.getElementById('builderInstructions').value.trim();
-  const taskType = document.getElementById('taskType').value;
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity = null;
 
-  if(!title){
-    alert('Write activity name first.');
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }else{
+    activity = collectBuiltActivityFromForm(activity.id);
+    await hubRef.child('builtActivities/' + activity.id).update(activity);
+  }
+
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const selectedGroups = Array.from(document.querySelectorAll('.assignGroupCheck:checked')).map(x=>String(x.value));
+
+  if(mode === 'groups' && !selectedGroups.length){
+    alert('Choose at least one group.');
     return;
   }
 
-  const criteria = document.getElementById('successCriteria')
-    .value
-    .split('\n')
-    .map(x=>x.trim())
-    .filter(Boolean);
+  activity.assignmentMode = mode;
+  activity.assignedClasses = selectedClasses;
+  activity.assignedGroups = mode === 'groups' ? selectedGroups : [];
+  activity.assignedAt = Date.now();
 
-  for(const className of classes){
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
 
-    if(taskType === 'same'){
-      const sameTask = document.getElementById('sameTaskText').value.trim();
+  selectedClasses.forEach(function(cls){
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
 
-      for(let i=1;i<=10;i++){
-        await hubRef.child(
-          'classes/' + className +
-          '/assignedActivities/group' + i
-        ).set({
-          title: title,
-          instructions: instructions,
-          groupTask: sameTask,
-          criteria: criteria,
-          assignedBy: 'Ms. Saidah Khwar',
-          assignedAt: Date.now()
-        });
-      }
-
-    } else {
-
-      for(let i=1;i<=10;i++){
-        const task = document.getElementById('groupTask_' + i).value.trim();
-
-        await hubRef.child(
-          'classes/' + className +
-          '/assignedActivities/group' + i
-        ).set({
-          title: title,
-          instructions: instructions,
-          groupTask: task,
-          criteria: criteria,
-          assignedBy: 'Ms. Saidah Khwar',
-          assignedAt: Date.now()
-        });
-      }
+    if(mode === 'class'){
+      // Important: remove old per-group tasks so students do not see yesterday's activity.
+      updates['classes/' + cls + '/currentActivity'] = activity;
+      updates['classes/' + cls + '/groupActivities'] = null;
+    }else{
+      // Selected groups receive this activity. Other groups keep their current assignment.
+      selectedGroups.forEach(function(g){
+        updates['classes/' + cls + '/groupActivities/group' + g] = activity;
+      });
     }
-  }
-
-  alert('✅ Activity assigned successfully.');
-}
-
-function toggleTaskType(){
-  const type = document.getElementById('taskType').value;
-
-  document.getElementById('sameTaskWrap')
-    .classList.toggle('hidden', type !== 'same');
-
-  document.getElementById('differentTaskWrap')
-    .classList.toggle('hidden', type !== 'different');
-}
-
-document.getElementById('taskType')
-  .addEventListener('change', toggleTaskType);
-
-function loadTeacherGroups(){
-  hubRef.child('classes').on('value', snap=>{
-    const classes = snap.val() || {};
-    let html = '';
-
-    Object.keys(classes).forEach(className=>{
-      const groups = classes[className].groups || {};
-
-      html += `
-        <div class="card">
-          <h2>📚 ${className}</h2>
-      `;
-
-      for(let i=1;i<=10;i++){
-        const g = groups['group' + i] || {};
-        const students = g.students || {};
-        const names = Object.keys(students);
-
-        html += `
-          <div class="groupTeacherCard">
-            <h3>Group ${i}</h3>
-            <p><b>Members:</b> ${names.join(' • ') || 'No members yet'}</p>
-            <p><b>Status:</b> ${g.finalSubmitted ? '✅ Final Submitted' : '✍️ In Progress'}</p>
-
-            <details>
-              <summary>View Work</summary>
-              <pre>${escapeHtml(g.finalAnswer || 'No final answer yet.')}</pre>
-            </details>
-
-            <label>Teacher Points</label>
-            <input id="points_${className}_${i}" type="number" value="${g.teacherPoints || 0}">
-
-            <label>Teacher Comment</label>
-            <textarea id="comment_${className}_${i}">${escapeHtml(g.teacherComment || '')}</textarea>
-
-            <button class="green" onclick="saveTeacherFeedback('${className}',${i})">
-              Save Points + Comment
-            </button>
-          </div>
-        `;
-      }
-
-      html += '</div>';
-    });
-
-    document.getElementById('teacherGroups').innerHTML = html;
-  });
-}
-
-function saveTeacherFeedback(className, groupNum){
-  const points = document.getElementById('points_' + className + '_' + groupNum).value;
-  const comment = document.getElementById('comment_' + className + '_' + groupNum).value;
-
-  hubRef.child(
-    'classes/' + className +
-    '/groups/group' + groupNum
-  ).update({
-    teacherPoints: points,
-    teacherComment: comment
   });
 
-  alert('✅ Teacher feedback saved.');
+  await hubRef.update(updates);
+
+  const where = mode === 'class'
+    ? selectedClasses.map(classDisplayName).join(', ')
+    : selectedClasses.map(classDisplayName).join(', ') + ' · Groups ' + selectedGroups.join(', ');
+
+  alert('✅ New activity assigned to ' + where + '. Students may refresh or rejoin to see it immediately.');
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
 }
 
-function finishActivity(){
-  alert('✅ Activity finished. Results are saved in Firebase. Excel export can be added next.');
-}
-
-function checkAchievement(){
-  alert('🏆 Achievement check will show after teacher releases final results.');
-}
-
-window.addEventListener('load', function(){
-  const savedClass = sessionStorage.getItem('skillClass');
-  const savedGroup = sessionStorage.getItem('skillGroup');
-  const savedStudent = sessionStorage.getItem('skillStudent');
-  const savedRole = sessionStorage.getItem('skillRole');
-
-  if(savedClass && savedGroup && savedStudent){
-    currentClass = savedClass;
-    currentGroup = savedGroup;
-    currentStudent = savedStudent;
-    currentRole = savedRole || 'member';
-
-    loadGroup();
-    showPage('workPage');
+async function resetOldActivityTopicsForClass(className){
+  if(!className) return;
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + className + '/groups/group' + i + '/topic'] = null;
   }
-});
+  await hubRef.update(updates);
+}
+
 
 </script>
-
-<button onclick="loginTeacher()"
-class="blue"
-style="position:fixed;left:18px;bottom:18px;z-index:999;">
-👩‍🏫 Teacher Login
-</button>
 
 </body>
 </html>
