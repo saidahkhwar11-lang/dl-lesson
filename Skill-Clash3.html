@@ -460,6 +460,34 @@ button:hover{filter:brightness(.96)}
   font-weight:700;
 }
 .voteCriteriaItem input,.bestGroupBox input{width:auto;margin:0}
+ .voteSystemBox{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px;
+  margin:10px 0;
+}
+.battleGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.battleAnswerCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.battleAnswerCard.own{opacity:.68}
+.battleAnswerCard h3{margin-bottom:8px}
+.battleLock{
+  background:#fff3c4;
+  border:1px solid #f4d28b;
+  border-radius:10px;
+  padding:8px;
+  color:#92400e;
+  font-weight:800;
+}
 .bestGroupBox{
   display:flex;
   align-items:center;
@@ -472,7 +500,7 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
   color:#92400e;
 }
-@media(max-width:900px){.votingLayout{grid-template-columns:1fr}}
+@media(max-width:900px){.votingLayout,.battleGrid{grid-template-columns:1fr}}
 
 .winnerBox{
   background:#ecfdf5;
@@ -658,8 +686,8 @@ button:hover{filter:brightness(.96)}
     </div>
 
     <div class="votingLayout">
-      <div class="card voteMainCard">
-        <h2>🗳 Vote for Another Group</h2>
+      <div id="peerVoteCard" class="card voteMainCard">
+        <h2>🗳 Peer Assessment Voting</h2>
         <p>Choose one group, read their final answer, tick the voting criteria, and submit your vote.</p>
 
         <label>Choose group to vote for</label>
@@ -683,9 +711,17 @@ button:hover{filter:brightness(.96)}
         <div id="voteMsg" class="note hidden"></div>
       </div>
 
+      <div id="battleVoteCard" class="card voteMainCard hidden">
+        <h2>⚔️ Group Work VS Group Work</h2>
+        <p>Your battle pair will appear here. Score the other group using the checklist. Your own group is shown for comparison only.</p>
+        <div id="battlePairTitle" class="voteTarget">Loading battle pair...</div>
+        <div id="battleVoteContent" class="battleGrid"></div>
+        <div id="battleVoteMsg" class="note hidden"></div>
+      </div>
+
       <div class="card voteSideCard">
-        <h2>📌 My Group Work</h2>
-        <p>You cannot vote for your own group. Your group will not appear in the voting list.</p>
+        <h2>📌 Voting Rules</h2>
+        <p id="votingRuleText">You cannot vote for your own group. Your group will not appear in the peer assessment list.</p>
         <div id="myGroupFinalPreview" class="voteFinal">No final answer submitted yet.</div>
       </div>
     </div>
@@ -722,9 +758,16 @@ button:hover{filter:brightness(.96)}
     <div id="classGroupsPanel" class="card hidden">
       <button class="gray" onclick="backToDashboard()">← Back to Dashboard</button>
       <h2 id="selectedClassTitle"></h2>
+      <div class="voteSystemBox">
+        <label>🗳 Choose Voting System</label>
+        <select id="teacherVoteSystem">
+          <option value="battle">System 1: Group Work VS Group Work</option>
+          <option value="peer">System 2: Peer Assessment - Evaluate One Group</option>
+        </select>
+      </div>
       <div class="btnRow">
         <button class="green" onclick="setStage('work')">✍️ Open Work Stage</button>
-        <button class="blue" onclick="setStage('voting')">🗳 Voting Stage</button>
+        <button class="blue" onclick="setStage('voting')">🗳 Activate Selected Voting System</button>
         <button class="blue" onclick="showVotingResults()">📊 Voting Results</button>
         <button class="red" onclick="resetSelectedClass()">🗑 Reset This Class</button>
       </div>
@@ -859,6 +902,7 @@ let settingsListener = null;
 let latestClassGroups = {};
 let latestClassVotes = {};
 let currentStage = 'work';
+let currentVoteSystem = 'peer';
 let latestAssignedActivity = {};
 let teacherLoggedIn = false;
 
@@ -983,8 +1027,9 @@ function listenClassSettings(){
     const cls = snap.val() || {};
     const settings = cls.settings || {};
     latestClassGroups = cls.groups || {};
-    latestClassVotes = cls.votes || {};
     currentStage = settings.stage || 'work';
+    currentVoteSystem = settings.voteSystem || 'peer';
+    latestClassVotes = currentVoteSystem === 'battle' ? (cls.battleVotes || {}) : (cls.votes || {});
 
     updateStageUI(settings);
   });
@@ -1012,9 +1057,11 @@ function routeStudentStage(){
     document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
     if(resultsPanel) resultsPanel.classList.add('hidden');
     if(votingLayout) votingLayout.classList.remove('hidden');
+    switchVotingModeUI();
     buildVoteTargets();
     renderVoteCriteria();
     renderMyGroupFinalPreview();
+    renderBattleVoting();
     checkMyVoteStatus();
     return;
   }
@@ -1037,6 +1084,35 @@ function routeStudentStage(){
   if(resultsPanel) resultsPanel.classList.add('hidden');
 }
 
+function getActiveVoteBucket(){
+  return currentVoteSystem === 'battle' ? 'battleVotes' : 'votes';
+}
+function getActiveVotes(){
+  return latestClassVotes || {};
+}
+function getBattlePair(groupNum){
+  const n = Number(groupNum);
+  if(n % 2 === 1) return [n, n+1];
+  return [n-1, n];
+}
+function switchVotingModeUI(){
+  const peer = document.getElementById('peerVoteCard');
+  const battle = document.getElementById('battleVoteCard');
+  const rule = document.getElementById('votingRuleText');
+  const badge = document.querySelector('#votingPage .statusBadge');
+
+  if(currentVoteSystem === 'battle'){
+    if(peer) peer.classList.add('hidden');
+    if(battle) battle.classList.remove('hidden');
+    if(rule) rule.innerText = 'System 1 is open: Group Work VS Group Work. You can see both answers, but you only score the other group.';
+    if(badge) badge.innerText = '⚔️ Group VS Group';
+  }else{
+    if(peer) peer.classList.remove('hidden');
+    if(battle) battle.classList.add('hidden');
+    if(rule) rule.innerText = 'System 2 is open: Peer Assessment. Choose one group and evaluate their work. You cannot vote for your own group.';
+    if(badge) badge.innerText = '🗳 Peer Assessment';
+  }
+}
 function buildVoteTargets(){
   const sel = document.getElementById('voteTargetGroup');
   if(!sel) return;
@@ -1077,16 +1153,16 @@ function renderMyGroupFinalPreview(){
   const box = document.getElementById('myGroupFinalPreview');
   if(!box) return;
   const g = latestClassGroups['group'+currentGroup] || {};
-  box.innerHTML = escapeHtml(g.finalAnswer || 'No final answer submitted yet.');
+  box.innerHTML = `<b>My Group ${escapeHtml(currentGroup)} Answer</b><div style="margin-top:6px">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
 }
 
 function getVotingCriteria(){
   const defaultCriteria = [
-    'Clear opinion is included',
+    'Opinion is clear',
     'Reasons are included',
-    'Evidence or examples are included',
+    'Evidence/examples are included',
     'Opinion is restated clearly',
-    'Grammar and spelling are checked'
+    'Grammar and spelling are correct'
   ];
   return (latestAssignedActivity.votingCriteria && latestAssignedActivity.votingCriteria.length)
     ? latestAssignedActivity.votingCriteria
@@ -1104,6 +1180,54 @@ function renderVoteCriteria(){
   box.innerHTML = html;
 }
 
+function renderBattleVoting(){
+  const title = document.getElementById('battlePairTitle');
+  const box = document.getElementById('battleVoteContent');
+  if(!title || !box) return;
+
+  const pair = getBattlePair(currentGroup);
+  const opponent = String(pair[0]) === String(currentGroup) ? pair[1] : pair[0];
+  title.innerHTML = `<b>Battle:</b> Group ${pair[0]} VS Group ${pair[1]} · You will score Group ${opponent}.`;
+
+  const items = getVotingCriteria();
+  const existing = (((latestClassVotes || {})['group'+currentGroup] || {})[currentStudent]) || null;
+  let html = '';
+
+  pair.forEach(num=>{
+    const g = latestClassGroups['group'+num] || {};
+    const own = String(num) === String(currentGroup);
+    html += `<div class="battleAnswerCard ${own ? 'own' : ''}">
+      <h3>${own ? '📌 My Group' : '🗳 Group to Evaluate'} ${num}</h3>
+      <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+
+    if(own){
+      html += `<div class="battleLock">Your own group is shown only for comparison. You cannot vote for yourself.</div>`;
+    }else{
+      html += `<h3>✅ Checklist for Group ${num}</h3><p class="smallNote">Each checked criterion = 1 point.</p>`;
+      items.forEach((c,i)=>{
+        const checked = existing && String(existing.targetGroup) === String(num) && existing.criteriaChecked && existing.criteriaChecked[i] ? 'checked' : '';
+        html += `<label class="voteCriteriaItem"><input type="checkbox" class="battleCriterion" value="${i}" ${checked}> ${escapeHtml(c)} <span style="margin-left:auto;color:#64748b">1 pt</span></label>`;
+      });
+      const bestChecked = existing && String(existing.targetGroup) === String(num) && existing.bestGroupBonus ? 'checked' : '';
+      const comment = existing && String(existing.targetGroup) === String(num) ? (existing.comment || '') : '';
+      html += `<label class="bestGroupBox"><input type="checkbox" id="battleBestGroup" ${bestChecked}> ⭐ Best Group Bonus = 5 points</label>
+        <label>Positive comment for Group ${num}</label>
+        <textarea id="battleComment" placeholder="Write one positive comment about this group work.">${escapeHtml(comment)}</textarea>
+        <button class="green" style="width:100%" onclick="submitBattleVote(${num})">✅ Submit Vote for Group ${num}</button>`;
+    }
+    html += '</div>';
+  });
+
+  box.innerHTML = html;
+  const msg = document.getElementById('battleVoteMsg');
+  if(existing && msg){
+    msg.classList.remove('hidden');
+    msg.innerHTML = `✅ You already voted for <b>Group ${escapeHtml(existing.targetGroup || '')}</b>. You can update your vote before results are released.`;
+  }else if(msg){
+    msg.classList.add('hidden');
+  }
+}
+
 function checkMyVoteStatus(){
   const msg = document.getElementById('voteMsg');
   if(!msg) return;
@@ -1113,7 +1237,7 @@ function checkMyVoteStatus(){
   const best = document.getElementById('voteBestGroup');
   if(best) best.checked = false;
 
-  if(vote){
+  if(vote && currentVoteSystem !== 'battle'){
     msg.classList.remove('hidden');
     msg.innerHTML = `✅ You already voted for <b>Group ${escapeHtml(vote.targetGroup || '')}</b>. You can change your vote before results are released.`;
     document.getElementById('voteTargetGroup').value = String(vote.targetGroup || '');
@@ -1129,9 +1253,30 @@ function checkMyVoteStatus(){
   }
 }
 
+async function saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, comment){
+  const total = criteriaTotal + bestGroupBonus;
+  await hubRef.child(`classes/${currentClass}/${getActiveVoteBucket()}/group${currentGroup}/${currentStudent}`).set({
+    voteSystem:currentVoteSystem,
+    voterName:currentStudent,
+    voterGroup:String(currentGroup),
+    targetGroup:String(target),
+    criteriaChecked:checked,
+    criteriaTotal,
+    bestGroupBonus,
+    total,
+    comment,
+    votedAt:Date.now()
+  });
+  return total;
+}
+
 async function submitVote(){
   if(currentStage !== 'voting'){
     alert('Voting is not open yet.');
+    return;
+  }
+  if(currentVoteSystem === 'battle'){
+    alert('The teacher selected Group VS Group voting. Use the battle voting box.');
     return;
   }
 
@@ -1160,19 +1305,7 @@ async function submitVote(){
     }
   });
   const bestGroupBonus = document.getElementById('voteBestGroup').checked ? 5 : 0;
-  const total = criteriaTotal + bestGroupBonus;
-
-  await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudent}`).set({
-    voterName:currentStudent,
-    voterGroup:String(currentGroup),
-    targetGroup:String(target),
-    criteriaChecked:checked,
-    criteriaTotal,
-    bestGroupBonus,
-    total,
-    comment,
-    votedAt:Date.now()
-  });
+  const total = await saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, comment);
 
   const msg = document.getElementById('voteMsg');
   msg.classList.remove('hidden');
@@ -1180,9 +1313,50 @@ async function submitVote(){
   alert('✅ Your vote has been submitted.');
 }
 
+async function submitBattleVote(target){
+  if(currentStage !== 'voting'){
+    alert('Voting is not open yet.');
+    return;
+  }
+  if(currentVoteSystem !== 'battle'){
+    alert('The teacher selected Peer Assessment voting.');
+    return;
+  }
+  if(String(target) === String(currentGroup)){
+    alert('You cannot vote for your own group.');
+    return;
+  }
+
+  const comment = document.getElementById('battleComment')?.value.trim() || '';
+  if(!comment){
+    alert('Write one positive comment before voting.');
+    return;
+  }
+
+  const checked = {};
+  let criteriaTotal = 0;
+  document.querySelectorAll('.battleCriterion').forEach(cb=>{
+    if(cb.checked){
+      checked[cb.value] = true;
+      criteriaTotal += 1;
+    }
+  });
+  const bestGroupBonus = document.getElementById('battleBestGroup')?.checked ? 5 : 0;
+  const total = await saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, comment);
+
+  const msg = document.getElementById('battleVoteMsg');
+  if(msg){
+    msg.classList.remove('hidden');
+    msg.innerHTML = `✅ Battle vote submitted for <b>Group ${escapeHtml(target)}</b>. Total: <b>${total}</b> points.`;
+  }
+  alert('✅ Your battle vote has been submitted.');
+}
+
 function calculateVotingResults(classData){
   const groups = classData.groups || {};
-  const votes = classData.votes || {};
+  const settings = classData.settings || {};
+  const system = settings.voteSystem || currentVoteSystem || 'peer';
+  const votes = system === 'battle' ? (classData.battleVotes || {}) : (classData.votes || {});
   const results = {};
 
   for(let i=1;i<=10;i++){
@@ -1227,28 +1401,39 @@ function renderStudentResults(){
   const content = document.getElementById('studentResultsContent');
   if(!content) return;
 
-  const classData = {groups:latestClassGroups, votes:latestClassVotes};
+  const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
+  const voteSystem = (classData.settings || {}).voteSystem || 'peer';
   const results = calculateVotingResults(classData);
   const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
+  const title = currentVoteSystem === 'battle' ? '⚔️ Group Work VS Group Work Results' : '🗳 Peer Assessment Results';
 
-  let html = '<table class="resultTable"><tr><th>Rank</th><th>Group</th><th>Criteria Pts</th><th>Best Group Bonus</th><th>Votes</th><th>Teacher Points</th><th>Total</th></tr>';
+  let pairHtml = '';
+  if(currentVoteSystem === 'battle'){
+    [[1,2],[3,4],[5,6],[7,8],[9,10]].forEach(pair=>{
+      const a = results['group'+pair[0]], b = results['group'+pair[1]];
+      const winner = (a.finalScore === b.finalScore) ? 'Tie' : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+      pairHtml += `<tr><td>Group ${pair[0]} VS Group ${pair[1]}</td><td>Group ${a.groupNum}: ${a.finalScore}<br>Group ${b.groupNum}: ${b.finalScore}</td><td><b>${winner}</b></td></tr>`;
+    });
+  }
+
+  let html = `<h3>${title}</h3>`;
+  if(sorted[0]) html += `<div class="winnerBox">🏆 Whole Class Winner: Group ${sorted[0].groupNum}</div>`;
+  if(pairHtml){
+    html += `<h3>⚔️ Competitive Teams Results</h3><table class="resultTable"><tr><th>Battle</th><th>Scores</th><th>Winner</th></tr>${pairHtml}</table>`;
+  }
+  html += '<h3>🌟 Whole Class Results</h3><table class="resultTable"><tr><th>Rank</th><th>Group</th><th>Criteria Pts</th><th>Best Group Bonus</th><th>Votes</th><th>Teacher Points</th><th>Total</th></tr>';
   sorted.forEach((r,idx)=>{
     html += `<tr>
       <td>${idx+1}</td>
       <td>Group ${r.groupNum}</td>
       <td>${r.criteriaTotal}</td>
       <td>${r.bestBonusTotal}</td>
-      <td>${r.criteriaTotal} + ${r.bestBonusTotal} bonus<br>${r.voteTotal} / ${r.voteCount} vote(s)</td>
+      <td>${r.voteTotal} / ${r.voteCount} vote(s)</td>
       <td>${r.teacherPoints}</td>
       <td><b>${r.finalScore}</b></td>
     </tr>`;
   });
   html += '</table>';
-
-  if(sorted[0]){
-    html = `<div class="winnerBox">🏆 Whole Class Winner: Group ${sorted[0].groupNum}</div>` + html;
-  }
-
   content.innerHTML = html;
 }
 
@@ -1642,14 +1827,16 @@ async function setStage(stage){
   if(!selectedTeacherClass) return;
 
   const updates = {};
+  const voteSystem = document.getElementById('teacherVoteSystem')?.value || 'peer';
   updates[`classes/${selectedTeacherClass}/settings/stage`] = stage;
+  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/voteSystem`] = voteSystem;
   if(stage === 'work') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
   if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
 
   await hubRef.update(updates);
 
   if(stage === 'voting') renderTeacherVotingResults(false);
-  alert(stage === 'voting' ? '🗳 Voting stage is open for students.' : 'Stage changed to '+stage);
+  alert(stage === 'voting' ? (voteSystem === 'battle' ? '⚔️ Group VS Group voting is open for students.' : '🗳 Peer Assessment voting is open for students.') : 'Stage changed to '+stage);
 }
 
 async function showVotingResults(){
@@ -1706,6 +1893,7 @@ async function renderTeacherVotingResults(showPanel){
 
   panel.innerHTML =
     `<h2>📊 Voting Results - Class ${classDisplay(selectedTeacherClass)}</h2>
+     <p class="note"><b>Voting System:</b> ${voteSystem === 'battle' ? 'System 1 - Group Work VS Group Work' : 'System 2 - Peer Assessment'}</p>
      <div class="winnerBox">🏆 Whole Class Winner: ${sorted[0] ? 'Group '+sorted[0].groupNum : 'No votes yet'}</div>
 
      <h3>⚔️ Competitive Teams Results</h3>
