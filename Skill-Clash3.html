@@ -188,6 +188,47 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 .chatBubble b{color:#243b6b}
 .chatInputArea{padding:10px;background:white}
 .chatInputArea textarea{min-height:70px}
+
+.chatClosedNotice{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:14px;
+  padding:10px 12px;
+  margin:10px;
+  font-weight:bold;
+}
+.teacherChatGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.teacherChatCard{
+  background:#ffffff;
+  border:1px solid #d6e3fa;
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 4px 14px rgba(0,0,0,.06);
+}
+.teacherChatCard h3{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-top:0;
+}
+.teacherChatMessages{
+  background:#f8fbff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:10px;
+  max-height:180px;
+  overflow:auto;
+  line-height:1.45;
+}
+.chatOpenPill{background:#d1fae5;color:#065f46}
+.chatClosedPill{background:#fee2e2;color:#991b1b}
 .roleBadge{
   display:inline-block;
   background:#fff7ed;
@@ -436,6 +477,31 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
   .cleanInfoLine span{white-space:normal}
 }
 
+
+.teacherNoteBox{
+  margin-top:14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#7c2d12;
+  border-radius:18px;
+  padding:16px;
+  font-size:17px;
+  line-height:1.5;
+}
+.teacherNoteBox b{color:#9a3412}
+.noteBtn{
+  background:#7c3aed;
+  color:white;
+  margin-top:10px;
+}
+.noteActionRow{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.noteActionRow button{flex:1;min-width:180px}
+
 </style>
 </head>
 
@@ -540,6 +606,7 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 
       <div id="submitMsg" class="soft hidden"></div>
       <div id="studentResultsBox" class="soft hidden">🏆 Results not released yet.</div>
+      <div id="teacherNoteBox" class="teacherNoteBox hidden">📝 Teacher note will appear here.</div>
     </div>
 
     <div>
@@ -718,6 +785,7 @@ Correct grammar and spelling</textarea>
     <button onclick="openWorkStageForCurrentClass()" class="green">✍️ Open Work Stage</button>
     <button onclick="openVotingStageForCurrentClass()">🗳 Voting Stage</button>
     <button onclick="openTeacherVotingResults(currentTeacherClass)">📊 Voting Results</button>
+    <button onclick="openTeacherChatControl(currentTeacherClass)">💬 Chat Control</button>
     <button onclick="resetCurrentTeacherClass()" class="red">🗑 Reset This Class</button>
   </div>
   <div id="teacherClassSummary" class="soft"></div>
@@ -739,6 +807,18 @@ Correct grammar and spelling</textarea>
     <button onclick="hideResultsForCurrentClass()" class="red">🙈 Hide Results from Students</button>
   </div>
   <div id="teacherVotingResultsBox"></div>
+</div>
+
+<div id="teacherChatControlPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Class Groups</button>
+  <h2 id="teacherChatControlTitle">💬 Chat Control</h2>
+  <div class="teacherTopActions">
+    <button onclick="setAllChatsForCurrentClass(true)" class="green">✅ Open All Chats</button>
+    <button onclick="setAllChatsForCurrentClass(false)" class="red">🔒 Close All Chats</button>
+    <button onclick="clearAllChatsForCurrentClass()" class="red">🧹 Clear All Chats</button>
+  </div>
+  <div class="soft">Teacher can open/close each group chat, view live messages, or clear chat messages.</div>
+  <div id="teacherChatControlGrid" class="teacherChatGrid"></div>
 </div>
 
 </div>
@@ -808,7 +888,7 @@ let topics = {
 }
 
 function showPage(id){
-  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage'].forEach(p=>{
+  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage','teacherChatControlPage'].forEach(p=>{
     const el=document.getElementById(p);
     if(el) el.classList.add('hidden');
   });
@@ -1043,8 +1123,19 @@ document.getElementById('studentGroupInfo').innerHTML =
 
   document.getElementById('groupAnswer').value = data.answer || '';
 
+  const teacherNoteBox = document.getElementById('teacherNoteBox');
+  if(teacherNoteBox){
+    if(data.teacherNote){
+      teacherNoteBox.classList.remove('hidden');
+      teacherNoteBox.innerHTML = '📝 <b>Teacher Comment:</b><br>' + escapeHtml(data.teacherNote);
+    }else{
+      teacherNoteBox.classList.add('hidden');
+      teacherNoteBox.innerHTML = '';
+    }
+  }
+
   renderStudentBoxes(students);
-  renderChatMessages(data.chat || {});
+  renderChatMessages(data.chat || {}, data.chatOpen !== false);
   loadCurrentActivityForStudent();
 
   });
@@ -1219,21 +1310,32 @@ function toggleChatRoom(){
   chat.classList.toggle('hidden');
 }
 
-function renderChatMessages(chat){
+function renderChatMessages(chat, chatOpen){
   const box = document.getElementById('chatMessages');
   if(!box) return;
+
+  const inputArea = document.querySelector('.chatInputArea');
+  if(inputArea){
+    inputArea.style.display = chatOpen ? 'block' : 'none';
+  }
 
   const messages = Object.keys(chat || {})
     .map(id=>chat[id])
     .sort((a,b)=>Number(a.time || 0) - Number(b.time || 0));
 
-  box.innerHTML = messages.map(m=>`
+  let html = '';
+  if(!chatOpen){
+    html += '<div class="chatClosedNotice">🔒 Chat is closed by your teacher.</div>';
+  }
+
+  html += messages.map(m=>`
     <div class="chatBubble">
       <b>${escapeHtml(m.name || 'Student')}:</b><br>
       ${escapeHtml(m.text || '')}
     </div>
   `).join('') || '<p>No messages yet.</p>';
 
+  box.innerHTML = html;
   box.scrollTop = box.scrollHeight;
 }
 
@@ -1245,6 +1347,17 @@ async function sendChatMessage(){
 
   if(!currentClass || !currentGroup || !currentStudent){
     alert('Join group first.');
+    return;
+  }
+
+  const chatStatusSnap = await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup +
+    '/chatOpen'
+  ).once('value');
+
+  if(chatStatusSnap.val() === false){
+    alert('Chat is closed by your teacher.');
     return;
   }
 
@@ -2048,7 +2161,9 @@ function renderTeacherClassGroups(cls){
         <h3>Group ${i} <span class="statusPill ${pill}">${status}</span></h3>
         <p><b>Members:</b> ${escapeHtml(names)}</p>
         <p><b>Teacher Points:</b> ${escapeHtml(g.teacherMark ?? 'Not marked')}</p>
+        <p><b>Chat:</b> ${g.chatOpen === false ? '🔒 Closed' : '✅ Open'}</p>
         <button onclick="openTeacherGroupReview('${cls}',${i})">👀 Check Group Work</button>
+        <button onclick="openTeacherChatControl('${cls}')">💬 Control Chat</button>
       </div>`;
     }
 
@@ -2124,8 +2239,12 @@ function openTeacherGroupReview(cls, groupNumber){
           </div>
           <button onclick="saveTeacherGroupMark('${cls}',${groupNumber})" class="green">Save Points</button>
         </div>
-        <label>Teacher Note</label>
-        <textarea id="teacherNoteInput" placeholder="Optional feedback note...">${escapeHtml(g.teacherNote || '')}</textarea>
+        <label>Teacher Note / Comment to Students</label>
+        <textarea id="teacherNoteInput" placeholder="Write teacher comment for this group...">${escapeHtml(g.teacherNote || '')}</textarea>
+        <div class="noteActionRow">
+          <button onclick="saveTeacherNoteOnly('${cls}',${groupNumber})" class="noteBtn">📝 Post Teacher Comment</button>
+          <button onclick="clearTeacherNote('${cls}',${groupNumber})" class="red">🗑 Clear Comment</button>
+        </div>
       </div>`;
   });
 }
@@ -2137,9 +2256,41 @@ async function saveTeacherGroupMark(cls, groupNumber){
   await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
     teacherMark: mark,
     teacherNote: note,
-    markedAt: Date.now()
+    markedAt: Date.now(),
+    teacherNoteUpdatedAt: Date.now()
   });
-  alert('✅ Points saved for Group ' + groupNumber + '.');
+  alert('✅ Points and teacher comment saved for Group ' + groupNumber + '.');
+}
+
+async function saveTeacherNoteOnly(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  const noteBox = document.getElementById('teacherNoteInput');
+  const note = noteBox ? noteBox.value.trim() : '';
+
+  if(!note){
+    alert('Write a teacher comment first.');
+    return;
+  }
+
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    teacherNote: note,
+    teacherNoteUpdatedAt: Date.now()
+  });
+
+  alert('✅ Teacher comment posted to Group ' + groupNumber + '.');
+}
+
+async function clearTeacherNote(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  if(!confirm('Clear teacher comment for Group ' + groupNumber + '?')) return;
+
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/teacherNote').remove();
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/teacherNoteUpdatedAt').remove();
+
+  const noteBox = document.getElementById('teacherNoteInput');
+  if(noteBox) noteBox.value = '';
+
+  alert('Teacher comment cleared.');
 }
 
 async function openWorkStageForCurrentClass(){
@@ -2155,6 +2306,94 @@ async function openVotingStageForCurrentClass(){
   if(!currentTeacherClass){ alert('Choose a class first.'); return; }
   await hubRef.child('classes/' + currentTeacherClass + '/settings/stage').set('voting');
   openTeacherVotingResults(currentTeacherClass);
+}
+
+
+function openTeacherChatControl(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherChatControlPage');
+  const title = document.getElementById('teacherChatControlTitle');
+  if(title) title.innerHTML = '💬 Class ' + classDisplayName(cls) + ' Chat Control';
+  renderTeacherChatControl(cls);
+}
+
+function renderTeacherChatControl(cls){
+  const grid = document.getElementById('teacherChatControlGrid');
+  if(!grid) return;
+
+  hubRef.child('classes/' + cls + '/groups').on('value', snap=>{
+    const groups = snap.val() || {};
+    let html = '';
+
+    for(let i=1;i<=10;i++){
+      const g = groups['group'+i] || {};
+      const students = g.students || {};
+      const names = getGroupMemberNames(students) || 'No students joined yet';
+      const chatOpen = g.chatOpen !== false;
+      const chat = g.chat || {};
+      const messages = Object.keys(chat).map(id=>chat[id]).sort((a,b)=>Number(a.time || 0)-Number(b.time || 0));
+
+      const messageHtml = messages.length ? messages.map(m=>{
+        const time = m.time ? new Date(Number(m.time)).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+        return '<div class="chatBubble"><b>' + escapeHtml(m.name || 'Student') + '</b> <small>' + escapeHtml(time) + '</small><br>' + escapeHtml(m.text || '') + '</div>';
+      }).join('') : '<p>No chat messages yet.</p>';
+
+      html += `
+        <div class="teacherChatCard">
+          <h3>
+            Group ${i}
+            <span class="statusPill ${chatOpen ? 'chatOpenPill' : 'chatClosedPill'}">${chatOpen ? 'Open' : 'Closed'}</span>
+          </h3>
+          <p><b>Members:</b> ${escapeHtml(names)}</p>
+          <div class="teacherTopActions">
+            <button onclick="setGroupChatOpen('${cls}',${i},true)" class="green">✅ Open</button>
+            <button onclick="setGroupChatOpen('${cls}',${i},false)" class="red">🔒 Close</button>
+            <button onclick="clearGroupChat('${cls}',${i})" class="red">🧹 Clear</button>
+          </div>
+          <div class="teacherChatMessages">${messageHtml}</div>
+        </div>`;
+    }
+
+    grid.innerHTML = html;
+  });
+}
+
+async function setGroupChatOpen(cls, groupNumber, isOpen){
+  if(!checkTeacherPassword()) return;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    chatOpen: isOpen,
+    chatControlledAt: Date.now()
+  });
+}
+
+async function clearGroupChat(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  if(!confirm('Clear chat messages for Group ' + groupNumber + '?')) return;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber + '/chat').remove();
+}
+
+async function setAllChatsForCurrentClass(isOpen){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chatOpen'] = isOpen;
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chatControlledAt'] = Date.now();
+  }
+  await hubRef.update(updates);
+}
+
+async function clearAllChatsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  if(!confirm('Clear chat messages for all groups in this class?')) return;
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + currentTeacherClass + '/groups/group' + i + '/chat'] = null;
+  }
+  await hubRef.update(updates);
 }
 
 function openTeacherVotingResults(cls){
