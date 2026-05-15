@@ -1190,6 +1190,32 @@ button:hover{filter:brightness(.96)}
   padding:10px;
 }
 
+
+.activityImageWrap{
+  margin-top:12px;
+  position:relative;
+}
+.activityImageSmall{
+  width:180px;
+  max-width:100%;
+  border-radius:14px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:.25s;
+  display:block;
+}
+.activityImageSmall.maximized{
+  width:100%;
+  max-height:70vh;
+  object-fit:contain;
+}
+.imageToggleBtn{
+  margin-top:8px;
+  background:#243b6b;
+  padding:7px 12px;
+  font-size:12px;
+}
+
 </style>
 </head>
 
@@ -1317,6 +1343,9 @@ button:hover{filter:brightness(.96)}
 
           <h3 style="margin-top:12px;">📝 Group Activity Details</h3>
           <div id="groupTaskBox" class="taskBox">No group task</div>
+
+<div id="activityImageHolder"></div>
+<div id="groupTaskImageHolder"></div>
 
           <div id="criteriaBox" class="criteriaBox">
             <h3>✅ Success Criteria Checklist</h3>
@@ -1646,6 +1675,20 @@ let builderMainImageData = '';
 let builderGroupImageData = {};
 
 function classDisplay(c){return c.replace('-','/')}
+
+function toggleActivityImage(btn,id){
+  const img = document.getElementById(id);
+  if(!img) return;
+
+  img.classList.toggle('maximized');
+
+  if(img.classList.contains('maximized')){
+    btn.innerText = '🔽 Minimize Picture';
+  }else{
+    btn.innerText = '🔍 Maximize Picture';
+  }
+}
+
 function escapeHtml(text){
   return String(text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
