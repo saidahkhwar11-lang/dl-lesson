@@ -831,6 +831,136 @@ button:hover{filter:brightness(.96)}
 @media(max-width:560px){
   .loginGrid,.classGrid,.groupCards,.groupTaskGrid,.currentGrid,.teacherTopActions,.actions{grid-template-columns:1fr}
 }
+
+/* Clean compact battle voting update */
+.compactChooser{
+  display:grid;
+  grid-template-columns:minmax(240px, 1.2fr) 170px 1fr;
+  gap:14px;
+  align-items:end;
+  padding:12px;
+}
+.compactChooser select{height:46px;font-weight:800;color:#18376b}
+.miniProgress{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px 12px;
+  text-align:center;
+  color:#18376b;
+}
+.miniProgress b{display:block;font-size:20px}
+.miniProgress span{font-size:12px;color:#64748b;font-weight:800}
+.miniHint{
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  color:#166534;
+  border-radius:14px;
+  padding:10px 12px;
+  font-weight:800;
+}
+.cleanBattleCard{padding:12px 14px 0;overflow:hidden}
+.compactTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px 14px;
+  margin-bottom:12px;
+}
+.compactTitle h2{margin:0;font-size:22px}.compactTitle p{margin:0;color:#475569}
+.compactReadGrid{gap:12px;margin-bottom:12px}
+.clearAnswerBlue{border-color:#bfdbfe}.clearAnswerGreen{border-color:#bbf7d0}
+.largeAnswerText{
+  min-height:230px;
+  max-height:360px;
+  font-size:15px;
+  line-height:1.65;
+  padding:16px;
+}
+.submittedLine{
+  padding:9px 12px;
+  border-top:1px solid #e2e8f0;
+  background:#fbfdff;
+  color:#18376b;
+}
+.miniMember{
+  display:inline-block;
+  background:#eaf3ff;
+  color:#1d4ed8;
+  border-radius:999px;
+  padding:4px 9px;
+  margin:3px;
+  font-size:12px;
+  font-weight:800;
+}
+.clearAnswerGreen .miniMember{background:#dcfce7;color:#166534}
+.startVotingPanel{
+  text-align:center;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  padding:26px 14px;
+  margin:10px 0 14px;
+}
+.startIcon{
+  width:56px;height:56px;line-height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2d6fc2,#1d4ed8);
+  color:white;
+  margin:0 auto 8px;
+  font-size:22px;
+  font-weight:900;
+}
+.startVoteBtn{min-width:180px;padding:12px 22px;font-size:16px}
+.compactStepTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-size:18px;
+  font-weight:900;
+  color:#18376b;
+  margin:8px 0 10px;
+}
+.compactStepTitle span{font-size:13px;color:#475569;background:#eff6ff;border-radius:999px;padding:5px 10px}
+.compactScoreSection{gap:12px;margin:10px 0}
+.compactScoreCard{padding:10px;border-radius:16px}
+.compactScoreCard h3{font-size:16px;padding:8px 10px;margin-bottom:7px}
+.compactCriterion{padding:8px 10px;margin:6px 0;font-size:13px}
+.compactCriterion input{transform:scale(1.08)}
+.compactBestSection{padding:10px;margin:10px 0;border-radius:16px}
+.compactBestSection h3{font-size:16px;margin-bottom:8px}
+.compactBestChoices{gap:10px}.compactBestChoices .clearBestChoice{padding:10px;font-size:15px}
+.compactComment{min-height:74px;max-height:110px}
+.compactSaveBar{
+  position:static;
+  display:grid;
+  grid-template-columns:180px 180px 1fr;
+  align-items:center;
+  gap:10px;
+  border-radius:0;
+  margin:12px -14px 0;
+  padding:12px 18px;
+  box-shadow:none;
+  background:#f8fbff;
+  border-left:0;border-right:0;border-bottom:0;
+}
+.compactSaveBar .note{margin:0;padding:8px 10px;font-size:13px}
+.compactActionBtn{
+  width:100%!important;
+  margin:0;
+  padding:10px 12px!important;
+  font-size:14px!important;
+  border-radius:12px;
+}
+@media(max-width:900px){
+  .compactChooser{grid-template-columns:1fr}.compactTitle{display:block}.largeAnswerText{min-height:180px}.compactSaveBar{grid-template-columns:1fr 1fr}.compactSaveBar .note{grid-column:1/-1}
+}
+
 </style>
 </head>
 
@@ -1221,6 +1351,7 @@ let latestClassVotes = {};
 let currentStage = 'work';
 let currentVoteSystem = 'peer';
 let selectedBattleKey = '';
+let battleVotingStarted = false;
 let latestAssignedActivity = {};
 let teacherLoggedIn = false;
 
@@ -1504,9 +1635,19 @@ function getAvailableBattlePairs(){
 }
 function selectBattlePair(key){
   selectedBattleKey = key || '';
+  battleVotingStarted = false;
   renderBattleVoting();
 }
+function startBattleVoting(){
+  battleVotingStarted = true;
+  const startBox = document.getElementById('battleStartBox');
+  const form = document.getElementById('battleVotingForm');
+  if(startBox) startBox.classList.add('hidden');
+  if(form) form.classList.remove('hidden');
+  setTimeout(()=>{ form?.scrollIntoView({behavior:'smooth', block:'start'}); }, 80);
+}
 function goToNextBattle(){
+  battleVotingStarted = false;
   const availablePairs = getAvailableBattlePairs();
   const votes = latestClassVotes || {};
   const notVoted = availablePairs.find(pair=>{
@@ -1543,6 +1684,7 @@ function renderBattleVoting(){
       return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
     });
     selectedBattleKey = firstNotVoted ? `${firstNotVoted[0]}vs${firstNotVoted[1]}` : validKeys[0];
+    battleVotingStarted = false;
   }
 
   const completed = availablePairs.filter(pair=>{
@@ -1551,27 +1693,21 @@ function renderBattleVoting(){
   }).length;
 
   let chooser = `
-    <div class="battleChooser">
-      <label style="margin-top:0">⚔️ Select one battle to vote</label>
-      <select id="battlePairSelect" onchange="selectBattlePair(this.value)">`;
+    <div class="battleChooser compactChooser">
+      <div>
+        <label style="margin-top:0">⚔️ Choose Battle</label>
+        <select id="battlePairSelect" onchange="selectBattlePair(this.value)">`;
 
   availablePairs.forEach(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
     const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
     const selected = key === selectedBattleKey ? 'selected' : '';
-    chooser += `<option value="${key}" ${selected}>Group ${pair[0]} VS Group ${pair[1]} ${voted ? '✅ saved' : '— not voted yet'}</option>`;
+    chooser += `<option value="${key}" ${selected}>Group ${pair[0]} VS Group ${pair[1]} ${voted ? '✅ saved' : ''}</option>`;
   });
 
-  chooser += `</select>
-    <div class="battleStepBar">`;
-  availablePairs.forEach(pair=>{
-    const key = `${pair[0]}vs${pair[1]}`;
-    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
-    const cls = key === selectedBattleKey ? 'battleStep active' : (voted ? 'battleStep done' : 'battleStep');
-    chooser += `<span class="${cls}">Group ${pair[0]} VS ${pair[1]} ${voted ? '✓ saved' : ''}</span>`;
-  });
-  chooser += `</div>
-    <p class="smallNote">Progress: <b>${completed} / ${availablePairs.length}</b> battles saved. Your own battle is hidden, so you cannot vote for yourself.</p>
+  chooser += `</select></div>
+      <div class="miniProgress"><b>${completed} / ${availablePairs.length}</b><span>battles saved</span></div>
+      <div class="miniHint">Your own battle is hidden, so you cannot vote for yourself.</div>
     </div>`;
 
   title.innerHTML = chooser;
@@ -1583,13 +1719,17 @@ function renderBattleVoting(){
   const gB = latestClassGroups['group'+b] || {};
   const comment = existing ? (existing.comment || '') : '';
 
+  function membersText(groupObj){
+    const names = Object.keys((groupObj || {}).students || {});
+    return names.length ? names.map(n=>`<span class="miniMember">${escapeHtml(n)}</span>`).join('') : '<span class="smallNote">No members joined.</span>';
+  }
+
   function scoreCard(num){
-    let html = `<div class="clearScoreCard">
-      <h3>✅ Give points to Group ${num}</h3>
-      <p class="smallNote">Tick only the criteria that Group ${num} covered well.</p>`;
+    let html = `<div class="clearScoreCard compactScoreCard">
+      <h3>✅ Score Group ${num}</h3>`;
     items.forEach((c,i)=>{
       const checked = (existing && existing.groupScores && existing.groupScores['group'+num] && existing.groupScores['group'+num].criteriaChecked && existing.groupScores['group'+num].criteriaChecked[i]) ? 'checked' : '';
-      html += `<label class="clearCriterion">
+      html += `<label class="clearCriterion compactCriterion">
         <input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked}>
         <span>${escapeHtml(c)}</span>
         <span class="pointBadge">+1</span>
@@ -1601,52 +1741,57 @@ function renderBattleVoting(){
 
   const bestA = existing && String(existing.winnerGroup) === String(a) ? 'checked' : '';
   const bestB = existing && String(existing.winnerGroup) === String(b) ? 'checked' : '';
+  const formHiddenClass = battleVotingStarted ? '' : 'hidden';
+  const startHiddenClass = battleVotingStarted ? 'hidden' : '';
 
-  const html = `<div class="card" style="grid-column:1/-1">
-    <div class="battleVoteMainTitle">
+  const html = `<div class="card cleanBattleCard" style="grid-column:1/-1">
+    <div class="battleVoteMainTitle compactTitle">
       <h2>⚔️ Group ${a} VS Group ${b}</h2>
-      <p>Read both final answers. Score each group separately. Then choose the stronger group.</p>
+      <p>Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
     </div>
 
-    <div class="battleInstructionBanner">
-      <div>1️⃣ Read Group ${a}</div>
-      <div>2️⃣ Read Group ${b}</div>
-      <div>3️⃣ Tick points for each group</div>
-      <div>4️⃣ Choose best + submit</div>
-    </div>
-
-    <h3>📖 Step 1: Read both answers</h3>
-    <div class="battleReadGrid">
-      <div class="clearAnswerCard">
-        <div class="clearAnswerHead">Group ${a} Final Answer</div>
-        <div class="clearAnswerText">${escapeHtml(gA.finalAnswer || 'No final answer submitted yet.')}</div>
+    <div class="battleReadGrid compactReadGrid">
+      <div class="clearAnswerCard clearAnswerBlue">
+        <div class="clearAnswerHead">👥 Group ${a} Final Answer</div>
+        <div class="clearAnswerText largeAnswerText">${escapeHtml(gA.finalAnswer || 'No final answer submitted yet.')}</div>
+        <div class="submittedLine"><b>Submitted by:</b> ${membersText(gA)}</div>
       </div>
-      <div class="clearAnswerCard">
-        <div class="clearAnswerHead">Group ${b} Final Answer</div>
-        <div class="clearAnswerText">${escapeHtml(gB.finalAnswer || 'No final answer submitted yet.')}</div>
+      <div class="clearAnswerCard clearAnswerGreen">
+        <div class="clearAnswerHead">👥 Group ${b} Final Answer</div>
+        <div class="clearAnswerText largeAnswerText">${escapeHtml(gB.finalAnswer || 'No final answer submitted yet.')}</div>
+        <div class="submittedLine"><b>Submitted by:</b> ${membersText(gB)}</div>
       </div>
     </div>
 
-    <h3>🧾 Step 2: Score each group with the checklist</h3>
-    <div class="clearScoreSection">
-      ${scoreCard(a)}
-      ${scoreCard(b)}
+    <div id="battleStartBox" class="startVotingPanel ${startHiddenClass}">
+      <div class="startIcon">▶</div>
+      <h2>Ready to vote?</h2>
+      <p>The checklist is hidden so you can read the answers clearly first.</p>
+      <button class="blue startVoteBtn" onclick="startBattleVoting()">▶ Start Voting</button>
     </div>
 
-    <div class="clearBestSection">
-      <h3>⭐ Step 3: Choose the stronger group for 5 bonus points</h3>
-      <div class="clearBestChoices">
-        <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${a}" ${bestA}> Group ${a} is stronger (+5)</label>
-        <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${b}" ${bestB}> Group ${b} is stronger (+5)</label>
+    <div id="battleVotingForm" class="${formHiddenClass}">
+      <div class="compactStepTitle">Step 1: Score each group with the checklist <span>Each criterion = 1 point</span></div>
+      <div class="clearScoreSection compactScoreSection">
+        ${scoreCard(a)}
+        ${scoreCard(b)}
       </div>
+
+      <div class="clearBestSection compactBestSection">
+        <h3>⭐ Step 2: Choose the stronger group for 5 bonus points</h3>
+        <div class="clearBestChoices compactBestChoices">
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${a}" ${bestA}> Group ${a} is stronger (+5)</label>
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${b}" ${bestB}> Group ${b} is stronger (+5)</label>
+        </div>
+      </div>
+
+      <label>💬 Positive comment about this battle</label>
+      <textarea class="compactComment" id="battleComment_${battleKey}" maxlength="300" placeholder="Write one short positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
     </div>
 
-    <label>💬 Positive comment about this battle</label>
-    <textarea id="battleComment_${battleKey}" placeholder="Write one positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
-
-    <div class="clearSaveBar">
-      <button class="green" style="width:100%" onclick="submitBattleVote(${a},${b})">✅ Submit and Save Vote for Group ${a} VS Group ${b}</button>
-      <button class="nextBattleBtn" onclick="goToNextBattle()">➡️ Go to Next Unsaved Battle</button>
+    <div class="clearSaveBar compactSaveBar">
+      <button class="green compactActionBtn" onclick="submitBattleVote(${a},${b})">✅ Submit Vote</button>
+      <button class="blue compactActionBtn" onclick="goToNextBattle()">➡️ Next Battle</button>
       <div id="battleMsg_${battleKey}" class="note ${existing ? '' : 'hidden'}">${existing ? '✅ Your vote for this battle is already saved. You can update it before results are released.' : ''}</div>
     </div>
   </div>`;
