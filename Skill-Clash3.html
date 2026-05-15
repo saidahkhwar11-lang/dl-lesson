@@ -502,6 +502,13 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 }
 .noteActionRow button{flex:1;min-width:180px}
 
+
+.differentTaskGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:10px}
+.groupTaskMini{background:#f8fbff;border:1px solid #d6e3fa;border-radius:14px;padding:12px}
+.groupTaskMini label{font-weight:bold;color:#243b6b}
+.groupTaskMini textarea{min-height:95px;font-size:14px}
+.teacherFeedbackBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:14px;margin-top:12px;color:#7c2d12}
+.teacherFeedbackBox b{color:#9a3412}
 </style>
 </head>
 
@@ -739,7 +746,7 @@ Restated Opinion
       </div>
 
       <label>Task Type</label>
-      <select id="builderTaskMode">
+      <select id="builderTaskMode" onchange="toggleDifferentTasksBuilder()">
         <option value="same">Same task for all groups</option>
         <option value="different">Different task for each group</option>
       </select>
@@ -747,8 +754,12 @@ Restated Opinion
       <label>Same Task for All Groups</label>
       <textarea id="builderSameTask" placeholder="Example: Write an opinion paragraph about whether students should wear uniforms.">Write a clear opinion paragraph using opinion, reason, evidence/example, and restated opinion.</textarea>
 
-      <label>Different Group Tasks</label>
-      <textarea id="builderGroupTasks" placeholder="Write one task per group. Example:\n1: Group 1 task here\n2: Group 2 task here\n3: Group 3 task here"></textarea>
+      <div id="differentTasksSection" class="hidden">
+        <label>Different Activity for Each Group</label>
+        <p class="smallHint">Write a different task for each group. Leave any group empty if you do not want to assign a special task.</p>
+        <div id="differentGroupTaskGrid" class="differentTaskGrid"></div>
+        <textarea id="builderGroupTasks" class="hidden" placeholder="Auto-filled from group task boxes"></textarea>
+      </div>
 
       <label>Each Student's Question / Job inside the Group</label>
       <textarea id="builderStudentQuestions" placeholder="Example:\nOpinion Writer: What is your clear opinion?\nReason Writer: What is your reason?\nEvidence Writer: What example supports your reason?\nChecker: Check grammar and spelling.">Opinion Writer: Write the clear opinion sentence.
@@ -1125,9 +1136,14 @@ document.getElementById('studentGroupInfo').innerHTML =
 
   const teacherNoteBox = document.getElementById('teacherNoteBox');
   if(teacherNoteBox){
-    if(data.teacherNote){
+    const hasNote = String(data.teacherNote || '').trim();
+    const hasMark = data.teacherMark !== undefined && data.teacherMark !== null && String(data.teacherMark).trim() !== '';
+    if(hasNote || hasMark){
       teacherNoteBox.classList.remove('hidden');
-      teacherNoteBox.innerHTML = '📝 <b>Teacher Comment:</b><br>' + escapeHtml(data.teacherNote);
+      teacherNoteBox.className = 'teacherFeedbackBox';
+      teacherNoteBox.innerHTML =
+        (hasMark ? '⭐ <b>Teacher Points:</b> ' + escapeHtml(data.teacherMark) + '<br>' : '') +
+        (hasNote ? '📝 <b>Teacher Comment:</b><br>' + escapeHtml(data.teacherNote) : '');
     }else{
       teacherNoteBox.classList.add('hidden');
       teacherNoteBox.innerHTML = '';
@@ -1376,6 +1392,98 @@ async function sendChatMessage(){
   textBox.value = '';
 }
 
+
+function parseLines(text){
+  return String(text || '')
+    .split('\n')
+    .map(x => x.trim())
+    .filter(Boolean);
+}
+
+function parseGroupTasks(text){
+  const tasks = {};
+  String(text || '').split('\n').forEach(line => {
+    const parts = line.split(':');
+    const num = (parts.shift() || '').trim().replace(/group/ig,'').trim();
+    const task = parts.join(':').trim();
+    if(num && task) tasks[String(num)] = task;
+  });
+  return tasks;
+}
+
+function buildDifferentTaskInputs(){
+  const grid = document.getElementById('differentGroupTaskGrid');
+  if(!grid) return;
+  if(grid.dataset.ready === 'yes') return;
+  let html = '';
+  for(let i=1;i<=10;i++){
+    html += `<div class="groupTaskMini">
+      <label>Group ${i} Activity</label>
+      <textarea id="groupTask_${i}" placeholder="Write Group ${i} task here..."></textarea>
+    </div>`;
+  }
+  grid.innerHTML = html;
+  grid.dataset.ready = 'yes';
+}
+
+function toggleDifferentTasksBuilder(){
+  const mode = document.getElementById('builderTaskMode')?.value || 'same';
+  const section = document.getElementById('differentTasksSection');
+  const sameBox = document.getElementById('builderSameTask');
+  if(section){
+    if(mode === 'different'){
+      section.classList.remove('hidden');
+      buildDifferentTaskInputs();
+    }else{
+      section.classList.add('hidden');
+    }
+  }
+  if(sameBox){
+    sameBox.closest('label');
+  }
+}
+
+function collectDifferentGroupTasks(){
+  buildDifferentTaskInputs();
+  const tasks = {};
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box && box.value.trim()) tasks[String(i)] = box.value.trim();
+  }
+  // fallback for old pasted format
+  const oldBox = document.getElementById('builderGroupTasks');
+  if(oldBox && oldBox.value.trim()){
+    Object.assign(tasks, parseGroupTasks(oldBox.value));
+  }
+  return tasks;
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  const groupKey = String(groupNumber || '');
+  if(activity.taskMode === 'different'){
+    return (activity.groupTasks && activity.groupTasks[groupKey]) || activity.sameTask || 'No task assigned for this group yet.';
+  }
+  return activity.sameTask || 'No task assigned yet.';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const box = document.getElementById('studentActivityDetails');
+  if(!box) return;
+  if(!activity){
+    box.innerHTML = 'Activity details will appear here after teacher assigns it.';
+    return;
+  }
+  const studentParts = (activity.studentQuestions || []).map(q => '<span class="criteriaChip">' + escapeHtml(q) + '</span>').join(' ');
+  const criteria = (activity.successCriteria || []).map(c => '<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>').join(' ');
+  box.innerHTML =
+    '<h3>🧩 Assigned Activity</h3>' +
+    '<p><b>' + escapeHtml(activity.name || 'Group Activity') + '</b></p>' +
+    '<div class="activityTaskBox">' + escapeHtml(getAssignedTask(activity, groupNumber)) + '</div>' +
+    '<p><b>Each student job/question:</b></p>' + (studentParts || '<p>No student questions added.</p>') +
+    '<p><b>Success criteria for peer voting:</b></p>' + (criteria || '<p>No criteria added.</p>');
+}
+
 async function saveBuiltActivityAndAssign(){
   if(!checkTeacherPassword()) return;
 
@@ -1387,7 +1495,7 @@ async function saveBuiltActivityAndAssign(){
     name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
     taskMode: document.getElementById('builderTaskMode').value,
     sameTask: document.getElementById('builderSameTask').value.trim(),
-    groupTasks: parseGroupTasks(document.getElementById('builderGroupTasks').value),
+    groupTasks: collectDifferentGroupTasks(),
     studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
     successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
     assignedClasses: selected,
@@ -2493,6 +2601,8 @@ async function resetCurrentTeacherClass(){
 }
 
   window.addEventListener('load', function(){
+  buildDifferentTaskInputs();
+  toggleDifferentTasksBuilder();
 
   if(currentClass){
     const classSelect =
