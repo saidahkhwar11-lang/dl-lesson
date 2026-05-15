@@ -259,6 +259,63 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 .teacherAnswerWide{max-height:360px;overflow:auto;background:#f8fbff;border:1px solid #d6e3fa;border-radius:14px;padding:14px;white-space:pre-wrap;line-height:1.55}
 .backBtn{background:#64748b}
 
+
+
+/* ===== Cute Clean Student Design ===== */
+body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
+.topbar{background:linear-gradient(135deg,#243b6b,#4f7cc8);box-shadow:0 5px 18px rgba(36,59,107,.22)}
+.studentHero{
+  background:linear-gradient(135deg,#eaf4ff,#fff7fb);
+  border:1px solid #d7e7ff;
+  border-radius:28px;
+  padding:26px;
+  box-shadow:0 10px 30px rgba(36,59,107,.10);
+  overflow:hidden;
+  position:relative;
+}
+.studentHero:before{
+  content:"";
+  position:absolute;
+  width:160px;height:160px;
+  background:rgba(255,255,255,.55);
+  border-radius:50%;
+  right:-50px;top:-55px;
+}
+.studentHero h2{font-size:32px;margin-bottom:8px;color:#243b6b}
+.studentSub{color:#52627a;font-size:17px;margin:0 0 18px;line-height:1.5}
+.studentLoginGrid{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;margin-top:12px}
+.studentField{background:rgba(255,255,255,.78);border:1px solid #dce9fb;border-radius:20px;padding:14px;box-shadow:0 3px 12px rgba(36,59,107,.05)}
+.studentField label{display:block;font-weight:bold;color:#243b6b;margin-bottom:4px}
+.studentNote{background:#fffdf5;border:1px solid #fdecc8;color:#77521a;border-radius:18px;padding:13px 15px;margin-top:16px;line-height:1.5}
+.bigJoinBtn{width:100%;font-size:20px;padding:16px;margin-top:18px;background:linear-gradient(135deg,#2f6db8,#7aa7e8);box-shadow:0 8px 18px rgba(47,109,184,.25)}
+.workShell{background:transparent;box-shadow:none;padding:0}
+.workHero{background:linear-gradient(135deg,#243b6b,#517fd1);color:white;border-radius:28px;padding:22px;box-shadow:0 12px 26px rgba(36,59,107,.20);margin-bottom:16px}
+.workHero h2{color:white;font-size:30px;margin:0 0 8px}
+.workHero .soft{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);color:white}
+.workLayout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.9fr);gap:18px;align-items:start}
+.myWorkCard,.sideCuteCard,.cutePanel{
+  background:white;border:1px solid #d9e8fb;border-radius:24px;padding:18px;box-shadow:0 8px 22px rgba(36,59,107,.08);margin-bottom:16px
+}
+.myWorkCard h3,.sideCuteCard h3,.cutePanel h3{font-size:22px;color:#243b6b;margin-bottom:8px}
+.myWorkHelp{color:#64748b;margin-top:0;line-height:1.5}
+#myStudentAnswer{min-height:260px;border:2px solid #cfe1fb;background:#fbfdff;border-radius:18px;font-size:17px;line-height:1.6}
+.cuteActions{display:grid;grid-template-columns:repeat(2,minmax(180px,1fr));gap:12px;margin-top:14px}
+.cuteActions button{margin:0;min-height:58px;border-radius:18px;box-shadow:0 5px 14px rgba(36,59,107,.10)}
+.cuteActions .green{background:linear-gradient(135deg,#247a3d,#45a563)}
+.cuteActions .chatBtn{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+.cuteActions .viewBtn{background:linear-gradient(135deg,#0f766e,#5eead4)}
+.cuteActions .submitBtn{background:linear-gradient(135deg,#243b6b,#4f7cc8)}
+.studentBox{border-radius:20px;background:#fbfdff;border:1px solid #d9e8fb}
+.myBox{border:2px solid #8bc7a0;background:#f6fff8}
+.memberPanel.open{display:block;animation:softOpen .18s ease-out}
+@keyframes softOpen{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.chatPopup{border-radius:24px;border:1px solid #d9e8fb;box-shadow:0 14px 38px rgba(36,59,107,.22)}
+.chatHeader{background:linear-gradient(135deg,#7c3aed,#4f7cc8);padding:14px 16px}
+.chatMessages{background:#f8fbff}
+.chatBubble{border-radius:16px;background:white}
+.roleBadge{background:#fff0f6;color:#9d174d;border-color:#fbcfe8}
+@media(max-width:850px){.studentLoginGrid,.workLayout,.cuteActions{grid-template-columns:1fr}.studentHero h2,.workHero h2{font-size:26px}}
+
 </style>
 </head>
 
@@ -280,115 +337,117 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 
 </div>
 
-<div id="studentPage" class="card">
-  <h2>🎮 Join Group Activity</h2>
+<div id="studentPage" class="studentHero card">
+  <h2>🎮 Join Skill Clash</h2>
+  <p class="studentSub">Choose your class, write your name, choose your role, and enter your group work page.</p>
 
-  <label>Class</label>
-<select id="className">
-  <option value="">Choose class</option>
-  <option value="9-1">9/1</option>
-  <option value="9-2">9/2</option>
-  <option value="9-3">9/3</option>
-  <option value="9-4">9/4</option>
-</select>
+  <div class="studentLoginGrid">
+    <div class="studentField">
+      <label>📚 Class</label>
+      <select id="className">
+        <option value="">Choose class</option>
+        <option value="9-1">9/1</option>
+        <option value="9-2">9/2</option>
+        <option value="9-3">9/3</option>
+        <option value="9-4">9/4</option>
+      </select>
+    </div>
 
-  <label>Group Number</label>
-  <select id="studentGroup">
-    <option value="">Choose group</option>
-    <option value="1">Group 1</option><option value="2">Group 2</option>
-    <option value="3">Group 3</option><option value="4">Group 4</option>
-    <option value="5">Group 5</option><option value="6">Group 6</option>
-    <option value="7">Group 7</option><option value="8">Group 8</option>
-    <option value="9">Group 9</option><option value="10">Group 10</option>
-  </select>
+    <div class="studentField">
+      <label>👥 Group Number</label>
+      <select id="studentGroup">
+        <option value="">Choose group</option>
+        <option value="1">Group 1</option><option value="2">Group 2</option>
+        <option value="3">Group 3</option><option value="4">Group 4</option>
+        <option value="5">Group 5</option><option value="6">Group 6</option>
+        <option value="7">Group 7</option><option value="8">Group 8</option>
+        <option value="9">Group 9</option><option value="10">Group 10</option>
+      </select>
+    </div>
 
-<label>Student Name</label>
-<input id="studentName" placeholder="Write your name exactly the same next time">
+    <div class="studentField">
+      <label>🌸 Student Name</label>
+      <input id="studentName" placeholder="Write your name">
+    </div>
 
-<label>Group Role</label>
-<select id="studentRole">
-  <option value="">Choose role</option>
-  <option value="leader">Group Leader</option>
-  <option value="member">Group Member</option>
-</select>
-
-<div class="soft">
-  Decide who is the leader before joining. Group member names will appear automatically after everyone joins.
-</div>
-  
-<button onclick="joinGroup()">Join Activity</button>
-</div>
-
-<div id="workPage" class="card hidden">
-  <h2 id="workTitle">Group Work</h2>
-  <div class="soft" id="studentGroupInfo">
-  Group info will appear here.
-</div>
-  <div class="soft" id="groupTopic">Topic will appear here.</div>
-
- <div class="soft stickyTimer">
-  ⏱ Time Left:
-  <b id="workTimerDisplay">Not started</b>
-</div>
-
-  <p><b>Task:</b> Write your own answer first. Then submit the final group answer together.</p>
-
-<div id="studentWorkArea"></div>
-
-<div class="actionBar">
-
-  <button onclick="toggleMemberWork()">
-    👀 View Group Members’ Work
-  </button>
-
-  <button onclick="saveMyStudentWork()" class="green">
-    💾 Save My Work
-  </button>
-
-  <button onclick="submitCombinedGroupWork()">
-    📌 Submit Group Work
-  </button>
-
-  <button onclick="toggleChatRoom()">
-    💬 Chatroom
-  </button>
-
-</div>
-
-<div id="memberWorkPanel" class="soft memberPanel">
-  <h3>👥 Group Members’ Work</h3>
-  <div id="memberWorkArea"></div>
-</div>
-
-<details class="soft">
-  <summary style="cursor:pointer;font-weight:bold;">
-    📌 View Final Group Answer
-  </summary>
-
-  <textarea
-    id="groupAnswer"
-    placeholder="Final group answer will appear here..."
-    readonly
-  ></textarea>
-</details>
-
-<div id="chatRoom" class="chatPopup hidden">
-  <div class="chatHeader">
-    <span>💬 Group Chat</span>
-    <button onclick="toggleChatRoom()">Hide</button>
+    <div class="studentField">
+      <label>⭐ Group Role</label>
+      <select id="studentRole">
+        <option value="">Choose role</option>
+        <option value="leader">Group Leader</option>
+        <option value="member">Group Member</option>
+      </select>
+    </div>
   </div>
-  <div id="chatMessages" class="chatMessages"></div>
-  <div class="chatInputArea">
-    <textarea id="chatText" placeholder="Write a message to your group..."></textarea>
-    <button onclick="sendChatMessage()" class="green" style="width:100%;">Send Message</button>
-  </div>
-</div>
-  
 
-<div id="submitMsg" class="soft hidden"></div>
-  <div id="studentResultsBox" class="soft hidden">
-  🏆 Results not released yet.
+  <div class="studentNote">
+    💡 Decide who is the leader before joining. Members will appear automatically after they join the same group.
+  </div>
+  
+  <button onclick="joinGroup()" class="bigJoinBtn">✨ Join My Group Work</button>
 </div>
+
+<div id="workPage" class="workShell card hidden">
+  <div class="workHero">
+    <h2 id="workTitle">Group Work</h2>
+    <div class="soft" id="studentGroupInfo">Group info will appear here.</div>
+  </div>
+
+  <div class="workLayout">
+    <div>
+      <div class="myWorkCard">
+        <h3>✍️ My Answer</h3>
+        <p class="myWorkHelp">Write your own part here. Click <b>Save My Work</b> so your group can see it.</p>
+        <div id="studentWorkArea"></div>
+
+        <div class="cuteActions">
+          <button onclick="toggleMemberWork()" class="viewBtn">👀 View Members’ Work</button>
+          <button onclick="saveMyStudentWork()" class="green">💾 Save My Work</button>
+          <button onclick="submitCombinedGroupWork()" class="submitBtn">📌 Submit Group Work</button>
+          <button onclick="toggleChatRoom()" class="chatBtn">💬 Chatroom</button>
+          <button onclick="leaveGroup()" class="red">🚪 Leave Group</button>
+        </div>
+      </div>
+
+      <div id="memberWorkPanel" class="cutePanel memberPanel">
+        <h3>👥 Group Members’ Work</h3>
+        <p class="myWorkHelp">These boxes show what each member saved.</p>
+        <div id="memberWorkArea"></div>
+      </div>
+
+      <div id="submitMsg" class="soft hidden"></div>
+      <div id="studentResultsBox" class="soft hidden">🏆 Results not released yet.</div>
+    </div>
+
+    <div>
+      <div class="sideCuteCard">
+        <h3>📌 Topic</h3>
+        <div id="groupTopic">Topic will appear here.</div>
+      </div>
+
+      <div class="sideCuteCard stickyTimer">
+        <h3>⏱ Timer</h3>
+        Time Left: <b id="workTimerDisplay">Not started</b>
+      </div>
+
+      <details class="sideCuteCard">
+        <summary style="cursor:pointer;font-weight:bold;color:#243b6b;">📌 View Final Group Answer</summary>
+        <textarea id="groupAnswer" placeholder="Final group answer will appear here..." readonly></textarea>
+      </details>
+    </div>
+  </div>
+
+  <div id="chatRoom" class="chatPopup hidden">
+    <div class="chatHeader">
+      <span>💬 Group Chat</span>
+      <button onclick="toggleChatRoom()">Hide</button>
+    </div>
+    <div id="chatMessages" class="chatMessages"></div>
+    <div class="chatInputArea">
+      <textarea id="chatText" placeholder="Write a message to your group..."></textarea>
+      <button onclick="sendChatMessage()" class="green" style="width:100%;">Send Message</button>
+    </div>
+  </div>
 </div>
 
 <div id="votePage" class="card hidden">
@@ -688,7 +747,7 @@ function makeStudentId(name){
     .replace(/[^a-z0-9_\u0600-\u06FF-]/g,'') || ('student_' + Date.now());
 }
 
-function joinGroup(){
+async function joinGroup(){
 
   const group = document.getElementById('studentGroup').value;
   const className = document.getElementById('className').value;
@@ -712,27 +771,34 @@ function joinGroup(){
   sessionStorage.setItem('skillClashClass', className);
   sessionStorage.setItem('skillClashGroup', group);
 
-  hubRef.child(
-    'classes/' + currentClass + '/groups/group' + group
-  ).update({
+  const groupPath =
+    'classes/' + currentClass + '/groups/group' + group;
+
+  const studentPath =
+    groupPath + '/students/' + currentStudentId;
+
+  /* IMPORTANT:
+     Do not set answer:'' here.
+     This keeps the student's saved work after refresh, closing the page,
+     or rejoining the same class/group with the same name. */
+  const oldStudentSnap = await hubRef.child(studentPath).once('value');
+  const oldStudent = oldStudentSnap.val() || {};
+
+  await hubRef.child(groupPath).update({
     group: group,
     topic: topics[group] || '',
+    status: oldStudent.answer ? 'inProgress' : 'joined',
     joinedAt: Date.now()
   });
 
-  hubRef
-    .child(
-      'classes/' + currentClass +
-      '/groups/group' + group +
-      '/students/' + currentStudentId
-    )
-    .update({
-      id: currentStudentId,
-      name: studentName,
-      role: role,
-      answer: '',
-      joinedAt: Date.now()
-    });
+  await hubRef.child(studentPath).update({
+    id: currentStudentId,
+    name: studentName,
+    role: role,
+    answer: oldStudent.answer || '',
+    joinedAt: oldStudent.joinedAt || Date.now(),
+    lastSeenAt: Date.now()
+  });
 
   loadGroupWork();
 
@@ -874,7 +940,19 @@ async function saveMyStudentWork(){
     name: currentStudent,
     role: currentRole,
     answer: answer,
+    saved: true,
     updatedAt: Date.now()
+  });
+
+  // Mark the whole group as in progress for the teacher dashboard.
+  await hubRef.child(
+    'classes/' + currentClass +
+    '/groups/group' + currentGroup
+  ).update({
+    status: 'inProgress',
+    hasSavedWork: true,
+    lastSavedBy: currentStudent,
+    lastSavedAt: Date.now()
   });
 
   document.getElementById('submitMsg')
@@ -975,6 +1053,7 @@ async function sendChatMessage(){
     '/groups/group' + currentGroup +
     '/chat'
   ).push({
+    studentId: currentStudentId,
     name: currentStudent,
     role: currentRole,
     text: text,
@@ -1941,8 +2020,87 @@ async function resetCurrentTeacherClass(){
 
 });
 
-  function leaveGroup(){
-  goToStudentLogin();
+async function leaveGroup(){
+
+  if(!currentClass || !currentGroup || !currentStudentId){
+    goToStudentLogin();
+    return;
+  }
+
+  if(!confirm('Leave this group? Your saved work and chat messages will be deleted from the group page.')){
+    return;
+  }
+
+  const groupPath =
+    'classes/' + currentClass + '/groups/group' + currentGroup;
+
+  try{
+
+    if(currentGroupRef){
+      currentGroupRef.off();
+    }
+
+    // 1) Delete this student record and saved work.
+    await hubRef.child(
+      groupPath + '/students/' + currentStudentId
+    ).remove();
+
+    // 2) Delete this student chat messages from the group chat.
+    const chatSnap = await hubRef.child(groupPath + '/chat').once('value');
+    const chat = chatSnap.val() || {};
+    const updates = {};
+
+    Object.keys(chat).forEach(function(key){
+      const msg = chat[key] || {};
+      if(msg.studentId === currentStudentId || msg.name === currentStudent){
+        updates[key] = null;
+      }
+    });
+
+    if(Object.keys(updates).length){
+      await hubRef.child(groupPath + '/chat').update(updates);
+    }
+
+    // 3) Rebuild the group final answer without this student.
+    const studentSnap = await hubRef.child(groupPath + '/students').once('value');
+    const students = studentSnap.val() || {};
+    const ids = Object.keys(students);
+
+    if(!ids.length){
+      // If the group is empty, remove the whole group page.
+      await hubRef.child(groupPath).remove();
+    } else {
+      let hasSavedWork = false;
+      let finalAnswer = '';
+
+      ids.forEach(function(id){
+        const s = students[id] || {};
+        if((s.answer || '').trim()) hasSavedWork = true;
+
+        finalAnswer += (s.name || id) + ' (' +
+          (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+        finalAnswer += (s.answer || 'No answer yet') + '\n\n';
+      });
+
+      const groupSnap = await hubRef.child(groupPath).once('value');
+      const groupData = groupSnap.val() || {};
+
+      await hubRef.child(groupPath).update({
+        status: groupData.finalSubmitted ? 'finalSubmitted' : (hasSavedWork ? 'inProgress' : 'joined'),
+        hasSavedWork: hasSavedWork,
+        answer: groupData.finalSubmitted ? finalAnswer : (groupData.answer || ''),
+        lastLeftBy: currentStudent,
+        lastLeftAt: Date.now()
+      });
+    }
+
+    alert('✅ You left the group. Your saved work was deleted from the group page.');
+    goToStudentLogin();
+
+  } catch(err){
+    console.error(err);
+    alert('Could not leave the group. Please try again.');
+  }
 }
 
   function leaveTeacher(){
