@@ -206,6 +206,59 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
   margin-top:12px;
 }
 
+
+.teacherHero{
+  background:linear-gradient(135deg,#eaf2ff,#ffffff);
+  border:1px solid #d6e3fa;
+  border-radius:22px;
+  padding:18px;
+  margin-bottom:18px;
+}
+.teacherClassGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:14px;
+  margin-top:14px;
+}
+.classCard{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:20px;
+  padding:18px;
+  box-shadow:0 4px 14px rgba(36,59,107,.08);
+  cursor:pointer;
+  transition:.2s;
+}
+.classCard:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(36,59,107,.14)}
+.classCard h3{font-size:28px;margin-bottom:8px}
+.statusPill{
+  display:inline-block;
+  border-radius:999px;
+  padding:6px 10px;
+  margin:4px 4px 4px 0;
+  font-weight:bold;
+  font-size:13px;
+}
+.pillProgress{background:#fef3c7;color:#92400e}
+.pillFinal{background:#d1fae5;color:#065f46}
+.pillEmpty{background:#f1f5f9;color:#475569}
+.pillMark{background:#ede9fe;color:#5b21b6}
+.teacherTopActions{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.teacherTopActions button{min-width:170px;flex:1}
+.groupReviewGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:14px}
+.teacherGroupCard{
+  background:white;
+  border:1px solid #d6e3fa;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 3px 12px rgba(0,0,0,.06);
+}
+.teacherGroupCard h3{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.markBox{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end;margin-top:12px}
+.markBox input{margin-top:4px}
+.teacherAnswerWide{max-height:360px;overflow:auto;background:#f8fbff;border:1px solid #d6e3fa;border-radius:14px;padding:14px;white-space:pre-wrap;line-height:1.55}
+.backBtn{background:#64748b}
+
 </style>
 </head>
 
@@ -359,26 +412,46 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 </div>
   
 <div id="teacherPage" class="card hidden">
-  <h2>👩‍🏫 Teacher Dashboard</h2>
+  <div class="teacherHero">
+    <h2>👩‍🏫 Teacher Dashboard</h2>
+    <p>Choose a class to check all group work, mark points, open voting, and release results.</p>
 
-  <label>Password</label>
-  <input id="teacherPass" type="password" placeholder="Enter password">
+    <label>Password</label>
+    <input id="teacherPass" type="password" placeholder="Enter password">
 
-  <label>Class</label>
-<select id="teacherClassName">
-  <option value="">Choose class</option>
-  <option value="9-1">9/1</option>
-  <option value="9-2">9/2</option>
-  <option value="9-3">9/3</option>
-  <option value="9-4">9/4</option>
-</select>
+    <div class="teacherTopActions">
+      <button onclick="saveActivitySettings()">💾 Save Activity Settings</button>
+      <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
+      <button onclick="leaveTeacher()" class="red">🚪 Leave Dashboard</button>
+    </div>
 
-  <label>Activity Title</label>
-  <input id="activityTitle" value="Opinion Battle">
+    <div class="soft">
+      ⏱ Teacher Timer: <b id="teacherTimerDisplay">Not started</b>
+    </div>
+  </div>
 
-  <label>Activity Instructions</label>
-  <textarea id="activityInstructions">Write a clear opinion paragraph. Remember: opinion, reason, evidence/example, and restated opinion.</textarea>
-  <label>Group Topics</label>
+  <h3>📚 Classes</h3>
+  <div id="teacherClassGrid" class="teacherClassGrid"></div>
+
+  <details class="soft" style="margin-top:18px;">
+    <summary style="cursor:pointer;font-weight:bold;">⚙️ Activity Settings</summary>
+
+    <label>Class for timer/stage controls</label>
+    <select id="teacherClassName">
+      <option value="">Choose class</option>
+      <option value="9-1">9/1</option>
+      <option value="9-2">9/2</option>
+      <option value="9-3">9/3</option>
+      <option value="9-4">9/4</option>
+    </select>
+
+    <label>Activity Title</label>
+    <input id="activityTitle" value="Opinion Battle">
+
+    <label>Activity Instructions</label>
+    <textarea id="activityInstructions">Write a clear opinion paragraph. Remember: opinion, reason, evidence/example, and restated opinion.</textarea>
+
+    <label>Group Topics</label>
 <textarea id="activityTopics">
 1: Should students have to wear uniforms?
 2: Should students have to wear uniforms?
@@ -392,7 +465,7 @@ button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 1
 10: The impact of social media on teenage social skills.
 </textarea>
 
- <label>Voting Criteria</label>
+    <label>Voting Criteria</label>
 <textarea id="voteCriteria">
 Opinion
 Reason
@@ -400,36 +473,45 @@ Evidence / Example
 Restated Opinion
 </textarea>
 
-<label>Timer Minutes</label>
-<input id="timerMinutes" type="number" value="20" min="1">
+    <label>Timer Minutes</label>
+    <input id="timerMinutes" type="number" value="20" min="1">
 
-  <div class="btnRow">
-    <button onclick="saveActivitySettings()">💾 Save Activity</button>
-    <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
-    <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
-    <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
-    <button onclick="resetHub()" class="red">🗑 Reset</button>
-
-    <button onclick="leaveTeacher()" class="red">
-    🚪 Leave Teacher Dashboard
-  </button>
-</div>
-  
-
-  <div class="soft">
-  ⏱ Teacher Timer:
-  <b id="teacherTimerDisplay">Not started</b>
+    <div class="btnRow">
+      <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
+      <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
+      <button onclick="resetHub()" class="red">🗑 Reset Selected Class</button>
+    </div>
+  </details>
 </div>
 
-  <h3>📌 Live Groups</h3>
-  <button onclick="showTeacherPreview()">👀 Preview Group Work</button>
-  <div id="teacherPreview" class="groupGrid"></div>
+<div id="teacherClassPage" class="card hidden">
+  <button onclick="showTeacherDashboard()" class="backBtn">⬅ Back to Dashboard</button>
+  <h2 id="teacherClassTitle">Class Groups</h2>
+  <div class="teacherTopActions">
+    <button onclick="openWorkStageForCurrentClass()" class="green">✍️ Open Work Stage</button>
+    <button onclick="openVotingStageForCurrentClass()">🗳 Voting Stage</button>
+    <button onclick="openTeacherVotingResults(currentTeacherClass)">📊 Voting Results</button>
+    <button onclick="resetCurrentTeacherClass()" class="red">🗑 Reset This Class</button>
+  </div>
+  <div id="teacherClassSummary" class="soft"></div>
+  <div id="teacherGroupsGrid" class="groupReviewGrid"></div>
+</div>
 
-  <h3>🏆 Results</h3>
-<button onclick="startLiveResults()">
-  📊 Show Live Results
-</button>
-  <div id="resultsBox"></div>
+<div id="teacherGroupReviewPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Class Groups</button>
+  <h2 id="teacherGroupReviewTitle">Group Work</h2>
+  <div id="teacherGroupReviewContent"></div>
+</div>
+
+<div id="teacherVotingResultsPage" class="card hidden">
+  <button onclick="openTeacherClass(currentTeacherClass)" class="backBtn">⬅ Back to Dashboard</button>
+  <h2 id="teacherVotingTitle">Voting Results</h2>
+  <div class="teacherTopActions">
+    <button onclick="openVotingStageForCurrentClass()">🗳 Open Voting Stage for Students</button>
+    <button onclick="releaseResultsForCurrentClass()" class="green">📢 Release Results to Students</button>
+    <button onclick="hideResultsForCurrentClass()" class="red">🙈 Hide Results from Students</button>
+  </div>
+  <div id="teacherVotingResultsBox"></div>
 </div>
 
 </div>
@@ -465,6 +547,7 @@ let currentStudentId =
   let timerInterval = null;
 let timerEndTime = 0;
   let currentBattleIndex = 0;
+let currentTeacherClass = sessionStorage.getItem('skillClashTeacherClass') || '';
 
 let topics = {
   1:'Should students have to wear uniforms?',
@@ -496,7 +579,7 @@ let topics = {
 }
 
 function showPage(id){
-  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage'].forEach(p=>{
+  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage'].forEach(p=>{
     const el=document.getElementById(p);
     if(el) el.classList.add('hidden');
   });
@@ -1537,6 +1620,288 @@ function escapeHtml(text){
   });
 }
 
+
+function getClassOptions(){
+  return ['9-1','9-2','9-3','9-4'];
+}
+
+function classDisplayName(cls){
+  return String(cls || '').replace('-', '/');
+}
+
+function showTeacherDashboard(){
+  if(!teacherLoggedIn && !document.getElementById('teacherPass').value){
+    // allow after login only
+  }
+  showPage('teacherPage');
+  renderTeacherDashboard();
+}
+
+function renderTeacherDashboard(){
+  const grid = document.getElementById('teacherClassGrid');
+  if(!grid) return;
+
+  hubRef.child('classes').once('value', snap=>{
+    const classes = snap.val() || {};
+    let html = '';
+
+    getClassOptions().forEach(cls=>{
+      const groups = (classes[cls] || {}).groups || {};
+      let joined = 0;
+      let final = 0;
+      let marked = 0;
+
+      for(let i=1;i<=10;i++){
+        const g = groups['group'+i];
+        if(g && g.students) joined++;
+        if(g && g.finalSubmitted) final++;
+        if(g && g.teacherMark !== undefined && g.teacherMark !== '') marked++;
+      }
+
+      html += `
+        <div class="classCard" onclick="openTeacherClass('${cls}')">
+          <h3>Class ${classDisplayName(cls)}</h3>
+          <span class="statusPill pillProgress">${joined} joined groups</span>
+          <span class="statusPill pillFinal">${final} final submitted</span>
+          <span class="statusPill pillMark">${marked} marked</span>
+          <p>Click to view all groups.</p>
+        </div>`;
+    });
+
+    grid.innerHTML = html;
+  });
+}
+
+function openTeacherClass(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  const teacherClassSelect = document.getElementById('teacherClassName');
+  if(teacherClassSelect) teacherClassSelect.value = cls;
+  showPage('teacherClassPage');
+  renderTeacherClassGroups(cls);
+}
+
+function renderTeacherClassGroups(cls){
+  document.getElementById('teacherClassTitle').innerHTML = '📚 Class ' + classDisplayName(cls) + ' Groups';
+
+  hubRef.child('classes/' + cls).once('value', snap=>{
+    const classData = snap.val() || {};
+    const groups = classData.groups || {};
+    const stage = classData.settings?.stage || 'work';
+    const released = classData.settings?.resultsReleased === true;
+
+    let joined = 0, final = 0, progress = 0;
+    let html = '';
+
+    for(let i=1;i<=10;i++){
+      const g = groups['group'+i] || {};
+      const students = g.students || {};
+      const names = getGroupMemberNames(students) || 'No students joined yet';
+      const hasWork = Object.keys(students).some(id => String(students[id]?.answer || '').trim());
+      const status = g.finalSubmitted ? '✅ Final Submitted' : (hasWork ? '✍️ In Progress' : 'Empty');
+      const pill = g.finalSubmitted ? 'pillFinal' : (hasWork ? 'pillProgress' : 'pillEmpty');
+
+      if(Object.keys(students).length) joined++;
+      if(g.finalSubmitted) final++;
+      if(hasWork && !g.finalSubmitted) progress++;
+
+      html += `
+      <div class="teacherGroupCard">
+        <h3>Group ${i} <span class="statusPill ${pill}">${status}</span></h3>
+        <p><b>Members:</b> ${escapeHtml(names)}</p>
+        <p><b>Teacher Points:</b> ${escapeHtml(g.teacherMark ?? 'Not marked')}</p>
+        <button onclick="openTeacherGroupReview('${cls}',${i})">👀 Check Group Work</button>
+      </div>`;
+    }
+
+    document.getElementById('teacherClassSummary').innerHTML =
+      '<b>Stage:</b> ' + escapeHtml(stage) +
+      ' | <b>Results released:</b> ' + (released ? 'Yes ✅' : 'No') +
+      ' | <b>Joined:</b> ' + joined +
+      ' | <b>In progress:</b> ' + progress +
+      ' | <b>Final submitted:</b> ' + final;
+
+    document.getElementById('teacherGroupsGrid').innerHTML = html;
+  });
+}
+
+function openTeacherGroupReview(cls, groupNumber){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherGroupReviewPage');
+  document.getElementById('teacherGroupReviewTitle').innerHTML = '📝 Class ' + classDisplayName(cls) + ' — Group ' + groupNumber;
+
+  hubRef.child('classes/' + cls + '/groups/group' + groupNumber).once('value', snap=>{
+    const g = snap.val() || {};
+    const students = g.students || {};
+    const hasSavedWork = Object.keys(students).some(id => String(students[id]?.answer || '').trim());
+    const status = g.finalSubmitted ? '✅ Final Submitted' : (hasSavedWork ? '✍️ In Progress / Saved Work' : 'No saved work yet');
+
+    let studentWorkHtml = '';
+    Object.keys(students).forEach(id=>{
+      const s = students[id] || {};
+      studentWorkHtml += `
+        <div class="studentBox">
+          <h3>👤 ${escapeHtml(s.name || id)} <span class="roleBadge">${s.role === 'leader' ? 'Leader' : 'Member'}</span></h3>
+          <div class="answerBox">${escapeHtml(s.answer || 'No saved work yet.')}</div>
+        </div>`;
+    });
+
+    if(!studentWorkHtml) studentWorkHtml = '<div class="soft">No students joined this group yet.</div>';
+
+    const finalAnswer = g.answer || 'Final group work not submitted yet.';
+
+    document.getElementById('teacherGroupReviewContent').innerHTML = `
+      <div class="soft">
+        <b>Status:</b> ${status}<br>
+        <b>Members:</b> ${escapeHtml(getGroupMemberNames(students) || 'No members')}<br>
+        <b>Submitted by:</b> ${escapeHtml(g.submittedBy || '-')}
+      </div>
+
+      <h3>💾 Saved Individual Work</h3>
+      ${studentWorkHtml}
+
+      <h3>📌 Final Submitted Group Work</h3>
+      <div class="teacherAnswerWide">${escapeHtml(finalAnswer)}</div>
+
+      <div class="soft">
+        <h3>⭐ Teacher Mark</h3>
+        <div class="markBox">
+          <div>
+            <label>Points for Group ${groupNumber}</label>
+            <input id="teacherMarkInput" type="number" min="0" value="${escapeHtml(g.teacherMark ?? '')}" placeholder="Write points">
+          </div>
+          <button onclick="saveTeacherGroupMark('${cls}',${groupNumber})" class="green">Save Points</button>
+        </div>
+        <label>Teacher Note</label>
+        <textarea id="teacherNoteInput" placeholder="Optional feedback note...">${escapeHtml(g.teacherNote || '')}</textarea>
+      </div>`;
+  });
+}
+
+async function saveTeacherGroupMark(cls, groupNumber){
+  if(!checkTeacherPassword()) return;
+  const mark = document.getElementById('teacherMarkInput').value;
+  const note = document.getElementById('teacherNoteInput').value;
+  await hubRef.child('classes/' + cls + '/groups/group' + groupNumber).update({
+    teacherMark: mark,
+    teacherNote: note,
+    markedAt: Date.now()
+  });
+  alert('✅ Points saved for Group ' + groupNumber + '.');
+}
+
+async function openWorkStageForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/stage').set('work');
+  alert('Work stage opened for Class ' + classDisplayName(currentTeacherClass) + '.');
+  renderTeacherClassGroups(currentTeacherClass);
+}
+
+async function openVotingStageForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/stage').set('voting');
+  openTeacherVotingResults(currentTeacherClass);
+}
+
+function openTeacherVotingResults(cls){
+  currentTeacherClass = cls;
+  currentClass = cls;
+  sessionStorage.setItem('skillClashTeacherClass', cls);
+  showPage('teacherVotingResultsPage');
+  document.getElementById('teacherVotingTitle').innerHTML = '🗳 Class ' + classDisplayName(cls) + ' Voting Results';
+  renderTeacherVotingResults(cls);
+}
+
+function calculateVotingScores(votes){
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+  Object.keys(votes || {}).forEach(battleKey=>{
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(voteKey=>{
+      const v = battle[voteKey] || {};
+      if(v.teamA) scores[v.teamA] += Number(v.scoreA || 0);
+      if(v.teamB) scores[v.teamB] += Number(v.scoreB || 0);
+    });
+  });
+  return scores;
+}
+
+function renderTeacherVotingResults(cls){
+  hubRef.child('classes/' + cls).once('value', snap=>{
+    const classData = snap.val() || {};
+    const votes = classData.votes || {};
+    const groups = classData.groups || {};
+    const released = classData.settings?.resultsReleased === true;
+    const scores = calculateVotingScores(votes);
+    const ranking = Object.keys(scores).map(team=>({team, score:scores[team]})).sort((a,b)=>b.score-a.score);
+
+    let html = `<div class="soft"><b>Results released to students:</b> ${released ? 'Yes ✅' : 'No'}</div>`;
+    html += '<h3>⚔️ Competitive Team Results</h3>';
+
+    [[1,2],[3,4],[5,6],[7,8],[9,10]].forEach(pair=>{
+      const a = pair[0], b = pair[1];
+      const scoreA = scores[a] || 0;
+      const scoreB = scores[b] || 0;
+      let winner = 'Tie';
+      if(scoreA > scoreB) winner = 'Group ' + a;
+      if(scoreB > scoreA) winner = 'Group ' + b;
+      html += `
+        <div class="resultMini">
+          <b>Group ${a} VS Group ${b}</b><br>
+          Group ${a}: ${scoreA} | Group ${b}: ${scoreB}<br>
+          🏆 Battle Winner: <b>${winner}</b>
+        </div>`;
+    });
+
+    html += '<h3>🏆 Whole Class Ranking</h3>';
+    ranking.forEach((item,index)=>{
+      const g = groups['group'+item.team] || {};
+      const teacherMark = Number(g.teacherMark || 0);
+      const totalWithTeacher = Number(item.score || 0) + teacherMark;
+      let medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : '🏅';
+      html += `
+        <div class="resultMini">
+          <h3>${medal} Group ${item.team}</h3>
+          Student Voting Score: <b>${item.score}</b><br>
+          Teacher Points: <b>${teacherMark}</b><br>
+          Total: <b>${totalWithTeacher}</b>
+        </div>`;
+    });
+
+    document.getElementById('teacherVotingResultsBox').innerHTML = html;
+  });
+}
+
+async function releaseResultsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/resultsReleased').set(true);
+  alert('✅ Results released to students.');
+  renderTeacherVotingResults(currentTeacherClass);
+}
+
+async function hideResultsForCurrentClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  await hubRef.child('classes/' + currentTeacherClass + '/settings/resultsReleased').set(false);
+  alert('Results are hidden from students.');
+  renderTeacherVotingResults(currentTeacherClass);
+}
+
+async function resetCurrentTeacherClass(){
+  if(!checkTeacherPassword()) return;
+  if(!currentTeacherClass){ alert('Choose a class first.'); return; }
+  if(!confirm('Reset Class ' + classDisplayName(currentTeacherClass) + '?')) return;
+  await hubRef.child('classes/' + currentTeacherClass).set({settings:{stage:'work',resultsReleased:false}});
+  alert('Reset done.');
+  renderTeacherClassGroups(currentTeacherClass);
+}
+
   window.addEventListener('load', function(){
 
   if(currentClass){
@@ -1621,7 +1986,9 @@ function loginTeacher(){
   document.getElementById('teacherPass').value = pass;
 
   showPage('teacherPage');
+  renderTeacherDashboard();
 }
+
 
   function nextBattle(){
   currentBattleIndex++;
