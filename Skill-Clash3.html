@@ -1259,6 +1259,80 @@ button:hover{filter:brightness(.96)}
   font-size:12px;
 }
 
+
+/* ===== CLEAN FINAL IMAGE STYLE: compact thumbnail + neat maximize ===== */
+.imagePreviewBox{
+  margin:6px 12px 6px 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  display:inline-flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:5px !important;
+  max-width:140px !important;
+  float:left !important;
+}
+.activityImg,
+.groupTaskImg{
+  width:120px !important;
+  height:90px !important;
+  max-width:120px !important;
+  max-height:90px !important;
+  object-fit:contain !important;
+  display:block !important;
+  background:white !important;
+  border:1px solid #cfe0f7 !important;
+  border-radius:10px !important;
+  padding:3px !important;
+  cursor:pointer !important;
+  box-shadow:0 2px 8px rgba(36,59,107,.08) !important;
+}
+.imageToggleBtn{
+  width:120px !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:5px 7px !important;
+  font-size:11px !important;
+  border-radius:9px !important;
+  background:#243b6b !important;
+  line-height:1.15 !important;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  position:fixed !important;
+  z-index:999999 !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:88vw !important;
+  max-height:82vh !important;
+  background:white !important;
+  padding:12px !important;
+  border:3px solid #243b6b !important;
+  border-radius:18px !important;
+  box-shadow:0 20px 60px rgba(0,0,0,.35) !important;
+}
+.imagePreviewBox:has(.maximized)::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.55);
+  z-index:999998;
+}
+.instructionBox::after,
+.taskBox::after{
+  content:"";
+  display:block;
+  clear:both;
+}
+.instructionBox,
+.taskBox{
+  overflow:auto !important;
+}
+
 </style>
 </head>
 
@@ -3166,7 +3240,7 @@ function imageHtml(src, className, altText){
   const cls = className || 'activityImg';
   return `<div class="imagePreviewBox">
     <img id="${id}" class="${cls}" src="${src}" alt="${escapeHtml(altText || 'Activity picture')}" onclick="toggleActivityImage(this.nextElementSibling,'${id}')">
-    <button type="button" class="imageToggleBtn" onclick="toggleActivityImage(this,'${id}')">🔍 Maximize Picture</button>
+    <button type="button" class="imageToggleBtn" onclick="toggleActivityImage(this,'${id}')">🔍 View</button>
   </div>`;
 }
 function renderMainImagePreview(){
