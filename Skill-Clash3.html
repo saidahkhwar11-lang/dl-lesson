@@ -1216,6 +1216,49 @@ button:hover{filter:brightness(.96)}
   font-size:12px;
 }
 
+
+/* ===== FINAL FIX: small activity pictures + maximize/minimize ===== */
+.imagePreviewBox{
+  margin-top:10px;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  background:#f8fbff;
+  padding:8px;
+  overflow:visible;
+  display:inline-block;
+  max-width:100%;
+}
+.activityImg,
+.groupTaskImg{
+  width:180px !important;
+  max-width:100% !important;
+  max-height:130px !important;
+  object-fit:contain !important;
+  display:block;
+  background:white;
+  border-radius:12px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:all .25s ease;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  width:100% !important;
+  max-width:100% !important;
+  max-height:70vh !important;
+}
+.imageToggleBtn{
+  display:block;
+  width:180px;
+  max-width:100%;
+  margin-top:7px;
+  background:#243b6b;
+  color:white;
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:12px;
+}
+
 </style>
 </head>
 
@@ -3119,14 +3162,19 @@ function readImageAsDataUrl(file, maxWidth = 1000, quality = 0.82){
 }
 function imageHtml(src, className, altText){
   if(!src) return '';
-  return `<div class="imagePreviewBox"><img class="${className || 'activityImg'}" src="${src}" alt="${escapeHtml(altText || 'Activity picture')}"></div>`;
+  const id = 'activity_img_' + Math.random().toString(36).slice(2,10);
+  const cls = className || 'activityImg';
+  return `<div class="imagePreviewBox">
+    <img id="${id}" class="${cls}" src="${src}" alt="${escapeHtml(altText || 'Activity picture')}" onclick="toggleActivityImage(this.nextElementSibling,'${id}')">
+    <button type="button" class="imageToggleBtn" onclick="toggleActivityImage(this,'${id}')">🔍 Maximize Picture</button>
+  </div>`;
 }
 function renderMainImagePreview(){
   const box = document.getElementById('builderMainImagePreview');
   if(!box) return;
   if(builderMainImageData){
     box.classList.remove('hidden');
-    box.innerHTML = `<img class="activityImg" src="${builderMainImageData}" alt="Main activity picture">`;
+    box.innerHTML = imageHtml(builderMainImageData, 'activityImg', 'Main activity picture');
   }else{
     box.classList.add('hidden');
     box.innerHTML = '';
