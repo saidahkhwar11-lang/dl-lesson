@@ -823,6 +823,29 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
 }
 
+.certActions{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin:12px 0 16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.certActions button{
+  margin:0;
+  min-width:230px;
+  background:linear-gradient(135deg,#f59e0b,#ec4899);
+}
+.certMsg{
+  flex:1;
+  min-width:240px;
+  font-weight:800;
+  color:#92400e;
+}
+
 @media(max-width:900px){
   .studentLayout,.builderGrid{grid-template-columns:1fr}
   .classGrid,.groupCards,.groupTaskGrid,.currentGrid{grid-template-columns:1fr 1fr}
@@ -1071,12 +1094,6 @@ button:hover{filter:brightness(.96)}
           <div id="membersWorkBox" class="memberWorkBox"></div>
         </div>
 
-        <div class="achievement">
-          <h2>🏅 My Achievement</h2>
-          <p>Check after teacher releases results.</p>
-          <button onclick="checkAchievement()">🏆 Check My Achievement</button>
-          <div id="achievementMsg"></div>
-        </div>
       </div>
 
       <div>
@@ -1554,11 +1571,7 @@ function switchVotingModeUI(){
     if(peer) peer.classList.add('hidden');
     if(battle) battle.classList.remove('hidden');
     if(rule) rule.innerText = 'System 1 is open: Group Work VS Group Work. You can see both answers, but you only score the other group.';
-if(badge){
-  badge.innerText = '⚔️ Group VS Group';
-  badge.style.background = '#dc2626';
-  badge.style.color = '#fff';
-}
+    if(badge) badge.innerText = '⚔️ Group VS Group';
   }else{
     if(peer) peer.classList.remove('hidden');
     if(battle) battle.classList.add('hidden');
@@ -1749,10 +1762,9 @@ function renderBattleVoting(){
   const startHiddenClass = battleVotingStarted ? 'hidden' : '';
 
   const html = `<div class="card cleanBattleCard" style="grid-column:1/-1">
-    <div class="battleVoteMainTitle compactTitle" style="background:#ec4899;color:white;">
-    
+    <div class="battleVoteMainTitle compactTitle">
       <h2>⚔️ Group ${a} VS Group ${b}</h2>
-<p style="color:white;">Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
+      <p>Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
     </div>
 
     <div class="battleReadGrid compactReadGrid">
@@ -2053,25 +2065,38 @@ function renderStudentResults(){
   if(!content) return;
 
   const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
-  const voteSystem = (classData.settings || {}).voteSystem || 'peer';
   const results = calculateVotingResults(classData);
-  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore || a.groupNum-b.groupNum);
   const title = currentVoteSystem === 'battle' ? '⚔️ Group Work VS Group Work Results' : '🗳 Peer Assessment Results';
 
   let pairHtml = '';
   if(currentVoteSystem === 'battle'){
     [[1,2],[3,4],[5,6],[7,8],[9,10]].forEach(pair=>{
       const a = results['group'+pair[0]], b = results['group'+pair[1]];
-      const winner = (a.finalScore === b.finalScore) ? 'Tie' : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+      const maxScore = Math.max(a.finalScore, b.finalScore);
+      const hasScore = maxScore > 0 || a.voteCount > 0 || b.voteCount > 0;
+      let winner = 'No winner yet';
+      if(hasScore){
+        winner = (a.finalScore === b.finalScore) ? `Tie: Group ${a.groupNum} & Group ${b.groupNum}` : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+      }
       pairHtml += `<tr><td>Group ${pair[0]} VS Group ${pair[1]}</td><td>Group ${a.groupNum}: ${a.finalScore}<br>Group ${b.groupNum}: ${b.finalScore}</td><td><b>${winner}</b></td></tr>`;
     });
   }
 
+  const topScore = sorted.length ? sorted[0].finalScore : 0;
+  const wholeWinners = topScore > 0 ? sorted.filter(r=>r.finalScore === topScore).map(r=>'Group '+r.groupNum).join(', ') : 'No winner yet';
+
   let html = `<h3>${title}</h3><div class="resultFormulaBox">Final Total = Voting Points + Teacher Mark. If the teacher did not mark a group, teacher mark counts as 0.</div>`;
-  if(sorted[0]) html += `<div class="winnerBox">🏆 Whole Class Winner: Group ${sorted[0].groupNum}</div>`;
+  html += `<div class="winnerBox">🏆 Whole Class Winner: ${escapeHtml(wholeWinners)}</div>`;
+
   if(pairHtml){
     html += `<h3>⚔️ Competitive Teams Results</h3><table class="resultTable"><tr><th>Battle</th><th>Scores</th><th>Winner</th></tr>${pairHtml}</table>`;
+    html += `<div class="certActions">
+      <button onclick="checkBattleAchievement()">🏅 Check My Battle Certificate</button>
+      <div id="battleCertMsg" class="certMsg">This checks only your group battle result.</div>
+    </div>`;
   }
+
   html += '<h3>🌟 Whole Class Results</h3><table class="resultTable"><tr><th>Rank</th><th>Group</th><th>Criteria Pts</th><th>Best Group Bonus</th><th>Voting Points</th><th>Teacher Mark</th><th>Final Total</th></tr>';
   sorted.forEach((r,idx)=>{
     html += `<tr>
@@ -2085,8 +2110,140 @@ function renderStudentResults(){
     </tr>`;
   });
   html += '</table>';
+  html += `<div class="certActions">
+      <button onclick="checkWholeClassAchievement()">🏆 Check My Whole Class Certificate</button>
+      <div id="wholeCertMsg" class="certMsg">This checks only your group whole-class result.</div>
+    </div>`;
   content.innerHTML = html;
 }
+
+function getCurrentResults(){
+  const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
+  return calculateVotingResults(classData);
+}
+
+function getMyBattlePair(){
+  const n = Number(currentGroup);
+  if(!n) return null;
+  return n % 2 === 1 ? [n, n+1] : [n-1, n];
+}
+
+function checkBattleAchievement(){
+  const msg = document.getElementById('battleCertMsg');
+  const results = getCurrentResults();
+  const pair = getMyBattlePair();
+  if(!pair || !results['group'+pair[0]] || !results['group'+pair[1]]){
+    if(msg) msg.innerHTML = 'No battle result found for your group.';
+    return;
+  }
+
+  const a = results['group'+pair[0]];
+  const b = results['group'+pair[1]];
+  const my = results['group'+currentGroup];
+  const maxScore = Math.max(a.finalScore, b.finalScore);
+  const hasScore = maxScore > 0 || a.voteCount > 0 || b.voteCount > 0;
+
+  if(!hasScore){
+    if(msg) msg.innerHTML = 'Your battle does not have results yet.';
+    return;
+  }
+
+  if(my.finalScore === maxScore){
+    const isTie = a.finalScore === b.finalScore;
+    downloadCertificate({
+      certType:'Battle Winner Certificate',
+      title:isTie ? 'Battle Tie Winner' : 'Battle Winner',
+      subtitle:`Group ${pair[0]} VS Group ${pair[1]}`,
+      detail:`Final Battle Score: Group ${a.groupNum} = ${a.finalScore}, Group ${b.groupNum} = ${b.finalScore}`,
+      note:isTie ? 'Awarded because your group tied for the highest battle score.' : 'Awarded because your group won this battle.'
+    });
+    if(msg) msg.innerHTML = '✅ Congratulations! Your battle certificate has been downloaded.';
+  }else{
+    if(msg) msg.innerHTML = '⭐ Great effort! Your group did not win this battle certificate this time.';
+  }
+}
+
+function checkWholeClassAchievement(){
+  const msg = document.getElementById('wholeCertMsg');
+  const results = getCurrentResults();
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore || a.groupNum-b.groupNum);
+  if(!sorted.length || sorted[0].finalScore <= 0){
+    if(msg) msg.innerHTML = 'Whole class results are not ready yet.';
+    return;
+  }
+
+  const topScore = sorted[0].finalScore;
+  const my = results['group'+currentGroup];
+  const winnerGroups = sorted.filter(r=>r.finalScore === topScore).map(r=>r.groupNum);
+
+  if(my && my.finalScore === topScore){
+    const isTie = winnerGroups.length > 1;
+    downloadCertificate({
+      certType:'Whole Class Winner Certificate',
+      title:isTie ? 'Whole Class Tie Winner' : 'Whole Class First Winner',
+      subtitle:`Skill Clash Whole Class Results`,
+      detail:`Final Total: ${my.finalScore} points`,
+      note:isTie ? `Awarded because your group tied for first place with Group ${winnerGroups.join(', Group ')}.` : 'Awarded because your group achieved first place in the whole class.'
+    });
+    if(msg) msg.innerHTML = '✅ Congratulations! Your whole class certificate has been downloaded.';
+  }else{
+    if(msg) msg.innerHTML = '⭐ Great effort! Your group did not receive the whole class winner certificate this time.';
+  }
+}
+
+function downloadCertificate(info){
+  const safeStudent = escapeHtml(currentStudent || 'Student');
+  const safeGroup = escapeHtml(currentGroup || '');
+  const dateText = new Date().toLocaleDateString();
+  const fileName = `${(info.title || 'Skill Clash Certificate').replace(/[^a-z0-9]+/gi,'_')}_Group_${safeGroup}_${(currentStudent || 'student').replace(/[^a-z0-9]+/gi,'_')}.html`;
+
+  const certHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(info.title)}</title>
+  <style>
+    body{margin:0;background:#eef4fb;font-family:Arial,sans-serif;color:#10233f;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:30px;}
+    .cert{width:1000px;max-width:100%;background:white;border:12px solid #f7c948;border-radius:28px;padding:52px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.16);position:relative;}
+    .cert:before{content:"";position:absolute;inset:18px;border:3px solid #1f4f99;border-radius:18px;pointer-events:none;}
+    .school{font-size:22px;font-weight:800;color:#1f4f99;letter-spacing:2px;text-transform:uppercase;}
+    h1{font-size:54px;margin:28px 0 8px;color:#b45309;}
+    h2{font-size:34px;margin:10px 0;color:#0f2f66;}
+    .presented{font-size:20px;margin-top:30px;color:#475569;}
+    .name{font-size:46px;font-weight:900;color:#0f2f66;margin:12px 0;border-bottom:3px solid #dbeafe;display:inline-block;padding:0 35px 10px;}
+    .group{font-size:28px;font-weight:800;color:#15803d;margin:10px 0;}
+    .detail{background:#eff6ff;border:1px solid #bfdbfe;border-radius:18px;padding:18px;margin:28px auto;max-width:760px;font-size:22px;font-weight:700;}
+    .note{font-size:20px;line-height:1.55;max-width:760px;margin:20px auto;color:#334155;}
+    .bottom{display:flex;justify-content:space-between;margin-top:55px;text-align:center;color:#334155;font-weight:700;}
+    .line{border-top:2px solid #94a3b8;width:240px;margin:8px auto;}
+    .print{position:fixed;top:15px;right:15px;background:#1d4ed8;color:white;border:0;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;}
+    @media print{.print{display:none}body{background:white;padding:0}.cert{box-shadow:none;width:100%;min-height:90vh}}
+  </style></head><body>
+  <button class="print" onclick="window.print()">Print / Save PDF</button>
+  <div class="cert">
+    <div class="school">Al Reyada School · Skill Clash Hub</div>
+    <h1>🏆 ${escapeHtml(info.certType)}</h1>
+    <h2>${escapeHtml(info.title)}</h2>
+    <div class="presented">This certificate is proudly awarded to</div>
+    <div class="name">${safeStudent}</div>
+    <div class="group">Group ${safeGroup}</div>
+    <div class="detail">${escapeHtml(info.subtitle)}<br>${escapeHtml(info.detail)}</div>
+    <div class="note">${escapeHtml(info.note)} Thank you for your teamwork, effort, and active participation.</div>
+    <div class="bottom">
+      <div><div class="line"></div>Teacher</div>
+      <div>Date: ${escapeHtml(dateText)}</div>
+      <div><div class="line"></div>School</div>
+    </div>
+  </div></body></html>`;
+
+  const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 500);
+}
+
 
 
 async function saveMyWork(){
@@ -2599,10 +2756,6 @@ async function resetSelectedClass(){
   if(!confirm('Reset this class? This clears groups and assignments.')) return;
   await hubRef.child('classes/'+selectedTeacherClass).remove();
 }
-function checkAchievement(){
-  document.getElementById('achievementMsg').innerHTML = '<p class="note">Achievement certificates will appear after teacher releases results.</p>';
-}
-
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
   buildAssignGroupChecks();
