@@ -1383,6 +1383,7 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
     <div class="teacherTopActions">
       <button onclick="startActivityTimer()" class="green">⏱ Start Timer</button>
       <button onclick="leaveTeacher()" class="red">🚪 Leave Dashboard</button>
+      <button onclick="finishActivityFromDashboard()" class="red">🏁 Finish Activity + Excel</button>
     </div>
 
     <div class="soft compactTimer">
@@ -1528,6 +1529,7 @@ Correct grammar and spelling"></textarea>
     <button onclick="openVotingStageForCurrentClass()">🗳 Voting Stage</button>
     <button onclick="openTeacherVotingResults(currentTeacherClass)">📊 Voting Results</button>
     <button onclick="openTeacherChatControl(currentTeacherClass)">💬 Chat Control</button>
+    <button onclick="finishActivityForCurrentClass()" class="red">🏁 Finish Activity + Excel</button>
     <button onclick="resetCurrentTeacherClass()" class="red">🗑 Reset This Class</button>
   </div>
   <div id="teacherClassSummary" class="soft"></div>
@@ -3976,6 +3978,169 @@ async function submitCombinedGroupWork(){
 window.addEventListener('load', function(){
   toggleAssignTargetMode();
 });
+
+
+/* ===== FINAL EDIT: safe leave + finish activity archive/export ===== */
+function csvSafe(value){
+  value = String(value == null ? '' : value);
+  return '"' + value.replace(/"/g,'""').replace(/\r?\n/g,'\n') + '"';
+}
+
+function downloadTextFile(filename, text){
+  const blob = new Blob(['\ufeff' + text], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function buildActivityCSV(className, classData){
+  const rows = [];
+  rows.push(['Class','Group','Status','Activity','Task','Members','Leader','Student Name','Role','Saved Work','Final Group Work','Teacher Points','Teacher Comment','Votes Score','Final Submitted At'].map(csvSafe).join(','));
+
+  const groups = (classData && classData.groups) || {};
+  const votes = (classData && classData.votes) || {};
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+
+  Object.keys(votes).forEach(function(battleKey){
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(function(voteKey){
+      const v = battle[voteKey] || {};
+      if(v.teamA) scores[v.teamA] = (scores[v.teamA] || 0) + Number(v.scoreA || 0);
+      if(v.teamB) scores[v.teamB] = (scores[v.teamB] || 0) + Number(v.scoreB || 0);
+    });
+  });
+
+  for(let i=1;i<=10;i++){
+    const groupKey = 'group' + i;
+    const g = groups[groupKey] || {};
+    const students = g.students || {};
+    const activity = ((classData.groupActivities || {})[groupKey]) || classData.currentActivity || {};
+    const task = (typeof getAssignedTask === 'function') ? getAssignedTask(activity, i) : (activity.sameTask || '');
+    const ids = Object.keys(students);
+    const members = ids.map(id => (students[id] && students[id].name) || id).join(' | ');
+    const leader = ids.map(id => students[id] || {}).find(s => s.role === 'leader') || {};
+    const teacherFeedback = g.teacherFeedback || {};
+    const teacherPoints = g.teacherPoints || teacherFeedback.points || '';
+    const teacherComment = g.teacherComment || teacherFeedback.comment || (g.teacherNote && g.teacherNote.text) || '';
+    const status = g.finalSubmitted ? 'Final Submitted' : (g.hasSavedWork ? 'In Progress' : (ids.length ? 'Joined' : 'Empty'));
+    const finalSubmittedAt = g.submittedAt ? new Date(g.submittedAt).toLocaleString() : '';
+
+    if(ids.length){
+      ids.forEach(function(id){
+        const st = students[id] || {};
+        rows.push([
+          classDisplayName ? classDisplayName(className) : className,
+          'Group ' + i,
+          status,
+          activity.name || '',
+          task || '',
+          members,
+          leader.name || '',
+          st.name || id,
+          st.role || '',
+          st.answer || '',
+          g.answer || '',
+          teacherPoints,
+          teacherComment,
+          scores[i] || 0,
+          finalSubmittedAt
+        ].map(csvSafe).join(','));
+      });
+    }else{
+      rows.push([
+        classDisplayName ? classDisplayName(className) : className,
+        'Group ' + i,
+        'Empty', activity.name || '', task || '', '', '', '', '', '', '', teacherPoints, teacherComment, scores[i] || 0, ''
+      ].map(csvSafe).join(','));
+    }
+  }
+  return rows.join('\n');
+}
+
+async function finishActivityForClass(className){
+  if(!checkTeacherPassword()) return;
+  if(!className){ alert('Choose a class first.'); return; }
+
+  const prettyClass = (typeof classDisplayName === 'function') ? classDisplayName(className) : className;
+  if(!confirm('Finish activity for ' + prettyClass + '? Results will download as an Excel/CSV sheet and the class workspace will be cleared for a new activity. Saved activity library will stay.')) return;
+
+  const snap = await hubRef.child('classes/' + className).once('value');
+  const classData = snap.val() || {};
+  const finishedAt = Date.now();
+  const archiveId = 'finished_' + finishedAt;
+  const csv = buildActivityCSV(className, classData);
+
+  await hubRef.child('activityArchives/' + className + '/' + archiveId).set({
+    className: className,
+    finishedAt: finishedAt,
+    finishedBy: 'Ms. Saidah Khwar',
+    csv: csv,
+    data: classData
+  });
+
+  downloadTextFile('Skill-Clash-' + prettyClass.replace(/\W+/g,'-') + '-' + new Date(finishedAt).toISOString().slice(0,10) + '.csv', csv);
+
+  await hubRef.child('classes/' + className).set({
+    settings:{
+      stage:'work',
+      resultsReleased:false,
+      activityFinished:false,
+      lastFinishedAt: finishedAt
+    },
+    currentActivity:null,
+    groupActivities:null
+  });
+
+  alert('✅ Activity finished. Excel/CSV downloaded and results archived. You can now assign a new activity.');
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+  if(currentTeacherClass === className && typeof renderTeacherClassGroups === 'function') renderTeacherClassGroups(className);
+}
+
+async function finishActivityForCurrentClass(){
+  await finishActivityForClass(currentTeacherClass);
+}
+
+async function finishActivityFromDashboard(){
+  if(!checkTeacherPassword()) return;
+  let className = currentTeacherClass || (document.getElementById('teacherClassName') && document.getElementById('teacherClassName').value) || '';
+  if(!className){
+    className = prompt('Which class do you want to finish? Write: 9-1, 9-2, 9-3, or 9-4') || '';
+    className = className.trim();
+  }
+  await finishActivityForClass(className);
+}
+
+// Leaving should only exit the page/session. It must NOT delete saved work, chat, groups, or system data.
+function leaveGroup(){
+  if(currentGroupRef){ currentGroupRef.off(); }
+  sessionStorage.removeItem('skillClashGroup');
+  sessionStorage.removeItem('skillClashStudent');
+  sessionStorage.removeItem('skillClashClass');
+  sessionStorage.removeItem('skillClashRole');
+  sessionStorage.removeItem('skillClashStudentId');
+  currentGroup = '';
+  currentStudent = '';
+  currentRole = '';
+  currentStudentId = '';
+  currentClass = '';
+  currentGroupRef = null;
+  showPage('studentPage');
+}
+
+function leaveTeacher(){
+  teacherLoggedIn = false;
+  sessionStorage.removeItem('skillClashTeacherClass');
+  currentTeacherClass = '';
+  const pass = document.getElementById('teacherPass');
+  if(pass) pass.value = 'Welcome@2020';
+  showPage('teacherLoginPage');
+}
 </script>
 
 </body>
