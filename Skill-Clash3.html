@@ -4141,6 +4141,223 @@ function leaveTeacher(){
   if(pass) pass.value = 'Welcome@2020';
   showPage('teacherLoginPage');
 }
+
+
+/* =========================================================
+   FINAL FIX: Activity Builder is the ONLY source for student task.
+   - Removes old hardcoded group topics from student view.
+   - Whole-class assignment clears old group-specific assignments.
+   - Selected-group assignment writes only to those groups.
+   - Student page always reads latest assigned activity from Firebase.
+   ========================================================= */
+
+function safeEscape(text){
+  if(typeof escapeHtml === 'function') return escapeHtml(text);
+  return String(text || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;');
+}
+
+function getGroupAssignedActivity(classData, groupNumber){
+  const groupKey = 'group' + String(groupNumber || '');
+  const groupActivity = classData && classData.groupActivities && classData.groupActivities[groupKey];
+  const classActivity = classData && classData.currentActivity;
+  return groupActivity || classActivity || null;
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  const g = String(groupNumber || '');
+  if(activity.taskMode === 'different'){
+    return (
+      (activity.groupTasks && activity.groupTasks[g]) ||
+      (activity.groupTasks && activity.groupTasks['group' + g]) ||
+      activity.sameTask ||
+      ''
+    );
+  }
+  return activity.sameTask || '';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const topic = document.getElementById('groupTopic');
+  const box = document.getElementById('studentActivityDetails');
+  if(!topic || !box) return;
+
+  if(!activity){
+    topic.innerHTML = '<div class="activityTitleLine">No activity assigned yet</div>';
+    box.innerHTML = '<div class="activityInstructionClean">Your teacher has not assigned an activity to this class/group yet.</div>';
+    return;
+  }
+
+  const taskText = getAssignedTask(activity, groupNumber) || 'No task written for this group yet.';
+  const instructions = activity.instructions || 'Read your task carefully. Save your work, then the leader submits the final group work.';
+  const criteriaList = Array.isArray(activity.successCriteria)
+    ? activity.successCriteria
+    : String(activity.successCriteria || '').split('\n').map(x=>x.trim()).filter(Boolean);
+
+  topic.innerHTML =
+    '<div class="activityTitleLine">' + safeEscape(activity.name || 'Group Activity') + '</div>' +
+    '<div class="activityTaskClean">' + safeEscape(taskText) + '</div>';
+
+  box.innerHTML =
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="activityInstructionClean">' + safeEscape(instructions) + '</div>' +
+    '<div class="studentCriteriaBox">' +
+      '<h3>✅ Success Criteria Checklist</h3>' +
+      '<p class="smallHint">Tick each item before the group leader submits the final work.</p>' +
+      (criteriaList.length
+        ? criteriaList.map((c,i)=>
+            '<label class="studentCriteriaItem">' +
+              '<input type="checkbox" class="studentCriteriaCheck" data-index="' + i + '"> ' +
+              '<span>' + safeEscape(c) + '</span>' +
+            '</label>'
+          ).join('')
+        : '<p>No success criteria added.</p>') +
+    '</div>';
+}
+
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  hubRef.child('classes/' + currentClass).once('value', function(snap){
+    const classData = snap.val() || {};
+    currentActivity = getGroupAssignedActivity(classData, currentGroup);
+    renderActivityDetails(currentActivity, currentGroup);
+  });
+}
+
+async function joinGroup(){
+  teacherLoggedIn = false;
+
+  const group = document.getElementById('studentGroup').value;
+  const className = document.getElementById('className').value;
+  const studentName = document.getElementById('studentName').value.trim();
+  const role = document.getElementById('studentRole').value;
+
+  if(!className || !group || !studentName || !role){
+    alert('Choose class, write your name, choose role, and choose group number.');
+    return;
+  }
+
+  currentGroup = group;
+  currentStudent = studentName;
+  currentRole = role;
+  currentStudentId = makeStudentId(studentName);
+  currentClass = className;
+
+  sessionStorage.setItem('skillClashStudent', studentName);
+  sessionStorage.setItem('skillClashRole', role);
+  sessionStorage.setItem('skillClashStudentId', currentStudentId);
+  sessionStorage.setItem('skillClashClass', className);
+  sessionStorage.setItem('skillClashGroup', group);
+
+  const groupPath = 'classes/' + currentClass + '/groups/group' + group;
+  const studentPath = groupPath + '/students/' + currentStudentId;
+
+  const oldStudentSnap = await hubRef.child(studentPath).once('value');
+  const oldStudent = oldStudentSnap.val() || {};
+
+  /* Do NOT write any fixed topic here. Activity Builder controls the task. */
+  await hubRef.child(groupPath).update({
+    group: group,
+    status: oldStudent.answer ? 'inProgress' : 'joined',
+    joinedAt: Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  await hubRef.child(studentPath).update({
+    id: currentStudentId,
+    name: studentName,
+    role: role,
+    answer: oldStudent.answer || '',
+    joinedAt: oldStudent.joinedAt || Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  document.getElementById('workTitle').innerHTML = 'Group ' + group + ' Work';
+  loadGroupWork();
+  loadCurrentActivityForStudent();
+  showPage('workPage');
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){
+    alert('Choose at least one class.');
+    return;
+  }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity = null;
+
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }else{
+    activity = collectBuiltActivityFromForm(activity.id);
+    await hubRef.child('builtActivities/' + activity.id).update(activity);
+  }
+
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const selectedGroups = Array.from(document.querySelectorAll('.assignGroupCheck:checked')).map(x=>String(x.value));
+
+  if(mode === 'groups' && !selectedGroups.length){
+    alert('Choose at least one group.');
+    return;
+  }
+
+  activity.assignmentMode = mode;
+  activity.assignedClasses = selectedClasses;
+  activity.assignedGroups = mode === 'groups' ? selectedGroups : [];
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+
+  selectedClasses.forEach(function(cls){
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+
+    if(mode === 'class'){
+      // Important: remove old per-group tasks so students do not see yesterday's activity.
+      updates['classes/' + cls + '/currentActivity'] = activity;
+      updates['classes/' + cls + '/groupActivities'] = null;
+    }else{
+      // Selected groups receive this activity. Other groups keep their current assignment.
+      selectedGroups.forEach(function(g){
+        updates['classes/' + cls + '/groupActivities/group' + g] = activity;
+      });
+    }
+  });
+
+  await hubRef.update(updates);
+
+  const where = mode === 'class'
+    ? selectedClasses.map(classDisplayName).join(', ')
+    : selectedClasses.map(classDisplayName).join(', ') + ' · Groups ' + selectedGroups.join(', ');
+
+  alert('✅ New activity assigned to ' + where + '. Students may refresh or rejoin to see it immediately.');
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+}
+
+async function resetOldActivityTopicsForClass(className){
+  if(!className) return;
+  const updates = {};
+  for(let i=1;i<=10;i++){
+    updates['classes/' + className + '/groups/group' + i + '/topic'] = null;
+  }
+  await hubRef.update(updates);
+}
+
+
 </script>
 
 </body>
