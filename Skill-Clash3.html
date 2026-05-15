@@ -847,6 +847,48 @@ button:hover{filter:brightness(.96)}
 }
 
 
+
+/* Student cute header timer linked with teacher timer */
+.groupHeader{position:relative; padding-right:230px;}
+.studentHeaderTimer{
+  position:absolute;
+  right:18px;
+  top:18px;
+  min-width:190px;
+  background:linear-gradient(135deg,#fff7ed,#fef3c7);
+  border:1px solid rgba(255,255,255,.55);
+  color:#7c2d12;
+  border-radius:18px;
+  padding:10px 14px;
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+  text-align:center;
+}
+.studentHeaderTimer .timerIcon{font-size:20px;line-height:1}
+.studentHeaderTimer .timerText{
+  display:block;
+  font-size:24px;
+  font-weight:900;
+  color:#18376b;
+  letter-spacing:.5px;
+  margin-top:2px;
+}
+.studentHeaderTimer .timerStatus{
+  display:block;
+  font-size:11px;
+  font-weight:900;
+  color:#92400e;
+  margin-top:2px;
+}
+.studentHeaderTimer.running{background:linear-gradient(135deg,#dcfce7,#f0fdf4);color:#065f46;}
+.studentHeaderTimer.running .timerStatus{color:#166534;}
+.studentHeaderTimer.paused{background:linear-gradient(135deg,#fef3c7,#fff7ed);}
+.studentHeaderTimer.finished{background:linear-gradient(135deg,#fee2e2,#fff1f2);}
+.studentHeaderTimer.finished .timerText{color:#b91c1c;}
+@media(max-width:760px){
+  .groupHeader{padding-right:16px;}
+  .studentHeaderTimer{position:static;margin:12px 0 0;min-width:0;width:100%;}
+}
+
 /* Teacher timer maximize popup */
 .teacherTimerLine{
   display:flex;
@@ -1182,6 +1224,11 @@ button:hover{filter:brightness(.96)}
         <h1 id="workTitle">Group Work</h1>
         <span class="statusBadge" id="statusBadge">✍️ In Progress</span>
       </div>
+      <div id="studentHeaderTimer" class="studentHeaderTimer">
+        <div class="timerIcon">⏱️</div>
+        <span id="studentTimer" class="timerText">Not started</span>
+        <span id="studentTimerStatus" class="timerStatus">Teacher timer</span>
+      </div>
       <div class="infoLine">
         <span id="infoClass"></span>
         <span id="infoGroup"></span>
@@ -1235,10 +1282,6 @@ button:hover{filter:brightness(.96)}
 
         </div>
 
-        <div class="card">
-          <h2>⏱ Timer</h2>
-          <div id="studentTimer">Not started</div>
-        </div>
 
         <details class="card">
           <summary>📌 View Final Group Answer</summary>
@@ -1546,6 +1589,8 @@ let teacherTimerInterval = null;
 let teacherTimerSeconds = 0;
 let teacherTimerPaused = false;
 let teacherTimerLastSetSeconds = 0;
+let studentTimerInterval = null;
+let latestClassTimer = {};
 
 function classDisplay(c){return c.replace('-','/')}
 function escapeHtml(text){
@@ -1683,6 +1728,8 @@ function listenClassSettings(){
     latestClassGroups = cls.groups || {};
     currentStage = settings.stage || 'work';
     currentVoteSystem = settings.voteSystem || 'peer';
+    latestClassTimer = settings.timer || {};
+    syncStudentTimerFromSettings(settings);
     latestClassVotes = currentVoteSystem === 'battle' ? (cls.battleVotes || {}) : (cls.votes || {});
 
     updateStageUI(settings);
@@ -2880,7 +2927,15 @@ function openClass(cls){
   selectedTeacherClass = cls;
   document.getElementById('classGroupsPanel').classList.remove('hidden');
   document.getElementById('selectedClassTitle').innerText = `📚 Class ${classDisplay(cls)} Groups`;
-  hubRef.child(`classes/${cls}`).once('value', snap => renderSelectedClass(snap.val() || {}));
+  hubRef.child(`classes/${cls}`).once('value', snap => {
+    const data = snap.val() || {};
+    const timer = (data.settings || {}).timer || {};
+    teacherTimerSeconds = getTimerSecondsFromSettings(timer);
+    teacherTimerPaused = timer.state === 'paused';
+    teacherTimerLastSetSeconds = Number(timer.duration || teacherTimerSeconds || 0);
+    updateTeacherTimerDisplay();
+    renderSelectedClass(data);
+  });
 }
 
 function backToDashboard(){
@@ -3170,17 +3225,61 @@ function formatTeacherTime(totalSeconds){
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
 
+function renderStudentHeaderTimer(seconds, state){
+  const studentTimer = document.getElementById('studentTimer');
+  const box = document.getElementById('studentHeaderTimer');
+  const status = document.getElementById('studentTimerStatus');
+  const sec = Math.max(0, Number(seconds || 0));
+  const txt = sec > 0 ? formatTeacherTime(sec) : 'Not started';
+  if(studentTimer) studentTimer.innerText = txt;
+  if(box){
+    box.classList.remove('running','paused','finished');
+    if(state === 'running' && sec > 0) box.classList.add('running');
+    else if(state === 'paused' && sec > 0) box.classList.add('paused');
+    else if(state === 'finished') box.classList.add('finished');
+  }
+  if(status){
+    if(state === 'running' && sec > 0) status.innerText = 'Running now';
+    else if(state === 'paused' && sec > 0) status.innerText = 'Paused by teacher';
+    else if(state === 'finished') status.innerText = 'Time is up';
+    else status.innerText = 'Teacher timer';
+  }
+}
+
+function getTimerSecondsFromSettings(timer){
+  timer = timer || {};
+  const remaining = Number(timer.remaining || 0);
+  if(timer.state === 'running'){
+    const elapsed = Math.floor((Date.now() - Number(timer.updatedAt || Date.now())) / 1000);
+    return Math.max(0, remaining - elapsed);
+  }
+  return Math.max(0, remaining);
+}
+
+function syncStudentTimerFromSettings(settings){
+  latestClassTimer = (settings && settings.timer) || latestClassTimer || {};
+  if(studentTimerInterval) clearInterval(studentTimerInterval);
+  const tick = ()=>{
+    const sec = getTimerSecondsFromSettings(latestClassTimer);
+    let state = latestClassTimer.state || 'not_started';
+    if(state === 'running' && sec <= 0) state = 'finished';
+    renderStudentHeaderTimer(sec, state);
+  };
+  tick();
+  if((latestClassTimer.state || '') === 'running'){
+    studentTimerInterval = setInterval(tick,1000);
+  }
+}
+
 function updateTeacherTimerDisplay(){
   const txt = teacherTimerSeconds > 0 ? formatTeacherTime(teacherTimerSeconds) : '00:00';
   const teacherTimer = document.getElementById('teacherTimer');
   const bigTimer = document.getElementById('bigTeacherTimer');
   const label = document.getElementById('bigTeacherTimerLabel');
   const mini = document.getElementById('currentTimerMini');
-  const studentTimer = document.getElementById('studentTimer');
   if(teacherTimer) teacherTimer.innerText = teacherTimerSeconds > 0 ? txt : 'Not started';
   if(bigTimer) bigTimer.innerText = txt;
   if(mini) mini.innerText = txt;
-  if(studentTimer) studentTimer.innerText = teacherTimerSeconds > 0 ? txt : 'Not started';
   if(label){
     if(teacherTimerSeconds <= 0) label.innerText = 'Timer not started or finished';
     else if(teacherTimerPaused) label.innerText = 'Timer paused';
@@ -3188,7 +3287,27 @@ function updateTeacherTimerDisplay(){
   }
 }
 
-function startTimer(){
+function getTeacherTimerClass(){
+  if(selectedTeacherClass) return selectedTeacherClass;
+  alert('Please open a class first, then start the timer so students in that class can see it.');
+  return '';
+}
+
+async function saveTimerToFirebase(state){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  await hubRef.child(`classes/${cls}/settings/timer`).set({
+    state,
+    remaining: Math.max(0, Number(teacherTimerSeconds || 0)),
+    duration: Math.max(0, Number(teacherTimerLastSetSeconds || teacherTimerSeconds || 0)),
+    updatedAt: Date.now(),
+    updatedBy: 'Ms. Saidah Khwar'
+  });
+}
+
+async function startTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
   const mins = prompt('Set timer minutes:', '15');
   if(mins === null) return;
   const n = Math.max(1, parseInt(mins,10) || 15);
@@ -3196,13 +3315,18 @@ function startTimer(){
   teacherTimerLastSetSeconds = teacherTimerSeconds;
   teacherTimerPaused = false;
   if(teacherTimerInterval) clearInterval(teacherTimerInterval);
-  teacherTimerInterval = setInterval(()=>{
+  await saveTimerToFirebase('running');
+  teacherTimerInterval = setInterval(async ()=>{
     if(!teacherTimerPaused && teacherTimerSeconds > 0){
       teacherTimerSeconds--;
       updateTeacherTimerDisplay();
+      if(teacherTimerSeconds % 5 === 0){
+        saveTimerToFirebase('running');
+      }
       if(teacherTimerSeconds <= 0){
         clearInterval(teacherTimerInterval);
         teacherTimerInterval = null;
+        await saveTimerToFirebase('finished');
         alert('⏱ Time is up!');
       }
     }
@@ -3211,23 +3335,33 @@ function startTimer(){
   openTimerPopup();
 }
 
-function pauseTeacherTimer(){
+async function pauseTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
   teacherTimerPaused = true;
   updateTeacherTimerDisplay();
+  await saveTimerToFirebase('paused');
 }
-function resumeTeacherTimer(){
+async function resumeTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
   if(teacherTimerSeconds <= 0 && teacherTimerLastSetSeconds > 0){
     teacherTimerSeconds = teacherTimerLastSetSeconds;
   }
   teacherTimerPaused = false;
+  await saveTimerToFirebase('running');
   if(!teacherTimerInterval && teacherTimerSeconds > 0){
-    teacherTimerInterval = setInterval(()=>{
+    teacherTimerInterval = setInterval(async ()=>{
       if(!teacherTimerPaused && teacherTimerSeconds > 0){
         teacherTimerSeconds--;
         updateTeacherTimerDisplay();
+        if(teacherTimerSeconds % 5 === 0){
+          saveTimerToFirebase('running');
+        }
         if(teacherTimerSeconds <= 0){
           clearInterval(teacherTimerInterval);
           teacherTimerInterval = null;
+          await saveTimerToFirebase('finished');
           alert('⏱ Time is up!');
         }
       }
@@ -3235,13 +3369,17 @@ function resumeTeacherTimer(){
   }
   updateTeacherTimerDisplay();
 }
-function resetTeacherTimer(){
+async function resetTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
   if(teacherTimerInterval) clearInterval(teacherTimerInterval);
   teacherTimerInterval = null;
   teacherTimerSeconds = 0;
   teacherTimerPaused = false;
   updateTeacherTimerDisplay();
+  await saveTimerToFirebase('reset');
 }
+
 function openTimerPopup(){
   updateTimerPopupActivity();
   updateTeacherTimerDisplay();
