@@ -384,6 +384,64 @@ button:hover{filter:brightness(.96)}
   width:100%;
   background:linear-gradient(135deg,#f59e0b,#ec4899);
 }
+
+.votePanel{
+  background:#f0f7ff;
+  border:1px solid #bcd7ff;
+  border-radius:16px;
+  padding:14px;
+  margin-top:14px;
+}
+.voteTarget{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.voteFinal{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  max-height:160px;
+  overflow:auto;
+  margin-top:8px;
+}
+.scoreGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.resultTable{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+}
+.resultTable th,.resultTable td{
+  border:1px solid #d8e5f6;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+.resultTable th{
+  background:#eaf3ff;
+  color:#18376b;
+}
+.winnerBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:800;
+}
+
 @media(max-width:900px){
   .studentLayout,.builderGrid{grid-template-columns:1fr}
   .classGrid,.groupCards,.groupTaskGrid,.currentGrid{grid-template-columns:1fr 1fr}
@@ -525,6 +583,51 @@ button:hover{filter:brightness(.96)}
             <h3>✅ Success Criteria Checklist</h3>
             <div id="criteriaItems"></div>
           </div>
+
+        <div id="votingPanel" class="votePanel hidden">
+          <h2>🗳 Voting Stage</h2>
+          <p>Read another group’s final answer, then vote using the rubric.</p>
+
+          <label>Choose group to vote for</label>
+          <select id="voteTargetGroup" onchange="previewVoteTarget()"></select>
+
+          <div id="voteTargetPreview" class="voteTarget">Choose a group to preview their answer.</div>
+
+          <div class="scoreGrid">
+            <div>
+              <label>OREO Parts Covered / 5</label>
+              <select id="voteOreo">
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Very good</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Needs work</option>
+                <option value="1">1 - Weak</option>
+              </select>
+            </div>
+            <div>
+              <label>Grammar & Clarity / 5</label>
+              <select id="voteGrammar">
+                <option value="5">5 - Excellent</option>
+                <option value="4">4 - Very good</option>
+                <option value="3">3 - Good</option>
+                <option value="2">2 - Needs work</option>
+                <option value="1">1 - Weak</option>
+              </select>
+            </div>
+          </div>
+
+          <label>Positive comment</label>
+          <textarea id="voteComment" placeholder="Write one positive comment about the group work."></textarea>
+
+          <button class="green" style="width:100%" onclick="submitVote()">✅ Submit My Vote</button>
+          <div id="voteMsg" class="note hidden"></div>
+        </div>
+
+        <div id="studentResultsPanel" class="votePanel hidden">
+          <h2>📊 Voting Results</h2>
+          <div id="studentResultsContent">Waiting for teacher to release results.</div>
+        </div>
+
         </div>
 
         <div class="card">
@@ -575,6 +678,7 @@ button:hover{filter:brightness(.96)}
         <button class="red" onclick="resetSelectedClass()">🗑 Reset This Class</button>
       </div>
       <div id="groupCards" class="groupCards"></div>
+      <div id="votingResultsPanel" class="card hidden"></div>
     </div>
   </div>
 
@@ -693,6 +797,10 @@ let currentActivityId = '';
 let latestStudents = {};
 let groupListener = null;
 let chatListener = null;
+let settingsListener = null;
+let latestClassGroups = {};
+let latestClassVotes = {};
+let currentStage = 'work';
 let teacherLoggedIn = false;
 
 function classDisplay(c){return c.replace('-','/')}
@@ -780,6 +888,7 @@ function listenGroup(){
   });
 
   listenAssignedActivity();
+  listenClassSettings();
   listenChat();
 }
 
@@ -798,6 +907,210 @@ function listenAssignedActivity(){
     document.getElementById('criteriaItems').innerHTML = html || '<p>No criteria assigned.</p>';
   });
 }
+
+
+function listenClassSettings(){
+  if(settingsListener) settingsListener.off();
+
+  const ref = hubRef.child(`classes/${currentClass}`);
+  settingsListener = ref;
+
+  ref.on('value', snap=>{
+    const cls = snap.val() || {};
+    const settings = cls.settings || {};
+    latestClassGroups = cls.groups || {};
+    latestClassVotes = cls.votes || {};
+    currentStage = settings.stage || 'work';
+
+    updateStageUI(settings);
+  });
+}
+
+function updateStageUI(settings){
+  const votingPanel = document.getElementById('votingPanel');
+  const resultsPanel = document.getElementById('studentResultsPanel');
+  const badge = document.getElementById('statusBadge');
+
+  if(!votingPanel || !resultsPanel) return;
+
+  votingPanel.classList.add('hidden');
+  resultsPanel.classList.add('hidden');
+
+  if(currentStage === 'voting'){
+    badge.innerText = '🗳 Voting Stage';
+    votingPanel.classList.remove('hidden');
+    buildVoteTargets();
+    checkMyVoteStatus();
+  }else if(currentStage === 'results'){
+    badge.innerText = '📊 Results Released';
+    resultsPanel.classList.remove('hidden');
+    renderStudentResults();
+  }else{
+    badge.innerText = '✍️ In Progress';
+  }
+}
+
+function buildVoteTargets(){
+  const sel = document.getElementById('voteTargetGroup');
+  if(!sel) return;
+
+  const previous = sel.value;
+  let html = '<option value="">Choose group</option>';
+
+  for(let i=1;i<=10;i++){
+    if(String(i) === String(currentGroup)) continue;
+    const g = latestClassGroups['group'+i] || {};
+    if(g.finalSubmitted && g.finalAnswer){
+      html += `<option value="${i}">Group ${i}</option>`;
+    }
+  }
+
+  sel.innerHTML = html;
+  if(previous && sel.querySelector(`option[value="${previous}"]`)) sel.value = previous;
+  previewVoteTarget();
+}
+
+function previewVoteTarget(){
+  const target = document.getElementById('voteTargetGroup')?.value;
+  const box = document.getElementById('voteTargetPreview');
+  if(!box) return;
+
+  if(!target){
+    box.innerHTML = 'Choose a group to preview their answer.';
+    return;
+  }
+
+  const g = latestClassGroups['group'+target] || {};
+  box.innerHTML =
+    `<b>Group ${target} Final Answer</b>
+     <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+}
+
+function checkMyVoteStatus(){
+  const msg = document.getElementById('voteMsg');
+  if(!msg) return;
+
+  const vote = (((latestClassVotes || {})['group'+currentGroup] || {})[currentStudent]) || null;
+  if(vote){
+    msg.classList.remove('hidden');
+    msg.innerHTML = `✅ You already voted for <b>Group ${escapeHtml(vote.targetGroup || '')}</b>. You can change your vote before results are released.`;
+    document.getElementById('voteTargetGroup').value = String(vote.targetGroup || '');
+    document.getElementById('voteOreo').value = String(vote.oreoScore || 5);
+    document.getElementById('voteGrammar').value = String(vote.grammarScore || 5);
+    document.getElementById('voteComment').value = vote.comment || '';
+    previewVoteTarget();
+  }else{
+    msg.classList.add('hidden');
+  }
+}
+
+async function submitVote(){
+  if(currentStage !== 'voting'){
+    alert('Voting is not open yet.');
+    return;
+  }
+
+  const target = document.getElementById('voteTargetGroup').value;
+  const oreoScore = Number(document.getElementById('voteOreo').value || 0);
+  const grammarScore = Number(document.getElementById('voteGrammar').value || 0);
+  const comment = document.getElementById('voteComment').value.trim();
+
+  if(!target){
+    alert('Choose a group to vote for.');
+    return;
+  }
+  if(String(target) === String(currentGroup)){
+    alert('You cannot vote for your own group.');
+    return;
+  }
+  if(!comment){
+    alert('Write one positive comment before voting.');
+    return;
+  }
+
+  await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudent}`).set({
+    voterName:currentStudent,
+    voterGroup:String(currentGroup),
+    targetGroup:String(target),
+    oreoScore,
+    grammarScore,
+    total:oreoScore + grammarScore,
+    comment,
+    votedAt:Date.now()
+  });
+
+  const msg = document.getElementById('voteMsg');
+  msg.classList.remove('hidden');
+  msg.innerHTML = `✅ Vote submitted for <b>Group ${escapeHtml(target)}</b>.`;
+  alert('✅ Your vote has been submitted.');
+}
+
+function calculateVotingResults(classData){
+  const groups = classData.groups || {};
+  const votes = classData.votes || {};
+  const results = {};
+
+  for(let i=1;i<=10;i++){
+    const key = 'group'+i;
+    const g = groups[key] || {};
+    results[key] = {
+      groupNum:i,
+      finalSubmitted:!!g.finalSubmitted,
+      teacherPoints:Number(g.teacherPoints || 0),
+      voteTotal:0,
+      voteCount:0,
+      average:0,
+      comments:[]
+    };
+  }
+
+  Object.keys(votes).forEach(voterGroup=>{
+    Object.keys(votes[voterGroup] || {}).forEach(voterName=>{
+      const v = votes[voterGroup][voterName] || {};
+      const targetKey = 'group' + v.targetGroup;
+      if(!results[targetKey]) return;
+      results[targetKey].voteTotal += Number(v.total || 0);
+      results[targetKey].voteCount += 1;
+      if(v.comment) results[targetKey].comments.push(`${v.voterName || voterName}: ${v.comment}`);
+    });
+  });
+
+  Object.keys(results).forEach(k=>{
+    const r = results[k];
+    r.average = r.voteCount ? (r.voteTotal / r.voteCount) : 0;
+    r.finalScore = r.teacherPoints + r.voteTotal;
+  });
+
+  return results;
+}
+
+function renderStudentResults(){
+  const content = document.getElementById('studentResultsContent');
+  if(!content) return;
+
+  const classData = {groups:latestClassGroups, votes:latestClassVotes};
+  const results = calculateVotingResults(classData);
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
+
+  let html = '<table class="resultTable"><tr><th>Rank</th><th>Group</th><th>Votes</th><th>Teacher Points</th><th>Total</th></tr>';
+  sorted.forEach((r,idx)=>{
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td>Group ${r.groupNum}</td>
+      <td>${r.voteTotal} / ${r.voteCount} vote(s)</td>
+      <td>${r.teacherPoints}</td>
+      <td><b>${r.finalScore}</b></td>
+    </tr>`;
+  });
+  html += '</table>';
+
+  if(sorted[0]){
+    html = `<div class="winnerBox">🏆 Whole Class Winner: Group ${sorted[0].groupNum}</div>` + html;
+  }
+
+  content.innerHTML = html;
+}
+
 
 async function saveMyWork(){
   const answer = document.getElementById('myAnswerBox').value.trim();
@@ -859,6 +1172,7 @@ function leaveGroup(){
   currentClass='';currentGroup='';currentStudent='';currentRole='';
   if(groupListener) groupListener.off();
   if(chatListener) chatListener.off();
+  if(settingsListener) settingsListener.off();
   showOnly('studentLoginPage');
 }
 
@@ -1181,11 +1495,85 @@ async function assignCurrentActivity(){
 
 async function setStage(stage){
   if(!selectedTeacherClass) return;
-  await hubRef.child(`classes/${selectedTeacherClass}/settings/stage`).set(stage);
-  alert('Stage changed to '+stage);
+
+  const updates = {};
+  updates[`classes/${selectedTeacherClass}/settings/stage`] = stage;
+  if(stage === 'work') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
+  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
+
+  await hubRef.update(updates);
+
+  if(stage === 'voting') renderTeacherVotingResults(false);
+  alert(stage === 'voting' ? '🗳 Voting stage is open for students.' : 'Stage changed to '+stage);
 }
-function showVotingResults(){
-  alert('Voting results page can be connected here.');
+
+async function showVotingResults(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+
+  await hubRef.update({
+    [`classes/${selectedTeacherClass}/settings/stage`]:'results',
+    [`classes/${selectedTeacherClass}/settings/resultsReleased`]:true,
+    [`classes/${selectedTeacherClass}/settings/resultsReleasedAt`]:Date.now()
+  });
+
+  renderTeacherVotingResults(true);
+}
+
+async function renderTeacherVotingResults(showPanel){
+  if(!selectedTeacherClass) return;
+
+  const snap = await hubRef.child(`classes/${selectedTeacherClass}`).once('value');
+  const classData = snap.val() || {};
+  const results = calculateVotingResults(classData);
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
+
+  const panel = document.getElementById('votingResultsPanel');
+  if(!panel) return;
+  panel.classList.toggle('hidden', !showPanel);
+
+  let pairHtml = '';
+  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  pairs.forEach(pair=>{
+    const a = results['group'+pair[0]];
+    const b = results['group'+pair[1]];
+    const winner = (a.finalScore === b.finalScore) ? 'Tie' : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+    pairHtml += `<tr>
+      <td>Group ${pair[0]} VS Group ${pair[1]}</td>
+      <td>Group ${a.groupNum}: ${a.finalScore}<br>Group ${b.groupNum}: ${b.finalScore}</td>
+      <td><b>${winner}</b></td>
+    </tr>`;
+  });
+
+  let fullHtml = '';
+  sorted.forEach((r,idx)=>{
+    fullHtml += `<tr>
+      <td>${idx+1}</td>
+      <td>Group ${r.groupNum}</td>
+      <td>${r.voteTotal} / ${r.voteCount} vote(s)</td>
+      <td>${r.teacherPoints}</td>
+      <td><b>${r.finalScore}</b></td>
+      <td>${escapeHtml((r.comments || []).slice(0,3).join(' | ') || '-')}</td>
+    </tr>`;
+  });
+
+  panel.innerHTML =
+    `<h2>📊 Voting Results - Class ${classDisplay(selectedTeacherClass)}</h2>
+     <div class="winnerBox">🏆 Whole Class Winner: ${sorted[0] ? 'Group '+sorted[0].groupNum : 'No votes yet'}</div>
+
+     <h3>⚔️ Competitive Teams Results</h3>
+     <table class="resultTable">
+      <tr><th>Battle</th><th>Scores</th><th>Winner</th></tr>
+      ${pairHtml}
+     </table>
+
+     <h3>🌟 Whole Class Results</h3>
+     <table class="resultTable">
+      <tr><th>Rank</th><th>Group</th><th>Voting Score</th><th>Teacher Points</th><th>Total</th><th>Comments</th></tr>
+      ${fullHtml}
+     </table>`;
 }
 function startTimer(){
   alert('Timer can be started here.');
