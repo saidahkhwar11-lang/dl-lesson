@@ -1470,7 +1470,6 @@ function renderStudentResults(){
 
   const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
   const voteSystem = (classData.settings || {}).voteSystem || 'peer';
-  const voteSystem = (classData.settings || {}).voteSystem || 'peer';
   const results = calculateVotingResults(classData);
   const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
   const title = currentVoteSystem === 'battle' ? '⚔️ Group Work VS Group Work Results' : '🗳 Peer Assessment Results';
