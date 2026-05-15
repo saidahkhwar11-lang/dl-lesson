@@ -1185,6 +1185,20 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 .sameTaskSection{display:block}
 @media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
 
+
+.activityBuilderClean,.assignPanelClean{background:#ffffff;border:1px solid #dce8fb;border-radius:22px;padding:18px;margin-top:16px;box-shadow:0 8px 22px rgba(36,59,107,.06)}
+.builderTwoCol{display:grid;grid-template-columns:1fr 280px;gap:14px;align-items:end}
+.instructionTextarea{min-height:95px;background:#fbfdff;border:1.5px solid #cfdcf3}
+.taskPanel{background:#f8fbff;border:1px solid #dbe6f8;border-radius:16px;padding:14px;margin-top:12px}
+.taskPanel textarea{min-height:115px}
+.groupAssignBox{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-top:8px}
+.groupAssignBox label,.compactAssignBox label{background:#f8fbff;border:1px solid #dbe6f8;border-radius:14px;padding:10px;text-align:center;font-weight:bold;color:#243b6b}
+.studentCriteriaBox{background:#f8fbff;border:1px solid #dbe6f8;border-radius:16px;padding:14px;margin-top:12px}
+.studentCriteriaItem{display:flex;gap:10px;align-items:center;margin:8px 0;font-weight:bold;color:#243b6b}
+.studentCriteriaItem input{width:auto;margin:0;transform:scale(1.2)}
+.activityInstructionClean{background:#fffaf0;border:1px solid #f8d98b;border-radius:16px;padding:12px;margin-top:10px;line-height:1.5;white-space:pre-wrap}
+.activityTaskClean{background:#eef6ff;border:1px solid #bfd7ff;border-radius:16px;padding:14px;margin-top:10px;font-size:17px;line-height:1.5;white-space:pre-wrap}
+@media(max-width:800px){.builderTwoCol{grid-template-columns:1fr}.groupAssignBox{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 
@@ -1398,66 +1412,88 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
       </div>
     </div>
 
-    <div class="builderSection">
+    <div class="builderSection activityBuilderClean">
       <h3>✍️ Build Activity</h3>
+      <p class="smallHint">Create one activity, save it to your library, then assign it to a full class or selected groups only.</p>
       <input id="editingActivityId" type="hidden" value="">
 
-      <label>Activity Name</label>
-      <input id="builderActivityName" value="Opinion Group Challenge">
-
-      <label>Instructions students will read</label>
-      <textarea id="builderActivityInstructions" placeholder="Write clear instructions students will see after you assign the activity.">Read your group task carefully. Each student should complete her own part, save her work, then the leader combines the answers and submits the final group work.</textarea>
-
-      <label>Task Type</label>
-      <select id="builderTaskMode" onchange="toggleDifferentTasksBuilder()">
-        <option value="same">Same task for all groups</option>
-        <option value="different">Different task for each group</option>
-      </select>
-
-      <div id="sameTaskSection">
-        <label>Task for All Groups</label>
-        <textarea id="builderSameTask" placeholder="Example: Write an opinion paragraph about whether students should wear uniforms.">Write a clear opinion paragraph using opinion, reason, evidence/example, and restated opinion.</textarea>
+      <div class="builderTwoCol">
+        <div>
+          <label>Activity Name</label>
+          <input id="builderActivityName" placeholder="Example: Opinion Paragraph Challenge" value="">
+        </div>
+        <div>
+          <label>Task Type</label>
+          <select id="builderTaskMode" onchange="toggleDifferentTasksBuilder()">
+            <option value="same">One task written once</option>
+            <option value="different">Different task for each group</option>
+          </select>
+        </div>
       </div>
 
-      <div id="differentTasksSection" class="hidden">
-        <label>Different Activity for Each Group</label>
-        <p class="smallHint">Write a different task for each group. Students will only see the task for their own group.</p>
+      <label>Activity Instructions</label>
+      <textarea id="builderActivityInstructions" class="instructionTextarea" placeholder="Write the instructions students will read. Example: Read your task, write your part, save your work, check the success criteria, then the leader submits the final answer."></textarea>
+
+      <div id="sameTaskSection" class="taskPanel">
+        <label>Task / Question</label>
+        <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
+      </div>
+
+      <div id="differentTasksSection" class="taskPanel hidden">
+        <label>Different Task for Each Group</label>
+        <p class="smallHint">Write only the groups you want to use. Students see only their own group task.</p>
         <div id="differentGroupTaskGrid" class="differentTaskGrid"></div>
         <textarea id="builderGroupTasks" class="hidden" placeholder="Auto-filled from group task boxes"></textarea>
       </div>
 
-      <label>Each Student's Question / Job inside the Group</label>
-      <textarea id="builderStudentQuestions" placeholder="Example:
-Opinion Writer: What is your clear opinion?
-Reason Writer: What is your reason?
-Evidence Writer: What example supports your reason?
-Checker: Check grammar and spelling.">Opinion Writer: Write the clear opinion sentence.
-Reason Writer: Write one strong reason.
-Evidence Writer: Add an example or evidence.
-Checker: Check grammar, spelling, and OREO parts.
-Leader: Combine all parts and submit the final group work.</textarea>
-
-      <label>Success Criteria / Peer Assessment Rubric</label>
-      <textarea id="builderSuccessCriteria" placeholder="One criterion per line. Students will tick these during peer voting.">Clear opinion
+      <label>Success Criteria Checklist</label>
+      <p class="smallHint">Write one criterion per line. Students must tick these before the leader submits final work.</p>
+      <textarea id="builderSuccessCriteria" placeholder="Example:
+Clear opinion
 Strong reason
-Relevant evidence or example
+Relevant evidence/example
 Restated opinion
-Correct grammar and spelling</textarea>
+Correct grammar and spelling"></textarea>
 
       <div class="builderSaveRow">
         <button onclick="saveBuiltActivityOnly()" class="green">💾 Save Activity to Library</button>
       </div>
     </div>
 
-    <div class="assignPanel">
-      <h3>📤 Assign Activity to Classes</h3>
-      <p class="smallHint">After saving or loading an activity, choose the classes and assign. Students will see the activity instantly in their group page.</p>
+    <div class="assignPanel assignPanelClean">
+      <h3>📤 Assign Activity</h3>
+      <p class="smallHint">Choose where this activity should appear. You can assign to a whole class or to selected groups only.</p>
+
+      <label>Assign To</label>
+      <select id="assignTargetMode" onchange="toggleAssignTargetMode()">
+        <option value="class">Whole class / all groups</option>
+        <option value="groups">Selected group(s) only</option>
+      </select>
+
+      <label>Choose Class(es)</label>
       <div class="classAssignBox compactAssignBox">
         <label><input type="checkbox" class="assignClassCheck" value="9-1"> 9/1</label>
         <label><input type="checkbox" class="assignClassCheck" value="9-2"> 9/2</label>
         <label><input type="checkbox" class="assignClassCheck" value="9-3"> 9/3</label>
         <label><input type="checkbox" class="assignClassCheck" value="9-4"> 9/4</label>
       </div>
+
+      <div id="assignGroupTargetBox" class="hidden">
+        <label>Choose Group(s)</label>
+        <div class="groupAssignBox">
+          <label><input type="checkbox" class="assignGroupCheck" value="1"> Group 1</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="2"> Group 2</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="3"> Group 3</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="4"> Group 4</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="5"> Group 5</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="6"> Group 6</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="7"> Group 7</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="8"> Group 8</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="9"> Group 9</label>
+          <label><input type="checkbox" class="assignGroupCheck" value="10"> Group 10</label>
+        </div>
+      </div>
+
       <button onclick="assignCurrentBuiltActivity()" class="green wideBtn">✅ Assign Current Activity</button>
     </div>
 
@@ -3740,6 +3776,205 @@ window.addEventListener('load', function(){
   buildDifferentTaskInputs();
   toggleDifferentTasksBuilder();
   loadBuiltActivitiesLibrary();
+});
+
+
+/* ===== FINAL PATCH: clear activity builder, group/class assignment, criteria checklist ===== */
+function toggleAssignTargetMode(){
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const box = document.getElementById('assignGroupTargetBox');
+  if(box) box.classList.toggle('hidden', mode !== 'groups');
+}
+
+function collectBuiltActivityFromForm(existingId){
+  const id = existingId || ('activity_' + Date.now());
+  const taskMode = document.getElementById('builderTaskMode')?.value || 'same';
+  return {
+    id,
+    name: document.getElementById('builderActivityName')?.value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions')?.value.trim() || '',
+    taskMode,
+    sameTask: document.getElementById('builderSameTask')?.value.trim() || '',
+    groupTasks: collectDifferentGroupTasks ? collectDifferentGroupTasks() : {},
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria')?.value || ''),
+    updatedAt: Date.now(),
+    createdAt: existingId ? undefined : Date.now()
+  };
+}
+
+async function saveBuiltActivityOnly(){
+  if(!checkTeacherPassword()) return null;
+  const existingId = document.getElementById('editingActivityId')?.value || '';
+  const activity = collectBuiltActivityFromForm(existingId);
+  if(!activity.name){ alert('Write activity name.'); return null; }
+  if(!activity.instructions){ alert('Write activity instructions.'); return null; }
+  if(activity.taskMode === 'same' && !activity.sameTask){ alert('Write the task/question.'); return null; }
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks || {}).length){
+    alert('Write at least one group task.'); return null;
+  }
+  await hubRef.child('builtActivities/' + activity.id).update(activity);
+  document.getElementById('editingActivityId').value = activity.id;
+  await loadBuiltActivitiesLibrary(activity.id);
+  alert('✅ Activity saved to your library.');
+  return activity;
+}
+
+function fillActivityBuilder(activity){
+  document.getElementById('editingActivityId').value = activity.id || '';
+  document.getElementById('builderActivityName').value = activity.name || '';
+  document.getElementById('builderActivityInstructions').value = activity.instructions || '';
+  document.getElementById('builderTaskMode').value = activity.taskMode || 'same';
+  document.getElementById('builderSameTask').value = activity.sameTask || '';
+  document.getElementById('builderSuccessCriteria').value = (activity.successCriteria || []).join('\n');
+  if(typeof toggleDifferentTasksBuilder === 'function') toggleDifferentTasksBuilder();
+  if(typeof buildDifferentTaskInputs === 'function') buildDifferentTaskInputs();
+  for(let i=1;i<=10;i++){
+    const box = document.getElementById('groupTask_' + i);
+    if(box) box.value = (activity.groupTasks && activity.groupTasks[String(i)]) || '';
+  }
+  document.querySelectorAll('.assignClassCheck').forEach(ch=>{
+    ch.checked = (activity.assignedClasses || []).includes(ch.value);
+  });
+  const targetMode = activity.assignmentMode || 'class';
+  const targetEl = document.getElementById('assignTargetMode');
+  if(targetEl) targetEl.value = targetMode;
+  document.querySelectorAll('.assignGroupCheck').forEach(ch=>{
+    ch.checked = (activity.assignedGroups || []).map(String).includes(String(ch.value));
+  });
+  toggleAssignTargetMode();
+}
+
+async function assignCurrentBuiltActivity(){
+  if(!checkTeacherPassword()) return;
+  const selectedClasses = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selectedClasses.length){ alert('Choose at least one class.'); return; }
+
+  let activityId = document.getElementById('editingActivityId')?.value || '';
+  let activity = null;
+  if(activityId){
+    const snap = await hubRef.child('builtActivities/' + activityId).once('value');
+    activity = snap.val();
+  }
+  if(!activity){
+    activity = await saveBuiltActivityOnly();
+    if(!activity) return;
+  }else{
+    activity = collectBuiltActivityFromForm(activity.id);
+    await hubRef.child('builtActivities/' + activity.id).update(activity);
+  }
+
+  const mode = document.getElementById('assignTargetMode')?.value || 'class';
+  const selectedGroups = Array.from(document.querySelectorAll('.assignGroupCheck:checked')).map(x=>String(x.value));
+  if(mode === 'groups' && !selectedGroups.length){ alert('Choose at least one group.'); return; }
+
+  activity.assignmentMode = mode;
+  activity.assignedClasses = selectedClasses;
+  activity.assignedGroups = mode === 'groups' ? selectedGroups : [];
+  activity.assignedAt = Date.now();
+
+  const updates = {};
+  updates['builtActivities/' + activity.id] = activity;
+  selectedClasses.forEach(cls=>{
+    if(mode === 'class'){
+      updates['classes/' + cls + '/currentActivity'] = activity;
+    }else{
+      selectedGroups.forEach(g=>{
+        updates['classes/' + cls + '/groupActivities/group' + g] = activity;
+      });
+    }
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  const where = mode === 'class'
+    ? selectedClasses.map(classDisplayName).join(', ')
+    : selectedClasses.map(classDisplayName).join(', ') + ' · Groups ' + selectedGroups.join(', ');
+  alert('✅ Activity assigned to ' + where);
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+}
+
+function getAssignedTask(activity, groupNumber){
+  if(!activity) return '';
+  if(activity.taskMode === 'different'){
+    return (activity.groupTasks && (activity.groupTasks[String(groupNumber)] || activity.groupTasks['group' + groupNumber])) || activity.sameTask || '';
+  }
+  return activity.sameTask || '';
+}
+
+function renderActivityDetails(activity, groupNumber){
+  const box = document.getElementById('studentActivityDetails');
+  const topic = document.getElementById('groupTopic');
+  if(!box) return;
+  if(!activity){
+    if(topic) topic.innerHTML = 'No activity assigned yet.';
+    box.innerHTML = '<div class="activityInstructionClean">Activity instructions will appear here after the teacher assigns an activity.</div>';
+    return;
+  }
+  const taskText = getAssignedTask(activity, groupNumber);
+  const instructions = activity.instructions || 'Follow the task, save your own work, check the success criteria, then the leader submits the final answer.';
+  if(topic){
+    topic.innerHTML = '<div class="activityTitleLine">' + escapeHtml(activity.name || 'Group Activity') + '</div>' +
+      '<div class="activityTaskClean">' + escapeHtml(taskText || 'No task written for this group yet.') + '</div>';
+  }
+  const criteria = (activity.successCriteria || []).map((c,i)=>
+    '<label class="studentCriteriaItem"><input type="checkbox" class="studentCriteriaCheck" data-index="' + i + '"> <span>' + escapeHtml(c) + '</span></label>'
+  ).join('');
+  box.innerHTML =
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="activityInstructionClean">' + escapeHtml(instructions) + '</div>' +
+    '<div class="studentCriteriaBox"><h3>✅ Success Criteria Checklist</h3>' +
+    '<p class="smallHint">Tick each item before the group leader submits the final work.</p>' +
+    (criteria || '<p>No success criteria added.</p>') + '</div>';
+}
+
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  const groupKey = 'group' + currentGroup;
+  hubRef.child('classes/' + currentClass).once('value', snap=>{
+    const classData = snap.val() || {};
+    const groupActivity = classData.groupActivities && classData.groupActivities[groupKey];
+    currentActivity = groupActivity || classData.currentActivity || null;
+    renderActivityDetails(currentActivity, currentGroup);
+  });
+}
+
+async function submitCombinedGroupWork(){
+  if(!currentGroup || !currentStudentId){ alert('Join group first.'); return; }
+  if(currentRole !== 'leader'){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML = '⚠️ Only the group leader can submit the final group work.';
+    return;
+  }
+  const checks = Array.from(document.querySelectorAll('.studentCriteriaCheck'));
+  if(checks.length && checks.some(ch=>!ch.checked)){
+    document.getElementById('submitMsg').classList.remove('hidden');
+    document.getElementById('submitMsg').innerHTML = '⚠️ Please tick all success criteria before submitting final work.';
+    return;
+  }
+  await saveMyStudentWork();
+  const snap = await hubRef.child('classes/' + currentClass + '/groups/group' + currentGroup + '/students').once('value');
+  const students = snap.val() || {};
+  let finalAnswer = '';
+  Object.keys(students).forEach(id=>{
+    const s = students[id] || {};
+    finalAnswer += (s.name || id) + ' (' + (s.role === 'leader' ? 'Leader' : 'Member') + '):\n';
+    finalAnswer += (s.answer || 'No answer yet') + '\n\n';
+  });
+  await hubRef.child('classes/' + currentClass + '/groups/group' + currentGroup).update({
+    answer: finalAnswer,
+    finalSubmitted: true,
+    submittedBy: currentStudent,
+    submittedAt: Date.now(),
+    checkedCriteria: checks.map(ch=>ch.nextElementSibling ? ch.nextElementSibling.textContent : '').filter(Boolean)
+  });
+  document.getElementById('groupAnswer').value = finalAnswer;
+  document.getElementById('submitMsg').classList.remove('hidden');
+  document.getElementById('submitMsg').innerHTML = '✅ Final group answer submitted. Student boxes are now locked.';
+}
+
+window.addEventListener('load', function(){
+  toggleAssignTargetMode();
 });
 </script>
 
