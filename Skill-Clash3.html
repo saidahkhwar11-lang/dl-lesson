@@ -1146,6 +1146,50 @@ button:hover{filter:brightness(.96)}
   .compactChooser{grid-template-columns:1fr}.compactTitle{display:block}.largeAnswerText{min-height:180px}.compactSaveBar{grid-template-columns:1fr 1fr}.compactSaveBar .note{grid-column:1/-1}
 }
 
+/* ===== Activity image upload/display upgrade ===== */
+.imageUploadBox{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:14px;
+  padding:10px;
+  margin-top:8px;
+}
+.imagePreviewBox{
+  margin-top:8px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+.activityImg{
+  width:100%;
+  max-height:240px;
+  object-fit:contain;
+  display:block;
+  background:#f8fbff;
+}
+.groupTaskImg{
+  width:100%;
+  max-height:160px;
+  object-fit:contain;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  background:#f8fbff;
+  margin-top:8px;
+}
+.smallImageBtn{
+  background:#64748b;
+  padding:7px 10px;
+  font-size:12px;
+  margin-top:6px;
+}
+.groupTaskMiniCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+
 </style>
 </head>
 
@@ -1441,6 +1485,13 @@ button:hover{filter:brightness(.96)}
         <label>Activity Instructions</label>
         <textarea id="builderInstructions" placeholder="Instructions students will read."></textarea>
 
+        <label>📷 Main Activity Details Picture</label>
+        <div class="imageUploadBox">
+          <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
+          <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
+          <button type="button" class="smallImageBtn" onclick="clearMainActivityImage()">Remove Main Picture</button>
+        </div>
+
         <div id="sameTaskArea">
           <label>Task / Question</label>
           <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
@@ -1591,6 +1642,8 @@ let teacherTimerPaused = false;
 let teacherTimerLastSetSeconds = 0;
 let studentTimerInterval = null;
 let latestClassTimer = {};
+let builderMainImageData = '';
+let builderGroupImageData = {};
 
 function classDisplay(c){return c.replace('-','/')}
 function escapeHtml(text){
@@ -1701,7 +1754,10 @@ function listenAssignedActivity(){
     latestAssignedActivity = a;
     document.getElementById('activityNameBox').innerText = a.title || 'No activity assigned';
     document.getElementById('activityInstructionsBox').innerText = a.instructions || 'No instructions';
-    document.getElementById('groupTaskBox').innerText = a.groupTask || 'No group task';
+    const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
+    const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'activityImg', 'Group task picture') : '';
+    document.getElementById('groupTaskBox').innerHTML =
+      `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}`;
 
     const items = a.criteria || [];
     let html = '';
@@ -2889,7 +2945,8 @@ function renderCurrentActivity(classes){
     ? 'Different tasks are assigned to groups. Students write, save, check criteria, and the leader submits.'
     : 'All groups complete the same task. Students write, save, check criteria, and the leader submits.';
   document.getElementById('currentActivityContent').innerHTML =
-    `<div class="currentGrid">
+    `${a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : ''}
+    <div class="currentGrid">
       <div class="currentMini"><b>📌 Activity Name</b><span>${escapeHtml(a.title || 'Activity')}</span></div>
       <div class="currentMini"><b>⏱ Timer</b><span id="currentTimerMini">${formatTeacherTime(teacherTimerSeconds)}</span></div>
       <div class="currentMini"><b>📋 Instructions</b><span>${escapeHtml((a.instructions || '').slice(0,160))}</span></div>
@@ -2990,6 +3047,94 @@ async function saveTeacherFeedback(groupNum){
   alert('✅ Feedback saved.');
 }
 
+
+function readImageAsDataUrl(file, maxWidth = 1000, quality = 0.82){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(''); return; }
+    if(!file.type || !file.type.startsWith('image/')){
+      reject(new Error('Please choose an image file.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('Could not read this image.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>reject(new Error('Could not upload this image.'));
+    reader.readAsDataURL(file);
+  });
+}
+function imageHtml(src, className, altText){
+  if(!src) return '';
+  return `<div class="imagePreviewBox"><img class="${className || 'activityImg'}" src="${src}" alt="${escapeHtml(altText || 'Activity picture')}"></div>`;
+}
+function renderMainImagePreview(){
+  const box = document.getElementById('builderMainImagePreview');
+  if(!box) return;
+  if(builderMainImageData){
+    box.classList.remove('hidden');
+    box.innerHTML = `<img class="activityImg" src="${builderMainImageData}" alt="Main activity picture">`;
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function renderGroupImagePreview(i){
+  const box = document.getElementById('groupImagePreview_'+i);
+  if(!box) return;
+  const src = builderGroupImageData['group'+i] || '';
+  if(src){
+    box.classList.remove('hidden');
+    box.innerHTML = `<img class="groupTaskImg" src="${src}" alt="Group ${i} task picture">`;
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function renderAllGroupImagePreviews(){
+  for(let i=1;i<=10;i++) renderGroupImagePreview(i);
+}
+async function handleMainActivityImageUpload(input){
+  try{
+    builderMainImageData = await readImageAsDataUrl(input.files && input.files[0], 1000, 0.82);
+    renderMainImagePreview();
+  }catch(err){
+    alert(err.message || 'Image upload failed.');
+    input.value = '';
+  }
+}
+async function handleGroupTaskImageUpload(i, input){
+  try{
+    builderGroupImageData['group'+i] = await readImageAsDataUrl(input.files && input.files[0], 900, 0.82);
+    renderGroupImagePreview(i);
+  }catch(err){
+    alert(err.message || 'Image upload failed.');
+    input.value = '';
+  }
+}
+function clearMainActivityImage(){
+  builderMainImageData = '';
+  const input = document.getElementById('builderMainImage');
+  if(input) input.value = '';
+  renderMainImagePreview();
+}
+function clearGroupTaskImage(i){
+  delete builderGroupImageData['group'+i];
+  const input = document.getElementById('groupImage_'+i);
+  if(input) input.value = '';
+  renderGroupImagePreview(i);
+}
+
 function showBuilder(){
   showOnly('builderPage');
   buildGroupTaskInputs();
@@ -3007,9 +3152,17 @@ function toggleAssignMode(){
 function buildGroupTaskInputs(){
   let html = '';
   for(let i=1;i<=10;i++){
-    html += `<div><label>Group ${i} Activity</label><textarea id="groupTask_${i}"></textarea></div>`;
+    html += `<div class="groupTaskMiniCard">
+      <label>Group ${i} Activity</label>
+      <textarea id="groupTask_${i}"></textarea>
+      <label>📷 Group ${i} Picture</label>
+      <input id="groupImage_${i}" type="file" accept="image/*" onchange="handleGroupTaskImageUpload(${i}, this)">
+      <div id="groupImagePreview_${i}" class="imagePreviewBox hidden"></div>
+      <button type="button" class="smallImageBtn" onclick="clearGroupTaskImage(${i})">Remove Picture</button>
+    </div>`;
   }
   document.getElementById('groupTaskGrid').innerHTML = html;
+  renderAllGroupImagePreviews();
 }
 function buildAssignGroupChecks(){
   let html = '';
@@ -3018,22 +3171,46 @@ function buildAssignGroupChecks(){
   }
   document.getElementById('assignGroupChecks').innerHTML = html;
 }
-function collectActivity(){
+async function collectActivity(){
   const title = document.getElementById('builderActivityName').value.trim();
   const instructions = document.getElementById('builderInstructions').value.trim();
   const taskType = document.getElementById('builderTaskType').value;
   const sameTask = document.getElementById('builderSameTask').value.trim();
   const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
   const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
+
+  const mainInput = document.getElementById('builderMainImage');
+  if(mainInput && mainInput.files && mainInput.files[0]){
+    builderMainImageData = await readImageAsDataUrl(mainInput.files[0], 1000, 0.82);
+  }
+
   const groupTasks = {};
+  const groupTaskImages = {};
   for(let i=1;i<=10;i++){
     const el = document.getElementById('groupTask_'+i);
+    const imgInput = document.getElementById('groupImage_'+i);
+    if(imgInput && imgInput.files && imgInput.files[0]){
+      builderGroupImageData['group'+i] = await readImageAsDataUrl(imgInput.files[0], 900, 0.82);
+    }
     groupTasks['group'+i] = el ? el.value.trim() : '';
+    groupTaskImages['group'+i] = builderGroupImageData['group'+i] || '';
   }
-  return {id:currentActivityId || 'activity_'+Date.now(), title, instructions, taskType, sameTask, groupTasks, criteria, votingCriteria};
+
+  return {
+    id:currentActivityId || 'activity_'+Date.now(),
+    title,
+    instructions,
+    taskType,
+    sameTask,
+    mainImage: builderMainImageData || '',
+    groupTasks,
+    groupTaskImages,
+    criteria,
+    votingCriteria
+  };
 }
 async function saveActivityToLibrary(){
-  const a = collectActivity();
+  const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
   if(a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
   currentActivityId = a.id;
@@ -3065,10 +3242,18 @@ async function loadActivity(){
   document.getElementById('builderSameTask').value = a.sameTask || '';
   document.getElementById('builderCriteria').value = (a.criteria || []).join('\n');
   document.getElementById('builderVotingCriteria').value = (a.votingCriteria || []).join('\n');
+  builderMainImageData = a.mainImage || '';
+  builderGroupImageData = Object.assign({}, a.groupTaskImages || {});
+  const mainInput = document.getElementById('builderMainImage');
+  if(mainInput) mainInput.value = '';
+  renderMainImagePreview();
   buildGroupTaskInputs();
   for(let i=1;i<=10;i++){
     const el = document.getElementById('groupTask_'+i);
     if(el) el.value = (a.groupTasks || {})['group'+i] || '';
+    const imgInput = document.getElementById('groupImage_'+i);
+    if(imgInput) imgInput.value = '';
+    renderGroupImagePreview(i);
   }
   toggleTaskType();
   alert('✅ Activity loaded.');
@@ -3082,7 +3267,7 @@ async function deleteActivity(){
 }
 
 async function assignCurrentActivity(){
-  const a = collectActivity();
+  const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
 
   const classes = Array.from(document.querySelectorAll('.assignClass:checked')).map(x=>x.value);
@@ -3101,10 +3286,13 @@ async function assignCurrentActivity(){
   classes.forEach(cls=>{
     groups.forEach(i=>{
       const groupTask = a.taskType === 'same' ? a.sameTask : (a.groupTasks['group'+i] || '');
+      const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})['group'+i] || '');
       updates[`classes/${cls}/assignedActivities/group${i}`] = {
         title:a.title,
         instructions:a.instructions,
+        mainImage:a.mainImage || '',
         groupTask,
+        groupTaskImage,
         criteria:a.criteria,
         votingCriteria:a.votingCriteria,
         taskType:a.taskType,
@@ -3115,6 +3303,7 @@ async function assignCurrentActivity(){
     updates[`classes/${cls}/currentActivity`] = {
       title:a.title,
       instructions:a.instructions,
+      mainImage:a.mainImage || '',
       taskType:a.taskType,
       criteria:a.criteria,
       votingCriteria:a.votingCriteria,
@@ -3399,7 +3588,7 @@ function updateTimerPopupActivity(){
   const criteria = document.getElementById('popupSuccessCriteria');
   if(name) name.innerText = a.title || 'No activity assigned yet.';
   if(assigned) assigned.innerText = latestTeacherAssignedTo || '-';
-  if(instructions) instructions.innerText = a.instructions || 'No instructions.';
+  if(instructions) instructions.innerHTML = `${a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : ''}${escapeHtml(a.instructions || 'No instructions.')}`;
   const detailText = a.taskType === 'different'
     ? 'Different tasks are assigned to groups. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.'
     : 'All groups complete the same task. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.';
