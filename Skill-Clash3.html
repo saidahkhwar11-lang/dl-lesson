@@ -342,6 +342,18 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 @media(max-width:950px){.compactInfoGrid{grid-template-columns:repeat(2,minmax(140px,1fr))}.compactInfoItem.wide{grid-column:span 2}.cuteActions{grid-template-columns:repeat(2,minmax(140px,1fr))}}
 @media(max-width:560px){.compactInfoGrid,.cuteActions{grid-template-columns:1fr}.compactInfoItem.wide{grid-column:span 1}.leaveBottomRow button{width:100%}}
 
+
+
+.activityBuilderGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:12px}
+.classAssignBox{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}
+.classAssignBox label{background:#f8fbff;border:1px solid #dbe6f8;border-radius:14px;padding:10px 14px;font-weight:bold;color:#243b6b}
+.activityCard{background:#fffaf0;border:1px solid #fde68a;border-radius:16px;padding:14px;margin-top:12px}
+.activityTaskBox{background:#ffffff;border:1px dashed #f59e0b;border-radius:14px;padding:12px;line-height:1.6;white-space:pre-wrap}
+.criteriaChip{display:inline-block;background:#ecfdf5;border:1px solid #bbf7d0;color:#047857;border-radius:999px;padding:6px 10px;margin:4px;font-weight:bold;font-size:13px}
+.questionList{margin:8px 0 0 18px;line-height:1.7}
+.questionList li{margin-bottom:6px}
+.smallHint{font-size:13px;color:#64748b;margin-top:6px}
+
 </style>
 </head>
 
@@ -452,6 +464,7 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
       <div class="sideCuteCard">
         <h3>📌 Topic</h3>
         <div id="groupTopic">Topic will appear here.</div>
+        <div id="studentActivityDetails" class="activityCard">Activity details will appear here after teacher assigns it.</div>
       </div>
 
       <div class="sideCuteCard stickyTimer">
@@ -561,6 +574,50 @@ Evidence / Example
 Restated Opinion
 </textarea>
 
+    <div class="activityCard">
+      <h3>🧩 Build & Assign Group Activity</h3>
+      <p class="smallHint">Build the activity here, then assign it to one or more classes. Students will see the task inside their group page.</p>
+
+      <label>Activity Name</label>
+      <input id="builderActivityName" value="Opinion Group Challenge">
+
+      <label>Assign to Classes</label>
+      <div class="classAssignBox">
+        <label><input type="checkbox" class="assignClassCheck" value="9-1"> 9/1</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-2"> 9/2</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-3"> 9/3</label>
+        <label><input type="checkbox" class="assignClassCheck" value="9-4"> 9/4</label>
+      </div>
+
+      <label>Task Type</label>
+      <select id="builderTaskMode">
+        <option value="same">Same task for all groups</option>
+        <option value="different">Different task for each group</option>
+      </select>
+
+      <label>Same Task for All Groups</label>
+      <textarea id="builderSameTask" placeholder="Example: Write an opinion paragraph about whether students should wear uniforms.">Write a clear opinion paragraph using opinion, reason, evidence/example, and restated opinion.</textarea>
+
+      <label>Different Group Tasks</label>
+      <textarea id="builderGroupTasks" placeholder="Write one task per group. Example:\n1: Group 1 task here\n2: Group 2 task here\n3: Group 3 task here"></textarea>
+
+      <label>Each Student's Question / Job inside the Group</label>
+      <textarea id="builderStudentQuestions" placeholder="Example:\nOpinion Writer: What is your clear opinion?\nReason Writer: What is your reason?\nEvidence Writer: What example supports your reason?\nChecker: Check grammar and spelling.">Opinion Writer: Write the clear opinion sentence.
+Reason Writer: Write one strong reason.
+Evidence Writer: Add an example or evidence.
+Checker: Check grammar, spelling, and OREO parts.
+Leader: Combine all parts and submit the final group work.</textarea>
+
+      <label>Success Criteria / Peer Assessment Rubric</label>
+      <textarea id="builderSuccessCriteria" placeholder="One criterion per line. Students will tick these during peer voting.">Clear opinion
+Strong reason
+Relevant evidence or example
+Restated opinion
+Correct grammar and spelling</textarea>
+
+      <button onclick="saveBuiltActivityAndAssign()" class="green">💾 Save Activity & Assign to Classes</button>
+    </div>
+
     <label>Timer Minutes</label>
     <input id="timerMinutes" type="number" value="20" min="1">
 
@@ -636,6 +693,8 @@ let currentStudentId =
 let timerEndTime = 0;
   let currentBattleIndex = 0;
 let currentTeacherClass = sessionStorage.getItem('skillClashTeacherClass') || '';
+let currentActivity = null;
+let activeSuccessCriteria = ['Opinion','Reason','Evidence / Example','Restated Opinion'];
 
 let topics = {
   1:'Should students have to wear uniforms?',
@@ -890,9 +949,23 @@ document.getElementById('studentGroupInfo').innerHTML =
 
   renderStudentBoxes(students);
   renderChatMessages(data.chat || {});
+  loadCurrentActivityForStudent();
 
   });
 
+}
+
+function loadCurrentActivityForStudent(){
+  if(!currentClass || !currentGroup) return;
+  hubRef.child('classes/' + currentClass + '/currentActivity').once('value', snap=>{
+    currentActivity = snap.val();
+    renderActivityDetails(currentActivity, currentGroup);
+    if(currentActivity){
+      document.getElementById('groupTopic').innerHTML =
+        '<b>' + escapeHtml(currentActivity.name || 'Group Activity') + '</b><br>' +
+        escapeHtml(getAssignedTask(currentActivity, currentGroup));
+    }
+  });
 }
 
 function renderStudentBoxes(students){
@@ -1094,6 +1167,43 @@ async function sendChatMessage(){
   textBox.value = '';
 }
 
+async function saveBuiltActivityAndAssign(){
+  if(!checkTeacherPassword()) return;
+
+  const selected = Array.from(document.querySelectorAll('.assignClassCheck:checked')).map(x=>x.value);
+  if(!selected.length){ alert('Choose at least one class to assign the activity.'); return; }
+
+  const activity = {
+    id: 'activity_' + Date.now(),
+    name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    taskMode: document.getElementById('builderTaskMode').value,
+    sameTask: document.getElementById('builderSameTask').value.trim(),
+    groupTasks: parseGroupTasks(document.getElementById('builderGroupTasks').value),
+    studentQuestions: parseLines(document.getElementById('builderStudentQuestions').value),
+    successCriteria: parseLines(document.getElementById('builderSuccessCriteria').value),
+    assignedClasses: selected,
+    createdAt: Date.now()
+  };
+
+  if(activity.taskMode === 'different' && !Object.keys(activity.groupTasks).length){
+    alert('You chose different task for each group. Please write group tasks like 1: task, 2: task.');
+    return;
+  }
+
+  await hubRef.child('builtActivities/' + activity.id).set(activity);
+
+  const updates = {};
+  selected.forEach(cls=>{
+    updates['classes/' + cls + '/currentActivity'] = activity;
+    updates['classes/' + cls + '/settings/stage'] = 'work';
+    updates['classes/' + cls + '/settings/resultsReleased'] = false;
+  });
+
+  await hubRef.update(updates);
+  alert('✅ Activity saved and assigned to: ' + selected.map(classDisplayName).join(', '));
+  renderTeacherDashboard();
+}
+
 async function saveActivitySettings(){
   if(!checkTeacherPassword()) return;
 
@@ -1197,6 +1307,13 @@ hubRef.on('value', snap=>{
 
   if(classData.settings?.timerEndTime){
     startLiveTimer(classData.settings.timerEndTime);
+  }
+
+  if(classData.currentActivity){
+    currentActivity = classData.currentActivity;
+    if(currentActivity.successCriteria && currentActivity.successCriteria.length){
+      activeSuccessCriteria = currentActivity.successCriteria;
+    }
   }
 
   const stage =
@@ -1323,6 +1440,23 @@ if(currentGroup && currentClass){
 }
 });
 
+function renderCriteriaChecks(a,b,team){
+  const criteria = activeSuccessCriteria && activeSuccessCriteria.length ? activeSuccessCriteria : ['Opinion','Reason','Evidence / Example','Restated Opinion'];
+  return criteria.map((c,idx)=>
+    '<label>' + escapeHtml(c) + ' <input type="checkbox" id="crit_' + a + '_' + b + '_' + team + '_' + idx + '"></label>'
+  ).join('');
+}
+
+function countCriteriaScore(a,b,team){
+  const criteria = activeSuccessCriteria && activeSuccessCriteria.length ? activeSuccessCriteria : ['Opinion','Reason','Evidence / Example','Restated Opinion'];
+  let total = 0;
+  criteria.forEach((c,idx)=>{
+    const el = document.getElementById('crit_' + a + '_' + b + '_' + team + '_' + idx);
+    if(el && el.checked) total++;
+  });
+  return total;
+}
+
 function buildVoting(groups){
 
   const battles = [
@@ -1395,11 +1529,8 @@ style="display:flex;justify-content:space-between;align-items:center;margin-bott
           </div>
 
           <div class="voteMiniBox">
-            <h4>Evaluate</h4>
-            <label>Opinion <input type="checkbox" id="opinion_${a}_${b}_${a}"></label>
-            <label>Reason <input type="checkbox" id="reason_${a}_${b}_${a}"></label>
-            <label>Example <input type="checkbox" id="example_${a}_${b}_${a}"></label>
-            <label>Restate <input type="checkbox" id="restate_${a}_${b}_${a}"></label>
+            <h4>Success Criteria</h4>
+            ${renderCriteriaChecks(a,b,a)}
           </div>
         </div>
       </div>
@@ -1416,11 +1547,8 @@ style="display:flex;justify-content:space-between;align-items:center;margin-bott
           </div>
 
           <div class="voteMiniBox">
-            <h4>Evaluate</h4>
-            <label>Opinion <input type="checkbox" id="opinion_${a}_${b}_${b}"></label>
-            <label>Reason <input type="checkbox" id="reason_${a}_${b}_${b}"></label>
-            <label>Example <input type="checkbox" id="example_${a}_${b}_${b}"></label>
-            <label>Restate <input type="checkbox" id="restate_${a}_${b}_${b}"></label>
+            <h4>Success Criteria</h4>
+            ${renderCriteriaChecks(a,b,b)}
           </div>
         </div>
       </div>
@@ -1494,19 +1622,8 @@ async function submitVote(a,b){
   return el && el.checked ? 1 : 0;
 }
 
-const scoreA =
-  checked('opinion_' + a + '_' + b + '_' + a) +
-  checked('reason_' + a + '_' + b + '_' + a) +
-  checked('example_' + a + '_' + b + '_' + a) +
-  checked('restate_' + a + '_' + b + '_' + a) +
-  (Number(winner.value) === a ? 3 : 0);
-
-const scoreB =
-  checked('opinion_' + a + '_' + b + '_' + b) +
-  checked('reason_' + a + '_' + b + '_' + b) +
-  checked('example_' + a + '_' + b + '_' + b) +
-  checked('restate_' + a + '_' + b + '_' + b) +
-  (Number(winner.value) === b ? 3 : 0);
+const scoreA = countCriteriaScore(a,b,a) + (Number(winner.value) === a ? 3 : 0);
+const scoreB = countCriteriaScore(a,b,b) + (Number(winner.value) === b ? 3 : 0);
 
   await hubRef.child(votePath).set({
     voterGroup: myGroup,
@@ -1515,6 +1632,7 @@ const scoreB =
     scoreA: scoreA,
     scoreB: scoreB,
     winner: Number(winner.value),
+    criteria: activeSuccessCriteria || [],
     submittedAt: Date.now()
   });
 
@@ -1756,7 +1874,9 @@ function renderTeacherDashboard(){
     let html = '';
 
     getClassOptions().forEach(cls=>{
-      const groups = (classes[cls] || {}).groups || {};
+      const classObj = classes[cls] || {};
+      const groups = classObj.groups || {};
+      const actName = classObj.currentActivity?.name || 'No activity assigned';
       let joined = 0;
       let final = 0;
       let marked = 0;
@@ -1774,7 +1894,7 @@ function renderTeacherDashboard(){
           <span class="statusPill pillProgress">${joined} joined groups</span>
           <span class="statusPill pillFinal">${final} final submitted</span>
           <span class="statusPill pillMark">${marked} marked</span>
-          <p>Click to view all groups.</p>
+          <p><b>Activity:</b> ${escapeHtml(actName)}</p><p>Click to view all groups.</p>
         </div>`;
     });
 
@@ -1800,6 +1920,8 @@ function renderTeacherClassGroups(cls){
     const groups = classData.groups || {};
     const stage = classData.settings?.stage || 'work';
     const released = classData.settings?.resultsReleased === true;
+    const classActivity = classData.currentActivity || null;
+    window.teacherOpenClassActivity = classActivity;
 
     let joined = 0, final = 0, progress = 0;
     let html = '';
@@ -1826,7 +1948,8 @@ function renderTeacherClassGroups(cls){
     }
 
     document.getElementById('teacherClassSummary').innerHTML =
-      '<b>Stage:</b> ' + escapeHtml(stage) +
+      '<b>Activity:</b> ' + escapeHtml(classActivity?.name || 'No activity assigned') +
+      ' | <b>Stage:</b> ' + escapeHtml(stage) +
       ' | <b>Results released:</b> ' + (released ? 'Yes ✅' : 'No') +
       ' | <b>Joined:</b> ' + joined +
       ' | <b>In progress:</b> ' + progress +
@@ -1862,12 +1985,23 @@ function openTeacherGroupReview(cls, groupNumber){
     if(!studentWorkHtml) studentWorkHtml = '<div class="soft">No students joined this group yet.</div>';
 
     const finalAnswer = g.answer || 'Final group work not submitted yet.';
+    const groupActivity = window.teacherOpenClassActivity || null;
 
     document.getElementById('teacherGroupReviewContent').innerHTML = `
       <div class="soft">
         <b>Status:</b> ${status}<br>
         <b>Members:</b> ${escapeHtml(getGroupMemberNames(students) || 'No members')}<br>
         <b>Submitted by:</b> ${escapeHtml(g.submittedBy || '-')}
+      </div>
+
+      <h3>🧩 Assigned Activity</h3>
+      <div class="activityCard">
+        <b>${escapeHtml(groupActivity?.name || 'No activity assigned')}</b><br><br>
+        <div class="activityTaskBox">${escapeHtml(groupActivity ? getAssignedTask(groupActivity, groupNumber) : 'No task assigned.')}</div>
+        <p><b>Student parts/questions:</b></p>
+        ${(groupActivity?.studentQuestions || []).map(q=>'<span class="criteriaChip">' + escapeHtml(q) + '</span>').join('') || 'No student questions.'}
+        <p><b>Success criteria:</b></p>
+        ${(groupActivity?.successCriteria || []).map(c=>'<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>').join('') || 'No criteria.'}
       </div>
 
       <h3>💾 Saved Individual Work</h3>
@@ -1947,6 +2081,8 @@ function renderTeacherVotingResults(cls){
     const votes = classData.votes || {};
     const groups = classData.groups || {};
     const released = classData.settings?.resultsReleased === true;
+    const classActivity = classData.currentActivity || null;
+    window.teacherOpenClassActivity = classActivity;
     const scores = calculateVotingScores(votes);
     const ranking = Object.keys(scores).map(team=>({team, score:scores[team]})).sort((a,b)=>b.score-a.score);
 
