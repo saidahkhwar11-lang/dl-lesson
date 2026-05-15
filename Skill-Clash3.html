@@ -317,6 +317,80 @@ function downloadAchievementCertificate(){
 .sameTaskSection{display:block}
 @media(max-width:700px){.builderRow{grid-template-columns:1fr}.teacherTopActions button{min-width:100%}}
 
+
+
+/* ===== FINAL POLISH: smaller student fonts + cleaner spacing ===== */
+#workPage{font-size:14px;}
+#workPage .topbar{font-size:22px;}
+#workPage .workHero{padding:18px 20px;border-radius:24px;}
+#workPage .workHero h2{font-size:24px !important;line-height:1.15;margin-bottom:8px;}
+#workPage .compactInfoGrid{gap:8px;}
+#workPage .compactInfoItem{padding:7px 11px;border-radius:14px;}
+#workPage .compactInfoItem .infoLabel{font-size:10px !important;}
+#workPage .compactInfoItem .infoValue{font-size:13px !important;}
+#workPage .compactMembers{font-size:13px;}
+#workPage .compactMembers .badge{font-size:11px !important;padding:4px 7px;}
+#workPage .myWorkCard h3,
+#workPage .sideCuteCard h3,
+#workPage .cutePanel h3{font-size:17px !important;}
+#workPage .studentBox h3{font-size:16px !important;margin:0 0 8px;}
+#workPage #myStudentAnswer{font-size:14px !important;min-height:190px !important;line-height:1.45;}
+#workPage .cuteActions button{font-size:13px !important;min-height:42px !important;padding:9px 10px !important;}
+#workPage .leaveBottomRow button{font-size:13px !important;padding:9px 12px !important;}
+#workPage .activityTitleLine{font-size:18px !important;}
+#workPage .activityTaskClean,
+#workPage .activityInstructionClean{font-size:14px !important;line-height:1.45 !important;}
+#workPage .studentCriteriaBox h3{font-size:16px !important;}
+#workPage .studentCriteriaItem{font-size:14px !important;margin:7px 0;}
+#workPage .achievementCard h3{font-size:17px !important;}
+#workPage .achievementBtn{font-size:15px !important;padding:12px !important;}
+#workPage .sideCuteCard{padding:14px !important;}
+#workPage .workLayout{gap:14px;}
+
+/* ===== Teacher dashboard current activity summary ===== */
+.currentActivityDashboardBox{
+  background:linear-gradient(135deg,#fff7ed,#eef6ff);
+  border:1px solid #f7d99c;
+  border-radius:22px;
+  padding:16px;
+  margin:16px 0 18px;
+  box-shadow:0 3px 12px rgba(36,59,107,.06);
+}
+.currentActivityDashboardBox h3{
+  margin:0 0 10px;
+  color:#243b6b;
+  font-size:20px;
+}
+.currentActivityGrid{
+  display:grid;
+  grid-template-columns:1.1fr .7fr 1.4fr 1.4fr;
+  gap:10px;
+}
+.currentActivityMini{
+  background:white;
+  border:1px solid #dbe7fb;
+  border-radius:16px;
+  padding:12px;
+  min-height:72px;
+}
+.currentActivityMini b{
+  color:#243b6b;
+  display:block;
+  margin-bottom:5px;
+}
+.currentActivityMini span{
+  color:#334155;
+  line-height:1.35;
+}
+.currentActivityEmpty{
+  background:#f8fbff;
+  border:1px dashed #bfd4ef;
+  border-radius:16px;
+  padding:14px;
+  color:#64748b;
+}
+@media(max-width:900px){.currentActivityGrid{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -1391,12 +1465,19 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
     </div>
   </div>
 
+  <div id="teacherCurrentActivityBox" class="currentActivityDashboardBox"></div>
+
   <h3>📚 Classes</h3>
   <div id="teacherClassGrid" class="teacherClassGrid"></div>
 
-  <details class="soft teacherBuilderPanel" style="margin-top:18px;" open>
-    <summary style="cursor:pointer;font-weight:bold;font-size:18px;">🧩 Activity Library + Builder</summary>
+  <div class="teacherBuilderShortcut classCard" onclick="openTeacherBuilder()" style="margin-top:18px;cursor:pointer;">
+    <h3>🧩 Activity Library + Builder</h3>
+    <p>Click here to create, save, load, and assign activities.</p>
+  </div>
 
+<div id="teacherBuilderPage" class="card hidden">
+  <button onclick="showTeacherDashboard()" class="backBtn">⬅ Back to Dashboard</button>
+  <h2>🧩 Activity Library + Builder</h2>
     <div class="builderHelpBox">
       <b>Simple steps:</b> 1) Build or load an activity → 2) Save it to your library → 3) Choose classes → 4) Assign it.
     </div>
@@ -1518,7 +1599,10 @@ Correct grammar and spelling"></textarea>
         <button onclick="resetHub()" class="red">🗑 Reset Selected Class</button>
       </div>
     </details>
-  </details>
+  
+</div>
+
+  <button onclick="showTeacherDashboard()" class="backBtn" style="margin-top:18px;">⬅ Back to Dashboard</button>
 </div>
 
 <div id="teacherClassPage" class="card hidden">
@@ -1632,7 +1716,7 @@ let topics = {
 }
 
 function showPage(id){
-  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage','teacherChatControlPage'].forEach(p=>{
+  ['studentPage','workPage','votePage','teacherLoginPage','teacherPage','teacherBuilderPage','teacherClassPage','teacherGroupReviewPage','teacherVotingResultsPage','teacherChatControlPage'].forEach(p=>{
     const el=document.getElementById(p);
     if(el) el.classList.add('hidden');
   });
@@ -3031,6 +3115,13 @@ function classDisplayName(cls){
   return String(cls || '').replace('-', '/');
 }
 
+function openTeacherBuilder(){
+  showPage('teacherBuilderPage');
+  loadBuiltActivitiesLibrary();
+  toggleDifferentTasksBuilder();
+  toggleAssignTargetMode();
+}
+
 function showTeacherDashboard(){
   if(!teacherLoggedIn && !document.getElementById('teacherPass').value){
     // allow after login only
@@ -3040,6 +3131,65 @@ function showTeacherDashboard(){
   loadBuiltActivitiesLibrary();
 }
 
+
+function formatActivityTimeForTeacher(activity){
+  const t = activity && (activity.assignedAt || activity.updatedAt || activity.createdAt);
+  if(!t) return 'Not assigned yet';
+  try{
+    return new Date(t).toLocaleString([], {
+      month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'
+    });
+  }catch(e){ return 'Recently assigned'; }
+}
+
+function makeTeacherAiActivitySummary(activity){
+  if(!activity) return 'No current activity yet. Create or load an activity, then assign it to a class or selected groups.';
+  const taskText = activity.taskMode === 'different'
+    ? 'Students work in groups on different assigned tasks.'
+    : 'All groups complete the same assigned task.';
+  const criteriaCount = Array.isArray(activity.successCriteria) ? activity.successCriteria.length : 0;
+  return taskText + ' They write their part, save work, check ' + criteriaCount + ' success criteria, and the leader submits the final group answer.';
+}
+
+function renderTeacherCurrentActivitySummary(classes){
+  const box = document.getElementById('teacherCurrentActivityBox');
+  if(!box) return;
+
+  const classList = getClassOptions();
+  const active = classList
+    .map(cls=>({ cls, activity: (classes[cls] || {}).currentActivity }))
+    .filter(item=>item.activity);
+
+  if(!active.length){
+    box.innerHTML = `
+      <h3>🌟 Current Activity Details</h3>
+      <div class="currentActivityEmpty">No activity assigned yet. Open the Activity Builder to create or load an activity, then assign it to your class or selected groups.</div>
+    `;
+    return;
+  }
+
+  const latest = active.sort((a,b)=>
+    Number(b.activity.assignedAt || b.activity.updatedAt || b.activity.createdAt || 0) -
+    Number(a.activity.assignedAt || a.activity.updatedAt || a.activity.createdAt || 0)
+  )[0];
+
+  const activity = latest.activity || {};
+  const assignedClasses = active.map(x=>classDisplayName(x.cls)).join(', ');
+  const instruction = activity.instructions || 'No instructions written yet.';
+  const shortInstruction = instruction.length > 160 ? instruction.slice(0,160) + '...' : instruction;
+
+  box.innerHTML = `
+    <h3>🌟 Current Activity Details</h3>
+    <div class="currentActivityGrid">
+      <div class="currentActivityMini"><b>📌 Activity Name</b><span>${escapeHtml(activity.name || 'Group Activity')}</span></div>
+      <div class="currentActivityMini"><b>⏰ Time</b><span>${escapeHtml(formatActivityTimeForTeacher(activity))}</span></div>
+      <div class="currentActivityMini"><b>📋 Instruction</b><span>${escapeHtml(shortInstruction)}</span></div>
+      <div class="currentActivityMini"><b>🤖 AI Short Description</b><span>${escapeHtml(makeTeacherAiActivitySummary(activity))}</span></div>
+    </div>
+    <div class="smallHint" style="margin-top:8px;">Assigned to: ${escapeHtml(assignedClasses)}</div>
+  `;
+}
+
 function renderTeacherDashboard(){
   const grid = document.getElementById('teacherClassGrid');
   if(!grid) return;
@@ -3047,6 +3197,8 @@ function renderTeacherDashboard(){
   hubRef.child('classes').once('value', snap=>{
     const classes = snap.val() || {};
     let html = '';
+
+    renderTeacherCurrentActivitySummary(classes);
 
     getClassOptions().forEach(cls=>{
       const classObj = classes[cls] || {};
