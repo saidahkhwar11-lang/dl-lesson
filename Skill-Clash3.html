@@ -3536,7 +3536,6 @@ async function resetSelectedClass(){
   if(!confirm('Reset this class? This clears groups and assignments.')) return;
   await hubRef.child('classes/'+selectedTeacherClass).remove();
 }
-  let studentTimerInterval = null;
 
 function listenStudentTimer(){
   hubRef.child(`classes/${currentClass}/settings/timer`).on('value', snap=>{
