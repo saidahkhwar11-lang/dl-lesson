@@ -4,7 +4,201 @@
 <meta charset="UTF-8">
 <title>⚔️ Skill Clash Hub</title>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+
+let lastAchievementCertificate = null;
+
+function calculateClassAchievement(classData, groupNumber){
+  const votes = (classData && classData.votes) || {};
+  const scores = {};
+  for(let i=1;i<=10;i++) scores[i] = 0;
+
+  Object.keys(votes).forEach(battleKey=>{
+    const battle = votes[battleKey] || {};
+    Object.keys(battle).forEach(voteKey=>{
+      const v = battle[voteKey] || {};
+      const a = Number(v.teamA);
+      const b = Number(v.teamB);
+      if(a) scores[a] = (scores[a] || 0) + Number(v.scoreA || 0);
+      if(b) scores[b] = (scores[b] || 0) + Number(v.scoreB || 0);
+    });
+  });
+
+  const group = Number(groupNumber);
+  const battles = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  const myBattle = battles.find(pair => pair[0] === group || pair[1] === group);
+  let isBattleWinner = false;
+  let battleTitle = '';
+
+  if(myBattle){
+    const a = myBattle[0];
+    const b = myBattle[1];
+    const scoreA = Number(scores[a] || 0);
+    const scoreB = Number(scores[b] || 0);
+    battleTitle = 'Group ' + a + ' VS Group ' + b;
+
+    if(scoreA > scoreB && group === a) isBattleWinner = true;
+    if(scoreB > scoreA && group === b) isBattleWinner = true;
+    if(scoreA === scoreB && scoreA > 0 && (group === a || group === b)) isBattleWinner = true;
+  }
+
+  const ranking = Object.keys(scores)
+    .map(team => ({team:Number(team), score:Number(scores[team] || 0)}))
+    .sort((a,b) => b.score - a.score || a.team - b.team);
+
+  const topScore = ranking.length ? Number(ranking[0].score || 0) : 0;
+  const isWholeClassWinner = topScore > 0 && Number(scores[group] || 0) === topScore;
+  const myRank = ranking.findIndex(r => Number(r.team) === group) + 1;
+
+  return {
+    scores,
+    ranking,
+    group,
+    myScore:Number(scores[group] || 0),
+    myRank,
+    battleTitle,
+    isBattleWinner,
+    isWholeClassWinner,
+    qualifies:isBattleWinner || isWholeClassWinner
+  };
+}
+
+async function checkMyAchievement(){
+  const box = document.getElementById('achievementMsg');
+  const btn = document.getElementById('downloadCertificateBtn');
+
+  if(box){
+    box.classList.remove('hidden');
+    box.innerHTML = 'Checking your achievement...';
+  }
+  if(btn) btn.classList.add('hidden');
+
+  if(!currentClass || !currentGroup || !currentStudent){
+    if(box) box.innerHTML = 'Please join your group first.';
+    return;
+  }
+
+  const classSnap = await hubRef.child('classes/' + currentClass).once('value');
+  const classData = classSnap.val() || {};
+
+  if(!classData.settings || classData.settings.resultsReleased !== true){
+    if(box) box.innerHTML = '🔒 Results are not released yet. Wait for your teacher to release the results.';
+    return;
+  }
+
+  const result = calculateClassAchievement(classData, currentGroup);
+  const groupData = (classData.groups || {})['group' + currentGroup] || {};
+
+  if(!result.qualifies){
+    if(box){
+      box.innerHTML =
+        '🌟 Great effort! Your group rank is <b>#' + result.myRank + '</b> with <b>' + result.myScore + '</b> points.<br>' +
+        'Certificate is available only for battle winners or the whole-class winner.';
+    }
+    return;
+  }
+
+  const awards = [];
+  if(result.isWholeClassWinner) awards.push('Whole Class Winner');
+  if(result.isBattleWinner) awards.push('Battle Winner');
+
+  lastAchievementCertificate = {
+    studentName: currentStudent,
+    className: currentClass,
+    group: currentGroup,
+    awards: awards,
+    rank: result.myRank,
+    score: result.myScore,
+    battleTitle: result.battleTitle,
+    teacherMark: groupData.teacherMark || '',
+    date: new Date().toLocaleDateString()
+  };
+
+  if(box){
+    box.innerHTML =
+      '🎉 Congratulations! Your group earned: <b>' + awards.join(' + ') + '</b>.<br>' +
+      'Group Rank: <b>#' + result.myRank + '</b> | Voting Points: <b>' + result.myScore + '</b><br>' +
+      'You can download your certificate now.';
+  }
+  if(btn) btn.classList.remove('hidden');
+}
+
+function downloadAchievementCertificate(){
+  if(!lastAchievementCertificate){
+    alert('Click Check My Achievement first.');
+    return;
+  }
+
+  const c = lastAchievementCertificate;
+  const awardText = c.awards.join(' & ');
+  const safeStudent = escapeHtml(c.studentName);
+  const safeClass = escapeHtml(c.className);
+  const safeGroup = escapeHtml(c.group);
+  const safeAward = escapeHtml(awardText);
+  const safeBattle = escapeHtml(c.battleTitle || 'Skill Clash Battle');
+
+  const certHtml = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Skill Clash Certificate</title>
+<style>
+  body{margin:0;font-family:Georgia,'Times New Roman',serif;background:#f8fafc;color:#1e293b;}
+  .page{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:30px;box-sizing:border-box;}
+  .cert{width:1050px;max-width:100%;background:linear-gradient(135deg,#fff7ed,#eff6ff,#fdf2f8);border:10px solid #f59e0b;border-radius:32px;padding:55px;text-align:center;box-shadow:0 18px 50px rgba(15,23,42,.18);position:relative;overflow:hidden;}
+  .cert:before,.cert:after{content:'★';position:absolute;font-size:110px;color:rgba(245,158,11,.18);}
+  .cert:before{top:30px;left:45px}.cert:after{bottom:30px;right:45px}
+  h1{font-size:54px;color:#1d4ed8;margin:10px 0 4px;letter-spacing:1px;}
+  .subtitle{font-size:24px;color:#92400e;font-weight:bold;margin-bottom:35px;}
+  .presented{font-size:22px;margin-top:25px;}
+  .name{font-size:56px;color:#be185d;font-weight:bold;margin:18px 0;border-bottom:3px solid #f59e0b;display:inline-block;padding:0 45px 10px;}
+  .award{font-size:31px;color:#166534;font-weight:bold;margin:25px 0;}
+  .details{font-size:22px;line-height:1.8;margin-top:25px;}
+  .footer{display:flex;justify-content:space-between;align-items:end;margin-top:55px;font-size:18px;gap:20px;}
+  .line{border-top:2px solid #334155;padding-top:8px;min-width:230px;}
+  .printBtn{position:fixed;top:16px;right:16px;border:0;background:#1d4ed8;color:white;border-radius:14px;padding:12px 18px;font-size:16px;cursor:pointer;}
+  @media print{.printBtn{display:none}.page{padding:0}.cert{box-shadow:none;border-radius:0;width:100%;min-height:100vh;box-sizing:border-box}}
+
+.activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
+.instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
+</style>
+</head>
+<body>
+<button class="printBtn" onclick="window.print()">Print / Save PDF</button>
+<div class="page">
+  <div class="cert">
+    <div style="font-size:50px;">⚔️ 🏆 ⚔️</div>
+    <h1>Certificate of Achievement</h1>
+    <div class="subtitle">Skill Clash Hub</div>
+    <div class="presented">This certificate is proudly presented to</div>
+    <div class="name">${safeStudent}</div>
+    <div class="award">${safeAward}</div>
+    <div class="details">
+      For outstanding collaboration and achievement in <b>Group ${safeGroup}</b><br>
+      Class: <b>${safeClass}</b> | Rank: <b>#${c.rank}</b> | Voting Points: <b>${c.score}</b><br>
+      ${safeBattle}
+    </div>
+    <div class="footer">
+      <div class="line">Date: ${escapeHtml(c.date)}</div>
+      <div class="line">Al Reyada School</div>
+      <div class="line">Teacher Signature</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+
+  const win = window.open('', '_blank');
+  if(!win){
+    alert('Please allow popups to open the certificate.');
+    return;
+  }
+  win.document.open();
+  win.document.write(certHtml);
+  win.document.close();
+}
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
@@ -509,6 +703,32 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 .groupTaskMini textarea{min-height:95px;font-size:14px}
 .teacherFeedbackBox{background:#fff7ed;border:1px solid #fed7aa;border-radius:14px;padding:14px;margin-top:12px;color:#7c2d12}
 .teacherFeedbackBox b{color:#9a3412}
+
+.achievementBox{
+  margin-top:14px;
+  background:linear-gradient(135deg,#fff7ed,#fdf2f8);
+  border:1px solid #fed7aa;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 6px 16px rgba(124,45,18,.08);
+}
+.achievementBox h3{margin:0 0 8px;color:#9a3412;display:flex;align-items:center;gap:8px}
+.achievementActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.achievementActions button{flex:1;min-width:180px}
+.achievementMsg{
+  margin-top:10px;
+  background:white;
+  border:1px solid #fde68a;
+  border-radius:14px;
+  padding:12px;
+  color:#78350f;
+  line-height:1.5;
+}
+.certificateBtn{background:linear-gradient(135deg,#f59e0b,#ec4899)!important;color:white!important;font-weight:bold}
+
+
+.activityTitleLine{font-size:22px;font-weight:800;color:#243b6b;margin-bottom:10px}
+.instructionBox{background:#eef7ff;border:1px solid #cfe4ff;border-radius:14px;padding:12px;margin:10px 0;line-height:1.55;color:#203057}
 </style>
 </head>
 
@@ -614,6 +834,16 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
       <div id="submitMsg" class="soft hidden"></div>
       <div id="studentResultsBox" class="soft hidden">🏆 Results not released yet.</div>
       <div id="teacherNoteBox" class="teacherNoteBox hidden">📝 Teacher note will appear here.</div>
+
+      <div id="achievementBox" class="achievementBox">
+        <h3>🏅 My Achievement</h3>
+        <div>Check if your group is a battle winner or the whole-class winner after teacher releases results.</div>
+        <div class="achievementActions">
+          <button onclick="checkMyAchievement()" class="certificateBtn">🏆 Check My Achievement</button>
+          <button id="downloadCertificateBtn" onclick="downloadAchievementCertificate()" class="green hidden">📄 Download Certificate</button>
+        </div>
+        <div id="achievementMsg" class="achievementMsg hidden"></div>
+      </div>
     </div>
 
     <div>
@@ -736,6 +966,9 @@ Restated Opinion
 
       <label>Activity Name</label>
       <input id="builderActivityName" value="Opinion Group Challenge">
+
+      <label>Activity Instructions</label>
+      <textarea id="builderActivityInstructions" placeholder="Write clear instructions students will see after you assign the activity.">Read your group task carefully. Each student should complete her own part, save her work, then the leader combines the answers and submits the final group work.</textarea>
 
       <label>Assign to Classes</label>
       <div class="classAssignBox">
@@ -1163,11 +1396,6 @@ function loadCurrentActivityForStudent(){
   hubRef.child('classes/' + currentClass + '/currentActivity').once('value', snap=>{
     currentActivity = snap.val();
     renderActivityDetails(currentActivity, currentGroup);
-    if(currentActivity){
-      document.getElementById('groupTopic').innerHTML =
-        '<b>' + escapeHtml(currentActivity.name || 'Group Activity') + '</b><br>' +
-        escapeHtml(getAssignedTask(currentActivity, currentGroup));
-    }
   });
 }
 
@@ -1469,17 +1697,34 @@ function getAssignedTask(activity, groupNumber){
 
 function renderActivityDetails(activity, groupNumber){
   const box = document.getElementById('studentActivityDetails');
+  const topic = document.getElementById('groupTopic');
+
   if(!box) return;
+
   if(!activity){
-    box.innerHTML = 'Activity details will appear here after teacher assigns it.';
+    if(topic) topic.innerHTML = 'No activity assigned yet.';
+    box.innerHTML = 'Activity details and instructions will appear here after the teacher assigns the activity.';
     return;
   }
-  const studentParts = (activity.studentQuestions || []).map(q => '<span class="criteriaChip">' + escapeHtml(q) + '</span>').join(' ');
-  const criteria = (activity.successCriteria || []).map(c => '<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>').join(' ');
+
+  const taskText = getAssignedTask(activity, groupNumber);
+  const instructions = activity.instructions || 'Follow the task, save your own work, and let the leader submit the final group work.';
+  const studentParts = (activity.studentQuestions || [])
+    .map(q => '<span class="criteriaChip">' + escapeHtml(q) + '</span>')
+    .join(' ');
+  const criteria = (activity.successCriteria || [])
+    .map(c => '<span class="criteriaChip">✓ ' + escapeHtml(c) + '</span>')
+    .join(' ');
+
+  if(topic){
+    topic.innerHTML =
+      '<div class="activityTitleLine">' + escapeHtml(activity.name || 'Group Activity') + '</div>' +
+      '<div class="activityTaskBox">' + escapeHtml(taskText) + '</div>';
+  }
+
   box.innerHTML =
-    '<h3>🧩 Assigned Activity</h3>' +
-    '<p><b>' + escapeHtml(activity.name || 'Group Activity') + '</b></p>' +
-    '<div class="activityTaskBox">' + escapeHtml(getAssignedTask(activity, groupNumber)) + '</div>' +
+    '<h3>📋 Activity Instructions</h3>' +
+    '<div class="instructionBox">' + escapeHtml(instructions) + '</div>' +
     '<p><b>Each student job/question:</b></p>' + (studentParts || '<p>No student questions added.</p>') +
     '<p><b>Success criteria for peer voting:</b></p>' + (criteria || '<p>No criteria added.</p>');
 }
@@ -1493,6 +1738,7 @@ async function saveBuiltActivityAndAssign(){
   const activity = {
     id: 'activity_' + Date.now(),
     name: document.getElementById('builderActivityName').value.trim() || 'Group Activity',
+    instructions: document.getElementById('builderActivityInstructions') ? document.getElementById('builderActivityInstructions').value.trim() : (document.getElementById('activityInstructions') ? document.getElementById('activityInstructions').value.trim() : ''),
     taskMode: document.getElementById('builderTaskMode').value,
     sameTask: document.getElementById('builderSameTask').value.trim(),
     groupTasks: collectDifferentGroupTasks(),
@@ -2271,7 +2517,6 @@ function renderTeacherClassGroups(cls){
         <p><b>Teacher Points:</b> ${escapeHtml(g.teacherMark ?? 'Not marked')}</p>
         <p><b>Chat:</b> ${g.chatOpen === false ? '🔒 Closed' : '✅ Open'}</p>
         <button onclick="openTeacherGroupReview('${cls}',${i})">👀 Check Group Work</button>
-        <button onclick="openTeacherChatControl('${cls}')">💬 Control Chat</button>
       </div>`;
     }
 
