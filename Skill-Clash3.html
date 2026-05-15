@@ -316,6 +316,32 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 .roleBadge{background:#fff0f6;color:#9d174d;border-color:#fbcfe8}
 @media(max-width:850px){.studentLoginGrid,.workLayout,.cuteActions{grid-template-columns:1fr}.studentHero h2,.workHero h2{font-size:26px}}
 
+
+/* ===== Compact Student Work Page Polish ===== */
+.workHero{padding:18px 20px;margin-bottom:14px}
+.workHero h2{font-size:26px;margin-bottom:10px}
+#studentGroupInfo.soft{padding:10px 12px;margin-top:8px}
+.compactInfoGrid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;align-items:stretch}
+.compactInfoItem{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.22);border-radius:16px;padding:9px 10px;line-height:1.25;min-height:44px}
+.compactInfoItem .infoLabel{display:block;font-size:12px;opacity:.86;font-weight:bold;margin-bottom:3px}
+.compactInfoItem .infoValue{font-weight:bold;font-size:15px}
+.compactInfoItem.wide{grid-column:span 2}
+.compactMembers{max-height:58px;overflow:auto;padding-right:3px}
+.compactMembers .badge{background:rgba(255,255,255,.28);color:white;border:1px solid rgba(255,255,255,.28);margin:2px;padding:5px 8px;font-size:12px}
+.compactStatus{display:inline-block;margin-left:6px;vertical-align:middle}
+.myWorkCard{padding:16px 18px}
+.myWorkCard h3{margin-bottom:4px}
+.myWorkHelp{margin-bottom:10px}
+#myStudentAnswer{min-height:230px}
+.cuteActions{grid-template-columns:repeat(4,minmax(130px,1fr));gap:10px}
+.cuteActions button{min-height:50px;font-size:15px;padding:11px 12px}
+.leaveBottomRow{display:flex;justify-content:flex-end;margin-top:14px}
+.leaveBottomRow button{margin:0;min-width:170px;border-radius:18px;padding:11px 14px;font-size:15px;background:linear-gradient(135deg,#b42318,#ef4444)}
+.sideCuteCard{padding:15px 16px;margin-bottom:12px}
+.sideCuteCard h3{font-size:19px;margin-bottom:6px}
+@media(max-width:950px){.compactInfoGrid{grid-template-columns:repeat(2,minmax(140px,1fr))}.compactInfoItem.wide{grid-column:span 2}.cuteActions{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+@media(max-width:560px){.compactInfoGrid,.cuteActions{grid-template-columns:1fr}.compactInfoItem.wide{grid-column:span 1}.leaveBottomRow button{width:100%}}
+
 </style>
 </head>
 
@@ -325,7 +351,7 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
 
 <div class="container">
 
-  <div class="btnRow">
+  <div class="btnRow" id="mainLoginButtons">
 
   <button onclick="goToStudentLogin()">
     🎮 Student Login
@@ -401,11 +427,14 @@ body{background:linear-gradient(135deg,#f7fbff 0%,#eef6ff 45%,#fff7fb 100%)}
         <div id="studentWorkArea"></div>
 
         <div class="cuteActions">
-          <button onclick="toggleMemberWork()" class="viewBtn">👀 View Members’ Work</button>
+          <button onclick="toggleMemberWork()" class="viewBtn">👀 Members’ Work</button>
           <button onclick="saveMyStudentWork()" class="green">💾 Save My Work</button>
-          <button onclick="submitCombinedGroupWork()" class="submitBtn">📌 Submit Group Work</button>
+          <button onclick="submitCombinedGroupWork()" class="submitBtn">📌 Submit Final</button>
           <button onclick="toggleChatRoom()" class="chatBtn">💬 Chatroom</button>
-          <button onclick="leaveGroup()" class="red">🚪 Leave Group</button>
+        </div>
+
+        <div class="leaveBottomRow">
+          <button onclick="leaveGroup()">🚪 Leave Group</button>
         </div>
       </div>
 
@@ -847,13 +876,15 @@ const memberBadges = members.length
 const myRoleText = currentRole === 'leader' ? 'Group Leader' : 'Group Member';
 
 document.getElementById('studentGroupInfo').innerHTML =
-  '<b>Class:</b> ' + escapeHtml(currentClass) + ' | ' +
-  '<b>Group:</b> Group ' + currentGroup + ' ' + badge + '<br>' +
-  '<b>Leader:</b> ' + escapeHtml(leaderText) + '<br>' +
-  '<b>Members:</b> ' + memberBadges + '<br>' +
-  '<b>You:</b> ' + escapeHtml(currentStudent) +
-  '<span class="roleBadge">' + myRoleText + '</span>' +
-  ' | Total Votes: <b>' + totalVotes + '</b>';
+  '<div class="compactInfoGrid">' +
+    '<div class="compactInfoItem"><span class="infoLabel">Class:</span><span class="infoValue">' + escapeHtml(currentClass) + '</span></div>' +
+    '<div class="compactInfoItem"><span class="infoLabel">Group:</span><span class="infoValue">' + currentGroup + '</span></div>' +
+    '<div class="compactInfoItem"><span class="infoLabel">Leader:</span><span class="infoValue">' + escapeHtml(leaderText) + '</span></div>' +
+    '<div class="compactInfoItem"><span class="infoLabel">You:</span><span class="infoValue">' + escapeHtml(currentStudent) + '</span><span class="roleBadge">' + myRoleText + '</span></div>' +
+    '<div class="compactInfoItem"><span class="infoLabel">Votes:</span><span class="infoValue">' + totalVotes + '</span></div>' +
+    '<div class="compactInfoItem"><span class="infoLabel">Status:</span>' + badge + '</div>' +
+    '<div class="compactInfoItem wide"><span class="infoLabel">Members:</span><div class="compactMembers">' + memberBadges + '</div></div>' +
+  '</div>';
 
   document.getElementById('groupAnswer').value = data.answer || '';
 
