@@ -5,7 +5,74 @@
 <title>⚔️ Skill Clash Hub - Battle Voting Complete</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+function getAssignedActivityForSelectedClass(){
+  return hubRef.child(`classes/${selectedTeacherClass}/assignedActivities/group1`).once('value').then(s=>s.val() || {});
+}
+async function showClassReadingPerformance(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+  const panel = document.getElementById('votingResultsPanel');
+  if(!panel) return;
+
+  const snap = await hubRef.child(`classes/${selectedTeacherClass}`).once('value');
+  const cls = snap.val() || {};
+  const groups = cls.groups || {};
+  const assigned = ((cls.assignedActivities || {}).group1) || {};
+
+  let html = `<h2>📖 Reading Performance - Class ${classDisplay(selectedTeacherClass)}</h2>`;
+  html += `<p><b>Active Activity:</b> ${escapeHtml(assigned.title || 'No active reading activity')}</p>`;
+  html += `<div class="shareAnswersBox">Teacher view: check question marks, paragraph numbers, self-evaluation, and student summaries. The leader final group summary appears under each group if submitted.</div>`;
+
+  Object.keys(groups).sort().forEach(gKey=>{
+    const g = groups[gKey] || {};
+    const students = g.students || {};
+    html += `<div class="teacherPerformanceBox">
+      <h3>👥 ${escapeHtml(gKey.replace('group','Group '))}</h3>
+      <table class="performanceTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>ID</th>
+            <th>Paragraph</th>
+            <th>Question Marks</th>
+            <th>Self-Eval</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    Object.keys(students).forEach(id=>{
+      const s = students[id] || {};
+      html += `<tr>
+        <td>${escapeHtml(s.name || id)} ${s.role === 'leader' ? '👑' : ''}</td>
+        <td>${escapeHtml(id)}</td>
+        <td>${escapeHtml(s.assignedParagraphNumber || '-')}</td>
+        <td>${escapeHtml((s.readingScore ?? '-') + ' / ' + (s.readingTotal ?? '-'))}</td>
+        <td>${escapeHtml(s.selfEvaluation || '-')}</td>
+        <td class="summaryCell">${escapeHtml(s.paragraphSummary || 'No summary saved yet.')}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table>`;
+
+    if(g.finalSubmitted || g.finalAnswer){
+      html += `<div class="finalSummaryCard"><b>📌 Leader Final Group Summary:</b><br>${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+    }else{
+      html += `<div class="readingStatusWarn">Leader has not submitted the final group summary yet.</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  panel.classList.remove('hidden');
+  panel.innerHTML = html;
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+</script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
@@ -1621,6 +1688,70 @@ button:hover{filter:brightness(.96)}
 }
 @media(max-width:900px){.paragraphGrid{grid-template-columns:1fr}}
 
+
+/* ===== Clean Reading Builder Mode ===== */
+#readingBuilderArea{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+  margin-top:12px;
+}
+.readingCleanBox{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:10px;
+}
+.readingCleanTitle{
+  background:linear-gradient(135deg,#eef6ff,#ffffff);
+  border:1px solid #bfdbfe;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.readingCleanTitle h2{margin:0;color:#18376b}
+.readingCleanTitle p{margin:6px 0 0;color:#475569}
+.teacherPerformanceBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:14px;
+}
+.performanceTable{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.performanceTable th,.performanceTable td{
+  border:1px solid #d8e5f6;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+.performanceTable th{
+  background:#eaf3ff;
+  color:#18376b;
+}
+.summaryCell{
+  white-space:pre-wrap;
+  max-width:360px;
+}
+.shareAnswersBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:12px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:800;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1946,6 +2077,7 @@ button:hover{filter:brightness(.96)}
         <button class="green" onclick="setStage('work')">✍️ Open Work Stage</button>
         <button class="blue" onclick="setStage('voting')">🗳 Activate Selected Voting System</button>
         <button class="blue" onclick="showVotingResults()">📊 Voting Results</button>
+        <button class="purple" onclick="showClassReadingPerformance()">📖 Reading Performance</button>
         <button class="red" onclick="resetSelectedClass()">🗑 Reset This Class</button>
       </div>
       <div id="groupCards" class="groupCards"></div>
@@ -1995,7 +2127,40 @@ button:hover{filter:brightness(.96)}
         <label>Activity Instructions</label>
         <textarea id="builderInstructions" placeholder="Instructions students will read."></textarea>
 
-        <label>📷 Main Activity Details Picture</label>
+        <div id="readingBuilderArea" class="readingBuilderBox hidden">
+          <div class="readingCleanTitle">
+            <h2>📖 Reading Activity Builder</h2>
+            <p>Students in the same group will receive different paragraphs from the same full text. Each paragraph has auto-marked questions, then students write a short summary.</p>
+          </div>
+
+          <div class="readingCleanBox">
+            <label>📄 Upload Reading Text File / PDF</label>
+            <input id="readingSamePdf" type="file" accept=".txt,.pdf" onchange="handleReadingTextFileUpload(this)">
+
+            <label>Paste / Edit Full Reading Text</label>
+            <textarea id="readingSameText" placeholder="Paste the full reading text here, or upload a PDF/TXT file."></textarea>
+
+            <label>Number of Paragraphs</label>
+            <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
+
+            <label>Question Skills</label>
+            <div class="skillCheckGrid">
+              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
+              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
+              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="vocabulary" checked> Vocabulary</label>
+              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
+            </div>
+
+            <div class="btnRow">
+              <button type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Questions</button>
+              <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
+            </div>
+
+            <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
+          </div>
+        </div>
+<div id="writingBuilderFields">
+<label>📷 Main Activity Details Picture</label>
         <div class="imageUploadBox">
           <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
           <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
@@ -2054,7 +2219,6 @@ button:hover{filter:brightness(.96)}
           </div>
 
           <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
-          <div id="readingSamePreview" class="paragraphReadingBox hidden" style="display:none!important"></div>
         </div>
 
         <label>Success Criteria Checklist</label>
@@ -2067,7 +2231,8 @@ Reasons are included
 Evidence/examples are included
 Grammar and spelling are checked"></textarea>
 
-        <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
+        </div>
+<button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
       </div>
     </div>
   </div>
@@ -2333,7 +2498,7 @@ function listenAssignedActivity(){
     renderReadingStudentQuiz(null);
     renderParagraphReadingStudent(null);
 
-    if(a.activityType === 'readingParagraph'){
+    if((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length){
       document.getElementById('groupTaskBox').innerHTML =
         `${mainImg}<b>📖 Paragraph Reading Activity</b><br>${escapeHtml(a.groupTask || 'Each student will receive one paragraph, answer questions, then save a short summary.')}${groupImg}${resources}`;
       renderReadingStudentQuiz(null);
@@ -3954,19 +4119,29 @@ function showBuilder(){
 function toggleActivityType(){
   const activityType = document.getElementById('builderActivityType')?.value || 'writing';
   const readingArea = document.getElementById('readingBuilderArea');
+  const writingFields = document.getElementById('writingBuilderFields');
+  const taskTypeBox = document.getElementById('builderTaskType')?.closest('div');
+
   if(readingArea) readingArea.classList.toggle('hidden', activityType !== 'reading');
-  toggleTaskType();
-  toggleReadingMode();
+  if(writingFields) writingFields.classList.toggle('hidden', activityType === 'reading');
+  if(taskTypeBox) taskTypeBox.classList.toggle('hidden', activityType === 'reading');
+
+  toggleActivityType();
 }
 function toggleTaskType(){
-  const type = document.getElementById('builderTaskType').value;
+  const type = document.getElementById('builderTaskType')?.value || 'same';
   const activityType = document.getElementById('builderActivityType')?.value || 'writing';
-  document.getElementById('sameTaskArea').classList.toggle('hidden', type !== 'same');
-  document.getElementById('differentTaskArea').classList.toggle('hidden', type !== 'different');
-  const readingSameBox = document.getElementById('readingSameBox');
-  const readingDifferentNote = document.getElementById('readingDifferentNote');
-  if(readingSameBox) readingSameBox.classList.toggle('hidden', !(activityType === 'reading' && type === 'same'));
-  if(readingDifferentNote) readingDifferentNote.classList.toggle('hidden', !(activityType === 'reading' && type === 'different'));
+  const sameArea = document.getElementById('sameTaskArea');
+  const diffArea = document.getElementById('differentTaskArea');
+
+  if(activityType === 'reading'){
+    if(sameArea) sameArea.classList.add('hidden');
+    if(diffArea) diffArea.classList.add('hidden');
+    return;
+  }
+
+  if(sameArea) sameArea.classList.toggle('hidden', type !== 'same');
+  if(diffArea) diffArea.classList.toggle('hidden', type !== 'different');
 }
 function toggleAssignMode(){
   document.getElementById('assignGroupsArea').classList.toggle('hidden', document.getElementById('assignMode').value !== 'groups');
@@ -4310,6 +4485,30 @@ function getSelectedReadingSkills(){
   const checked = Array.from(document.querySelectorAll('.readingSkill:checked')).map(x=>x.value);
   return checked.length ? checked : ['mainIdea','supportingDetails','vocabulary','grammar'];
 }
+
+async function handleReadingTextFileUpload(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+
+  const name = (file.name || '').toLowerCase();
+
+  if(name.endsWith('.txt')){
+    const text = await file.text();
+    const box = document.getElementById('readingSameText');
+    if(box) box.value = text.trim();
+    alert('Text file loaded. Now choose paragraph number and generate questions.');
+    return;
+  }
+
+  if(name.endsWith('.pdf')){
+    await extractReadingPdfToTextarea(input,'readingSameText');
+    return;
+  }
+
+  alert('Please upload PDF or TXT only for reading text.');
+  input.value = '';
+}
+
 async function extractReadingPdfToTextarea(input, textareaId){
   const file = input.files && input.files[0];
   if(!file) return;
@@ -4528,8 +4727,8 @@ async function collectActivity(){
   const instructions = document.getElementById('builderInstructions').value.trim();
   const activityType = document.getElementById('builderActivityType') ? document.getElementById('builderActivityType').value : 'writing';
   const readingWorkMode = 'paragraph';
-  const taskType = document.getElementById('builderTaskType').value;
-  const sameTask = document.getElementById('builderSameTask').value.trim();
+  const taskType = activityType === 'reading' ? 'same' : document.getElementById('builderTaskType').value;
+  const sameTask = activityType === 'reading' ? 'Each student receives one paragraph, answers questions, then writes a summary.' : document.getElementById('builderSameTask').value.trim();
   const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
   const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
   const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
@@ -4584,7 +4783,7 @@ async function saveActivityToLibrary(){
   const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
   if(a.activityType !== 'readingParagraph' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
-  if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Build the paragraph reading activity first.');return}
+  if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Build the reading activity: divide the text and generate questions first.');return}
   currentActivityId = a.id;
   await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
   alert('✅ Activity saved to library.');
