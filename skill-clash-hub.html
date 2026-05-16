@@ -1799,6 +1799,19 @@ button:hover{filter:brightness(.96)}
 .readingHiddenForMode{display:none!important}
 @media(max-width:900px){.readingMainLayout{grid-template-columns:1fr}}
 
+
+/* ===== Strong student active activity sync ===== */
+.studentSyncNote{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#92400e;
+  border-radius:12px;
+  padding:8px;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:800;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1957,7 +1970,7 @@ button:hover{filter:brightness(.96)}
       <div>
         <div class="card">
           <h2>📌 Activity Name</h2>
-          <div id="activityNameBox" class="activityName">No activity assigned</div>
+          <div id="activityNameBox" class="activityName">No activity assigned</div><button class="gray" style="width:100%;margin-top:8px" onclick="forceLoadStudentActiveActivity()">🔄 Refresh Active Activity</button>
 
           <h3 style="margin-top:12px;">📋 Activity Instructions</h3>
           <div id="activityInstructionsBox" class="instructionBox">No instructions</div>
@@ -2617,6 +2630,82 @@ function buildStudentParagraphQuestionsHtml(assigned, myData){
   return html;
 }
 
+
+async function findLatestLibraryActivityForClass(cls){
+  try{
+    const snap = await hubRef.child('activityLibrary').once('value');
+    const data = snap.val() || {};
+    let best = null;
+    Object.keys(data).forEach(id=>{
+      const a = data[id] || {};
+      const classes = a.lastActivatedClasses || a.assignedClasses || [];
+      if(Array.isArray(classes) && classes.includes(cls)){
+        const t = Number(a.lastActivatedAt || a.assignedAt || a.updatedAt || 0);
+        if(!best || t > best.t) best = {id, t, activity:a};
+      }
+    });
+    if(best){
+      best.activity.id = best.id;
+      return best.activity;
+    }
+  }catch(e){}
+  return null;
+}
+
+async function forceLoadStudentActiveActivity(){
+  if(!currentClass || !currentGroup) return;
+
+  try{
+    const clsSnap = await hubRef.child(`classes/${currentClass}`).once('value');
+    const cls = clsSnap.val() || {};
+    const current = cls.currentActivity || {};
+    const assigned = ((cls.assignedActivities || {})['group'+currentGroup]) || {};
+    const settings = cls.settings || {};
+    let a = null;
+
+    if(assigned && assigned.title && (!current.activationId || !assigned.activationId || assigned.activationId === current.activationId)){
+      a = assigned;
+    }else if(current && current.title){
+      a = Object.assign({}, current, assigned || {}, {
+        title: current.title,
+        instructions: current.instructions || assigned.instructions || '',
+        activityType: current.activityType || assigned.activityType || 'writing',
+        activationId: current.activationId || assigned.activationId || settings.activationId || '',
+        groupTask: assigned.groupTask || current.groupTask || 'Activity assigned. Follow the instructions.',
+        groupTaskImage: assigned.groupTaskImage || current.groupTaskImage || current.mainImage || '',
+        paragraphReading: assigned.paragraphReading || current.paragraphReading || [],
+        readingText: assigned.readingText || current.readingText || '',
+        readingQuestions: assigned.readingQuestions || current.readingQuestions || [],
+        criteria: assigned.criteria || current.criteria || [],
+        votingCriteria: assigned.votingCriteria || current.votingCriteria || []
+      });
+    }else if(settings.activeActivityId){
+      const libSnap = await hubRef.child('activityLibrary/'+settings.activeActivityId).once('value');
+      const lib = libSnap.val() || {};
+      if(lib && lib.title){
+        a = buildAssignedActivityForGroup(lib, Number(currentGroup), settings.activationId || ('act_'+Date.now()));
+      }
+    }else{
+      const latest = await findLatestLibraryActivityForClass(currentClass);
+      if(latest && latest.title){
+        a = buildAssignedActivityForGroup(latest, Number(currentGroup), latest.lastActivatedAt || ('act_'+Date.now()));
+      }
+    }
+
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+    }else{
+      renderAssignedActivityOnStudent({});
+      const taskBox = document.getElementById('groupTaskBox');
+      if(taskBox){
+        taskBox.innerHTML = `<div class="studentSyncNote">No active activity found for Class ${classDisplay(currentClass)} / Group ${currentGroup}. Ask teacher to click Activate for Selected Classes again.</div>`;
+      }
+    }
+  }catch(err){
+    console.log('forceLoadStudentActiveActivity error', err);
+  }
+}
+
 function listenAssignedActivity(){
   if(assignedActivityListener) assignedActivityListener.off();
   if(classActiveActivityListener) classActiveActivityListener.off();
@@ -2628,32 +2717,36 @@ function listenAssignedActivity(){
     const cls = snap.val() || {};
     const current = cls.currentActivity || {};
     const assigned = ((cls.assignedActivities || {})['group'+currentGroup]) || {};
+    const settings = cls.settings || {};
+    let a = null;
 
-    let a = {};
-
-    // Source of truth: currentActivity activationId. 
-    // If group assignment has the same activationId, use full group assignment.
-    // If not, use currentActivity immediately so students do not stay on old work.
-    if(current && current.title){
-      if(assigned && assigned.title && (!current.activationId || assigned.activationId === current.activationId)){
-        a = assigned;
-      }else{
-        a = Object.assign({}, current, {
-          groupTask: current.groupTask || current.sameTask || 'Activity assigned. Follow the instructions.',
-          groupTaskImage: current.groupTaskImage || current.mainImage || '',
-          criteria: current.criteria || [],
-          votingCriteria: current.votingCriteria || [],
-          paragraphReading: current.paragraphReading || [],
-          readingText: current.readingText || '',
-          readingQuestions: current.readingQuestions || []
-        });
-      }
-    }else if(assigned && assigned.title){
+    if(assigned && assigned.title && (!current.activationId || !assigned.activationId || assigned.activationId === current.activationId)){
       a = assigned;
+    }else if(current && current.title){
+      a = Object.assign({}, current, assigned || {}, {
+        title: current.title,
+        instructions: current.instructions || assigned.instructions || '',
+        activityType: current.activityType || assigned.activityType || 'writing',
+        activationId: current.activationId || assigned.activationId || settings.activationId || '',
+        groupTask: assigned.groupTask || current.groupTask || 'Activity assigned. Follow the instructions.',
+        groupTaskImage: assigned.groupTaskImage || current.groupTaskImage || current.mainImage || '',
+        paragraphReading: assigned.paragraphReading || current.paragraphReading || [],
+        readingText: assigned.readingText || current.readingText || '',
+        readingQuestions: assigned.readingQuestions || current.readingQuestions || [],
+        criteria: assigned.criteria || current.criteria || [],
+        votingCriteria: assigned.votingCriteria || current.votingCriteria || []
+      });
     }
 
-    renderAssignedActivityOnStudent(a);
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+    }else{
+      forceLoadStudentActiveActivity();
+    }
   });
+
+  setTimeout(forceLoadStudentActiveActivity, 500);
+  setTimeout(forceLoadStudentActiveActivity, 2000);
 }
 
 function renderAssignedActivityOnStudent(a){
