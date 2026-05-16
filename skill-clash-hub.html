@@ -1507,6 +1507,40 @@ button:hover{filter:brightness(.96)}
   .skillCheckGrid{grid-template-columns:1fr}
 }
 
+
+/* ===== Dashboard Activity Activation Panel ===== */
+.activationPanel{
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid #cfe0f7;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.activationGrid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:12px;
+  align-items:end;
+}
+.activationClassChecks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.activationPreview{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  color:#92400e;
+  font-weight:800;
+}
+@media(max-width:900px){.activationGrid{grid-template-columns:1fr}}
+
+.teacherTopActions{grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){.teacherTopActions{grid-template-columns:1fr 1fr}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1768,6 +1802,7 @@ button:hover{filter:brightness(.96)}
 
       <div class="teacherTopActions">
         <button class="green" onclick="startTimer()">⏱ Start Timer</button>
+        <button class="purple" onclick="toggleActivationPanel()">🚀 Activate Activity</button>
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
@@ -1776,6 +1811,35 @@ button:hover{filter:brightness(.96)}
       <div class="note teacherTimerLine">
         <span>⏱ Teacher Timer: <b id="teacherTimer">Not started</b></span>
         <button class="timerMiniBtn" onclick="openTimerPopup()">⛶ Maximize Timer + Activity</button>
+      </div>
+    </div>
+
+
+    <div id="dashboardActivationPanel" class="activationPanel hidden">
+      <h2>🚀 Activate / Assign Saved Activity</h2>
+      <p class="smallNote">Choose one saved activity from your library and assign it to selected classes. Each class can have a different active activity at the same time.</p>
+
+      <div class="activationGrid">
+        <div>
+          <label>📚 Saved Activity Library</label>
+          <select id="dashboardSavedActivities" onchange="previewDashboardActivity()"></select>
+        </div>
+        <div>
+          <label>Assign To Class(es)</label>
+          <div class="activationClassChecks">
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-1">9/1</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-2">9/2</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-3">9/3</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-4">9/4</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="dashboardActivityPreview" class="activationPreview">Choose an activity to preview.</div>
+
+      <div class="btnRow">
+        <button class="green" onclick="activateSavedActivityForSelectedClasses()">✅ Activate for Selected Classes</button>
+        <button class="gray" onclick="toggleActivationPanel()">Close</button>
       </div>
     </div>
 
@@ -1913,31 +1977,6 @@ Evidence/examples are included
 Grammar and spelling are checked"></textarea>
 
         <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
-      </div>
-
-      <div class="card">
-        <h2>📤 Assign Activity</h2>
-
-        <label>Assign To</label>
-        <select id="assignMode" onchange="toggleAssignMode()">
-          <option value="class">Whole class / all groups</option>
-          <option value="groups">Selected group(s) only</option>
-        </select>
-
-        <label>Choose Class(es)</label>
-        <div class="assignChecks">
-          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-1">9/1</label>
-          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-2">9/2</label>
-          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-3">9/3</label>
-          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-4">9/4</label>
-        </div>
-
-        <div id="assignGroupsArea" class="hidden">
-          <label>Choose Group(s)</label>
-          <div class="assignChecks" id="assignGroupChecks"></div>
-        </div>
-
-        <button class="green" style="width:100%" onclick="assignCurrentActivity()">✅ Assign Current Activity</button>
       </div>
     </div>
   </div>
@@ -3786,7 +3825,6 @@ function clearGroupTaskImage(i){
 function showBuilder(){
   showOnly('builderPage');
   buildGroupTaskInputs();
-  buildAssignGroupChecks();
   loadActivityLibrary();
 }
 function toggleActivityType(){
@@ -4191,6 +4229,129 @@ async function deleteActivity(){
   if(!confirm('Delete this activity from library?')) return;
   await hubRef.child('activityLibrary/'+id).remove();
   loadActivityLibrary();
+}
+
+
+function toggleActivationPanel(){
+  const panel = document.getElementById('dashboardActivationPanel');
+  if(!panel) return;
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden')){
+    loadDashboardActivityLibrary();
+  }
+}
+
+function loadDashboardActivityLibrary(){
+  hubRef.child('activityLibrary').once('value', snap=>{
+    const data = snap.val() || {};
+    let html = '<option value="">Choose saved activity</option>';
+    Object.keys(data).forEach(id=>{
+      const a = data[id] || {};
+      html += `<option value="${id}">${escapeHtml(a.title || 'Activity')}</option>`;
+    });
+    const sel = document.getElementById('dashboardSavedActivities');
+    if(sel) sel.innerHTML = html;
+    previewDashboardActivity();
+  });
+}
+
+async function previewDashboardActivity(){
+  const sel = document.getElementById('dashboardSavedActivities');
+  const box = document.getElementById('dashboardActivityPreview');
+  if(!sel || !box) return;
+  const id = sel.value;
+  if(!id){
+    box.innerHTML = 'Choose an activity to preview.';
+    return;
+  }
+  const snap = await hubRef.child('activityLibrary/'+id).once('value');
+  const a = snap.val() || {};
+  box.innerHTML = `
+    <b>${escapeHtml(a.title || 'Activity')}</b><br>
+    Type: ${escapeHtml((a.activityType || 'writing').toUpperCase())} · Task: ${escapeHtml(a.taskType || 'same')}<br>
+    ${escapeHtml(a.instructions || 'No instructions.')}
+  `;
+}
+
+function buildAssignedActivityForGroup(a, i){
+  const groupKey = 'group'+i;
+  const groupTask = a.taskType === 'same' ? (a.sameTask || 'Answer the activity below.') : ((a.groupTasks || {})[groupKey] || '');
+  const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})[groupKey] || '');
+  const hybridLink = a.taskType === 'same' ? (a.sameHybridLink || '') : ((a.groupTaskLinks || {})[groupKey] || '');
+  const attachedFile = a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})[groupKey] || null);
+  const readingText = a.taskType === 'same' ? (a.readingText || '') : ((a.groupReadingTexts || {})[groupKey] || '');
+  const readingQuestions = a.taskType === 'same' ? (a.readingQuestions || []) : ((a.groupReadingQuestions || {})[groupKey] || []);
+
+  return {
+    id: a.id || '',
+    title: a.title || 'Activity',
+    instructions: a.instructions || '',
+    activityType: a.activityType || 'writing',
+    taskType: a.taskType || 'same',
+    mainImage: a.mainImage || '',
+    groupTask,
+    groupTaskImage,
+    hybridLink,
+    attachedFile,
+    readingText,
+    readingQuestions,
+    criteria: a.criteria || [],
+    votingCriteria: a.votingCriteria || [],
+    assignedAt: Date.now(),
+    assignedBy: 'Ms. Saidah Khwar'
+  };
+}
+
+async function activateSavedActivityForSelectedClasses(){
+  const activityId = document.getElementById('dashboardSavedActivities')?.value || '';
+  if(!activityId){
+    alert('Choose an activity from the library.');
+    return;
+  }
+
+  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>x.value);
+  if(!classes.length){
+    alert('Choose at least one class.');
+    return;
+  }
+
+  const snap = await hubRef.child('activityLibrary/'+activityId).once('value');
+  const a = snap.val();
+  if(!a){
+    alert('Activity not found.');
+    return;
+  }
+
+  const updates = {};
+  classes.forEach(cls=>{
+    for(let i=1;i<=10;i++){
+      updates[`classes/${cls}/assignedActivities/group${i}`] = buildAssignedActivityForGroup(a, i);
+    }
+
+    updates[`classes/${cls}/currentActivity`] = {
+      id: activityId,
+      title: a.title || 'Activity',
+      instructions: a.instructions || '',
+      activityType: a.activityType || 'writing',
+      taskType: a.taskType || 'same',
+      mainImage: a.mainImage || '',
+      criteria: a.criteria || [],
+      votingCriteria: a.votingCriteria || [],
+      assignedAt: Date.now()
+    };
+
+    updates[`classes/${cls}/settings/stage`] = 'work';
+    updates[`classes/${cls}/settings/resultsReleased`] = false;
+  });
+
+  updates[`activityLibrary/${activityId}/lastActivatedAt`] = Date.now();
+  updates[`activityLibrary/${activityId}/lastActivatedClasses`] = classes;
+
+  await hubRef.update(updates);
+
+  alert('✅ Activity activated for: ' + classes.map(classDisplay).join(', '));
+  document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
+  renderTeacherDashboard();
 }
 
 async function assignCurrentActivity(){
