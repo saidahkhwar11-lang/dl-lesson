@@ -1970,7 +1970,7 @@ button:hover{filter:brightness(.96)}
       <div>
         <div class="card">
           <h2>📌 Activity Name</h2>
-          <div id="activityNameBox" class="activityName">No activity assigned</div><button class="gray" style="width:100%;margin-top:8px" onclick="forceLoadStudentActiveActivity()">🔄 Refresh Active Activity</button>
+          <div id="activityNameBox" class="activityName">No activity assigned</div><button class="gray" style="width:100%;margin-top:8px" onclick="forceLoadStudentActiveActivity()">🔄 Load Latest Active Activity</button>
 
           <h3 style="margin-top:12px;">📋 Activity Instructions</h3>
           <div id="activityInstructionsBox" class="instructionBox">No instructions</div>
@@ -2652,48 +2652,26 @@ async function findLatestLibraryActivityForClass(cls){
   return null;
 }
 
+
 async function forceLoadStudentActiveActivity(){
   if(!currentClass || !currentGroup) return;
 
   try{
+    const active = await getActiveClassActivityForStudent();
+    if(active && active.title){
+      renderAssignedActivityOnStudent(active);
+      return;
+    }
+
     const clsSnap = await hubRef.child(`classes/${currentClass}`).once('value');
     const cls = clsSnap.val() || {};
     const current = cls.currentActivity || {};
     const assigned = ((cls.assignedActivities || {})['group'+currentGroup]) || {};
-    const settings = cls.settings || {};
-    let a = null;
 
-    if(assigned && assigned.title && (!current.activationId || !assigned.activationId || assigned.activationId === current.activationId)){
-      a = assigned;
+    if(assigned && assigned.title){
+      renderAssignedActivityOnStudent(assigned);
     }else if(current && current.title){
-      a = Object.assign({}, current, assigned || {}, {
-        title: current.title,
-        instructions: current.instructions || assigned.instructions || '',
-        activityType: current.activityType || assigned.activityType || 'writing',
-        activationId: current.activationId || assigned.activationId || settings.activationId || '',
-        groupTask: assigned.groupTask || current.groupTask || 'Activity assigned. Follow the instructions.',
-        groupTaskImage: assigned.groupTaskImage || current.groupTaskImage || current.mainImage || '',
-        paragraphReading: assigned.paragraphReading || current.paragraphReading || [],
-        readingText: assigned.readingText || current.readingText || '',
-        readingQuestions: assigned.readingQuestions || current.readingQuestions || [],
-        criteria: assigned.criteria || current.criteria || [],
-        votingCriteria: assigned.votingCriteria || current.votingCriteria || []
-      });
-    }else if(settings.activeActivityId){
-      const libSnap = await hubRef.child('activityLibrary/'+settings.activeActivityId).once('value');
-      const lib = libSnap.val() || {};
-      if(lib && lib.title){
-        a = buildAssignedActivityForGroup(lib, Number(currentGroup), settings.activationId || ('act_'+Date.now()));
-      }
-    }else{
-      const latest = await findLatestLibraryActivityForClass(currentClass);
-      if(latest && latest.title){
-        a = buildAssignedActivityForGroup(latest, Number(currentGroup), latest.lastActivatedAt || ('act_'+Date.now()));
-      }
-    }
-
-    if(a && a.title){
-      renderAssignedActivityOnStudent(a);
+      renderAssignedActivityOnStudent(current);
     }else{
       renderAssignedActivityOnStudent({});
       const taskBox = document.getElementById('groupTaskBox');
@@ -2706,38 +2684,17 @@ async function forceLoadStudentActiveActivity(){
   }
 }
 
+
+
 function listenAssignedActivity(){
   if(assignedActivityListener) assignedActivityListener.off();
   if(classActiveActivityListener) classActiveActivityListener.off();
 
-  const classRef = hubRef.child(`classes/${currentClass}`);
-  classActiveActivityListener = classRef;
+  const groupRef = hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`);
+  assignedActivityListener = groupRef;
 
-  classRef.on('value', snap=>{
-    const cls = snap.val() || {};
-    const current = cls.currentActivity || {};
-    const assigned = ((cls.assignedActivities || {})['group'+currentGroup]) || {};
-    const settings = cls.settings || {};
-    let a = null;
-
-    if(assigned && assigned.title && (!current.activationId || !assigned.activationId || assigned.activationId === current.activationId)){
-      a = assigned;
-    }else if(current && current.title){
-      a = Object.assign({}, current, assigned || {}, {
-        title: current.title,
-        instructions: current.instructions || assigned.instructions || '',
-        activityType: current.activityType || assigned.activityType || 'writing',
-        activationId: current.activationId || assigned.activationId || settings.activationId || '',
-        groupTask: assigned.groupTask || current.groupTask || 'Activity assigned. Follow the instructions.',
-        groupTaskImage: assigned.groupTaskImage || current.groupTaskImage || current.mainImage || '',
-        paragraphReading: assigned.paragraphReading || current.paragraphReading || [],
-        readingText: assigned.readingText || current.readingText || '',
-        readingQuestions: assigned.readingQuestions || current.readingQuestions || [],
-        criteria: assigned.criteria || current.criteria || [],
-        votingCriteria: assigned.votingCriteria || current.votingCriteria || []
-      });
-    }
-
+  groupRef.on('value', snap=>{
+    const a = snap.val() || {};
     if(a && a.title){
       renderAssignedActivityOnStudent(a);
     }else{
@@ -2745,9 +2702,23 @@ function listenAssignedActivity(){
     }
   });
 
+  const classRef = hubRef.child(`classes/${currentClass}/activeActivity`);
+  classActiveActivityListener = classRef;
+
+  classRef.on('value', snap=>{
+    const a = snap.val() || {};
+    if(a && a.title){
+      hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value', gs=>{
+        const g = gs.val() || {};
+        renderAssignedActivityOnStudent((g && g.title) ? g : a);
+      });
+    }
+  });
+
   setTimeout(forceLoadStudentActiveActivity, 500);
-  setTimeout(forceLoadStudentActiveActivity, 2000);
+  setTimeout(forceLoadStudentActiveActivity, 1500);
 }
+
 
 function renderAssignedActivityOnStudent(a){
   a = a || {};
@@ -4106,7 +4077,7 @@ function renderClassCards(classes){
       if(groups[g].finalSubmitted) final++;
       if(groups[g].teacherPoints) marked++;
     });
-    const activity = c.currentActivity?.title || 'No activity assigned';
+    const activity = (c.activeActivity && c.activeActivity.title) ? c.activeActivity.title : (c.currentActivity?.title || 'No activity assigned');
     html += `<div class="classCard" onclick="openClass('${cls}')">
       <h3>Class ${classDisplay(cls)}</h3>
       <span class="pill pillYellow">${joined} joined groups</span>
@@ -5237,6 +5208,53 @@ async function previewDashboardActivity(){
   `;
 }
 
+
+function buildActiveActivityForGroup(a, i, activationId){
+  const groupKey = 'group' + i;
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+
+  const groupTask = isReading
+    ? 'Each student receives one paragraph from the same full text.'
+    : (a.taskType === 'same'
+      ? (a.sameTask || 'Activity assigned. Follow the instructions.')
+      : ((a.groupTasks || {})[groupKey] || ''));
+
+  return {
+    id: a.id || '',
+    activationId: activationId,
+    title: a.title || 'Activity',
+    instructions: a.instructions || '',
+    activityType: isReading ? 'readingParagraph' : 'writing',
+    readingWorkMode: isReading ? 'paragraph' : '',
+    taskType: a.taskType || 'same',
+    mainImage: a.mainImage || '',
+    groupTask: groupTask,
+    groupTaskImage: a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})[groupKey] || ''),
+    hybridLink: a.taskType === 'same' ? (a.sameHybridLink || '') : ((a.groupTaskLinks || {})[groupKey] || ''),
+    attachedFile: a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})[groupKey] || null),
+    paragraphReading: a.paragraphReading || [],
+    readingText: a.readingText || '',
+    readingQuestions: a.readingQuestions || [],
+    criteria: isReading ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary'] : (a.criteria || []),
+    votingCriteria: a.votingCriteria || [],
+    assignedAt: Date.now(),
+    assignedBy: 'Ms. Saidah Khwar'
+  };
+}
+
+async function getActiveClassActivityForStudent(){
+  if(!currentClass || !currentGroup) return {};
+  const groupSnap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+  const groupActive = groupSnap.val() || {};
+  if(groupActive && groupActive.title) return groupActive;
+
+  const classSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
+  const classActive = classSnap.val() || {};
+  if(classActive && classActive.title) return classActive;
+
+  return {};
+}
+
 function buildAssignedActivityForGroup(a, i, activationId){
   const groupKey = 'group'+i;
   const isReading = (a.activityType === 'reading' || a.activityType === 'readingParagraph');
@@ -5282,63 +5300,44 @@ function buildAssignedActivityForGroup(a, i, activationId){
   };
 }
 
+
 async function activateSavedActivityForSelectedClasses(){
   const activityId = document.getElementById('dashboardSavedActivities')?.value || '';
-  if(!activityId){
-    alert('Choose an activity from the library.');
-    return;
-  }
+  if(!activityId){ alert('Choose an activity from the library.'); return; }
 
   const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>x.value);
-  if(!classes.length){
-    alert('Choose at least one class.');
-    return;
-  }
+  if(!classes.length){ alert('Choose at least one class.'); return; }
 
-  const snap = await hubRef.child('activityLibrary/'+activityId).once('value');
+  const snap = await hubRef.child('activityLibrary/' + activityId).once('value');
   const a = snap.val();
-  if(!a){
-    alert('Activity not found.');
-    return;
-  }
+  if(!a){ alert('Activity not found.'); return; }
 
+  a.id = activityId;
   const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+
   if(isReading && (!a.paragraphReading || !a.paragraphReading.length)){
     alert('This reading activity has no generated paragraphs. Open it in Activity Builder, divide the text, generate paragraph questions, then save again.');
     return;
   }
 
-  a.id = activityId;
   if(isReading) a.activityType = 'readingParagraph';
 
   const activationId = 'act_' + Date.now();
   const updates = {};
 
   classes.forEach(cls=>{
-    for(let i=1;i<=10;i++){
-      updates[`classes/${cls}/assignedActivities/group${i}`] = buildAssignedActivityForGroup(a, i, activationId);
-    }
+    const classActive = buildActiveActivityForGroup(a, 1, activationId);
+    classActive.assignedClasses = classes;
+    classActive.assignedToText = classes.map(classDisplay).join(', ');
 
-    updates[`classes/${cls}/currentActivity`] = {
-      id: activityId,
-      activationId: activationId,
-      title: a.title || 'Activity',
-      instructions: a.instructions || '',
-      activityType: isReading ? 'readingParagraph' : (a.activityType || 'writing'),
-      readingWorkMode: 'paragraph',
-      taskType: a.taskType || 'same',
-      mainImage: a.mainImage || '',
-      groupTask: isReading ? 'Each student receives one paragraph from the same full text.' : (a.sameTask || 'Activity assigned. Follow the instructions.'),
-      groupTaskImage: a.mainImage || '',
-      paragraphReading: a.paragraphReading || [],
-      readingText: a.readingText || '',
-      readingQuestions: a.readingQuestions || [],
-      criteria: a.criteria || [],
-      votingCriteria: a.votingCriteria || [],
-      assignedClasses: classes,
-      assignedToText: classes.map(classDisplay).join(', '),
-      assignedAt: Date.now()
-    };
+    updates[`classes/${cls}/activeActivity`] = classActive;
+    updates[`classes/${cls}/currentActivity`] = classActive;
+
+    for(let i=1;i<=10;i++){
+      const groupActive = buildActiveActivityForGroup(a, i, activationId);
+      updates[`classes/${cls}/activeActivityGroups/group${i}`] = groupActive;
+      updates[`classes/${cls}/assignedActivities/group${i}`] = groupActive;
+    }
 
     updates[`classes/${cls}/settings/stage`] = 'work';
     updates[`classes/${cls}/settings/voteSystem`] = 'battle';
@@ -5352,10 +5351,7 @@ async function activateSavedActivityForSelectedClasses(){
 
   await hubRef.update(updates);
 
-  latestTeacherActivityForPopup = {
-    title: a.title || 'Activity',
-    instructions: a.instructions || ''
-  };
+  latestTeacherActivityForPopup = { title: a.title || 'Activity', instructions: a.instructions || '' };
   latestTeacherAssignedTo = classes.map(classDisplay).join(', ');
   if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
 
@@ -5363,6 +5359,7 @@ async function activateSavedActivityForSelectedClasses(){
   document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
 }
+
 
 async function assignCurrentActivity(){
   const a = await collectActivity();
