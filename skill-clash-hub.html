@@ -2112,7 +2112,7 @@ button:hover{filter:brightness(.96)}
             <label>Activity Type</label>
             <select id="builderActivityType" onchange="toggleActivityType()">
               <option value="writing">Writing Type</option>
-              <option value="reading">Reading Type</option>
+              <option value="reading">Reading Type - Paragraphs + Auto Questions</option>
             </select>
           </div>
           <div>
@@ -2130,20 +2130,32 @@ button:hover{filter:brightness(.96)}
         <div id="readingBuilderArea" class="readingBuilderBox hidden">
           <div class="readingCleanTitle">
             <h2>📖 Reading Activity Builder</h2>
-            <p>Students in the same group will receive different paragraphs from the same full text. Each paragraph has auto-marked questions, then students write a short summary.</p>
+            <p><b>Reading activity system:</b> Upload/paste one full text → choose paragraph number → generate questions for each paragraph → save to library. When activated, each student receives one different paragraph.</p>
           </div>
 
           <div class="readingCleanBox">
-            <label>📄 Upload Reading Text File / PDF</label>
-            <input id="readingSamePdf" type="file" accept=".txt,.pdf" onchange="handleReadingTextFileUpload(this)">
+            <h2>1️⃣ Upload or Paste Full Reading Text</h2>
 
-            <label>Paste / Edit Full Reading Text</label>
-            <textarea id="readingSameText" placeholder="Paste the full reading text here, or upload a PDF/TXT file."></textarea>
+            <label>📄 Upload PDF Reading Text</label>
+            <input id="readingSamePdf" type="file" accept=".pdf,.txt,application/pdf,text/plain" onchange="handleReadingTextFileUpload(this)">
+            <p class="smallHint">You can upload PDF or TXT. If PDF extraction does not work, paste the text manually below.</p>
 
-            <label>Number of Paragraphs</label>
+            <label>✍️ Full Reading Text</label>
+            <textarea id="readingSameText" placeholder="Paste the full reading text here..."></textarea>
+          </div>
+
+          <div class="readingCleanBox">
+            <h2>2️⃣ Paragraph Setup</h2>
+
+            <label>🔢 Number of Paragraphs / Students per Group</label>
             <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
+            <p class="smallHint">Example: If the group has 4 students, choose 4 paragraphs. Each student receives one paragraph.</p>
+          </div>
 
-            <label>Question Skills</label>
+          <div class="readingCleanBox">
+            <h2>3️⃣ AI Question Generator</h2>
+
+            <label>Choose Question Skills</label>
             <div class="skillCheckGrid">
               <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
               <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
@@ -2151,13 +2163,14 @@ button:hover{filter:brightness(.96)}
               <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
             </div>
 
-            <div class="btnRow">
-              <button type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Questions</button>
-              <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
-            </div>
+            <button type="button" class="purple" style="width:100%;font-size:16px;padding:14px" onclick="buildParagraphReadingActivity()">
+              ✨ AI Generate: Divide Paragraphs + Create Questions
+            </button>
 
-            <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
+            <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
           </div>
+
+          <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
         </div>
 <div id="writingBuilderFields">
 <label>📷 Main Activity Details Picture</label>
@@ -4120,13 +4133,18 @@ function toggleActivityType(){
   const activityType = document.getElementById('builderActivityType')?.value || 'writing';
   const readingArea = document.getElementById('readingBuilderArea');
   const writingFields = document.getElementById('writingBuilderFields');
-  const taskTypeBox = document.getElementById('builderTaskType')?.closest('div');
+  const taskTypeSelect = document.getElementById('builderTaskType');
+  const taskTypeBox = taskTypeSelect ? taskTypeSelect.closest('div') : null;
 
   if(readingArea) readingArea.classList.toggle('hidden', activityType !== 'reading');
   if(writingFields) writingFields.classList.toggle('hidden', activityType === 'reading');
   if(taskTypeBox) taskTypeBox.classList.toggle('hidden', activityType === 'reading');
 
-  toggleActivityType();
+  if(activityType === 'reading'){
+    if(taskTypeSelect) taskTypeSelect.value = 'same';
+  }
+
+  toggleTaskType();
 }
 function toggleTaskType(){
   const type = document.getElementById('builderTaskType')?.value || 'same';
@@ -4283,6 +4301,8 @@ function buildParagraphReadingActivity(){
 
   builderReadingTexts.same = text;
   renderParagraphReadingPreview();
+  const preview = document.getElementById('paragraphReadingPreview');
+  if(preview) preview.scrollIntoView({behavior:'smooth', block:'start'});
   const wholePreview = document.getElementById('readingSamePreview');
   if(wholePreview){ wholePreview.classList.add('hidden'); wholePreview.innerHTML = ''; }
 }
@@ -4311,18 +4331,25 @@ function renderParagraphReadingPreview(){
     box.innerHTML = '';
     return;
   }
+
   box.classList.remove('hidden');
-  let html = `<h3>✅ Paragraph Reading Activity Ready</h3>
-  <p class="smallNote">Each student will randomly receive one paragraph. Questions are auto-marked. Students then write a short summary.</p>
-  <div class="paragraphGrid">`;
+  let html = `<h2>✅ Generated Reading Activity Preview</h2>
+    <p><b>${builderParagraphReading.length}</b> paragraphs created. Each paragraph has its own auto-marked MCQ / True-False questions.</p>
+    <div class="paragraphGrid">`;
+
   builderParagraphReading.forEach(p=>{
     html += `<div class="paragraphCard">
       <h3>Paragraph ${p.paragraphNumber}</h3>
       <div class="paragraphTextPreview">${escapeHtml(p.text)}</div>
-      <p><b>${(p.questions || []).length}</b> auto-marked questions</p>
+      <p><b>${(p.questions || []).length}</b> questions generated</p>
+      <details>
+        <summary>View Questions</summary>
+        ${(p.questions || []).map((q,i)=>`<div class="previewQuestion"><b>${i+1}. ${escapeHtml(q.type)}</b><br>${escapeHtml(q.question)}</div>`).join('')}
+      </details>
     </div>`;
   });
-  html += '</div>';
+
+  html += '</div><div class="readingStatusGood">Ready. Now click Save Activity to Library.</div>';
   box.innerHTML = html;
 }
 function getStudentReadingAssignment(a){
