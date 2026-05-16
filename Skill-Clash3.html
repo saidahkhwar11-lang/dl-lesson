@@ -1360,6 +1360,12 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
 }
 
+
+.pill small{
+  opacity:.75;
+  font-weight:700;
+  margin-left:4px;
+}
 </style>
 </head>
 
@@ -1412,6 +1418,11 @@ button:hover{filter:brightness(.96)}
       </div>
 
       <div>
+        <label>🆔 Student ID</label>
+        <input id="studentId" placeholder="Write your ID number">
+      </div>
+
+      <div>
         <label>⭐ Group Role</label>
         <select id="studentRole">
           <option value="member">Group Member</option>
@@ -1420,7 +1431,7 @@ button:hover{filter:brightness(.96)}
       </div>
     </div>
 
-    <div class="note">💡 Decide who is the leader before joining. Members appear automatically after joining the same group.</div>
+    <div class="note">💡 Decide who is the leader before joining. Members appear automatically after joining the same group.<br>🆔 Use the same Student ID every day to restore your saved work, even if your name spelling changes.</div>
 
     <button class="joinBtn" onclick="joinGroup()">✨ Join My Group Work</button>
   </div>
@@ -1815,6 +1826,7 @@ const hubRef = db.ref('skillClashHubClean');
 let currentClass = sessionStorage.getItem('skillClass') || '';
 let currentGroup = sessionStorage.getItem('skillGroup') || '';
 let currentStudent = sessionStorage.getItem('skillStudent') || '';
+let currentStudentId = sessionStorage.getItem('skillStudentId') || '';
 let currentRole = sessionStorage.getItem('skillRole') || '';
 let selectedTeacherClass = '';
 let currentActivityId = '';
@@ -1874,35 +1886,42 @@ async function joinGroup(){
   currentClass = document.getElementById('className').value;
   currentGroup = document.getElementById('studentGroup').value;
   currentStudent = document.getElementById('studentName').value.trim();
+  currentStudentId = document.getElementById('studentId').value.trim();
   currentRole = document.getElementById('studentRole').value;
 
-  if(!currentClass || !currentGroup || !currentStudent){
-    alert('Complete class, group, and student name.');
+  if(!currentClass || !currentGroup || !currentStudent || !currentStudentId){
+    alert('Complete class, group, student name, and student ID.');
     return;
   }
+
+  currentStudentId = currentStudentId.replace(/[^a-zA-Z0-9_-]/g,'_');
 
   const groupPath = `classes/${currentClass}/groups/group${currentGroup}/students`;
   const studentsSnap = await hubRef.child(groupPath).once('value');
   const existingStudents = studentsSnap.val() || {};
-  const existingLeader = Object.keys(existingStudents).find(name => {
-    return existingStudents[name] && existingStudents[name].role === 'leader' && name !== currentStudent;
+  const existingLeader = Object.keys(existingStudents).find(id => {
+    return existingStudents[id] && existingStudents[id].role === 'leader' && id !== currentStudentId;
   });
 
   if(currentRole === 'leader' && existingLeader){
+    const leaderName = existingStudents[existingLeader].name || existingLeader;
     currentRole = 'member';
     document.getElementById('studentRole').value = 'member';
-    alert('This group already has a leader: ' + existingLeader + '. You will join as a group member.');
+    alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
   }
 
   sessionStorage.setItem('skillClass',currentClass);
   sessionStorage.setItem('skillGroup',currentGroup);
   sessionStorage.setItem('skillStudent',currentStudent);
+  sessionStorage.setItem('skillStudentId',currentStudentId);
   sessionStorage.setItem('skillRole',currentRole);
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudent}`).update({
-    name:currentStudent,
-    role:currentRole,
-    joinedAt:Date.now()
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    joinedAt: Date.now(),
+    lastSeenAt: Date.now()
   });
 
   showOnly('workPage');
@@ -1917,20 +1936,24 @@ function listenGroup(){
     const data = snap.val() || {};
     const students = data.students || {};
     latestStudents = students;
-    const names = Object.keys(students);
-    const leader = names.find(n => students[n].role === 'leader') || '-';
-    const myData = students[currentStudent] || {};
+    const ids = Object.keys(students);
+    const leaderId = ids.find(id => students[id].role === 'leader') || '';
+    const leader = leaderId ? (students[leaderId].name || leaderId) : '-';
+    const myData = students[currentStudentId] || {};
 
     document.getElementById('workTitle').innerText = `Group ${currentGroup} Work`;
     document.getElementById('statusBadge').innerText = data.finalSubmitted ? '✅ Final Submitted' : '✍️ In Progress';
     document.getElementById('infoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
     document.getElementById('infoGroup').innerText = `👥 Group: ${currentGroup}`;
     document.getElementById('infoLeader').innerText = `👑 Leader: ${leader}`;
-    document.getElementById('infoYou').innerHTML = `⭐ You: ${escapeHtml(currentStudent)} <span class="roleBadge">${currentRole==='leader'?'Leader':'Group Member'}</span>`;
+    document.getElementById('infoYou').innerHTML = `⭐ You: ${escapeHtml(currentStudent)} · ID: ${escapeHtml(currentStudentId)} <span class="roleBadge">${currentRole==='leader'?'Leader':'Group Member'}</span>`;
     document.getElementById('infoVotes').innerText = `💗 Votes: ${data.votes || 0}`;
 
     let members = '👥 Members: ';
-    names.forEach(n => members += `<span class="pill">${escapeHtml(n)}</span>`);
+    ids.forEach(id => {
+      const s = students[id] || {};
+      members += `<span class="pill">${escapeHtml(s.name || id)} <small>ID: ${escapeHtml(id)}</small></span>`;
+    });
     document.getElementById('infoMembers').innerHTML = members;
 
     document.getElementById('myWorkLabel').innerText = `${currentStudent}'s Work`;
@@ -2021,7 +2044,7 @@ function routeStudentStage(){
     showOnly('votingPage');
     document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
     document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
-    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
     if(resultsPanel) resultsPanel.classList.add('hidden');
     if(votingLayout) votingLayout.classList.remove('hidden');
     switchVotingModeUI();
@@ -2037,7 +2060,7 @@ function routeStudentStage(){
     showOnly('votingPage');
     document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
     document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
-    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
     if(votingLayout) votingLayout.classList.add('hidden');
     if(resultsPanel) resultsPanel.classList.remove('hidden');
     renderStudentResults();
@@ -2170,7 +2193,7 @@ function goToNextBattle(){
   const votes = latestClassVotes || {};
   const notVoted = availablePairs.find(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
-    return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
   });
   if(notVoted){
     selectedBattleKey = `${notVoted[0]}vs${notVoted[1]}`;
@@ -2199,7 +2222,7 @@ function renderBattleVoting(){
   if(!selectedBattleKey || !validKeys.includes(selectedBattleKey)){
     const firstNotVoted = availablePairs.find(pair=>{
       const key = `${pair[0]}vs${pair[1]}`;
-      return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+      return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
     });
     selectedBattleKey = firstNotVoted ? `${firstNotVoted[0]}vs${firstNotVoted[1]}` : validKeys[0];
     battleVotingStarted = false;
@@ -2207,7 +2230,7 @@ function renderBattleVoting(){
 
   const completed = availablePairs.filter(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
-    return !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    return !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
   }).length;
 
   let chooser = `
@@ -2218,7 +2241,7 @@ function renderBattleVoting(){
 
   availablePairs.forEach(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
-    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
     const selected = key === selectedBattleKey ? 'selected' : '';
     chooser += `<option value="${key}" ${selected}>Group ${pair[0]} VS Group ${pair[1]} ${voted ? '✅ saved' : ''}</option>`;
   });
@@ -2232,7 +2255,7 @@ function renderBattleVoting(){
 
   const [a,b] = selectedBattleKey.split('vs').map(Number);
   const battleKey = selectedBattleKey;
-  const existing = ((((votes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudent]) || null;
+  const existing = ((((votes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudentId]) || null;
   const gA = latestClassGroups['group'+a] || {};
   const gB = latestClassGroups['group'+b] || {};
   const comment = existing ? (existing.comment || '') : '';
@@ -2324,7 +2347,7 @@ function checkMyVoteStatus(){
   const msg = document.getElementById('voteMsg');
   if(!msg) return;
 
-  const vote = (((latestClassVotes || {})['group'+currentGroup] || {})[currentStudent]) || null;
+  const vote = (((latestClassVotes || {})['group'+currentGroup] || {})[currentStudentId]) || null;
   document.querySelectorAll('.voteCriterion').forEach(cb=>cb.checked=false);
   const best = document.getElementById('voteBestGroup');
   if(best) best.checked = false;
@@ -2362,9 +2385,9 @@ async function saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, co
   };
 
   if(currentVoteSystem === 'battle' && extra && extra.battleKey){
-    await hubRef.child(`classes/${currentClass}/battleVotes/${extra.battleKey}/group${currentGroup}/${currentStudent}`).set(payload);
+    await hubRef.child(`classes/${currentClass}/battleVotes/${extra.battleKey}/group${currentGroup}/${currentStudentId}`).set(payload);
   }else{
-    await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudent}`).set(payload);
+    await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudentId}`).set(payload);
   }
   return total;
 }
@@ -2482,7 +2505,7 @@ async function submitBattleVote(a,b){
   const freshVotes = snap.val() || {};
   const nextPair = availablePairs.find(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
-    return !((((freshVotes || {})[key] || {})['group'+currentGroup] || {})[currentStudent]);
+    return !((((freshVotes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
   });
 
   if(nextPair){
@@ -3000,7 +3023,7 @@ function downloadCertificate(info){
 
 async function saveMyWork(){
   const answer = document.getElementById('myAnswerBox').value.trim();
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudent}`).update({
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     answer,
     status:'in progress',
     updatedAt:Date.now()
@@ -3063,9 +3086,10 @@ async function submitLeaderFinalWork(){
 function renderMembersWork(){
   let html = '<h3>👥 Group Members Work</h3>';
 
-  Object.keys(latestStudents || {}).forEach(name=>{
-    const s = latestStudents[name] || {};
-    html += `<div class="workItem"><b>${escapeHtml(name)} ${s.role==='leader'?'👑':''}</b><br>${escapeHtml(s.answer || 'No saved work yet.')}</div>`;
+  Object.keys(latestStudents || {}).forEach(id=>{
+    const s = latestStudents[id] || {};
+    const displayName = s.name || id;
+    html += `<div class="workItem"><b>${escapeHtml(displayName)} ${s.role==='leader'?'👑':''}</b> <span class="smallNote">ID: ${escapeHtml(id)}</span><br>${escapeHtml(s.answer || 'No saved work yet.')}</div>`;
   });
 
   if(currentRole === 'leader'){
