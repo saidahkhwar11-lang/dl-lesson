@@ -1541,6 +1541,86 @@ button:hover{filter:brightness(.96)}
 
 .teacherTopActions{grid-template-columns:repeat(5,1fr)}
 @media(max-width:900px){.teacherTopActions{grid-template-columns:1fr 1fr}}
+
+/* ===== Paragraph Reading System ===== */
+.paragraphReadingBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.paragraphGrid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.paragraphCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+.paragraphCard h3{
+  margin:0 0 8px;
+  color:#18376b;
+}
+.paragraphTextPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  max-height:120px;
+  overflow:auto;
+  white-space:pre-wrap;
+  font-size:13px;
+}
+.studentParagraphBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  padding:12px;
+  margin:12px 0;
+}
+.studentParagraphBox h3{
+  color:#9a3412;
+  margin-bottom:8px;
+}
+.studentSummaryBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.readingStatusGood{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+  font-weight:900;
+}
+.readingStatusWarn{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+  font-weight:900;
+}
+.finalSummaryCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+}
+@media(max-width:900px){.paragraphGrid{grid-template-columns:1fr}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1705,6 +1785,7 @@ button:hover{filter:brightness(.96)}
           <h3 style="margin-top:12px;">📝 Group Activity Details</h3>
           <div id="groupTaskBox" class="taskBox">No group task</div>
 
+          <div id="paragraphReadingStudentBox" class="quizCard hidden"></div>
           <div id="readingQuizBox" class="quizCard hidden"></div>
 
 <div id="activityImageHolder"></div>
@@ -1941,8 +2022,11 @@ button:hover{filter:brightness(.96)}
 
 
         <div id="readingBuilderArea" class="readingBuilderBox hidden">
-          <h2>📖 Reading Type Generator</h2>
-          <p class="smallNote">Upload a PDF reading text, choose the question skills, then generate auto-marked MCQ and True/False questions.</p>
+          <h2>📖 Reading Type: Paragraph Group System</h2>
+          <p class="smallNote">
+            Upload or paste the full reading text. Choose how many paragraphs you want.
+            Each student in a group will receive one paragraph randomly with its own auto-marked questions.
+          </p>
 
           <label>Choose Question Skills</label>
           <div class="skillCheckGrid">
@@ -1952,18 +2036,21 @@ button:hover{filter:brightness(.96)}
             <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
           </div>
 
-          <div id="readingSameBox">
-            <label>📄 Upload Reading PDF for Whole Class / All Groups</label>
-            <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
-            <label>Extracted / Pasted Reading Text</label>
-            <textarea id="readingSameText" placeholder="PDF text will appear here. You can also paste the reading text manually."></textarea>
-            <button type="button" class="purple" onclick="generateSameReadingQuestions()">✨ Generate Reading Questions</button>
-            <div id="readingSamePreview" class="resourceBox hidden"></div>
+          <label>📄 Upload Full Reading PDF</label>
+          <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
+
+          <label>Full Reading Text</label>
+          <textarea id="readingSameText" placeholder="PDF text will appear here. You can also paste the full reading text manually."></textarea>
+
+          <label>Number of Paragraphs / Group Members</label>
+          <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
+
+          <div class="btnRow">
+            <button type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Questions</button>
+            <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
           </div>
 
-          <div id="readingDifferentNote" class="note hidden">
-            For different group tasks, upload/paste each group reading text inside the group cards below, then generate questions for each group.
-          </div>
+          <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
         </div>
 
         <label>Success Criteria Checklist</label>
@@ -2090,6 +2177,7 @@ let builderGroupFileData = {};
 let builderReadingSameQuestions = [];
 let builderGroupReadingQuestions = {};
 let builderReadingTexts = {};
+let builderParagraphReading = [];
 
 function classDisplay(c){return c.replace('-','/')}
 
@@ -2236,14 +2324,21 @@ function listenAssignedActivity(){
     const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'groupTaskImg', 'Group activity picture') : '';
     const resources = renderTeacherResources(a);
 
-    if(a.activityType === 'reading'){
+    if(a.activityType === 'readingParagraph'){
+      document.getElementById('groupTaskBox').innerHTML =
+        `${mainImg}<b>📖 Paragraph Reading Activity</b><br>${escapeHtml(a.groupTask || 'Each student will receive one paragraph, answer questions, then save a short summary.')}${groupImg}${resources}`;
+      renderReadingStudentQuiz(null);
+      renderParagraphReadingStudent(a);
+    }else if(a.activityType === 'reading'){
       document.getElementById('groupTaskBox').innerHTML =
         `${mainImg}<b>📖 Reading Activity</b><br>${escapeHtml(a.groupTask || 'Answer the reading questions below.')}${groupImg}${resources}`;
       renderReadingStudentQuiz(a);
+      renderParagraphReadingStudent(null);
     }else{
       document.getElementById('groupTaskBox').innerHTML =
         `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}${resources}`;
       renderReadingStudentQuiz(null);
+      renderParagraphReadingStudent(null);
     }
 
     const items = a.criteria || [];
@@ -3368,7 +3463,12 @@ function renderMembersWork(){
   Object.keys(latestStudents || {}).forEach(id=>{
     const s = latestStudents[id] || {};
     const displayName = s.name || id;
-    html += `<div class="workItem"><b>${escapeHtml(displayName)} ${s.role==='leader'?'👑':''}</b> <span class="smallNote">ID: ${escapeHtml(id)}</span><br>${escapeHtml(s.answer || 'No saved work yet.')}<br>${fileDownloadHtml(s.workFile, 'Student Work File')}</div>`;
+    html += `<div class="workItem">
+      <b>${escapeHtml(displayName)} ${s.role==='leader'?'👑':''}</b> <span class="smallNote">ID: ${escapeHtml(id)}</span><br>
+      ${escapeHtml(s.answer || 'No saved work yet.')}<br>
+      ${s.paragraphSummary ? `<div class="finalSummaryCard"><b>Paragraph ${escapeHtml(s.assignedParagraphNumber || '-')} Summary:</b><br>${escapeHtml(s.paragraphSummary)}</div>` : ''}
+      ${fileDownloadHtml(s.workFile, 'Student Work File')}
+    </div>`;
   });
 
   if(currentRole === 'leader'){
@@ -3381,6 +3481,7 @@ function renderMembersWork(){
           submit the final version here.
         </p>
         <textarea id="leaderFinalAnswerBox" placeholder="Write or combine the final agreed group answer here...">${escapeHtml(groupData.finalAnswer || '')}</textarea>
+        <button class="blue finalSubmitBtn" onclick="document.getElementById('leaderFinalAnswerBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect All Members’ Summaries</button>
         <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">✅ Submit Final Group Answer</button>
       </div>`;
   }else{
@@ -3899,6 +4000,255 @@ function buildAssignGroupChecks(){
   document.getElementById('assignGroupChecks').innerHTML = html;
 }
 
+
+function shuffleArray(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+function divideTextIntoParagraphs(text, count){
+  text = String(text || '').trim();
+  count = Math.max(1, Math.min(10, Number(count || 1)));
+
+  let natural = text.split(/\n\s*\n/).map(p=>p.trim()).filter(Boolean);
+
+  if(natural.length >= count){
+    const chosen = natural.slice(0,count);
+    if(natural.length > count){
+      chosen[count-1] += '\n\n' + natural.slice(count).join('\n\n');
+    }
+    return chosen;
+  }
+
+  const sentences = splitSentences(text);
+  if(!sentences.length) return [text];
+
+  const result = Array.from({length:count},()=>[]);
+  sentences.forEach((s,i)=> result[i % count].push(s));
+  return result.map(x=>x.join(' ').trim()).filter(Boolean);
+}
+function generateParagraphQuestions(paragraphText, skills, paragraphNumber){
+  const qs = generateReadingQuestionsFromText(paragraphText, skills).filter(q=>q.id !== 'selfEval');
+  return qs.map((q,idx)=>({
+    ...q,
+    id:'p'+paragraphNumber+'_q'+(idx+1),
+    paragraphNumber
+  }));
+}
+function buildParagraphReadingActivity(){
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  const count = Number(document.getElementById('readingParagraphCount')?.value || 1);
+  if(!text){
+    alert('Upload or paste the full reading text first.');
+    return;
+  }
+  if(count < 1 || count > 10){
+    alert('Choose paragraph number from 1 to 10.');
+    return;
+  }
+
+  const skills = getSelectedReadingSkills();
+  const parts = divideTextIntoParagraphs(text, count);
+
+  builderParagraphReading = parts.map((p,idx)=>({
+    paragraphNumber: idx+1,
+    text: p,
+    questions: generateParagraphQuestions(p, skills, idx+1)
+  }));
+
+  builderReadingTexts.same = text;
+  renderParagraphReadingPreview();
+}
+function clearParagraphReadingBuild(){
+  builderParagraphReading = [];
+  builderReadingTexts.same = '';
+  const text = document.getElementById('readingSameText');
+  if(text) text.value = '';
+  const box = document.getElementById('paragraphReadingPreview');
+  if(box){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function renderParagraphReadingPreview(){
+  const box = document.getElementById('paragraphReadingPreview');
+  if(!box) return;
+  if(!builderParagraphReading || !builderParagraphReading.length){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.remove('hidden');
+  let html = `<h3>✅ Paragraph Reading Activity Ready</h3>
+  <p class="smallNote">Each student will randomly receive one paragraph. Questions are auto-marked. Students then write a short summary.</p>
+  <div class="paragraphGrid">`;
+  builderParagraphReading.forEach(p=>{
+    html += `<div class="paragraphCard">
+      <h3>Paragraph ${p.paragraphNumber}</h3>
+      <div class="paragraphTextPreview">${escapeHtml(p.text)}</div>
+      <p><b>${(p.questions || []).length}</b> auto-marked questions</p>
+    </div>`;
+  });
+  html += '</div>';
+  box.innerHTML = html;
+}
+function getStudentReadingAssignment(a){
+  if(!a || !a.paragraphReading || !a.paragraphReading.length) return null;
+
+  const ids = Object.keys(latestStudents || {}).sort();
+  let index = ids.indexOf(currentStudentId);
+
+  if(index < 0){
+    ids.push(currentStudentId);
+    index = ids.length - 1;
+  }
+
+  const shuffled = shuffleArray(a.paragraphReading.map(p=>p.paragraphNumber));
+  const paragraphNumber = shuffled[index % shuffled.length];
+  return a.paragraphReading.find(p=>Number(p.paragraphNumber) === Number(paragraphNumber)) || a.paragraphReading[0];
+}
+function renderParagraphReadingStudent(a){
+  const box = document.getElementById('paragraphReadingStudentBox');
+  if(!box) return;
+
+  if(!a || a.activityType !== 'readingParagraph'){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+
+  const assigned = getStudentReadingAssignment(a);
+  if(!assigned){
+    box.classList.remove('hidden');
+    box.innerHTML = '<h2>📖 Reading Activity</h2><p>No paragraph assigned yet.</p>';
+    return;
+  }
+
+  const myData = (latestStudents || {})[currentStudentId] || {};
+  const submitted = myData.readingParagraphSubmitted;
+  const summary = myData.paragraphSummary || '';
+
+  let html = `<h2>📖 My Reading Paragraph</h2>
+    <div class="studentParagraphBox">
+      <h3>📌 Your Assigned Paragraph: Paragraph ${assigned.paragraphNumber}</h3>
+      <div class="readingTextBox">${escapeHtml(assigned.text)}</div>
+    </div>`;
+
+  if(submitted){
+    html += `<div class="readingStatusGood">✅ Questions submitted. Score: ${escapeHtml(myData.readingScore || 0)} / ${escapeHtml(myData.readingTotal || 0)}</div>`;
+  }else{
+    html += '<h3>✅ Answer your paragraph questions</h3>';
+    (assigned.questions || []).forEach((q,i)=>{
+      html += `<div class="quizQuestion"><b>${i+1}. ${escapeHtml(q.question)}</b><p class="smallNote">${escapeHtml(q.type)} · 1 mark</p>`;
+      if(q.format === 'mcq'){
+        (q.options || []).forEach((op,idx)=>{
+          html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="${idx}"> ${escapeHtml(op)}</label>`;
+        });
+      }else if(q.format === 'tf'){
+        html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="true"> True</label>`;
+        html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="false"> False</label>`;
+      }
+      html += '</div>';
+    });
+
+    html += `<label>Self-evaluation</label>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Easy"> Easy</label>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Some"> Some</label>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Difficult"> Difficult</label>
+      <button class="green" style="width:100%" onclick="submitParagraphReadingQuestions()">✅ Submit My Questions</button>
+      <div id="paragraphReadingResult"></div>`;
+  }
+
+  html += `<div class="studentSummaryBox">
+    <h3>✍️ My Paragraph Summary</h3>
+    <p class="smallNote">After submitting your questions, write the most important points from your paragraph.</p>
+    <textarea id="paragraphSummaryBox" placeholder="Write a short summary of the most important points in your paragraph...">${escapeHtml(summary)}</textarea>
+    <button class="green" onclick="saveParagraphSummary()">💾 Save My Summary</button>
+  </div>`;
+
+  box.classList.remove('hidden');
+  box.innerHTML = html;
+}
+async function submitParagraphReadingQuestions(){
+  const a = latestAssignedActivity || {};
+  const assigned = getStudentReadingAssignment(a);
+  if(!assigned){alert('No paragraph assigned.');return;}
+
+  let score = 0;
+  let total = 0;
+  const answers = {};
+
+  for(const q of (assigned.questions || [])){
+    const chosen = document.querySelector(`input[name="para_${q.id}"]:checked`);
+    if(!chosen){
+      alert('Please answer all questions.');
+      return;
+    }
+    answers[q.id] = chosen.value;
+    total++;
+    if(q.format === 'mcq' && Number(chosen.value) === Number(q.answer)) score++;
+    if(q.format === 'tf' && String(chosen.value) === String(!!q.answer)) score++;
+  }
+
+  const self = document.querySelector('input[name="paragraphSelfEval"]:checked');
+  if(!self){
+    alert('Choose self-evaluation: Easy, Some, or Difficult.');
+    return;
+  }
+
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    assignedParagraphNumber: assigned.paragraphNumber,
+    readingParagraphAnswers: answers,
+    readingScore: score,
+    readingTotal: total,
+    selfEvaluation: self.value,
+    readingParagraphSubmitted: true,
+    answer: `Paragraph ${assigned.paragraphNumber} Questions Score: ${score}/${total} | Self-evaluation: ${self.value}`,
+    status:'paragraph questions submitted',
+    updatedAt:Date.now()
+  });
+
+  const result = document.getElementById('paragraphReadingResult');
+  if(result) result.innerHTML = `<div class="quizResultBox">✅ Marked instantly: ${score}/${total}</div>`;
+  alert('✅ Your questions were submitted and marked instantly.');
+  renderParagraphReadingStudent(latestAssignedActivity);
+}
+async function saveParagraphSummary(){
+  const box = document.getElementById('paragraphSummaryBox');
+  const summary = box ? box.value.trim() : '';
+  if(!summary){
+    alert('Write your paragraph summary first.');
+    return;
+  }
+  const assigned = getStudentReadingAssignment(latestAssignedActivity || {});
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    assignedParagraphNumber: assigned ? assigned.paragraphNumber : '',
+    paragraphSummary: summary,
+    summarySavedAt: Date.now(),
+    status:'summary saved',
+    updatedAt:Date.now()
+  });
+  alert('✅ Your paragraph summary is saved.');
+}
+function buildLeaderFinalSummaryFromMembers(){
+  let finalText = 'Final Group Reading Summary\\n\\n';
+  Object.keys(latestStudents || {}).forEach(id=>{
+    const s = latestStudents[id] || {};
+    finalText += `${s.name || id} - Paragraph ${s.assignedParagraphNumber || '-'}:\\n`;
+    finalText += `${s.paragraphSummary || 'No summary saved yet.'}\\n\\n`;
+  });
+  return finalText.trim();
+}
+
 function getSelectedReadingSkills(){
   const checked = Array.from(document.querySelectorAll('.readingSkill:checked')).map(x=>x.value);
   return checked.length ? checked : ['mainIdea','supportingDetails','vocabulary','grammar'];
@@ -4147,7 +4497,7 @@ async function collectActivity(){
     id:currentActivityId || 'activity_'+Date.now(),
     title,
     instructions,
-    activityType,
+    activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
     taskType,
     sameTask,
     sameHybridLink,
@@ -4159,6 +4509,7 @@ async function collectActivity(){
     groupTaskFiles,
     readingText: builderReadingTexts.same || (document.getElementById('readingSameText') ? document.getElementById('readingSameText').value.trim() : ''),
     readingQuestions: builderReadingSameQuestions || [],
+    paragraphReading: builderParagraphReading || [],
     groupReadingTexts: builderReadingTexts || {},
     groupReadingQuestions: builderGroupReadingQuestions || {},
     criteria,
@@ -4169,7 +4520,7 @@ async function saveActivityToLibrary(){
   const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
   if(a.activityType !== 'reading' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
-  if(a.activityType === 'reading' && a.taskType === 'same' && (!a.readingQuestions || !a.readingQuestions.length)){alert('Generate reading questions first.');return}
+  if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Build the paragraph reading activity first.');return}
   currentActivityId = a.id;
   await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
   alert('✅ Activity saved to library.');
@@ -4195,7 +4546,7 @@ async function loadActivity(){
   currentActivityId = id;
   document.getElementById('builderActivityName').value = a.title || '';
   document.getElementById('builderInstructions').value = a.instructions || '';
-  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = a.activityType || 'writing';
+  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = (a.activityType === 'readingParagraph' ? 'reading' : (a.activityType || 'writing'));
   document.getElementById('builderTaskType').value = a.taskType || 'same';
   document.getElementById('builderSameTask').value = a.sameTask || '';
   if(document.getElementById('builderSameLink')) document.getElementById('builderSameLink').value = a.sameHybridLink || '';
@@ -4206,11 +4557,13 @@ async function loadActivity(){
   builderSameFileData = a.sameAttachedFile || null;
   builderGroupFileData = Object.assign({}, a.groupTaskFiles || {});
   builderReadingSameQuestions = a.readingQuestions || [];
+  builderParagraphReading = a.paragraphReading || [];
   builderGroupReadingQuestions = Object.assign({}, a.groupReadingQuestions || {});
   builderReadingTexts = Object.assign({}, a.groupReadingTexts || {});
   if(a.readingText) builderReadingTexts.same = a.readingText;
   if(document.getElementById('readingSameText')) document.getElementById('readingSameText').value = builderReadingTexts.same || '';
-  renderQuestionPreview('readingSamePreview', builderReadingSameQuestions || []);
+  if(document.getElementById('readingParagraphCount')) document.getElementById('readingParagraphCount').value = (builderParagraphReading || []).length || 4;
+  renderParagraphReadingPreview();
   const mainInput = document.getElementById('builderMainImage');
   if(mainInput) mainInput.value = '';
   renderMainImagePreview();
@@ -4278,7 +4631,7 @@ async function previewDashboardActivity(){
   const a = snap.val() || {};
   box.innerHTML = `
     <b>${escapeHtml(a.title || 'Activity')}</b><br>
-    Type: ${escapeHtml((a.activityType || 'writing').toUpperCase())} · Task: ${escapeHtml(a.taskType || 'same')}<br>
+    Type: ${escapeHtml(((a.activityType === 'readingParagraph' ? 'paragraph reading' : (a.activityType || 'writing')).toUpperCase()))} · Task: ${escapeHtml(a.taskType || 'same')}<br>
     ${escapeHtml(a.instructions || 'No instructions.')}
   `;
 }
@@ -4291,6 +4644,7 @@ function buildAssignedActivityForGroup(a, i, activationId){
   const attachedFile = a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})[groupKey] || null);
   const readingText = a.taskType === 'same' ? (a.readingText || '') : ((a.groupReadingTexts || {})[groupKey] || '');
   const readingQuestions = a.taskType === 'same' ? (a.readingQuestions || []) : ((a.groupReadingQuestions || {})[groupKey] || []);
+  const paragraphReading = a.paragraphReading || [];
 
   return {
     id: a.id || '',
@@ -4306,6 +4660,7 @@ function buildAssignedActivityForGroup(a, i, activationId){
     attachedFile,
     readingText,
     readingQuestions,
+    paragraphReading,
     criteria: a.criteria || [],
     votingCriteria: a.votingCriteria || [],
     assignedAt: Date.now(),
