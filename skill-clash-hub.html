@@ -1752,6 +1752,53 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
 }
 
+
+/* ===== Reading-only student page layout ===== */
+.readingMainLayout{
+  display:grid;
+  grid-template-columns:1fr .85fr;
+  gap:14px;
+}
+.readingPanel{
+  background:#ffffff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.readingPanel h2,.readingPanel h3{color:#18376b}
+.readingChecklistBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.readingChecklistBox label{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-weight:800;
+  margin:8px 0;
+}
+.readingChecklistBox input{width:auto;margin:0}
+.readingQuestionFeedback{
+  margin-top:8px;
+  padding:8px;
+  border-radius:10px;
+  font-weight:800;
+}
+.feedbackCorrect{background:#ecfdf5;color:#065f46;border:1px solid #86efac}
+.feedbackWrong{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}
+.leaderSummaryBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.readingHiddenForMode{display:none!important}
+@media(max-width:900px){.readingMainLayout{grid-template-columns:1fr}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -1850,6 +1897,8 @@ button:hover{filter:brightness(.96)}
       </div>
       <div class="memberLine" id="infoMembers"></div>
     </div>
+
+    <div id="readingMainWorkBox" class="card hidden"></div>
 
     <div class="studentLayout">
       <div>
@@ -2482,7 +2531,7 @@ function listenGroup(){
     }
 
     renderMembersWork();
-    if(latestAssignedActivity && latestAssignedActivity.activityType === 'readingParagraph'){
+    if(latestAssignedActivity && (latestAssignedActivity.activityType === 'readingParagraph' || latestAssignedActivity.activityType === 'reading')){
       renderParagraphReadingStudent(latestAssignedActivity);
     }
     routeStudentStage();
@@ -2491,6 +2540,81 @@ function listenGroup(){
   listenAssignedActivity();
   listenClassSettings();
   listenChat();
+}
+
+
+function setReadingModeUI(isReading){
+  const readingBox = document.getElementById('readingMainWorkBox');
+  const writingBox = document.querySelector('.card.myAnswer');
+  const detailsCards = document.querySelectorAll('.studentLayout > div:nth-child(2) > .card, .studentLayout > div:nth-child(2) > details');
+
+  if(readingBox) readingBox.classList.toggle('hidden', !isReading);
+  if(writingBox) writingBox.classList.toggle('readingHiddenForMode', isReading);
+  detailsCards.forEach(el=>el.classList.toggle('readingHiddenForMode', isReading));
+}
+
+function getReadingChecklistHtml(){
+  return `<div class="readingChecklistBox">
+    <h3>✅ Reading Activity Checklist</h3>
+    <label><input type="checkbox"> Read and understand my text</label>
+    <label><input type="checkbox"> Answer all questions</label>
+    <label><input type="checkbox"> Share idea with my group</label>
+    <label><input type="checkbox"> Write summary</label>
+  </div>`;
+}
+
+function buildStudentParagraphQuestionsHtml(assigned, myData){
+  const submitted = !!myData.readingParagraphSubmitted;
+  let html = '';
+
+  if(submitted){
+    html += `<div class="readingStatusGood">✅ Questions submitted. Score: ${escapeHtml(myData.readingScore || 0)} / ${escapeHtml(myData.readingTotal || 0)}</div>`;
+
+    const answers = myData.readingParagraphAnswers || {};
+    (assigned.questions || []).forEach((q,i)=>{
+      const studentAnswer = answers[q.id];
+      let correct = false;
+      if(q.format === 'mcq') correct = Number(studentAnswer) === Number(q.answer);
+      if(q.format === 'tf') correct = String(studentAnswer) === String(!!q.answer);
+
+      const correctText = q.format === 'mcq' ? (q.options || [])[q.answer] : (q.answer ? 'True' : 'False');
+      const studentText = q.format === 'mcq' ? (q.options || [])[studentAnswer] : (String(studentAnswer) === 'true' ? 'True' : 'False');
+
+      html += `<div class="quizQuestion">
+        <b>${i+1}. ${escapeHtml(q.question)}</b>
+        <div class="readingQuestionFeedback ${correct ? 'feedbackCorrect' : 'feedbackWrong'}">
+          ${correct ? '✅ Correct' : '❌ Wrong'}<br>
+          Your answer: ${escapeHtml(studentText || '-') }<br>
+          Correct answer: ${escapeHtml(correctText || '-')}
+        </div>
+      </div>`;
+    });
+
+    return html;
+  }
+
+  html += '<h3>✅ Answer your paragraph questions</h3>';
+  (assigned.questions || []).forEach((q,i)=>{
+    html += `<div class="quizQuestion"><b>${i+1}. ${escapeHtml(q.question)}</b><p class="smallNote">${escapeHtml(q.type)} · 1 point</p>`;
+    if(q.format === 'mcq'){
+      (q.options || []).forEach((op,idx)=>{
+        html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="${idx}"> ${escapeHtml(op)}</label>`;
+      });
+    }else if(q.format === 'tf'){
+      html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="true"> True</label>`;
+      html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="false"> False</label>`;
+    }
+    html += '</div>';
+  });
+
+  html += `<label>Self-evaluation</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Easy"> Easy</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Some"> Some</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Difficult"> Difficult</label>
+    <button class="green" style="width:100%" onclick="submitParagraphReadingQuestions()">✅ Submit My Questions</button>
+    <div id="paragraphReadingResult"></div>`;
+
+  return html;
 }
 
 function listenAssignedActivity(){
@@ -2557,12 +2681,15 @@ function renderAssignedActivityOnStudent(a){
     }
     if(typeof renderParagraphReadingStudent === 'function') renderParagraphReadingStudent(a);
   }else{
+    setReadingModeUI(false);
     if(taskBox){
       taskBox.innerHTML = `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}${resources}`;
     }
   }
 
-  const items = a.criteria || [];
+  const items = ((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length)
+    ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary']
+    : (a.criteria || []);
   let criteriaHtml = '';
   items.forEach((c,i)=>{
     criteriaHtml += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`;
@@ -4409,14 +4536,17 @@ function getStudentReadingAssignment(a){
   return a.paragraphReading.find(p=>Number(p.paragraphNumber) === Number(paragraphNumber)) || a.paragraphReading[0];
 }
 function renderParagraphReadingStudent(a){
-  const box = document.getElementById('paragraphReadingStudentBox');
+  const box = document.getElementById('readingMainWorkBox');
   if(!box) return;
 
-  if(!a || a.activityType !== 'readingParagraph'){
+  if(!a || !((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length)){
+    setReadingModeUI(false);
     box.classList.add('hidden');
     box.innerHTML = '';
     return;
   }
+
+  setReadingModeUI(true);
 
   const assigned = getStudentReadingAssignment(a);
   if(!assigned){
@@ -4426,47 +4556,50 @@ function renderParagraphReadingStudent(a){
   }
 
   const myData = (latestStudents || {})[currentStudentId] || {};
-  const submitted = myData.readingParagraphSubmitted;
+  const submitted = !!myData.readingParagraphSubmitted;
   const summary = myData.paragraphSummary || '';
+  const isLeader = currentRole === 'leader';
 
-  let html = `<h2>📖 My Reading Paragraph</h2>
-    <div class="studentParagraphBox">
-      <h3>📌 Your Assigned Paragraph: Paragraph ${assigned.paragraphNumber}</h3>
-      <div class="readingTextBox">${escapeHtml(assigned.text)}</div>
+  let html = `<h2>📖 ${escapeHtml(a.title || 'Reading Activity')}</h2>
+    <p class="smallNote">${escapeHtml(a.instructions || 'Read your assigned paragraph, answer the questions, then write your summary.')}</p>
+
+    <div class="readingMainLayout">
+      <div>
+        <div class="readingPanel">
+          <h3>📌 My Assigned Paragraph: Paragraph ${assigned.paragraphNumber}</h3>
+          <div class="readingTextBox">${escapeHtml(assigned.text)}</div>
+        </div>
+
+        <div class="readingPanel">
+          ${buildStudentParagraphQuestionsHtml(assigned, myData)}
+        </div>
+
+        <div class="studentSummaryBox">
+          <h3>✍️ My Paragraph Summary</h3>
+          <p class="smallNote">After submitting your questions, write the most important points from your paragraph.</p>
+          <textarea id="paragraphSummaryBox" placeholder="Write a short summary of the most important points in your paragraph..." ${submitted ? '' : 'disabled'}>${escapeHtml(summary)}</textarea>
+          <button class="green" onclick="saveParagraphSummary()" ${submitted ? '' : 'disabled'}>💾 Save My Summary</button>
+          ${submitted ? '' : '<div class="readingStatusWarn">Submit your paragraph questions first, then write your summary.</div>'}
+        </div>
+
+        ${isLeader ? `<div class="leaderSummaryBox">
+          <h3>👑 Leader Final Group Summary</h3>
+          <p class="smallNote">After all members save their summaries, collect them here, edit if needed, then submit the final group answer.</p>
+          <button class="blue" onclick="document.getElementById('leaderReadingFinalBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect All Members’ Summaries</button>
+          <textarea id="leaderReadingFinalBox" placeholder="Final group summary...">${escapeHtml(((latestClassGroups['group'+currentGroup] || {}).finalAnswer) || '')}</textarea>
+          <button class="green" style="width:100%" onclick="submitLeaderReadingFinalSummary()">✅ Submit Final Group Summary</button>
+        </div>` : `<div class="memberWaitingBox">👑 The group leader will submit the final group summary after all members save their summaries.</div>`}
+      </div>
+
+      <div>
+        ${getReadingChecklistHtml()}
+
+        <div class="readingPanel">
+          <h3>👥 Group Summaries</h3>
+          <div id="readingGroupSummaries">${renderReadingGroupSummariesHtml()}</div>
+        </div>
+      </div>
     </div>`;
-
-  if(submitted){
-    html += `<div class="readingStatusGood">✅ Questions submitted. Score: ${escapeHtml(myData.readingScore || 0)} / ${escapeHtml(myData.readingTotal || 0)}</div>`;
-  }else{
-    html += '<h3>✅ Answer your paragraph questions</h3>';
-    (assigned.questions || []).forEach((q,i)=>{
-      html += `<div class="quizQuestion"><b>${i+1}. ${escapeHtml(q.question)}</b><p class="smallNote">${escapeHtml(q.type)} · 1 mark</p>`;
-      if(q.format === 'mcq'){
-        (q.options || []).forEach((op,idx)=>{
-          html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="${idx}"> ${escapeHtml(op)}</label>`;
-        });
-      }else if(q.format === 'tf'){
-        html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="true"> True</label>`;
-        html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="false"> False</label>`;
-      }
-      html += '</div>';
-    });
-
-    html += `<label>Self-evaluation</label>
-      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Easy"> Easy</label>
-      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Some"> Some</label>
-      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Difficult"> Difficult</label>
-      <button class="green" style="width:100%" onclick="submitParagraphReadingQuestions()">✅ Submit My Questions</button>
-      <div id="paragraphReadingResult"></div>`;
-  }
-
-  html += `<div class="studentSummaryBox">
-    <h3>✍️ My Paragraph Summary</h3>
-    <p class="smallNote">After submitting your questions, write the most important points from your paragraph.</p>
-    <textarea id="paragraphSummaryBox" placeholder="Write a short summary of the most important points in your paragraph..." ${submitted ? '' : 'disabled'}>${escapeHtml(summary)}</textarea>
-    <button class="green" onclick="saveParagraphSummary()" ${submitted ? '' : 'disabled'}>💾 Save My Summary</button>
-    ${submitted ? '' : '<div class="readingStatusWarn">Submit your paragraph questions first, then write your summary.</div>'}
-  </div>`;
 
   box.classList.remove('hidden');
   box.innerHTML = html;
@@ -4537,7 +4670,51 @@ async function saveParagraphSummary(){
     updatedAt:Date.now()
   });
   alert('✅ Your paragraph summary is saved.');
+  renderParagraphReadingStudent(latestAssignedActivity);
 }
+
+function renderReadingGroupSummariesHtml(){
+  let html = '';
+  Object.keys(latestStudents || {}).forEach(id=>{
+    const s = latestStudents[id] || {};
+    html += `<div class="finalSummaryCard">
+      <b>${escapeHtml(s.name || id)} ${s.role === 'leader' ? '👑' : ''}</b>
+      <span class="smallNote">Paragraph ${escapeHtml(s.assignedParagraphNumber || '-')} · Score: ${escapeHtml((s.readingScore ?? '-') + '/' + (s.readingTotal ?? '-'))}</span><br>
+      ${escapeHtml(s.paragraphSummary || 'No summary saved yet.')}
+    </div>`;
+  });
+  return html || '<p>No summaries yet.</p>';
+}
+
+async function submitLeaderReadingFinalSummary(){
+  if(currentRole !== 'leader'){
+    alert('Only the group leader can submit the final group summary.');
+    return;
+  }
+
+  const box = document.getElementById('leaderReadingFinalBox');
+  const finalText = box ? box.value.trim() : '';
+
+  if(!finalText){
+    alert('Write or collect the final group summary first.');
+    return;
+  }
+
+  if(!allGroupSummariesSaved()){
+    if(!confirm('Some group members have not saved their summaries yet. Submit final summary anyway?')) return;
+  }
+
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`).update({
+    finalAnswer: finalText,
+    finalSubmitted: true,
+    finalSubmittedAt: Date.now(),
+    finalSubmittedBy: currentStudent,
+    finalType: 'readingSummary'
+  });
+
+  alert('✅ Final group reading summary submitted.');
+}
+
 function buildLeaderFinalSummaryFromMembers(){
   let finalText = 'Final Group Reading Summary\\n\\n';
   Object.keys(latestStudents || {}).forEach(id=>{
