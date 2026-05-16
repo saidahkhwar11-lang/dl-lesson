@@ -2036,6 +2036,9 @@ button:hover{filter:brightness(.96)}
             <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
           </div>
 
+          <input id="readingWorkMode" type="hidden" value="paragraph">
+          <div class="note">📌 Reading Type uses one clear system: each student receives a different paragraph from the same full text, answers auto-marked questions, then writes a short summary.</div>
+
           <label>📄 Upload Full Reading PDF</label>
           <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
 
@@ -2046,11 +2049,12 @@ button:hover{filter:brightness(.96)}
           <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
 
           <div class="btnRow">
-            <button type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Questions</button>
+            <button id="buildParagraphBtn" type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Paragraph Questions</button>
             <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
           </div>
 
           <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
+          <div id="readingSamePreview" class="paragraphReadingBox hidden" style="display:none!important"></div>
         </div>
 
         <label>Success Criteria Checklist</label>
@@ -2299,6 +2303,9 @@ function listenGroup(){
     }
 
     renderMembersWork();
+    if(latestAssignedActivity && latestAssignedActivity.activityType === 'readingParagraph'){
+      renderParagraphReadingStudent(latestAssignedActivity);
+    }
     routeStudentStage();
   });
 
@@ -2323,6 +2330,8 @@ function listenAssignedActivity(){
     const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
     const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'groupTaskImg', 'Group activity picture') : '';
     const resources = renderTeacherResources(a);
+    renderReadingStudentQuiz(null);
+    renderParagraphReadingStudent(null);
 
     if(a.activityType === 'readingParagraph'){
       document.getElementById('groupTaskBox').innerHTML =
@@ -3444,6 +3453,10 @@ async function submitLeaderFinalWork(){
     return;
   }
 
+  if(latestAssignedActivity && latestAssignedActivity.activityType === 'readingParagraph' && !allGroupSummariesSaved()){
+    if(!confirm('Some group members have not saved their summaries yet. Submit final answer anyway?')) return;
+  }
+
   await hubRef.child(
     `classes/${currentClass}/groups/group${currentGroup}`
   ).update({
@@ -3942,7 +3955,8 @@ function toggleActivityType(){
   const activityType = document.getElementById('builderActivityType')?.value || 'writing';
   const readingArea = document.getElementById('readingBuilderArea');
   if(readingArea) readingArea.classList.toggle('hidden', activityType !== 'reading');
-  toggleActivityType();
+  toggleTaskType();
+  toggleReadingMode();
 }
 function toggleTaskType(){
   const type = document.getElementById('builderTaskType').value;
@@ -4000,6 +4014,39 @@ function buildAssignGroupChecks(){
   document.getElementById('assignGroupChecks').innerHTML = html;
 }
 
+
+
+function hashTextToNumber(text){
+  text = String(text || '');
+  let h = 0;
+  for(let i=0;i<text.length;i++){
+    h = ((h << 5) - h) + text.charCodeAt(i);
+    h |= 0;
+  }
+  return Math.abs(h);
+}
+function toggleReadingMode(){
+  const modeEl = document.getElementById('readingWorkMode');
+  if(modeEl) modeEl.value = 'paragraph';
+  const paraBtn = document.getElementById('buildParagraphBtn');
+  if(paraBtn) paraBtn.classList.remove('hidden');
+  const wholeBtn = document.getElementById('buildWholeTextBtn');
+  if(wholeBtn) wholeBtn.classList.add('hidden');
+}
+function generateWholeTextReadingQuestions(){
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  if(!text){
+    alert('Upload or paste the full reading text first.');
+    return;
+  }
+  const skills = getSelectedReadingSkills();
+  builderReadingSameQuestions = generateReadingQuestionsFromText(text, skills);
+  builderReadingTexts.same = text;
+  builderParagraphReading = [];
+  const box = document.getElementById('paragraphReadingPreview');
+  if(box){ box.classList.add('hidden'); box.innerHTML = ''; }
+  renderQuestionPreview('readingSamePreview', builderReadingSameQuestions);
+}
 
 function shuffleArray(arr){
   const a = arr.slice();
@@ -4061,9 +4108,12 @@ function buildParagraphReadingActivity(){
 
   builderReadingTexts.same = text;
   renderParagraphReadingPreview();
+  const wholePreview = document.getElementById('readingSamePreview');
+  if(wholePreview){ wholePreview.classList.add('hidden'); wholePreview.innerHTML = ''; }
 }
 function clearParagraphReadingBuild(){
   builderParagraphReading = [];
+  builderReadingSameQuestions = [];
   builderReadingTexts.same = '';
   const text = document.getElementById('readingSameText');
   if(text) text.value = '';
@@ -4071,6 +4121,11 @@ function clearParagraphReadingBuild(){
   if(box){
     box.classList.add('hidden');
     box.innerHTML = '';
+  }
+  const whole = document.getElementById('readingSamePreview');
+  if(whole){
+    whole.classList.add('hidden');
+    whole.innerHTML = '';
   }
 }
 function renderParagraphReadingPreview(){
@@ -4106,8 +4161,9 @@ function getStudentReadingAssignment(a){
     index = ids.length - 1;
   }
 
-  const shuffled = shuffleArray(a.paragraphReading.map(p=>p.paragraphNumber));
-  const paragraphNumber = shuffled[index % shuffled.length];
+  const nums = a.paragraphReading.map(p=>p.paragraphNumber);
+  const base = hashTextToNumber((a.activationId || a.id || '') + '_' + currentStudentId);
+  const paragraphNumber = nums[base % nums.length];
   return a.paragraphReading.find(p=>Number(p.paragraphNumber) === Number(paragraphNumber)) || a.paragraphReading[0];
 }
 function renderParagraphReadingStudent(a){
@@ -4165,8 +4221,9 @@ function renderParagraphReadingStudent(a){
   html += `<div class="studentSummaryBox">
     <h3>✍️ My Paragraph Summary</h3>
     <p class="smallNote">After submitting your questions, write the most important points from your paragraph.</p>
-    <textarea id="paragraphSummaryBox" placeholder="Write a short summary of the most important points in your paragraph...">${escapeHtml(summary)}</textarea>
-    <button class="green" onclick="saveParagraphSummary()">💾 Save My Summary</button>
+    <textarea id="paragraphSummaryBox" placeholder="Write a short summary of the most important points in your paragraph..." ${submitted ? '' : 'disabled'}>${escapeHtml(summary)}</textarea>
+    <button class="green" onclick="saveParagraphSummary()" ${submitted ? '' : 'disabled'}>💾 Save My Summary</button>
+    ${submitted ? '' : '<div class="readingStatusWarn">Submit your paragraph questions first, then write your summary.</div>'}
   </div>`;
 
   box.classList.remove('hidden');
@@ -4359,6 +4416,11 @@ function generateReadingQuestionsFromText(text, skills){
 function renderQuestionPreview(boxId, questions){
   const box = document.getElementById(boxId);
   if(!box) return;
+  if(!questions || !questions.length){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
   box.classList.remove('hidden');
   let html = '<h3>✅ Generated Questions Preview</h3>';
   questions.forEach((q,i)=>{
@@ -4465,6 +4527,7 @@ async function collectActivity(){
   const title = document.getElementById('builderActivityName').value.trim();
   const instructions = document.getElementById('builderInstructions').value.trim();
   const activityType = document.getElementById('builderActivityType') ? document.getElementById('builderActivityType').value : 'writing';
+  const readingWorkMode = 'paragraph';
   const taskType = document.getElementById('builderTaskType').value;
   const sameTask = document.getElementById('builderSameTask').value.trim();
   const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
@@ -4498,6 +4561,7 @@ async function collectActivity(){
     title,
     instructions,
     activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
+    readingWorkMode,
     taskType,
     sameTask,
     sameHybridLink,
@@ -4519,7 +4583,7 @@ async function collectActivity(){
 async function saveActivityToLibrary(){
   const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
-  if(a.activityType !== 'reading' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
+  if(a.activityType !== 'readingParagraph' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
   if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Build the paragraph reading activity first.');return}
   currentActivityId = a.id;
   await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
@@ -4546,7 +4610,8 @@ async function loadActivity(){
   currentActivityId = id;
   document.getElementById('builderActivityName').value = a.title || '';
   document.getElementById('builderInstructions').value = a.instructions || '';
-  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = (a.activityType === 'readingParagraph' ? 'reading' : (a.activityType || 'writing'));
+  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = ((a.activityType === 'readingParagraph' || a.activityType === 'reading') ? 'reading' : (a.activityType || 'writing'));
+  if(document.getElementById('readingWorkMode')) document.getElementById('readingWorkMode').value = 'paragraph';
   document.getElementById('builderTaskType').value = a.taskType || 'same';
   document.getElementById('builderSameTask').value = a.sameTask || '';
   if(document.getElementById('builderSameLink')) document.getElementById('builderSameLink').value = a.sameHybridLink || '';
@@ -4631,7 +4696,7 @@ async function previewDashboardActivity(){
   const a = snap.val() || {};
   box.innerHTML = `
     <b>${escapeHtml(a.title || 'Activity')}</b><br>
-    Type: ${escapeHtml(((a.activityType === 'readingParagraph' ? 'paragraph reading' : (a.activityType || 'writing')).toUpperCase()))} · Task: ${escapeHtml(a.taskType || 'same')}<br>
+    Type: ${escapeHtml(((a.activityType === 'readingParagraph' || a.activityType === 'reading' ? 'paragraph reading' : (a.activityType || 'writing')).toUpperCase()))} · Task: ${escapeHtml(a.taskType || 'same')}<br>
     ${escapeHtml(a.instructions || 'No instructions.')}
   `;
 }
@@ -4651,7 +4716,8 @@ function buildAssignedActivityForGroup(a, i, activationId){
     activationId: activationId || ('act_' + Date.now()),
     title: a.title || 'Activity',
     instructions: a.instructions || '',
-    activityType: a.activityType || 'writing',
+    activityType: (a.activityType === 'reading' ? 'readingParagraph' : (a.activityType || 'writing')),
+    readingWorkMode: 'paragraph',
     taskType: a.taskType || 'same',
     mainImage: a.mainImage || '',
     groupTask,
@@ -4688,6 +4754,12 @@ async function activateSavedActivityForSelectedClasses(){
     return;
   }
 
+  if((a.activityType === 'readingParagraph' || a.activityType === 'reading') && (!a.paragraphReading || !a.paragraphReading.length)){
+    alert('This reading activity has no generated paragraphs. Open it in Activity Builder, divide the text, generate paragraph questions, then save again.');
+    return;
+  }
+
+  if(a.activityType === 'reading') a.activityType = 'readingParagraph';
   const activationId = 'act_' + Date.now();
   const updates = {};
   classes.forEach(cls=>{
@@ -4700,7 +4772,8 @@ async function activateSavedActivityForSelectedClasses(){
       activationId: activationId,
       title: a.title || 'Activity',
       instructions: a.instructions || '',
-      activityType: a.activityType || 'writing',
+      activityType: (a.activityType === 'reading' ? 'readingParagraph' : (a.activityType || 'writing')),
+      readingWorkMode: 'paragraph',
       taskType: a.taskType || 'same',
       mainImage: a.mainImage || '',
       criteria: a.criteria || [],
