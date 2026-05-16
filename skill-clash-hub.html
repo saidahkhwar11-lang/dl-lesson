@@ -1870,6 +1870,78 @@ button:hover{filter:brightness(.96)}
 .feedbackCorrect{background:#ecfdf5;color:#065f46;border:1px solid #86efac}
 .feedbackWrong{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}
 
+
+/* ===== Manual paragraph question builder ===== */
+.manualQBuilder{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.manualQItem{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+}
+.manualQItem h4{
+  margin:0 0 8px;
+  color:#18376b;
+}
+.manualQOptions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.manualQActions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.manualQActions button{margin:0}
+@media(max-width:700px){.manualQOptions{grid-template-columns:1fr}}
+
+
+/* ===== Clean final group answer collection ===== */
+.finalCollectPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin:10px 0;
+}
+.finalMemberBlock{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin:10px 0;
+  box-shadow:0 4px 12px rgba(36,59,107,.06);
+}
+.finalMemberName{
+  display:inline-block;
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+.finalMemberWork{
+  white-space:pre-wrap;
+  line-height:1.55;
+  color:#0b1b33;
+}
+#leaderFinalAnswerBox,
+#leaderReadingFinalBox{
+  min-height:220px;
+  line-height:1.55;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2273,18 +2345,12 @@ button:hover{filter:brightness(.96)}
           </div>
 
           <div class="readingCleanBox">
-            <h2>3️⃣ AI Question Generator</h2>
+            <h2>3️⃣ Divide Text + Add Your Own Questions</h2>
 
-            <label>Choose Question Skills</label>
-            <div class="skillCheckGrid">
-              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
-              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
-              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="vocabulary" checked> Vocabulary</label>
-              <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
-            </div>
+            <div class="note">After dividing the text, add your own MCQ or True/False questions under each paragraph.</div>
 
             <button type="button" class="purple" style="width:100%;font-size:16px;padding:14px" onclick="buildParagraphReadingActivity()">
-              ✨ AI Generate: Divide Paragraphs + Create Questions
+              ✨ Divide Text into Paragraphs
             </button>
 
             <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
@@ -2326,7 +2392,7 @@ button:hover{filter:brightness(.96)}
             Each student in a group will receive one paragraph randomly with its own auto-marked questions.
           </p>
 
-          <label>Choose Question Skills</label>
+          <label>Manual Questions</label>
           <div class="skillCheckGrid">
             <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
             <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
@@ -3952,11 +4018,11 @@ function renderMembersWork(){
       <div class="leaderFinalSection">
         <h3>📌 Final Group Answer Submission</h3>
         <p class="smallNote">
-          Review all members’ work together. When your group agrees on the final answer,
-          submit the final version here.
+          Review members’ work below. Click Collect Members’ Work to place all answers neatly in one final box, then submit.
         </p>
         <textarea id="leaderFinalAnswerBox" placeholder="Write or combine the final agreed group answer here...">${escapeHtml(groupData.finalAnswer || '')}</textarea>
-        <button class="blue finalSubmitBtn" onclick="document.getElementById('leaderFinalAnswerBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect All Members’ Summaries</button>
+        <div id="leaderFinalPreview">${buildLeaderFinalPreviewHtml()}</div>
+        <button class="blue finalSubmitBtn" onclick="document.getElementById('leaderFinalAnswerBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect Members’ Work</button>
         <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">✅ Submit Final Group Answer</button>
       </div>`;
   }else{
@@ -4579,21 +4645,18 @@ function buildParagraphReadingActivity(){
     return;
   }
 
-  const skills = getSelectedReadingSkills();
   const parts = divideTextIntoParagraphs(text, count);
 
   builderParagraphReading = parts.map((p,idx)=>({
     paragraphNumber: idx+1,
     text: p,
-    questions: generateParagraphQuestions(p, skills, idx+1)
+    questions: []
   }));
 
   builderReadingTexts.same = text;
   renderParagraphReadingPreview();
   const preview = document.getElementById('paragraphReadingPreview');
   if(preview) preview.scrollIntoView({behavior:'smooth', block:'start'});
-  const wholePreview = document.getElementById('readingSamePreview');
-  if(wholePreview){ wholePreview.classList.add('hidden'); wholePreview.innerHTML = ''; }
 }
 function clearParagraphReadingBuild(){
   builderParagraphReading = [];
@@ -4612,6 +4675,138 @@ function clearParagraphReadingBuild(){
     whole.innerHTML = '';
   }
 }
+
+function getParagraphBuildIndex(paragraphNumber){
+  return (builderParagraphReading || []).findIndex(p=>Number(p.paragraphNumber) === Number(paragraphNumber));
+}
+function addManualQuestion(paragraphNumber){
+  const idx = getParagraphBuildIndex(paragraphNumber);
+  if(idx < 0) return;
+  builderParagraphReading[idx].questions = builderParagraphReading[idx].questions || [];
+  const qNum = builderParagraphReading[idx].questions.length + 1;
+  builderParagraphReading[idx].questions.push({
+    id:'p'+paragraphNumber+'_q'+qNum+'_'+Date.now(),
+    paragraphNumber: paragraphNumber,
+    type:'Manual Question',
+    format:'mcq',
+    question:'',
+    options:['','','',''],
+    answer:0
+  });
+  renderParagraphReadingPreview();
+}
+function removeManualQuestion(paragraphNumber, qIndex){
+  const idx = getParagraphBuildIndex(paragraphNumber);
+  if(idx < 0) return;
+  builderParagraphReading[idx].questions.splice(qIndex,1);
+  renderParagraphReadingPreview();
+}
+function updateManualQuestion(paragraphNumber, qIndex, field, value){
+  const idx = getParagraphBuildIndex(paragraphNumber);
+  if(idx < 0) return;
+  const q = builderParagraphReading[idx].questions[qIndex];
+  if(!q) return;
+
+  if(field === 'format'){
+    q.format = value;
+    q.answer = value === 'tf' ? true : 0;
+    q.options = value === 'tf' ? [] : (q.options && q.options.length ? q.options : ['','','','']);
+  }else if(field === 'question'){
+    q.question = value;
+  }else if(field === 'type'){
+    q.type = value;
+  }else if(field.startsWith('option')){
+    const opIndex = Number(field.replace('option',''));
+    q.options = q.options || ['','','',''];
+    q.options[opIndex] = value;
+  }else if(field === 'answer'){
+    q.answer = q.format === 'tf' ? (value === 'true') : Number(value);
+  }
+}
+function validateManualReadingQuestions(){
+  if(!builderParagraphReading || !builderParagraphReading.length) return false;
+
+  for(const p of builderParagraphReading){
+    if(!p.questions || !p.questions.length){
+      alert('Add at least one question for Paragraph ' + p.paragraphNumber + '.');
+      return false;
+    }
+    for(let i=0;i<p.questions.length;i++){
+      const q = p.questions[i];
+      if(!String(q.question || '').trim()){
+        alert('Write question ' + (i+1) + ' for Paragraph ' + p.paragraphNumber + '.');
+        return false;
+      }
+      if(q.format === 'mcq'){
+        if(!q.options || q.options.some(op=>!String(op || '').trim())){
+          alert('Complete all 4 options for question ' + (i+1) + ' in Paragraph ' + p.paragraphNumber + '.');
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+function renderManualQuestionEditor(p){
+  let html = `<div class="manualQBuilder">
+    <h3>📝 Add Questions for Paragraph ${p.paragraphNumber}</h3>
+    <p class="smallNote">Choose MCQ or True/False. Each question = 1 point.</p>`;
+
+  (p.questions || []).forEach((q,qi)=>{
+    html += `<div class="manualQItem">
+      <h4>Question ${qi+1}</h4>
+
+      <label>Question Type</label>
+      <select onchange="updateManualQuestion(${p.paragraphNumber},${qi},'format',this.value); renderParagraphReadingPreview();">
+        <option value="mcq" ${q.format === 'mcq' ? 'selected' : ''}>Multiple Choice</option>
+        <option value="tf" ${q.format === 'tf' ? 'selected' : ''}>True / False</option>
+      </select>
+
+      <label>Skill / Question Category</label>
+      <select onchange="updateManualQuestion(${p.paragraphNumber},${qi},'type',this.value)">
+        <option value="Main Idea" ${q.type === 'Main Idea' ? 'selected' : ''}>Main Idea</option>
+        <option value="Supporting Details" ${q.type === 'Supporting Details' ? 'selected' : ''}>Supporting Details</option>
+        <option value="Vocabulary in Context" ${q.type === 'Vocabulary in Context' ? 'selected' : ''}>Vocabulary in Context</option>
+        <option value="Basic Grammar" ${q.type === 'Basic Grammar' ? 'selected' : ''}>Basic Grammar</option>
+      </select>
+
+      <label>Question</label>
+      <textarea placeholder="Write your question here..." oninput="updateManualQuestion(${p.paragraphNumber},${qi},'question',this.value)">${escapeHtml(q.question || '')}</textarea>`;
+
+    if(q.format === 'tf'){
+      html += `<label>Correct Answer</label>
+        <select onchange="updateManualQuestion(${p.paragraphNumber},${qi},'answer',this.value)">
+          <option value="true" ${q.answer === true ? 'selected' : ''}>True</option>
+          <option value="false" ${q.answer === false ? 'selected' : ''}>False</option>
+        </select>`;
+    }else{
+      q.options = q.options || ['','','',''];
+      html += `<div class="manualQOptions">`;
+      for(let oi=0; oi<4; oi++){
+        html += `<div>
+          <label>Option ${oi+1}</label>
+          <input value="${escapeHtml(q.options[oi] || '')}" placeholder="Option ${oi+1}" oninput="updateManualQuestion(${p.paragraphNumber},${qi},'option${oi}',this.value)">
+        </div>`;
+      }
+      html += `</div>
+        <label>Correct Answer</label>
+        <select onchange="updateManualQuestion(${p.paragraphNumber},${qi},'answer',this.value)">
+          <option value="0" ${Number(q.answer)===0 ? 'selected' : ''}>Option 1</option>
+          <option value="1" ${Number(q.answer)===1 ? 'selected' : ''}>Option 2</option>
+          <option value="2" ${Number(q.answer)===2 ? 'selected' : ''}>Option 3</option>
+          <option value="3" ${Number(q.answer)===3 ? 'selected' : ''}>Option 4</option>
+        </select>`;
+    }
+
+    html += `<div class="manualQActions">
+      <button type="button" class="red" onclick="removeManualQuestion(${p.paragraphNumber},${qi})">Delete Question</button>
+    </div></div>`;
+  });
+
+  html += `<button type="button" class="green" onclick="addManualQuestion(${p.paragraphNumber})">➕ Add Question to Paragraph ${p.paragraphNumber}</button></div>`;
+  return html;
+}
+
 function renderParagraphReadingPreview(){
   const box = document.getElementById('paragraphReadingPreview');
   if(!box) return;
@@ -4622,23 +4817,25 @@ function renderParagraphReadingPreview(){
   }
 
   box.classList.remove('hidden');
-  let html = `<h2>✅ Generated Reading Activity Preview</h2>
-    <p><b>${builderParagraphReading.length}</b> paragraphs created. Each paragraph has its own auto-marked MCQ / True-False questions.</p>
+  let html = `<h2>✅ Text Divided into Paragraphs</h2>
+    <p><b>${builderParagraphReading.length}</b> paragraphs created. Now add your own questions under each paragraph.</p>
     <div class="paragraphGrid">`;
 
   builderParagraphReading.forEach(p=>{
     html += `<div class="paragraphCard">
       <h3>Paragraph ${p.paragraphNumber}</h3>
       <div class="paragraphTextPreview">${escapeHtml(p.text)}</div>
-      <p><b>${(p.questions || []).length}</b> questions generated</p>
-      <details>
-        <summary>View Questions</summary>
-        ${(p.questions || []).map((q,i)=>`<div class="previewQuestion"><b>${i+1}. ${escapeHtml(q.type)}</b><br>${escapeHtml(q.question)}</div>`).join('')}
-      </details>
+      <p><b>${(p.questions || []).length}</b> manual questions added</p>
     </div>`;
   });
 
-  html += '</div><div class="readingStatusGood">Ready. Now click Save Activity to Library.</div>';
+  html += '</div>';
+
+  builderParagraphReading.forEach(p=>{
+    html += renderManualQuestionEditor(p);
+  });
+
+  html += '<div class="readingStatusGood">When all paragraphs have questions, click Save Activity to Library.</div>';
   box.innerHTML = html;
 }
 function getStudentReadingAssignment(a){
@@ -4784,9 +4981,10 @@ function renderParagraphReadingStudent(a){
 
         ${isLeader ? `<div class="leaderSummaryBox">
           <h3>👑 Leader Final Group Summary</h3>
-          <p class="smallNote">After all members save their summaries, collect them here, edit if needed, then submit the final group answer.</p>
-          <button class="blue" onclick="document.getElementById('leaderReadingFinalBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect All Members’ Summaries</button>
-          <textarea id="leaderReadingFinalBox" placeholder="Final group summary...">${escapeHtml(((latestClassGroups['group'+currentGroup] || {}).finalAnswer) || '')}</textarea>
+          <p class="smallNote">Collect members’ work here, edit if needed, then submit one final group answer.</p>
+          <div id="leaderReadingPreview">${buildLeaderFinalPreviewHtml()}</div>
+          <button class="blue" onclick="document.getElementById('leaderReadingFinalBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect Members’ Work</button>
+          <textarea id="leaderReadingFinalBox" placeholder="Final group answer...">${escapeHtml(((latestClassGroups['group'+currentGroup] || {}).finalAnswer) || '')}</textarea>
           <button class="green" style="width:100%" onclick="submitLeaderReadingFinalSummary()">✅ Submit Final Group Summary</button>
         </div>` : `<div class="memberWaitingBox">👑 The group leader will submit the final group summary after all members save their summaries.</div>`}
       </div>
@@ -4921,13 +5119,34 @@ async function submitLeaderReadingFinalSummary(){
 }
 
 function buildLeaderFinalSummaryFromMembers(){
-  let finalText = 'Final Group Reading Summary\\n\\n';
+  let finalText = '';
   Object.keys(latestStudents || {}).forEach(id=>{
     const s = latestStudents[id] || {};
-    finalText += `${s.name || id} - Paragraph ${s.assignedParagraphNumber || '-'}:\\n`;
-    finalText += `${s.paragraphSummary || 'No summary saved yet.'}\\n\\n`;
+    const name = s.name || id;
+
+    // For reading activity, use paragraph summary first.
+    // For writing activity, use saved answer.
+    const work = (s.paragraphSummary || s.answer || '').trim();
+
+    finalText += `${name}\n`;
+    finalText += `${work || 'No saved work yet.'}\n\n`;
   });
   return finalText.trim();
+}
+
+function buildLeaderFinalPreviewHtml(){
+  let html = '<div class="finalCollectPreview">';
+  Object.keys(latestStudents || {}).forEach(id=>{
+    const s = latestStudents[id] || {};
+    const name = s.name || id;
+    const work = (s.paragraphSummary || s.answer || '').trim() || 'No saved work yet.';
+    html += `<div class="finalMemberBlock">
+      <div class="finalMemberName">${escapeHtml(name)}</div>
+      <div class="finalMemberWork">${escapeHtml(work)}</div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
 }
 
 function getSelectedReadingSkills(){
@@ -5302,7 +5521,8 @@ async function saveActivityToLibrary(){
   const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
   if(a.activityType !== 'readingParagraph' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
-  if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Build the reading activity: divide the text and generate questions first.');return}
+  if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Divide the reading text first.');return}
+  if(a.activityType === 'readingParagraph' && !validateManualReadingQuestions()){return}
   currentActivityId = a.id;
   await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
   alert('✅ Activity saved to library.');
