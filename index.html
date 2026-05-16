@@ -5743,8 +5743,59 @@ function downloadLessonPlan(){
     const topicText = lessonTitle;
 
     const hotQuestion =
-      'How can today’s lesson topic help us think differently about real-life situations, and what evidence from the activity supports your idea?, and how can you show your understanding clearly?';
+function generateHOTQuestion(title, objectives, stations){
 
+  const allText = (
+    title + ' ' +
+    objectives.join(' ') + ' ' +
+    stations.map(s =>
+      (s.title || '') + ' ' +
+      (s.details || '') + ' ' +
+      (s.objective || '')
+    ).join(' ')
+  ).toLowerCase();
+
+  if(allText.includes('technology')){
+    return 'How has technology changed the way people learn, communicate, or live their daily lives?';
+  }
+
+  if(allText.includes('opinion') || allText.includes('oreo')){
+    return 'What makes an opinion strong and convincing, and why is evidence important when sharing ideas?';
+  }
+
+  if(allText.includes('business')){
+    return 'Why do different people solve problems in different ways during difficult situations?';
+  }
+
+  if(allText.includes('dream')){
+    return 'How can dreams or goals influence a person’s future decisions and success?';
+  }
+
+  if(allText.includes('reading')){
+    return 'How can understanding the main idea and details help us make better decisions in real life?';
+  }
+
+  if(allText.includes('writing')){
+    return 'How can writing clearly help people express ideas and influence others?';
+  }
+
+  if(allText.includes('listening')){
+    return 'Why is listening carefully important in communication and daily life?';
+  }
+
+  if(allText.includes('grammar')){
+    return 'How does using correct grammar improve communication and understanding?';
+  }
+
+  return 'How can today’s lesson help you think differently about real-life situations?';
+}
+
+const hotQuestion = generateHOTQuestion(
+  lessonTitle,
+  objectives,
+  stations
+);
+    
     let eTools = ['DL Online Lesson', 'Live Tracker'];
     stations.forEach(function(s){
       if(s.hasImage) eTools.push('Activity visuals');
