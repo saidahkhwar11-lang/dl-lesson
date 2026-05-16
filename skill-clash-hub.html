@@ -1,109 +1,2005 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>⚔️ Skill Clash Hub</title>
+<title>⚔️ Skill Clash Hub - Battle Voting Complete</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f4f7fb;color:#1f2937}
-.topbar{background:#243b6b;color:white;padding:18px;text-align:center;font-size:28px;font-weight:bold}
-.container{max-width:1200px;margin:auto;padding:20px}
-.card{background:white;border-radius:18px;padding:20px;margin-bottom:18px;box-shadow:0 4px 14px rgba(0,0,0,.08)}
-.hidden{display:none}
-h2,h3{color:#243b6b;margin-top:0}
-input,textarea,select{width:100%;box-sizing:border-box;border:1px solid #ccd6e6;border-radius:12px;padding:12px;margin-top:8px;font-size:16px}
-textarea{min-height:170px}
-button{border:0;border-radius:14px;background:#243b6b;color:white;padding:13px 16px;font-size:17px;cursor:pointer;margin-top:12px}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef4fb;
+  color:#10233f;
+  font-size:14px;
+}
+.topbar{
+  background:linear-gradient(135deg,#263f78,#5b8fea);
+  color:white;
+  text-align:center;
+  padding:12px;
+  font-size:24px;
+  font-weight:800;
+}
+.container{
+  max-width:1180px;
+  margin:auto;
+  padding:14px;
+}
+.card{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 5px 18px rgba(36,59,107,.07);
+}
+.hidden{display:none!important}
+h1,h2,h3{margin:0 0 10px;color:#18376b}
+h1{font-size:24px}
+h2{font-size:20px}
+h3{font-size:16px}
+p{margin:6px 0;line-height:1.45}
+label{display:block;font-weight:700;margin-top:8px;color:#18376b}
+input,select,textarea{
+  width:100%;
+  border:1px solid #cad9ee;
+  border-radius:12px;
+  padding:10px;
+  font-size:14px;
+  margin-top:5px;
+  background:white;
+}
+textarea{min-height:95px;resize:vertical}
+button{
+  border:0;
+  border-radius:12px;
+  padding:10px 14px;
+  color:white;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  margin-top:8px;
+}
+button:hover{filter:brightness(.96)}
+.blue{background:#243b6b}
+.green{background:#23823d}
+.red{background:#c12a20}
+.purple{background:#7c3aed}
+.orange{background:#f59e0b}
+.gray{background:#64748b}
 .btnRow{display:flex;gap:10px;flex-wrap:wrap}
-.btnRow button{flex:1}
-.red{background:#b42318}
-.green{background:#247a3d}
-.soft{background:#eef4ff;border:1px solid #cdddf7;border-radius:14px;padding:14px;margin-top:12px}
-.groupGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
-.answerBox{background:#f8fbff;border:1px solid #d6e3fa;border-radius:12px;padding:12px;margin-top:10px;max-height:200px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.5}
-.badge{display:inline-block;background:#eef4ff;border-radius:999px;padding:6px 10px;margin:4px}
+.btnRow button{flex:1;min-width:140px}
+.loginTabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+.loginTabs button{margin:0}
+.loginGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.note{
+  background:#fff8e8;
+  border:1px solid #f4d28b;
+  border-radius:14px;
+  padding:10px;
+  color:#7c4a05;
+  margin-top:12px;
+}
+.joinBtn{
+  width:100%;
+  background:linear-gradient(135deg,#2d6fc2,#72a8f3);
+  padding:13px;
+  font-size:16px;
+}
+.groupHeader{
+  background:linear-gradient(135deg,#274690,#5c8eea);
+  color:white;
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+}
+.titleLine{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.titleLine h1{color:white;font-size:28px}
+.statusBadge{
+  background:#fff3c4;
+  color:#92400e;
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:800;
+}
+.infoLine{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.infoLine span{
+  background:rgba(255,255,255,.17);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:999px;
+  padding:7px 10px;
+  color:white;
+}
+.roleBadge{
+  background:#ffe8f2;
+  color:#9d174d;
+  border-radius:999px;
+  padding:4px 8px;
+  font-weight:800;
+  margin-left:4px;
+}
+.memberLine{margin-top:10px;color:white}
+.memberLine .pill{
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.25);
+  padding:5px 9px;
+  border-radius:999px;
+  margin:2px;
+  display:inline-block;
+}
+.studentLayout{
+  display:grid;
+  grid-template-columns:1.35fr .8fr;
+  gap:14px;
+}
+.myAnswer textarea{min-height:190px}
+.actions{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.actions button{margin:0}
+.leaveRow{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.leaveRow button{min-width:145px}
+.activityName{
+  background:#fff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:12px;
+  font-size:18px;
+  font-weight:800;
+  color:#18376b;
+}
+.instructionBox{
+  background:#eaf3ff;
+  border:1px solid #bed6ff;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+  line-height:1.55;
+}
+.taskBox{
+  background:#fff9ec;
+  border:1px solid #f0d180;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+  line-height:1.55;
+  white-space:pre-wrap;
+}
+.criteriaBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+}
+.criteriaItem{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:7px 0;
+  font-weight:700;
+}
+.criteriaItem input{width:auto;margin:0}
+.memberWorkBox{
+  display:none;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-top:12px;
+}
+.memberWorkBox.open{display:block}
+.workItem{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+  white-space:pre-wrap;
+}
+.teacherHero{
+  background:linear-gradient(135deg,#f8fbff,#eef4ff);
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.teacherTopActions{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:12px;
+}
+.currentBox{
+  background:linear-gradient(135deg,#fff7ed,#eff6ff);
+  border:1px solid #fed7aa;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.currentGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.currentMini{
+  background:white;
+  border:1px solid #dbeafe;
+  border-radius:14px;
+  padding:10px;
+}
+.currentMini b{display:block;color:#18376b;margin-bottom:5px}
+.classGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.classCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:14px;
+  cursor:pointer;
+}
+.classCard h3{font-size:22px}
+.pill{
+  display:inline-block;
+  border-radius:999px;
+  padding:4px 8px;
+  margin:3px;
+  font-size:12px;
+  font-weight:800;
+}
+.pillYellow{background:#fef3c7;color:#92400e}
+.pillGreen{background:#d1fae5;color:#065f46}
+.pillPurple{background:#ede9fe;color:#5b21b6}
+.builderPanel,.reviewPanel{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.builderGrid{
+  display:grid;
+  grid-template-columns:1fr 260px;
+  gap:12px;
+}
+.groupTaskGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.groupTaskGrid textarea{min-height:80px;font-size:12px}
+.assignChecks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.checkCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px 16px;
+  font-weight:800;
+}
+.checkCard input{width:auto;margin:0 5px 0 0}
+.groupCards{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.groupCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+}
+.answerPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  max-height:220px;
+  overflow:auto;
+}
+.chatPopup{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:330px;
+  max-width:calc(100vw - 36px);
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  overflow:hidden;
+  z-index:9999;
+}
+.chatHead{
+  background:#7c3aed;
+  color:white;
+  padding:12px;
+  font-weight:800;
+  display:flex;
+  justify-content:space-between;
+}
+.chatHead button{padding:3px 8px;margin:0;background:#c12a20}
+.chatMessages{
+  height:230px;
+  overflow:auto;
+  padding:10px;
+  background:#f8fbff;
+}
+.chatMsg{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:8px;
+  margin-bottom:8px;
+}
+.chatActions button{font-size:11px;padding:5px 8px;margin-right:5px}
+.chatInput{padding:10px}
+.chatInput textarea{min-height:60px}
+.achievement{
+  background:#fff4f7;
+  border:1px solid #ffcbd7;
+  border-radius:16px;
+  padding:14px;
+  margin-top:14px;
+}
+.achievement button{
+  width:100%;
+  background:linear-gradient(135deg,#f59e0b,#ec4899);
+}
+
+.votePanel{
+  background:#f0f7ff;
+  border:1px solid #bcd7ff;
+  border-radius:16px;
+  padding:14px;
+  margin-top:14px;
+}
+.voteTarget{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.voteFinal{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  max-height:160px;
+  overflow:auto;
+  margin-top:8px;
+}
+.scoreGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.resultTable{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+}
+.resultTable th,.resultTable td{
+  border:1px solid #d8e5f6;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+.resultTable th{
+  background:#eaf3ff;
+  color:#18376b;
+}
+
+.votingHeader{background:linear-gradient(135deg,#243b6b,#4f7dd8)}
+.topVotingRules{
+  margin-top:12px;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:16px;
+  padding:12px;
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:12px;
+  align-items:start;
+}
+.topVotingRules h3{color:white;margin:0 0 6px}
+.topVotingRules p{color:white;margin:0;line-height:1.45}
+.topMyAnswer{
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:14px;
+  padding:10px;
+  color:white;
+}
+.topMyAnswer summary{cursor:pointer;font-weight:800}
+.topMyAnswer .voteFinal{
+  background:white;
+  color:#10233f;
+  margin-top:8px;
+  max-height:120px;
+}
+.votingLayout{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+.voteMainCard,.voteSideCard{margin-bottom:14px}
+.smallNote{color:#64748b;font-size:13px}
+.voteCriteriaList{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:8px;
+}
+.voteCriteriaItem{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  margin:7px 0;
+  font-weight:700;
+}
+.voteCriteriaItem input,.bestGroupBox input{width:auto;margin:0}
+ .voteSystemBox{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px;
+  margin:10px 0;
+}
+.battleGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.battleAnswerCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.battleAnswerCard.own{opacity:.68}
+.battleAnswerCard h3{margin-bottom:8px}
+.battleLock{
+  background:#fff3c4;
+  border:1px solid #f4d28b;
+  border-radius:10px;
+  padding:8px;
+  color:#92400e;
+  font-weight:800;
+}
+.bestGroupBox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:11px;
+  margin:12px 0;
+  font-weight:800;
+  color:#92400e;
+}
+
+.battleChooser{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.battleStepBar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+.battleStep{
+  background:#eef2ff;
+  border:1px solid #c7d2fe;
+  color:#243b6b;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:800;
+  font-size:12px;
+}
+.battleStep.active{
+  background:#fff7ed;
+  border-color:#fdba74;
+  color:#9a3412;
+}
+.battleStep.done{
+  background:#dcfce7;
+  border-color:#86efac;
+  color:#166534;
+}
+.battleClearSteps{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:10px 0 12px;
+}
+.battleClearSteps div{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:12px;
+  padding:10px;
+  font-weight:800;
+  color:#18376b;
+  text-align:center;
+}
+.battleCompareBox{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.battleAnswerCard h3{
+  background:#eaf3ff;
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:8px;
+}
+.battleRubric{
+  margin-top:14px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  overflow:hidden;
+}
+.battleRubric table{
+  width:100%;
+  border-collapse:collapse;
+}
+.battleRubric th{
+  background:#eaf3ff;
+  color:#18376b;
+  padding:10px;
+  font-size:14px;
+}
+.battleRubric td{
+  border-top:1px solid #d8e5f6;
+  padding:10px;
+  vertical-align:middle;
+}
+.battleRubric .criteriaText{
+  font-weight:800;
+  color:#18376b;
+}
+.scoreCheck{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  font-weight:800;
+  color:#166534;
+}
+.scoreCheck input{width:auto;margin:0;transform:scale(1.25)}
+.bestChoiceRow{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:12px 0;
+}
+.bestChoiceRow label{
+  margin:0;
+}
+.nextBattleBtn{
+  width:100%;
+  background:#243b6b;
+  margin-top:8px;
+}
+@media(max-width:900px){
+  .battleClearSteps,.battleCompareBox,.bestChoiceRow{grid-template-columns:1fr}
+  .battleRubric table,.battleRubric thead,.battleRubric tbody,.battleRubric tr,.battleRubric th,.battleRubric td{display:block;width:100%}
+  .battleRubric tr{border-top:1px solid #d8e5f6;padding:8px}
+  .battleRubric td{border-top:0;padding:7px}
+}
+
+@media(max-width:900px){.votingLayout,.battleGrid,.topVotingRules{grid-template-columns:1fr}}
+
+
+/* ===== Clear Battle Voting Page Upgrade ===== */
+#battleVoteCard{
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+  border:1px solid #cfe0f7;
+}
+.votingLayout{
+  grid-template-columns:1fr;
+}
+.battleChooser{
+  background:linear-gradient(135deg,#eff6ff,#ffffff);
+  border:1px solid #bfdbfe;
+  box-shadow:0 6px 16px rgba(36,59,107,.06);
+}
+.battleChooser select{
+  font-size:16px;
+  font-weight:800;
+  color:#18376b;
+  background:white;
+}
+.battleInstructionBanner{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+.battleInstructionBanner div{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  font-weight:900;
+  color:#18376b;
+  box-shadow:0 3px 10px rgba(36,59,107,.04);
+}
+.battleVoteMainTitle{
+  background:linear-gradient(135deg,#243b6b,#4f7dd8);
+  color:white;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.battleVoteMainTitle h2{color:white;margin:0}
+.battleVoteMainTitle p{color:#eaf3ff;margin:6px 0 0}
+.battleReadGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:14px 0;
+}
+.clearAnswerCard{
+  background:white;
+  border:2px solid #d8e5f6;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 5px 16px rgba(36,59,107,.06);
+}
+.clearAnswerHead{
+  background:#eaf3ff;
+  padding:12px 14px;
+  font-size:17px;
+  font-weight:900;
+  color:#18376b;
+  border-bottom:1px solid #d8e5f6;
+}
+.clearAnswerText{
+  min-height:160px;
+  max-height:260px;
+  overflow:auto;
+  padding:14px;
+  white-space:pre-wrap;
+  line-height:1.55;
+  background:#fbfdff;
+}
+.clearScoreSection{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:14px 0;
+}
+.clearScoreCard{
+  background:#ffffff;
+  border:2px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.clearScoreCard h3{
+  background:#eef6ff;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:10px;
+  color:#18376b;
+}
+.clearCriterion{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:10px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+  cursor:pointer;
+  font-weight:800;
+  color:#18376b;
+}
+.clearCriterion:hover{background:#eef6ff}
+.clearCriterion input{width:auto;margin:0;transform:scale(1.25)}
+.pointBadge{
+  background:#dcfce7;
+  color:#166534;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:900;
+}
+.clearBestSection{
+  background:#fff7ed;
+  border:2px solid #fed7aa;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.clearBestSection h3{color:#9a3412;margin-bottom:8px}
+.clearBestChoices{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.clearBestChoice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:white;
+  border:2px solid #fed7aa;
+  border-radius:14px;
+  padding:14px;
+  font-size:16px;
+  font-weight:900;
+  color:#9a3412;
+  cursor:pointer;
+}
+.clearBestChoice input{width:auto;margin:0;transform:scale(1.25)}
+.clearSaveBar{
+  position:sticky;
+  bottom:8px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 8px 24px rgba(15,23,42,.13);
+  margin-top:12px;
+}
+.clearSaveBar button{font-size:16px;padding:13px}
+.resultFormulaBox{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px;
+  color:#18376b;
+  font-weight:800;
+  margin:10px 0;
+}
+@media(max-width:900px){
+  .battleInstructionBanner,.battleReadGrid,.clearScoreSection,.clearBestChoices{grid-template-columns:1fr}
+}
+
+.winnerBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:800;
+}
+
+.certActions{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin:12px 0 16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.certActions button{
+  margin:0;
+  min-width:230px;
+  background:linear-gradient(135deg,#f59e0b,#ec4899);
+}
+.certMsg{
+  flex:1;
+  min-width:240px;
+  font-weight:800;
+  color:#92400e;
+}
+
+
+
+/* Student cute header timer linked with teacher timer */
+.groupHeader{position:relative; padding-right:230px;}
+.studentHeaderTimer{
+  position:absolute;
+  right:18px;
+  top:18px;
+  min-width:190px;
+  background:linear-gradient(135deg,#fff7ed,#fef3c7);
+  border:1px solid rgba(255,255,255,.55);
+  color:#7c2d12;
+  border-radius:18px;
+  padding:10px 14px;
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+  text-align:center;
+}
+.studentHeaderTimer .timerIcon{font-size:20px;line-height:1}
+.studentHeaderTimer .timerText{
+  display:block;
+  font-size:24px;
+  font-weight:900;
+  color:#18376b;
+  letter-spacing:.5px;
+  margin-top:2px;
+}
+.studentHeaderTimer .timerStatus{
+  display:block;
+  font-size:11px;
+  font-weight:900;
+  color:#92400e;
+  margin-top:2px;
+}
+.studentHeaderTimer.running{background:linear-gradient(135deg,#dcfce7,#f0fdf4);color:#065f46;}
+.studentHeaderTimer.running .timerStatus{color:#166534;}
+.studentHeaderTimer.paused{background:linear-gradient(135deg,#fef3c7,#fff7ed);}
+.studentHeaderTimer.finished{background:linear-gradient(135deg,#fee2e2,#fff1f2);}
+.studentHeaderTimer.finished .timerText{color:#b91c1c;}
+@media(max-width:760px){
+  .groupHeader{padding-right:16px;}
+  .studentHeaderTimer{position:static;margin:12px 0 0;min-width:0;width:100%;}
+}
+
+/* Teacher timer maximize popup */
+.teacherTimerLine{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.timerMiniBtn{
+  background:#243b6b;
+  padding:8px 12px;
+  border-radius:10px;
+  font-size:13px;
+  margin:0;
+}
+.timerPill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#ecfeff;
+  border:1px solid #bae6fd;
+  color:#075985;
+  padding:7px 10px;
+  border-radius:999px;
+  font-weight:900;
+}
+.timerModalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(6,18,46,.62);
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.timerModal{
+  width:min(980px,96vw);
+  max-height:92vh;
+  overflow:auto;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid #cfe0fb;
+  border-radius:26px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+.timerModalHeader{
+  background:linear-gradient(135deg,#18376b,#5b8fea);
+  color:white;
+  padding:20px;
+  border-radius:26px 26px 0 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+}
+.timerModalHeader h1{color:white;margin:0;font-size:28px}
+.timerModalHeader p{color:#eaf3ff;margin:5px 0 0}
+.timerCloseBtn{
+  background:#dc2626;
+  margin:0;
+  border-radius:12px;
+  padding:9px 13px;
+}
+.bigTimerBox{
+  margin:18px;
+  background:linear-gradient(135deg,#fff7ed,#eff6ff);
+  border:2px solid #fed7aa;
+  border-radius:24px;
+  text-align:center;
+  padding:22px;
+}
+.bigTimerTime{
+  font-size:64px;
+  line-height:1;
+  font-weight:900;
+  color:#18376b;
+  letter-spacing:2px;
+}
+.bigTimerLabel{
+  color:#92400e;
+  font-weight:900;
+  margin-top:8px;
+}
+.timerControlRow{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.timerControlRow button{min-width:135px;margin:0}
+.activityPopupGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:0 18px 18px;
+}
+.activityPopupCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.activityPopupCard.full{grid-column:1/-1}
+.activityPopupCard h3{font-size:16px;margin-bottom:8px;color:#18376b}
+.activityPopupText{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  min-height:58px;
+  white-space:pre-wrap;
+  line-height:1.5;
+}
+@media(max-width:760px){
+  .activityPopupGrid{grid-template-columns:1fr}
+  .bigTimerTime{font-size:46px}
+}
+
+@media(max-width:900px){
+  .studentLayout,.builderGrid{grid-template-columns:1fr}
+  .classGrid,.groupCards,.groupTaskGrid,.currentGrid{grid-template-columns:1fr 1fr}
+  .teacherTopActions,.actions{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .loginGrid,.classGrid,.groupCards,.groupTaskGrid,.currentGrid,.teacherTopActions,.actions{grid-template-columns:1fr}
+}
+
+/* Clean compact battle voting update */
+.compactChooser{
+  display:grid;
+  grid-template-columns:minmax(240px, 1.2fr) 170px 1fr;
+  gap:14px;
+  align-items:end;
+  padding:12px;
+}
+.compactChooser select{height:46px;font-weight:800;color:#18376b}
+.miniProgress{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px 12px;
+  text-align:center;
+  color:#18376b;
+}
+.miniProgress b{display:block;font-size:20px}
+.miniProgress span{font-size:12px;color:#64748b;font-weight:800}
+.miniHint{
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  color:#166534;
+  border-radius:14px;
+  padding:10px 12px;
+  font-weight:800;
+}
+.cleanBattleCard{padding:12px 14px 0;overflow:hidden}
+.compactTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px 14px;
+  margin-bottom:12px;
+}
+.compactTitle h2{margin:0;font-size:22px}.compactTitle p{margin:0;color:#475569}
+.compactReadGrid{gap:12px;margin-bottom:12px}
+.clearAnswerBlue{border-color:#bfdbfe}.clearAnswerGreen{border-color:#bbf7d0}
+.largeAnswerText{
+  min-height:230px;
+  max-height:360px;
+  font-size:15px;
+  line-height:1.65;
+  padding:16px;
+}
+.submittedLine{
+  padding:9px 12px;
+  border-top:1px solid #e2e8f0;
+  background:#fbfdff;
+  color:#18376b;
+}
+.miniMember{
+  display:inline-block;
+  background:#eaf3ff;
+  color:#1d4ed8;
+  border-radius:999px;
+  padding:4px 9px;
+  margin:3px;
+  font-size:12px;
+  font-weight:800;
+}
+.clearAnswerGreen .miniMember{background:#dcfce7;color:#166534}
+.startVotingPanel{
+  text-align:center;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  padding:26px 14px;
+  margin:10px 0 14px;
+}
+.startIcon{
+  width:56px;height:56px;line-height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2d6fc2,#1d4ed8);
+  color:white;
+  margin:0 auto 8px;
+  font-size:22px;
+  font-weight:900;
+}
+.startVoteBtn{min-width:180px;padding:12px 22px;font-size:16px}
+.compactStepTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-size:18px;
+  font-weight:900;
+  color:#18376b;
+  margin:8px 0 10px;
+}
+.compactStepTitle span{font-size:13px;color:#475569;background:#eff6ff;border-radius:999px;padding:5px 10px}
+.compactScoreSection{gap:12px;margin:10px 0}
+.compactScoreCard{padding:10px;border-radius:16px}
+.compactScoreCard h3{font-size:16px;padding:8px 10px;margin-bottom:7px}
+.compactCriterion{padding:8px 10px;margin:6px 0;font-size:13px}
+.compactCriterion input{transform:scale(1.08)}
+.compactBestSection{padding:10px;margin:10px 0;border-radius:16px}
+.compactBestSection h3{font-size:16px;margin-bottom:8px}
+.compactBestChoices{gap:10px}.compactBestChoices .clearBestChoice{padding:10px;font-size:15px}
+.compactComment{min-height:74px;max-height:110px}
+.compactSaveBar{
+  position:static;
+  display:grid;
+  grid-template-columns:180px 180px 1fr;
+  align-items:center;
+  gap:10px;
+  border-radius:0;
+  margin:12px -14px 0;
+  padding:12px 18px;
+  box-shadow:none;
+  background:#f8fbff;
+  border-left:0;border-right:0;border-bottom:0;
+}
+.compactSaveBar .note{margin:0;padding:8px 10px;font-size:13px}
+.compactActionBtn{
+  width:100%!important;
+  margin:0;
+  padding:10px 12px!important;
+  font-size:14px!important;
+  border-radius:12px;
+}
+@media(max-width:900px){
+  .compactChooser{grid-template-columns:1fr}.compactTitle{display:block}.largeAnswerText{min-height:180px}.compactSaveBar{grid-template-columns:1fr 1fr}.compactSaveBar .note{grid-column:1/-1}
+}
+
+/* ===== Activity image upload/display upgrade ===== */
+.imageUploadBox{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:14px;
+  padding:10px;
+  margin-top:8px;
+}
+.imagePreviewBox{
+  margin-top:8px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+.activityImg{
+  width:100%;
+  max-height:240px;
+  object-fit:contain;
+  display:block;
+  background:#f8fbff;
+}
+.groupTaskImg{
+  width:100%;
+  max-height:160px;
+  object-fit:contain;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  background:#f8fbff;
+  margin-top:8px;
+}
+.smallImageBtn{
+  background:#64748b;
+  padding:7px 10px;
+  font-size:12px;
+  margin-top:6px;
+}
+.groupTaskMiniCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+
+
+.activityImageWrap{
+  margin-top:12px;
+  position:relative;
+}
+.activityImageSmall{
+  width:180px;
+  max-width:100%;
+  border-radius:14px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:.25s;
+  display:block;
+}
+.activityImageSmall.maximized{
+  width:100%;
+  max-height:70vh;
+  object-fit:contain;
+}
+.imageToggleBtn{
+  margin-top:8px;
+  background:#243b6b;
+  padding:7px 12px;
+  font-size:12px;
+}
+
+
+/* ===== FINAL FIX: small activity pictures + maximize/minimize ===== */
+.imagePreviewBox{
+  margin-top:10px;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  background:#f8fbff;
+  padding:8px;
+  overflow:visible;
+  display:inline-block;
+  max-width:100%;
+}
+.activityImg,
+.groupTaskImg{
+  width:180px !important;
+  max-width:100% !important;
+  max-height:130px !important;
+  object-fit:contain !important;
+  display:block;
+  background:white;
+  border-radius:12px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:all .25s ease;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  width:100% !important;
+  max-width:100% !important;
+  max-height:70vh !important;
+}
+.imageToggleBtn{
+  display:block;
+  width:180px;
+  max-width:100%;
+  margin-top:7px;
+  background:#243b6b;
+  color:white;
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:12px;
+}
+
+
+/* ===== CLEAN FINAL IMAGE STYLE: compact thumbnail + neat maximize ===== */
+.imagePreviewBox{
+  margin:6px 12px 6px 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  display:inline-flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:5px !important;
+  max-width:140px !important;
+  float:left !important;
+}
+.activityImg,
+.groupTaskImg{
+  width:120px !important;
+  height:90px !important;
+  max-width:120px !important;
+  max-height:90px !important;
+  object-fit:contain !important;
+  display:block !important;
+  background:white !important;
+  border:1px solid #cfe0f7 !important;
+  border-radius:10px !important;
+  padding:3px !important;
+  cursor:pointer !important;
+  box-shadow:0 2px 8px rgba(36,59,107,.08) !important;
+}
+.imageToggleBtn{
+  width:120px !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:5px 7px !important;
+  font-size:11px !important;
+  border-radius:9px !important;
+  background:#243b6b !important;
+  line-height:1.15 !important;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  position:fixed !important;
+  z-index:999999 !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:88vw !important;
+  max-height:82vh !important;
+  background:white !important;
+  padding:12px !important;
+  border:3px solid #243b6b !important;
+  border-radius:18px !important;
+  box-shadow:0 20px 60px rgba(0,0,0,.35) !important;
+}
+.imagePreviewBox:has(.maximized)::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.55);
+  z-index:999998;
+}
+.instructionBox::after,
+.taskBox::after{
+  content:"";
+  display:block;
+  clear:both;
+}
+.instructionBox,
+.taskBox{
+  overflow:auto !important;
+}
+
+
+/* ===== Final submission inside members work ===== */
+.leaderFinalSection{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:2px dashed #d8e5f6;
+}
+.leaderFinalSection textarea{
+  min-height:140px;
+  margin-top:10px;
+}
+.finalSubmitBtn{
+  width:100%;
+  margin-top:10px;
+  font-size:15px;
+  padding:13px;
+}
+.memberWaitingBox{
+  margin-top:14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:14px;
+  padding:12px;
+  font-weight:800;
+}
+
+
+.pill small{
+  opacity:.75;
+  font-weight:700;
+  margin-left:4px;
+}
+
+/* ===== Teacher resources + student uploads ===== */
+.resourceBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.resourceBox h3{margin:0 0 8px;color:#18376b;font-size:15px}
+.resourceLink{
+  display:inline-block;
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:7px 10px;
+  margin:4px 4px 4px 0;
+  text-decoration:none;
+  font-weight:800;
+  font-size:13px;
+}
+.resourceLink:hover{background:#dbeafe}
+.fileMini{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+}
+.fileMini b{color:#9a3412}
+.uploadStudentBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.uploadStudentBox input{background:white}
+.studentUploadPreview{
+  margin-top:7px;
+  font-size:13px;
+  font-weight:800;
+  color:#18376b;
+}
+.groupTaskMiniCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+.groupTaskMiniCard input[type="url"]{font-size:12px}
+.smallHint{
+  font-size:12px;
+  color:#64748b;
+  margin-top:4px;
+}
+
+
+/* ===== Reading Activity Type + Auto Marking ===== */
+.readingBuilderBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.skillCheckGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:8px 0;
+}
+.skillCheck{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  font-weight:800;
+  color:#18376b;
+}
+.skillCheck input{width:auto;margin:0 6px 0 0}
+.quizCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.quizQuestion{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:11px;
+  margin:9px 0;
+}
+.quizQuestion b{color:#18376b}
+.quizOption{
+  display:block;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:10px;
+  padding:8px;
+  margin:6px 0;
+  font-weight:700;
+}
+.quizOption input{width:auto;margin:0 7px 0 0}
+.quizResultBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:900;
+}
+.readingTextBox{
+  background:#fff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  max-height:260px;
+  overflow:auto;
+  white-space:pre-wrap;
+  line-height:1.6;
+}
+.previewQuestion{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  margin:7px 0;
+  font-size:13px;
+}
+@media(max-width:900px){
+  .skillCheckGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .skillCheckGrid{grid-template-columns:1fr}
+}
+
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
 
 <body>
-
 <div class="topbar">⚔️ Skill Clash Hub</div>
 
 <div class="container">
 
-<div class="btnRow">
-  <button onclick="showPage('studentPage')">🎮 Student</button>
-  <button onclick="showPage('teacherPage')">👩‍🏫 Teacher Dashboard</button>
-</div>
-
-<div id="studentPage" class="card">
-  <h2>🎮 Join Group Activity</h2>
-
-  <label>Group Number</label>
-  <select id="studentGroup">
-    <option value="">Choose group</option>
-    <option value="1">Group 1</option><option value="2">Group 2</option>
-    <option value="3">Group 3</option><option value="4">Group 4</option>
-    <option value="5">Group 5</option><option value="6">Group 6</option>
-    <option value="7">Group 7</option><option value="8">Group 8</option>
-    <option value="9">Group 9</option><option value="10">Group 10</option>
-  </select>
-
-  <label>Group Members</label>
-  <input id="groupMembers" placeholder="Write group members">
-
-  <button onclick="joinGroup()">Join Activity</button>
-</div>
-
-<div id="workPage" class="card hidden">
-  <h2 id="workTitle">Group Work</h2>
-  <div class="soft" id="groupTopic">Topic will appear here.</div>
-
-  <p><b>Task:</b> Write your group answer in one box.</p>
-  <textarea id="groupAnswer" placeholder="Write your group answer here..."></textarea>
-
-  <button onclick="submitGroupWork()">Submit Group Work</button>
-  <div id="submitMsg" class="soft hidden"></div>
-</div>
-
-<div id="votePage" class="card hidden">
-  <h2>🗳 Peer Voting</h2>
-  <div id="voteArea"></div>
-</div>
-
-<div id="teacherPage" class="card hidden">
-  <h2>👩‍🏫 Teacher Dashboard</h2>
-
-  <label>Password</label>
-  <input id="teacherPass" type="password" placeholder="Enter password">
-
-  <label>Activity Title</label>
-  <input id="activityTitle" value="Opinion Battle">
-
-  <label>Activity Instructions</label>
-  <textarea id="activityInstructions">Write a clear opinion paragraph. Remember: opinion, reason, evidence/example, and restated opinion.</textarea>
-
-  <div class="btnRow">
-    <button onclick="saveActivitySettings()">💾 Save Activity</button>
-    <button onclick="openWorkStage()" class="green">✍️ Open Work Stage</button>
-    <button onclick="openVotingStage()">🗳 Open Voting Stage</button>
-    <button onclick="resetHub()" class="red">🗑 Reset</button>
+  <div id="mainTabs" class="loginTabs">
+    <button class="blue" onclick="showStudentLogin()">🎮 Student Login</button>
+    <button class="blue" onclick="showTeacherLogin()">👩‍🏫 Teacher Login</button>
   </div>
 
-  <h3>📌 Live Groups</h3>
-  <button onclick="showTeacherPreview()">👀 Preview Group Work</button>
-  <div id="teacherPreview" class="groupGrid"></div>
+  <div id="studentLoginPage" class="card">
+    <h1>🎮 Join Skill Clash</h1>
+    <p>Choose your class, name, role, and group number.</p>
 
-  <h3>🏆 Results</h3>
-<button onclick="startLiveResults()">
-  📊 Show Live Results
-</button>
-  <div id="resultsBox"></div>
+    <div class="loginGrid">
+      <div>
+        <label>📚 Class</label>
+        <select id="className">
+          <option value="">Choose class</option>
+          <option value="9-1">9/1</option>
+          <option value="9-2">9/2</option>
+          <option value="9-3">9/3</option>
+          <option value="9-4">9/4</option>
+        </select>
+      </div>
+
+      <div>
+        <label>👥 Group Number</label>
+        <select id="studentGroup">
+          <option value="">Choose group</option>
+          <option value="1">Group 1</option>
+          <option value="2">Group 2</option>
+          <option value="3">Group 3</option>
+          <option value="4">Group 4</option>
+          <option value="5">Group 5</option>
+          <option value="6">Group 6</option>
+          <option value="7">Group 7</option>
+          <option value="8">Group 8</option>
+          <option value="9">Group 9</option>
+          <option value="10">Group 10</option>
+        </select>
+      </div>
+
+      <div>
+        <label>🌸 Student Name</label>
+        <input id="studentName" placeholder="Write your name">
+      </div>
+
+      <div>
+        <label>🆔 Student ID</label>
+        <input id="studentId" placeholder="Write your ID number">
+      </div>
+
+      <div>
+        <label>⭐ Group Role</label>
+        <select id="studentRole">
+          <option value="member">Group Member</option>
+          <option value="leader">Group Leader</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="note">💡 Decide who is the leader before joining. Members appear automatically after joining the same group.<br>🆔 Use the same Student ID every day to restore your saved work, even if your name spelling changes.</div>
+
+    <button class="joinBtn" onclick="joinGroup()">✨ Join My Group Work</button>
+  </div>
+
+  <div id="teacherLoginPage" class="card hidden">
+    <h1>👩‍🏫 Teacher Login</h1>
+    <label>Password</label>
+    <input id="teacherPassword" type="password" placeholder="Enter password">
+    <button class="green" onclick="loginTeacher()">Login</button>
+  </div>
+
+  <div id="workPage" class="hidden">
+    <div class="groupHeader">
+      <div class="titleLine">
+        <h1 id="workTitle">Group Work</h1>
+        <span class="statusBadge" id="statusBadge">✍️ In Progress</span>
+      </div>
+      <div id="studentHeaderTimer" class="studentHeaderTimer">
+        <div class="timerIcon">⏱️</div>
+        <span id="studentTimer" class="timerText">Not started</span>
+        <span id="studentTimerStatus" class="timerStatus">Teacher timer</span>
+      </div>
+      <div class="infoLine">
+        <span id="infoClass"></span>
+        <span id="infoGroup"></span>
+        <span id="infoLeader"></span>
+        <span id="infoYou"></span>
+        <span id="infoVotes"></span>
+      </div>
+      <div class="memberLine" id="infoMembers"></div>
+    </div>
+
+    <div class="studentLayout">
+      <div>
+        <div class="card myAnswer">
+          <h2>✍️ My Answer</h2>
+          <p>Write your part. Click <b>Save My Work</b> so your group can see it.</p>
+          <label id="myWorkLabel">My Work</label>
+          <textarea id="myAnswerBox" placeholder="Write your answer here..."></textarea>
+
+          <div class="uploadStudentBox">
+            <label>📎 Upload your work file / picture</label>
+            <input id="studentWorkFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="previewStudentUpload(this)">
+            <div id="studentUploadPreview" class="studentUploadPreview">No file uploaded yet.</div>
+            <p class="smallHint">Allowed: Word, PDF, PPT, or picture. Click Save My Work after choosing the file.</p>
+          </div>
+
+          <div class="actions">
+            <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
+            <button class="green" onclick="saveMyWork()">💾 Save My Work</button>
+            
+            <button class="purple" onclick="toggleChat()">💬 Chatroom</button>
+          </div>
+
+          <div class="leaveRow">
+            <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
+          </div>
+
+          
+<div id="membersWorkBox" class="memberWorkBox">
+
+  <div id="leaderFinalSection" class="leaderFinalSection hidden">
+    <h3>📌 Final Group Answer Submission</h3>
+    <p class="smallNote">
+      Review all members’ work together. When your group agrees on the final answer,
+      the group leader can submit the final version here.
+    </p>
+
+    <textarea id="leaderFinalAnswerBox"
+      placeholder="Write or combine the final agreed group answer here..."></textarea>
+
+    <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">
+      ✅ Submit Final Group Answer
+    </button>
+  </div>
+
+  <div id="memberWaitingBox" class="memberWaitingBox hidden">
+    👑 Only the group leader can submit the final answer after discussion and agreement.
+  </div>
+
 </div>
 
+        </div>
+
+      </div>
+
+      <div>
+        <div class="card">
+          <h2>📌 Activity Name</h2>
+          <div id="activityNameBox" class="activityName">No activity assigned</div>
+
+          <h3 style="margin-top:12px;">📋 Activity Instructions</h3>
+          <div id="activityInstructionsBox" class="instructionBox">No instructions</div>
+
+          <h3 style="margin-top:12px;">📝 Group Activity Details</h3>
+          <div id="groupTaskBox" class="taskBox">No group task</div>
+
+          <div id="readingQuizBox" class="quizCard hidden"></div>
+
+<div id="activityImageHolder"></div>
+<div id="groupTaskImageHolder"></div>
+
+          <div id="criteriaBox" class="criteriaBox">
+            <h3>✅ Success Criteria Checklist</h3>
+            <div id="criteriaItems"></div>
+          </div>
+
+
+        </div>
+
+
+        <details class="card">
+          <summary>📌 View Final Group Answer</summary>
+          <textarea id="finalAnswerBox" readonly></textarea>
+        </details>
+
+        <div id="teacherFeedbackStudent" class="card hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="votingPage" class="hidden">
+    <div class="groupHeader votingHeader">
+      <div class="titleLine">
+        <h1>🗳 Voting Stage</h1>
+        <span class="statusBadge">Choose another group</span>
+      </div>
+      <div class="infoLine">
+        <span id="voteInfoClass"></span>
+        <span id="voteInfoGroup"></span>
+        <span id="voteInfoYou"></span>
+      </div>
+
+      <div class="topVotingRules">
+        <div>
+          <h3>📌 Voting Rules</h3>
+          <p id="votingRuleText">You cannot vote for your own group. Your group will not appear in the peer assessment list.</p>
+        </div>
+        <details class="topMyAnswer">
+          <summary>👥 My Group Answer</summary>
+          <div id="myGroupFinalPreview" class="voteFinal">No final answer submitted yet.</div>
+        </details>
+      </div>
+    </div>
+
+    <div class="votingLayout">
+      <div id="peerVoteCard" class="card voteMainCard">
+        <h2>🗳 Peer Assessment Voting</h2>
+        <p>Choose one group, read their final answer, tick the voting criteria, and submit your vote.</p>
+
+        <label>Choose group to vote for</label>
+        <select id="voteTargetGroup" onchange="previewVoteTarget()"></select>
+
+        <div id="voteTargetPreview" class="voteTarget">Choose a group to preview their answer.</div>
+
+        <h3 style="margin-top:12px;">✅ Voting Criteria</h3>
+        <p class="smallNote">Each checked criterion = 1 point.</p>
+        <div id="voteCriteriaItems" class="voteCriteriaList"></div>
+
+        <label class="bestGroupBox">
+          <input type="checkbox" id="voteBestGroup">
+          ⭐ Best Group Bonus = 5 points
+        </label>
+
+        <label>Positive comment</label>
+        <textarea id="voteComment" placeholder="Write one positive comment about the group work."></textarea>
+
+        <button class="green" style="width:100%" onclick="submitVote()">✅ Submit My Vote</button>
+        <div id="voteMsg" class="note hidden"></div>
+      </div>
+
+      <div id="battleVoteCard" class="card voteMainCard hidden">
+        <h2>⚔️ Group Work VS Group Work</h2>
+        <p>Vote on the battles that do not include your own group. Both groups’ final answers appear side-by-side. Score each group with the checklist, then choose the stronger group.</p>
+        <div id="battlePairTitle" class="voteTarget">Loading available battles...</div>
+        <div id="battleVoteContent" class="battleGrid"></div>
+        <div id="battleVoteMsg" class="note hidden"></div>
+      </div>
+
+    </div>
+
+    <div id="studentResultsPanel" class="votePanel hidden">
+      <h2>📊 Voting Results</h2>
+      <div id="studentResultsContent">Waiting for teacher to release results.</div>
+    </div>
+  </div>
+
+  <div id="teacherDashboard" class="hidden">
+    <div class="teacherHero">
+      <h1>👩‍🏫 Teacher Dashboard</h1>
+      <p><b>Ms. Saidah Khwar</b> · Build activities, assign them to classes, check group work, mark points, and release results.</p>
+
+      <div class="teacherTopActions">
+        <button class="green" onclick="startTimer()">⏱ Start Timer</button>
+        <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
+        <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
+        <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
+      </div>
+
+      <div class="note teacherTimerLine">
+        <span>⏱ Teacher Timer: <b id="teacherTimer">Not started</b></span>
+        <button class="timerMiniBtn" onclick="openTimerPopup()">⛶ Maximize Timer + Activity</button>
+      </div>
+    </div>
+
+    <div id="currentActivityBox" class="currentBox">
+      <h2>🌟 Current Activity Details</h2>
+      <div id="currentActivityContent">No activity assigned yet.</div>
+    </div>
+
+    <h2>📚 Classes</h2>
+    <div id="classCards" class="classGrid"></div>
+
+    <div id="classGroupsPanel" class="card hidden">
+      <button class="gray" onclick="backToDashboard()">← Back to Dashboard</button>
+      <h2 id="selectedClassTitle"></h2>
+      <div class="voteSystemBox">
+        <label>🗳 Choose Voting System</label>
+        <select id="teacherVoteSystem">
+          <option value="battle">System 1: Group Work VS Group Work</option>
+          <option value="peer">System 2: Peer Assessment - Evaluate One Group</option>
+        </select>
+      </div>
+      <div class="btnRow">
+        <button class="green" onclick="setStage('work')">✍️ Open Work Stage</button>
+        <button class="blue" onclick="setStage('voting')">🗳 Activate Selected Voting System</button>
+        <button class="blue" onclick="showVotingResults()">📊 Voting Results</button>
+        <button class="red" onclick="resetSelectedClass()">🗑 Reset This Class</button>
+      </div>
+      <div id="groupCards" class="groupCards"></div>
+      <div id="votingResultsPanel" class="card hidden"></div>
+    </div>
+  </div>
+
+  <div id="builderPage" class="hidden">
+    <div class="builderPanel">
+      <button class="gray" onclick="backToDashboard()">← Back to Dashboard</button>
+      <h1>🧩 Activity Library + Builder</h1>
+      <p class="note"><b>Steps:</b> Build or load activity → Save to library → Choose classes/groups → Assign.</p>
+
+      <div class="card">
+        <h2>📚 Saved Activities Library</h2>
+        <select id="savedActivities"></select>
+        <div class="btnRow">
+          <button class="blue" onclick="loadActivity()">📥 Load Activity</button>
+          <button class="red" onclick="deleteActivity()">🗑 Delete</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>✍️ Build Activity</h2>
+
+        <div class="builderGrid">
+          <div>
+            <label>Activity Name</label>
+            <input id="builderActivityName" placeholder="Example: Opinion Paragraph Challenge">
+          </div>
+          <div>
+            <label>Activity Type</label>
+            <select id="builderActivityType" onchange="toggleActivityType()">
+              <option value="writing">Writing Type</option>
+              <option value="reading">Reading Type</option>
+            </select>
+          </div>
+          <div>
+            <label>Task Type</label>
+            <select id="builderTaskType" onchange="toggleTaskType()">
+              <option value="same">One task for all groups</option>
+              <option value="different">Different task for each group</option>
+            </select>
+          </div>
+        </div>
+
+        <label>Activity Instructions</label>
+        <textarea id="builderInstructions" placeholder="Instructions students will read."></textarea>
+
+        <label>📷 Main Activity Details Picture</label>
+        <div class="imageUploadBox">
+          <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
+          <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
+          <button type="button" class="smallImageBtn" onclick="clearMainActivityImage()">Remove Main Picture</button>
+        </div>
+
+        <div id="sameTaskArea">
+          <label>Task / Question</label>
+          <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
+
+          <label>🔗 Hybrid Link for the Main Question</label>
+          <input id="builderSameLink" type="url" placeholder="Paste lesson link / Teams / website / activity link">
+
+          <label>📎 Attach Word / PDF / PPT / Picture for the Main Question</label>
+          <input id="builderSameFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleSameTaskFileUpload(this)">
+          <div id="builderSameFilePreview" class="fileMini hidden"></div>
+          <button type="button" class="smallImageBtn" onclick="clearSameTaskFile()">Remove File</button>
+        </div>
+
+        <div id="differentTaskArea" class="hidden">
+          <label>Different Tasks for Groups</label>
+          <div class="groupTaskGrid" id="groupTaskGrid"></div>
+        </div>
+
+
+        <div id="readingBuilderArea" class="readingBuilderBox hidden">
+          <h2>📖 Reading Type Generator</h2>
+          <p class="smallNote">Upload a PDF reading text, choose the question skills, then generate auto-marked MCQ and True/False questions.</p>
+
+          <label>Choose Question Skills</label>
+          <div class="skillCheckGrid">
+            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
+            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
+            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="vocabulary" checked> Vocabulary</label>
+            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
+          </div>
+
+          <div id="readingSameBox">
+            <label>📄 Upload Reading PDF for Whole Class / All Groups</label>
+            <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
+            <label>Extracted / Pasted Reading Text</label>
+            <textarea id="readingSameText" placeholder="PDF text will appear here. You can also paste the reading text manually."></textarea>
+            <button type="button" class="purple" onclick="generateSameReadingQuestions()">✨ Generate Reading Questions</button>
+            <div id="readingSamePreview" class="resourceBox hidden"></div>
+          </div>
+
+          <div id="readingDifferentNote" class="note hidden">
+            For different group tasks, upload/paste each group reading text inside the group cards below, then generate questions for each group.
+          </div>
+        </div>
+
+        <label>Success Criteria Checklist</label>
+        <textarea id="builderCriteria" placeholder="Write one criterion per line."></textarea>
+
+        <label>Voting Criteria Checklist</label>
+        <textarea id="builderVotingCriteria" placeholder="Each line = 1 voting point. Example:
+Clear opinion is included
+Reasons are included
+Evidence/examples are included
+Grammar and spelling are checked"></textarea>
+
+        <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
+      </div>
+
+      <div class="card">
+        <h2>📤 Assign Activity</h2>
+
+        <label>Assign To</label>
+        <select id="assignMode" onchange="toggleAssignMode()">
+          <option value="class">Whole class / all groups</option>
+          <option value="groups">Selected group(s) only</option>
+        </select>
+
+        <label>Choose Class(es)</label>
+        <div class="assignChecks">
+          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-1">9/1</label>
+          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-2">9/2</label>
+          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-3">9/3</label>
+          <label class="checkCard"><input type="checkbox" class="assignClass" value="9-4">9/4</label>
+        </div>
+
+        <div id="assignGroupsArea" class="hidden">
+          <label>Choose Group(s)</label>
+          <div class="assignChecks" id="assignGroupChecks"></div>
+        </div>
+
+        <button class="green" style="width:100%" onclick="assignCurrentActivity()">✅ Assign Current Activity</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="chatPopup" class="chatPopup hidden">
+  <div class="chatHead">
+    <span>💬 Group Chat</span>
+    <button onclick="toggleChat()">✖</button>
+  </div>
+  <div id="chatMessages" class="chatMessages"></div>
+  <div class="chatInput">
+    <textarea id="chatInput" placeholder="Type message..."></textarea>
+    <button class="purple" style="width:100%" onclick="sendChat()">Send</button>
+  </div>
+</div>
+
+<div id="teacherTimerPopup" class="timerModalOverlay hidden">
+  <div class="timerModal">
+    <div class="timerModalHeader">
+      <div>
+        <h1>⏱ Teacher Timer + Activity Details</h1>
+        <p>Use this as a clear classroom display while students are working.</p>
+      </div>
+      <button class="timerCloseBtn" onclick="closeTimerPopup()">✖ Close</button>
+    </div>
+
+    <div class="bigTimerBox">
+      <div id="bigTeacherTimer" class="bigTimerTime">00:00</div>
+      <div id="bigTeacherTimerLabel" class="bigTimerLabel">Timer not started</div>
+      <div class="timerControlRow">
+        <button class="green" onclick="startTimer()">▶ Start / Set Timer</button>
+        <button class="orange" onclick="pauseTeacherTimer()">⏸ Pause</button>
+        <button class="blue" onclick="resumeTeacherTimer()">▶ Resume</button>
+        <button class="red" onclick="resetTeacherTimer()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div class="activityPopupGrid">
+      <div class="activityPopupCard">
+        <h3>📌 Activity Name</h3>
+        <div id="popupActivityName" class="activityPopupText">No activity assigned yet.</div>
+      </div>
+      <div class="activityPopupCard">
+        <h3>👥 Assigned To</h3>
+        <div id="popupAssignedTo" class="activityPopupText">-</div>
+      </div>
+      <div class="activityPopupCard full">
+        <h3>📋 Instructions</h3>
+        <div id="popupInstructions" class="activityPopupText">No instructions.</div>
+      </div>
+      <div class="activityPopupCard">
+        <h3>📝 Activity Details</h3>
+        <div id="popupActivityDetails" class="activityPopupText">Students write, save, review group work, and submit final answer.</div>
+      </div>
+      <div class="activityPopupCard">
+        <h3>✅ Success Criteria</h3>
+        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -118,447 +2014,2574 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
-const hubRef = db.ref('skillClashHub_3');
-  
-let currentGroup = sessionStorage.getItem('skillClashGroup') || '';
+const hubRef = db.ref('skillClashHubClean');
 
-const topics = {
-  1:'Should students have to wear uniforms?',
-  2:'Should students have to wear uniforms?',
-  3:'Should we ban homework?',
-  4:'Should we ban homework?',
-  5:'Should fast food be allowed in schools?',
-  6:'Should fast food be allowed in schools?',
-  7:'Should parents decide their children’s career?',
-  8:'Should parents decide their children’s career?',
-  9:'The impact of social media on teenage social skills.',
-  10:'The impact of social media on teenage social skills.'
-};
+let currentClass = sessionStorage.getItem('skillClass') || '';
+let currentGroup = sessionStorage.getItem('skillGroup') || '';
+let currentStudent = sessionStorage.getItem('skillStudent') || '';
+let currentStudentId = sessionStorage.getItem('skillStudentId') || '';
+let currentRole = sessionStorage.getItem('skillRole') || '';
+let selectedTeacherClass = '';
+let currentActivityId = '';
+let latestStudents = {};
+let groupListener = null;
+let chatListener = null;
+let settingsListener = null;
+let latestClassGroups = {};
+let latestClassVotes = {};
+let currentStage = 'work';
+let currentVoteSystem = 'peer';
+let selectedBattleKey = '';
+let battleVotingStarted = false;
+let latestAssignedActivity = {};
+let teacherLoggedIn = false;
+let latestTeacherActivityForPopup = null;
+let latestTeacherAssignedTo = '-';
+let teacherTimerInterval = null;
+let teacherTimerSeconds = 0;
+let teacherTimerPaused = false;
+let teacherTimerLastSetSeconds = 0;
+let studentTimerInterval = null;
+let latestClassTimer = {};
+let builderMainImageData = '';
+let builderGroupImageData = {};
+let builderSameFileData = null;
+let builderGroupFileData = {};
+let builderReadingSameQuestions = [];
+let builderGroupReadingQuestions = {};
+let builderReadingTexts = {};
 
-function showPage(id){
-  ['studentPage','workPage','votePage','teacherPage'].forEach(p=>{
-    const el=document.getElementById(p);
-    if(el) el.classList.add('hidden');
-  });
-  document.getElementById(id).classList.remove('hidden');
-}
+function classDisplay(c){return c.replace('-','/')}
 
-function checkTeacher(){
-  return document.getElementById('teacherPass').value === '1234';
-}
+function toggleActivityImage(btn,id){
+  const img = document.getElementById(id);
+  if(!img) return;
 
-function joinGroup(){
-  const group = document.getElementById('studentGroup').value;
-  const members = document.getElementById('groupMembers').value.trim();
+  img.classList.toggle('maximized');
 
-  if(!group || !members){
-    alert('Choose group and write members.');
-    return;
+  if(img.classList.contains('maximized')){
+    btn.innerText = '🔽 Minimize Picture';
+  }else{
+    btn.innerText = '🔍 Maximize Picture';
   }
-
-  currentGroup = group;
-  sessionStorage.setItem('skillClashGroup', group);
-
-  hubRef.child('groups/group' + group).update({
-    group: group,
-    members: members,
-    joinedAt: Date.now()
-  });
-
-  document.getElementById('workTitle').innerHTML = 'Group ' + group + ' Work';
-  document.getElementById('groupTopic').innerHTML = topics[group] || 'Group topic';
-  showPage('workPage');
-}
-
-async function submitGroupWork(){
-  const answer = document.getElementById('groupAnswer').value.trim();
-  const members = document.getElementById('groupMembers').value.trim();
-
-  if(!currentGroup){
-    alert('Join a group first.');
-    return;
-  }
-
-  if(!answer){
-    alert('Write your answer first.');
-    return;
-  }
-
-  await hubRef.child('groups/group' + currentGroup).update({
-    answer: answer,
-    members: members,
-    topic: topics[currentGroup] || '',
-    submittedAt: Date.now()
-  });
-
-  const msg = document.getElementById('submitMsg');
-  msg.classList.remove('hidden');
-  msg.innerHTML = '✅ Submitted successfully. Wait for teacher.';
-}
-
-async function saveActivitySettings(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
-
-  await hubRef.child('settings').update({
-    title: document.getElementById('activityTitle').value,
-    instructions: document.getElementById('activityInstructions').value
-  });
-
-  alert('Activity saved.');
-}
-
-async function openWorkStage(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
-  await hubRef.child('settings/stage').set('work');
-  alert('Work stage opened.');
-}
-
-async function openVotingStage(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
-  await hubRef.child('settings/stage').set('voting');
-  alert('Voting stage opened.');
-}
-
-function showTeacherPreview(){
-  hubRef.child('groups').once('value', snap=>{
-    const data = snap.val() || {};
-    let html = '';
-
-    for(let i=1;i<=10;i++){
-      const g = data['group'+i];
-      html += `<div class="card">
-        <h3>Group ${i}</h3>
-        ${g ? `
-          <p><b>Members:</b> ${escapeHtml(g.members || '')}</p>
-          <p><b>Topic:</b> ${escapeHtml(g.topic || topics[i] || '')}</p>
-          <div class="answerBox">${escapeHtml(g.answer || 'Not submitted yet')}</div>
-        ` : `<p>❌ Not joined yet</p>`}
-      </div>`;
-    }
-
-    document.getElementById('teacherPreview').innerHTML = html;
-  });
-}
-
-hubRef.on('value', snap=>{
-  const game = snap.val() || {};
-  const stage = game.settings?.stage || 'work';
-
-  if(currentGroup && stage === 'voting'){
-    buildVoting(game.groups || {});
-    showPage('votePage');
-  }
-});
-
-function buildVoting(groups){
-
-  const battles = [
-    [1,2],
-    [3,4],
-    [5,6],
-    [7,8],
-    [9,10]
-  ];
-
-  let html = '';
-
-  battles.forEach(pair=>{
-
-    const a = pair[0];
-    const b = pair[1];
-
-    if(
-      Number(currentGroup) === a ||
-      Number(currentGroup) === b
-    ){
-      return;
-    }
-
-    const ga = groups['group'+a];
-    const gb = groups['group'+b];
-
-    if(
-      !ga || !gb ||
-      !ga.answer || !gb.answer
-    ){
-      return;
-    }
-
-    html += `
-      <div class="card">
-
-        <h3>
-          ⚔️ Group ${a} VS Group ${b}
-        </h3>
-
-        <div class="groupGrid">
-
-          <div>
-            <h3>🔵 Group ${a}</h3>
-
-            <div class="answerBox">
-              ${escapeHtml(ga.answer)}
-            </div>
-
-            <label>
-              <input type="checkbox"
-              id="opinion_${a}_${b}_${a}">
-              Opinion
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="reason_${a}_${b}_${a}">
-              Reason
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="example_${a}_${b}_${a}">
-              Example / Evidence
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="restate_${a}_${b}_${a}">
-              Restated Opinion
-            </label>
-          </div>
-
-          <div>
-            <h3>🔴 Group ${b}</h3>
-
-            <div class="answerBox">
-              ${escapeHtml(gb.answer)}
-            </div>
-
-            <label>
-              <input type="checkbox"
-              id="opinion_${a}_${b}_${b}">
-              Opinion
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="reason_${a}_${b}_${b}">
-              Reason
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="example_${a}_${b}_${b}">
-              Example / Evidence
-            </label><br>
-
-            <label>
-              <input type="checkbox"
-              id="restate_${a}_${b}_${b}">
-              Restated Opinion
-            </label>
-          </div>
-
-        </div>
-
-        <hr>
-
-        <h3>
-          💪 Stronger Group
-        </h3>
-
-        <label>
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${a}">
-          Group ${a}
-        </label>
-
-        <label style="margin-left:20px;">
-          <input type="radio"
-          name="winner_${a}_${b}"
-          value="${b}">
-          Group ${b}
-        </label>
-
-        <button onclick="submitVote(${a},${b})">
-          Submit Evaluation
-        </button>
-
-      </div>
-    `;
-  });
-
-  document.getElementById('voteArea').innerHTML =
-    html || '<p>No battles ready yet.</p>';
-}
-async function submitVote(a,b){
-
-  const myGroup = Number(
-    currentGroup ||
-    sessionStorage.getItem('skillClashGroup')
-  );
-
-  if(!myGroup){
-    alert('Join a group first.');
-    return;
-  }
-
-  if(myGroup === a || myGroup === b){
-    alert('⚠️ Your group cannot evaluate its own battle.');
-    return;
-  }
-
-  const votePath =
-    `votes/battle_${a}_${b}/group${myGroup}`;
-
-  const oldVote = await hubRef.child(votePath).once('value');
-
-  if(oldVote.exists()){
-    alert('✅ Your group already evaluated this battle.');
-    return;
-  }
-
-  const winner = document.querySelector(
-    'input[name="winner_' + a + '_' + b + '"]:checked'
-  );
-
-  if(!winner){
-    alert('Choose the stronger group.');
-    return;
-  }
-
-  function checked(id){
-    const el = document.getElementById(id);
-    return el && el.checked ? 1 : 0;
-  }
-
-  const scoreA =
-    checked('opinion_' + a + '_' + b + '_' + a) +
-    checked('reason_' + a + '_' + b + '_' + a) +
-    checked('example_' + a + '_' + b + '_' + a) +
-    checked('restate_' + a + '_' + b + '_' + a) +
-    (Number(winner.value) === a ? 2 : 0);
-
-  const scoreB =
-    checked('opinion_' + a + '_' + b + '_' + b) +
-    checked('reason_' + a + '_' + b + '_' + b) +
-    checked('example_' + a + '_' + b + '_' + b) +
-    checked('restate_' + a + '_' + b + '_' + b) +
-    (Number(winner.value) === b ? 2 : 0);
-
-  await hubRef.child(votePath).set({
-    voterGroup: myGroup,
-    teamA: a,
-    teamB: b,
-    scoreA: scoreA,
-    scoreB: scoreB,
-    winner: Number(winner.value),
-    submittedAt: Date.now()
-  });
-
-  alert('✅ Evaluation submitted successfully! Your vote is now locked.');
-}
-function showResults(){
-
-  hubRef.child('votes').once('value', snap=>{
-
-    const data = snap.val() || {};
-
-    const scores = {};
-
-    for(let i=1;i<=10;i++){
-      scores[i] = 0;
-    }
-
-    Object.keys(data).forEach(battleKey=>{
-
-      const battle = data[battleKey] || {};
-
-      Object.keys(battle).forEach(voteKey=>{
-
-        const v = battle[voteKey];
-
-        scores[v.teamA] += Number(v.scoreA || 0);
-        scores[v.teamB] += Number(v.scoreB || 0);
-
-      });
-    });
-
-    const ranking = Object.keys(scores)
-      .map(team=>({
-        team: team,
-        score: scores[team]
-      }))
-      .sort((a,b)=>b.score-a.score);
-
-    let html = `
-      <h3>🏆 Final Ranking</h3>
-    `;
-
-    ranking.forEach((item,index)=>{
-
-      let medal = '';
-
-      if(index === 0) medal = '🥇';
-      else if(index === 1) medal = '🥈';
-      else if(index === 2) medal = '🥉';
-
-      html += `
-        <div class="soft">
-          <h3>
-            ${medal} Group ${item.team}
-          </h3>
-
-          <p>
-            Total Score:
-            <b>${item.score}</b>
-          </p>
-        </div>
-      `;
-    });
-
-    document.getElementById('resultsBox').innerHTML =
-      html;
-  });
-}
-  
-async function resetHub(){
-  if(!checkTeacher()){
-    alert('Wrong password.');
-    return;
-  }
-
-  if(!confirm('Reset all hub data?')) return;
-
-  await hubRef.set({
-    settings:{stage:'work'}
-  });
-
-  alert('Reset done.');
-  location.reload();
 }
 
 function escapeHtml(text){
-  return String(text || '')
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;');
+  return String(text || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function showOnly(id){
+  ['studentLoginPage','teacherLoginPage','workPage','votingPage','teacherDashboard','builderPage'].forEach(x=>{
+    const el=document.getElementById(x);
+    if(el) el.classList.add('hidden');
+  });
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById('mainTabs').classList.toggle('hidden', id==='workPage' || id==='votingPage' || id==='teacherDashboard' || id==='builderPage');
+}
+function showStudentLogin(){showOnly('studentLoginPage')}
+function showTeacherLogin(){showOnly('teacherLoginPage')}
+
+async function joinGroup(){
+  currentClass = document.getElementById('className').value;
+  currentGroup = document.getElementById('studentGroup').value;
+  currentStudent = document.getElementById('studentName').value.trim();
+  currentStudentId = document.getElementById('studentId').value.trim();
+  currentRole = document.getElementById('studentRole').value;
+
+  if(!currentClass || !currentGroup || !currentStudent || !currentStudentId){
+    alert('Complete class, group, student name, and student ID.');
+    return;
+  }
+
+  currentStudentId = currentStudentId.replace(/[^a-zA-Z0-9_-]/g,'_');
+
+  const groupPath = `classes/${currentClass}/groups/group${currentGroup}/students`;
+  const studentsSnap = await hubRef.child(groupPath).once('value');
+  const existingStudents = studentsSnap.val() || {};
+  const existingLeader = Object.keys(existingStudents).find(id => {
+    return existingStudents[id] && existingStudents[id].role === 'leader' && id !== currentStudentId;
+  });
+
+  if(currentRole === 'leader' && existingLeader){
+    const leaderName = existingStudents[existingLeader].name || existingLeader;
+    currentRole = 'member';
+    document.getElementById('studentRole').value = 'member';
+    alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
+  }
+
+  sessionStorage.setItem('skillClass',currentClass);
+  sessionStorage.setItem('skillGroup',currentGroup);
+  sessionStorage.setItem('skillStudent',currentStudent);
+  sessionStorage.setItem('skillStudentId',currentStudentId);
+  sessionStorage.setItem('skillRole',currentRole);
+
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    joinedAt: Date.now(),
+    lastSeenAt: Date.now()
+  });
+
+  showOnly('workPage');
+  listenGroup();
 }
 
-  function startLiveResults(){
-  hubRef.child('votes').on('value', function(){
-    showResults();
+function listenGroup(){
+  if(groupListener) groupListener.off();
+  const ref = hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`);
+  groupListener = ref;
+  ref.on('value', snap=>{
+    const data = snap.val() || {};
+    const students = data.students || {};
+    latestStudents = students;
+    const ids = Object.keys(students);
+    const leaderId = ids.find(id => students[id].role === 'leader') || '';
+    const leader = leaderId ? (students[leaderId].name || leaderId) : '-';
+    const myData = students[currentStudentId] || {};
+
+    document.getElementById('workTitle').innerText = `Group ${currentGroup} Work`;
+    document.getElementById('statusBadge').innerText = data.finalSubmitted ? '✅ Final Submitted' : '✍️ In Progress';
+    document.getElementById('infoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    document.getElementById('infoGroup').innerText = `👥 Group: ${currentGroup}`;
+    document.getElementById('infoLeader').innerText = `👑 Leader: ${leader}`;
+    document.getElementById('infoYou').innerHTML = `⭐ You: ${escapeHtml(currentStudent)} · ID: ${escapeHtml(currentStudentId)} <span class="roleBadge">${currentRole==='leader'?'Leader':'Group Member'}</span>`;
+    document.getElementById('infoVotes').innerText = `💗 Votes: ${data.votes || 0}`;
+
+    let members = '👥 Members: ';
+    ids.forEach(id => {
+      const s = students[id] || {};
+      members += `<span class="pill">${escapeHtml(s.name || id)} <small>ID: ${escapeHtml(id)}</small></span>`;
+    });
+    document.getElementById('infoMembers').innerHTML = members;
+
+    document.getElementById('myWorkLabel').innerText = `${currentStudent}'s Work`;
+    if(document.activeElement !== document.getElementById('myAnswerBox')){
+      document.getElementById('myAnswerBox').value = myData.answer || '';
+    }
+    document.getElementById('finalAnswerBox').value = data.finalAnswer || '';
+
+    if(data.teacherPoints || data.teacherComment){
+      document.getElementById('teacherFeedbackStudent').classList.remove('hidden');
+      document.getElementById('teacherFeedbackStudent').innerHTML =
+        `<h2>⭐ Teacher Feedback</h2>
+         <p><b>Points:</b> ${escapeHtml(data.teacherPoints || 'Not marked')}</p>
+         <p><b>Comment:</b> ${escapeHtml(data.teacherComment || 'No comment')}</p>`;
+    }else{
+      document.getElementById('teacherFeedbackStudent').classList.add('hidden');
+    }
+
+    renderMembersWork();
+    routeStudentStage();
+  });
+
+  listenAssignedActivity();
+  listenClassSettings();
+  listenChat();
+}
+
+function listenAssignedActivity(){
+  hubRef.child(`classes/${currentClass}/assignedActivities/group${currentGroup}`).on('value', snap=>{
+    const a = snap.val() || {};
+    latestAssignedActivity = a;
+    document.getElementById('activityNameBox').innerText = a.title || 'No activity assigned';
+    document.getElementById('activityInstructionsBox').innerText = a.instructions || 'No instructions';
+    const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
+    const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'activityImg', 'Group task picture') : '';
+    const resources = renderTeacherResources(a);
+    if(a.activityType === 'reading'){
+      document.getElementById('groupTaskBox').innerHTML =
+        `${mainImg}<b>📖 Reading Activity</b><br>${escapeHtml(a.groupTask || 'Answer the reading questions below.')}${groupImg}${resources}`;
+      renderReadingStudentQuiz(a);
+    }else{
+      document.getElementById('groupTaskBox').innerHTML =
+        `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}${resources}`;
+      renderReadingStudentQuiz(null);
+    }
+
+    const items = a.criteria || [];
+    let html = '';
+    items.forEach((c,i)=>{
+      html += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`;
+    });
+    document.getElementById('criteriaItems').innerHTML = html || '<p>No criteria assigned.</p>';
+
+    renderVoteCriteria();
+    renderMyGroupFinalPreview();
   });
 }
-</script>
 
+
+function listenClassSettings(){
+  if(settingsListener) settingsListener.off();
+
+  const ref = hubRef.child(`classes/${currentClass}`);
+  settingsListener = ref;
+
+  ref.on('value', snap=>{
+    const cls = snap.val() || {};
+    const settings = cls.settings || {};
+    latestClassGroups = cls.groups || {};
+    currentStage = settings.stage || 'work';
+    currentVoteSystem = settings.voteSystem || 'peer';
+    latestClassTimer = settings.timer || {};
+    syncStudentTimerFromSettings(settings);
+    latestClassVotes = currentVoteSystem === 'battle' ? (cls.battleVotes || {}) : (cls.votes || {});
+
+    updateStageUI(settings);
+  });
+}
+
+function updateStageUI(settings){
+  const votingPanel = document.getElementById('votingPanel');
+  const oldResultsPanel = document.querySelector('#workPage #studentResultsPanel');
+  if(votingPanel) votingPanel.classList.add('hidden');
+  if(oldResultsPanel) oldResultsPanel.classList.add('hidden');
+
+  routeStudentStage();
+}
+
+function routeStudentStage(){
+  if(!currentClass || !currentGroup || !currentStudent) return;
+
+  const votingLayout = document.querySelector('.votingLayout');
+  const resultsPanel = document.getElementById('studentResultsPanel');
+
+  if(currentStage === 'voting'){
+    showOnly('votingPage');
+    document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
+    if(resultsPanel) resultsPanel.classList.add('hidden');
+    if(votingLayout) votingLayout.classList.remove('hidden');
+    switchVotingModeUI();
+    buildVoteTargets();
+    renderVoteCriteria();
+    renderMyGroupFinalPreview();
+    renderBattleVoting();
+    checkMyVoteStatus();
+    return;
+  }
+
+  if(currentStage === 'results'){
+    showOnly('votingPage');
+    document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
+    if(votingLayout) votingLayout.classList.add('hidden');
+    if(resultsPanel) resultsPanel.classList.remove('hidden');
+    renderStudentResults();
+    return;
+  }
+
+  showOnly('workPage');
+  const badge = document.getElementById('statusBadge');
+  if(badge) badge.innerText = '✍️ In Progress';
+  if(votingLayout) votingLayout.classList.remove('hidden');
+  if(resultsPanel) resultsPanel.classList.add('hidden');
+}
+
+function getActiveVoteBucket(){
+  return currentVoteSystem === 'battle' ? 'battleVotes' : 'votes';
+}
+function getActiveVotes(){
+  return latestClassVotes || {};
+}
+function getBattlePair(groupNum){
+  const n = Number(groupNum);
+  if(n % 2 === 1) return [n, n+1];
+  return [n-1, n];
+}
+function switchVotingModeUI(){
+  const peer = document.getElementById('peerVoteCard');
+  const battle = document.getElementById('battleVoteCard');
+  const rule = document.getElementById('votingRuleText');
+  const badge = document.querySelector('#votingPage .statusBadge');
+
+  if(currentVoteSystem === 'battle'){
+    if(peer) peer.classList.add('hidden');
+    if(battle) battle.classList.remove('hidden');
+    if(rule) rule.innerText = 'System 1 is open: Group Work VS Group Work. You can see both answers, but you only score the other group.';
+    if(badge) badge.innerText = '⚔️ Group VS Group';
+  }else{
+    if(peer) peer.classList.remove('hidden');
+    if(battle) battle.classList.add('hidden');
+    if(rule) rule.innerText = 'System 2 is open: Peer Assessment. Choose one group and evaluate their work. You cannot vote for your own group.';
+    if(badge) badge.innerText = '🗳 Peer Assessment';
+  }
+}
+function buildVoteTargets(){
+  const sel = document.getElementById('voteTargetGroup');
+  if(!sel) return;
+
+  const previous = sel.value;
+  let html = '<option value="">Choose group</option>';
+
+  for(let i=1;i<=10;i++){
+    if(String(i) === String(currentGroup)) continue;
+    const g = latestClassGroups['group'+i] || {};
+    if(g.finalSubmitted && g.finalAnswer){
+      html += `<option value="${i}">Group ${i}</option>`;
+    }
+  }
+
+  sel.innerHTML = html;
+  if(previous && sel.querySelector(`option[value="${previous}"]`)) sel.value = previous;
+  previewVoteTarget();
+}
+
+function previewVoteTarget(){
+  const target = document.getElementById('voteTargetGroup')?.value;
+  const box = document.getElementById('voteTargetPreview');
+  if(!box) return;
+
+  if(!target){
+    box.innerHTML = 'Choose a group to preview their answer.';
+    return;
+  }
+
+  const g = latestClassGroups['group'+target] || {};
+  box.innerHTML =
+    `<b>Group ${target} Final Answer</b>
+     <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+}
+
+function renderMyGroupFinalPreview(){
+  const box = document.getElementById('myGroupFinalPreview');
+  if(!box) return;
+  const g = latestClassGroups['group'+currentGroup] || {};
+  box.innerHTML = `<b>My Group ${escapeHtml(currentGroup)} Answer</b><div style="margin-top:6px">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+}
+
+function getVotingCriteria(){
+  const defaultCriteria = [
+    'Opinion is clear',
+    'Reasons are included',
+    'Evidence/examples are included',
+    'Opinion is restated clearly',
+    'Grammar and spelling are correct'
+  ];
+  return (latestAssignedActivity.votingCriteria && latestAssignedActivity.votingCriteria.length)
+    ? latestAssignedActivity.votingCriteria
+    : defaultCriteria;
+}
+
+function renderVoteCriteria(){
+  const box = document.getElementById('voteCriteriaItems');
+  if(!box) return;
+  const items = getVotingCriteria();
+  let html = '';
+  items.forEach((c,i)=>{
+    html += `<label class="voteCriteriaItem"><input type="checkbox" class="voteCriterion" value="${i}"> ${escapeHtml(c)} <span style="margin-left:auto;color:#64748b">1 pt</span></label>`;
+  });
+  box.innerHTML = html;
+}
+
+function getAvailableBattlePairs(){
+  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  return pairs.filter(pair => !pair.map(String).includes(String(currentGroup)));
+}
+function selectBattlePair(key){
+  selectedBattleKey = key || '';
+  battleVotingStarted = false;
+  renderBattleVoting();
+}
+function startBattleVoting(){
+  battleVotingStarted = true;
+  const startBox = document.getElementById('battleStartBox');
+  const form = document.getElementById('battleVotingForm');
+  if(startBox) startBox.classList.add('hidden');
+  if(form) form.classList.remove('hidden');
+  setTimeout(()=>{ form?.scrollIntoView({behavior:'smooth', block:'start'}); }, 80);
+}
+function goToNextBattle(){
+  battleVotingStarted = false;
+  const availablePairs = getAvailableBattlePairs();
+  const votes = latestClassVotes || {};
+  const notVoted = availablePairs.find(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
+  });
+  if(notVoted){
+    selectedBattleKey = `${notVoted[0]}vs${notVoted[1]}`;
+  }else if(availablePairs.length){
+    selectedBattleKey = `${availablePairs[0][0]}vs${availablePairs[0][1]}`;
+  }
+  renderBattleVoting();
+}
+
+function renderBattleVoting(){
+  const title = document.getElementById('battlePairTitle');
+  const box = document.getElementById('battleVoteContent');
+  if(!title || !box) return;
+
+  const availablePairs = getAvailableBattlePairs();
+  const items = getVotingCriteria();
+  const votes = latestClassVotes || {};
+
+  if(!availablePairs.length){
+    title.innerHTML = `<b>No available battle:</b> Your own battle is hidden for fairness.`;
+    box.innerHTML = `<div class="card" style="grid-column:1/-1"><h2>No available battle to vote on.</h2><p>Your own battle is hidden for fairness.</p></div>`;
+    return;
+  }
+
+  const validKeys = availablePairs.map(pair=>`${pair[0]}vs${pair[1]}`);
+  if(!selectedBattleKey || !validKeys.includes(selectedBattleKey)){
+    const firstNotVoted = availablePairs.find(pair=>{
+      const key = `${pair[0]}vs${pair[1]}`;
+      return !((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
+    });
+    selectedBattleKey = firstNotVoted ? `${firstNotVoted[0]}vs${firstNotVoted[1]}` : validKeys[0];
+    battleVotingStarted = false;
+  }
+
+  const completed = availablePairs.filter(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
+  }).length;
+
+  let chooser = `
+    <div class="battleChooser compactChooser">
+      <div>
+        <label style="margin-top:0">⚔️ Choose Battle</label>
+        <select id="battlePairSelect" onchange="selectBattlePair(this.value)">`;
+
+  availablePairs.forEach(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    const voted = !!((((votes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
+    const selected = key === selectedBattleKey ? 'selected' : '';
+    chooser += `<option value="${key}" ${selected}>Group ${pair[0]} VS Group ${pair[1]} ${voted ? '✅ saved' : ''}</option>`;
+  });
+
+  chooser += `</select></div>
+      <div class="miniProgress"><b>${completed} / ${availablePairs.length}</b><span>battles saved</span></div>
+      <div class="miniHint">Your own battle is hidden, so you cannot vote for yourself.</div>
+    </div>`;
+
+  title.innerHTML = chooser;
+
+  const [a,b] = selectedBattleKey.split('vs').map(Number);
+  const battleKey = selectedBattleKey;
+  const existing = ((((votes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudentId]) || null;
+  const gA = latestClassGroups['group'+a] || {};
+  const gB = latestClassGroups['group'+b] || {};
+  const comment = existing ? (existing.comment || '') : '';
+
+  function membersText(groupObj){
+    const names = Object.keys((groupObj || {}).students || {});
+    return names.length ? names.map(n=>`<span class="miniMember">${escapeHtml(n)}</span>`).join('') : '<span class="smallNote">No members joined.</span>';
+  }
+
+  function scoreCard(num){
+    let html = `<div class="clearScoreCard compactScoreCard">
+      <h3>✅ Score Group ${num}</h3>`;
+    items.forEach((c,i)=>{
+      const checked = (existing && existing.groupScores && existing.groupScores['group'+num] && existing.groupScores['group'+num].criteriaChecked && existing.groupScores['group'+num].criteriaChecked[i]) ? 'checked' : '';
+      html += `<label class="clearCriterion compactCriterion">
+        <input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked}>
+        <span>${escapeHtml(c)}</span>
+        <span class="pointBadge">+1</span>
+      </label>`;
+    });
+    html += `</div>`;
+    return html;
+  }
+
+  const bestA = existing && String(existing.winnerGroup) === String(a) ? 'checked' : '';
+  const bestB = existing && String(existing.winnerGroup) === String(b) ? 'checked' : '';
+  const formHiddenClass = battleVotingStarted ? '' : 'hidden';
+  const startHiddenClass = battleVotingStarted ? 'hidden' : '';
+
+  const html = `<div class="card cleanBattleCard" style="grid-column:1/-1">
+    <div class="battleVoteMainTitle compactTitle">
+      <h2>⚔️ Group ${a} VS Group ${b}</h2>
+      <p>Read both answers first. Click <b>Start Voting</b> when you are ready to score.</p>
+    </div>
+
+    <div class="battleReadGrid compactReadGrid">
+      <div class="clearAnswerCard clearAnswerBlue">
+        <div class="clearAnswerHead">👥 Group ${a} Final Answer</div>
+        <div class="clearAnswerText largeAnswerText">${escapeHtml(gA.finalAnswer || 'No final answer submitted yet.')}</div>
+        <div class="submittedLine"><b>Submitted by:</b> ${membersText(gA)}</div>
+      </div>
+      <div class="clearAnswerCard clearAnswerGreen">
+        <div class="clearAnswerHead">👥 Group ${b} Final Answer</div>
+        <div class="clearAnswerText largeAnswerText">${escapeHtml(gB.finalAnswer || 'No final answer submitted yet.')}</div>
+        <div class="submittedLine"><b>Submitted by:</b> ${membersText(gB)}</div>
+      </div>
+    </div>
+
+    <div id="battleStartBox" class="startVotingPanel ${startHiddenClass}">
+      <div class="startIcon">▶</div>
+      <h2>Ready to vote?</h2>
+      <p>The checklist is hidden so you can read the answers clearly first.</p>
+      <button class="blue startVoteBtn" onclick="startBattleVoting()">▶ Start Voting</button>
+    </div>
+
+    <div id="battleVotingForm" class="${formHiddenClass}">
+      <div class="compactStepTitle">Step 1: Score each group with the checklist <span>Each criterion = 1 point</span></div>
+      <div class="clearScoreSection compactScoreSection">
+        ${scoreCard(a)}
+        ${scoreCard(b)}
+      </div>
+
+      <div class="clearBestSection compactBestSection">
+        <h3>⭐ Step 2: Choose the stronger group for 5 bonus points</h3>
+        <div class="clearBestChoices compactBestChoices">
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${a}" ${bestA}> Group ${a} is stronger (+5)</label>
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${b}" ${bestB}> Group ${b} is stronger (+5)</label>
+        </div>
+      </div>
+
+      <label>💬 Positive comment about this battle</label>
+      <textarea class="compactComment" id="battleComment_${battleKey}" maxlength="300" placeholder="Write one short positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
+    </div>
+
+    <div class="clearSaveBar compactSaveBar">
+      <button class="green compactActionBtn" onclick="submitBattleVote(${a},${b})">✅ Submit Vote</button>
+      <button class="blue compactActionBtn" onclick="goToNextBattle()">➡️ Next Battle</button>
+      <div id="battleMsg_${battleKey}" class="note ${existing ? '' : 'hidden'}">${existing ? '✅ Your vote for this battle is already saved. You can update it before results are released.' : ''}</div>
+    </div>
+  </div>`;
+
+  box.innerHTML = html;
+
+  const msg = document.getElementById('battleVoteMsg');
+  if(msg) msg.classList.add('hidden');
+}
+
+function checkMyVoteStatus(){
+  const msg = document.getElementById('voteMsg');
+  if(!msg) return;
+
+  const vote = (((latestClassVotes || {})['group'+currentGroup] || {})[currentStudentId]) || null;
+  document.querySelectorAll('.voteCriterion').forEach(cb=>cb.checked=false);
+  const best = document.getElementById('voteBestGroup');
+  if(best) best.checked = false;
+
+  if(vote && currentVoteSystem !== 'battle'){
+    msg.classList.remove('hidden');
+    msg.innerHTML = `✅ You already voted for <b>Group ${escapeHtml(vote.targetGroup || '')}</b>. You can change your vote before results are released.`;
+    document.getElementById('voteTargetGroup').value = String(vote.targetGroup || '');
+    document.getElementById('voteComment').value = vote.comment || '';
+    const checked = vote.criteriaChecked || {};
+    document.querySelectorAll('.voteCriterion').forEach(cb=>{
+      cb.checked = !!checked[cb.value];
+    });
+    if(best) best.checked = !!vote.bestGroupBonus;
+    previewVoteTarget();
+  }else{
+    msg.classList.add('hidden');
+  }
+}
+
+async function saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, comment, extra){
+  const total = criteriaTotal + bestGroupBonus;
+  const payload = {
+    voteSystem:currentVoteSystem,
+    voterName:currentStudent,
+    voterGroup:String(currentGroup),
+    targetGroup:String(target || ''),
+    criteriaChecked:checked || {},
+    criteriaTotal,
+    bestGroupBonus,
+    total,
+    comment,
+    votedAt:Date.now(),
+    ...(extra || {})
+  };
+
+  if(currentVoteSystem === 'battle' && extra && extra.battleKey){
+    await hubRef.child(`classes/${currentClass}/battleVotes/${extra.battleKey}/group${currentGroup}/${currentStudentId}`).set(payload);
+  }else{
+    await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudentId}`).set(payload);
+  }
+  return total;
+}
+async function submitVote(){
+  if(currentStage !== 'voting'){
+    alert('Voting is not open yet.');
+    return;
+  }
+  if(currentVoteSystem === 'battle'){
+    alert('The teacher selected Group VS Group voting. Use the battle voting box.');
+    return;
+  }
+
+  const target = document.getElementById('voteTargetGroup').value;
+  const comment = document.getElementById('voteComment').value.trim();
+
+  if(!target){
+    alert('Choose a group to vote for.');
+    return;
+  }
+  if(String(target) === String(currentGroup)){
+    alert('You cannot vote for your own group.');
+    return;
+  }
+  if(!comment){
+    alert('Write one positive comment before voting.');
+    return;
+  }
+
+  const checked = {};
+  let criteriaTotal = 0;
+  document.querySelectorAll('.voteCriterion').forEach(cb=>{
+    if(cb.checked){
+      checked[cb.value] = true;
+      criteriaTotal += 1;
+    }
+  });
+  const bestGroupBonus = document.getElementById('voteBestGroup').checked ? 5 : 0;
+  const total = await saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, comment);
+
+  const msg = document.getElementById('voteMsg');
+  msg.classList.remove('hidden');
+  msg.innerHTML = `✅ Vote submitted for <b>Group ${escapeHtml(target)}</b>. Total: <b>${total}</b> points.`;
+  alert('✅ Your vote has been submitted.');
+}
+
+async function submitBattleVote(a,b){
+  if(currentStage !== 'voting'){
+    alert('Voting is not open yet.');
+    return;
+  }
+  if(currentVoteSystem !== 'battle'){
+    alert('The teacher selected Peer Assessment voting.');
+    return;
+  }
+  if(String(currentGroup) === String(a) || String(currentGroup) === String(b)){
+    alert('You cannot vote on your own battle. Please vote on another battle.');
+    return;
+  }
+
+  const battleKey = `${a}vs${b}`;
+  const winnerInput = document.querySelector(`input[name="battleWinner_${battleKey}"]:checked`);
+  if(!winnerInput){
+    alert('Choose the best group for this battle.');
+    return;
+  }
+
+  const comment = document.getElementById(`battleComment_${battleKey}`)?.value.trim() || '';
+  if(!comment){
+    alert('Write one positive comment before voting.');
+    return;
+  }
+
+  const groupScores = {};
+  let criteriaTotalAll = 0;
+  [a,b].forEach(num=>{
+    const checked = {};
+    let criteriaTotal = 0;
+    document.querySelectorAll(`.battleCriterion[data-battle="${battleKey}"][data-group="${num}"]`).forEach(cb=>{
+      if(cb.checked){
+        checked[cb.value] = true;
+        criteriaTotal += 1;
+      }
+    });
+    groupScores['group'+num] = {
+      targetGroup:String(num),
+      criteriaChecked:checked,
+      criteriaTotal,
+      bestGroupBonus:String(winnerInput.value) === String(num) ? 5 : 0,
+      total: criteriaTotal + (String(winnerInput.value) === String(num) ? 5 : 0)
+    };
+    criteriaTotalAll += criteriaTotal;
+  });
+
+  const winnerGroup = String(winnerInput.value);
+  const winnerScore = groupScores['group'+winnerGroup].total;
+
+  await saveVoteRecord(winnerGroup, {}, criteriaTotalAll, 5, comment, {
+    battleKey,
+    battlePair:[String(a),String(b)],
+    winnerGroup,
+    groupScores
+  });
+
+  const msg = document.getElementById(`battleMsg_${battleKey}`);
+  if(msg){
+    msg.classList.remove('hidden');
+    msg.innerHTML = `✅ Vote saved for <b>Group ${a} VS Group ${b}</b>. Winner: <b>Group ${escapeHtml(winnerGroup)}</b>. Winner score from you: <b>${winnerScore}</b> points.`;
+  }
+
+  alert('✅ Your vote is saved. Now choose the next battle.');
+
+  const availablePairs = getAvailableBattlePairs();
+  const snap = await hubRef.child(`classes/${currentClass}/battleVotes`).once('value');
+  const freshVotes = snap.val() || {};
+  const nextPair = availablePairs.find(pair=>{
+    const key = `${pair[0]}vs${pair[1]}`;
+    return !((((freshVotes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
+  });
+
+  if(nextPair){
+    selectedBattleKey = `${nextPair[0]}vs${nextPair[1]}`;
+  }else{
+    selectedBattleKey = battleKey;
+  }
+
+  renderBattleVoting();
+}
+
+function calculateVotingResults(classData){
+  const groups = classData.groups || {};
+  const settings = classData.settings || {};
+  const system = settings.voteSystem || currentVoteSystem || 'peer';
+  const votes = system === 'battle' ? (classData.battleVotes || {}) : (classData.votes || {});
+  const results = {};
+
+  for(let i=1;i<=10;i++){
+    const key = 'group'+i;
+    const g = groups[key] || {};
+    results[key] = {
+      groupNum:i,
+      finalSubmitted:!!g.finalSubmitted,
+      teacherPoints:Number(g.teacherPoints || 0),
+      voteTotal:0,
+      criteriaTotal:0,
+      bestBonusTotal:0,
+      voteCount:0,
+      average:0,
+      comments:[]
+    };
+  }
+
+  if(system === 'battle'){
+    Object.keys(votes).forEach(battleKey=>{
+      Object.keys(votes[battleKey] || {}).forEach(voterGroup=>{
+        Object.keys(votes[battleKey][voterGroup] || {}).forEach(voterName=>{
+          const v = votes[battleKey][voterGroup][voterName] || {};
+          const scores = v.groupScores || {};
+          Object.keys(scores).forEach(groupKey=>{
+            if(!results[groupKey]) return;
+            const gs = scores[groupKey] || {};
+            results[groupKey].voteTotal += Number(gs.total || 0);
+            results[groupKey].criteriaTotal += Number(gs.criteriaTotal || 0);
+            results[groupKey].bestBonusTotal += Number(gs.bestGroupBonus || 0);
+            results[groupKey].voteCount += 1;
+          });
+          if(v.comment && v.winnerGroup && results['group'+v.winnerGroup]){
+            results['group'+v.winnerGroup].comments.push(`${v.voterName || voterName}: ${v.comment}`);
+          }
+        });
+      });
+    });
+  }else{
+    Object.keys(votes).forEach(voterGroup=>{
+      Object.keys(votes[voterGroup] || {}).forEach(voterName=>{
+        const v = votes[voterGroup][voterName] || {};
+        const targetKey = 'group' + v.targetGroup;
+        if(!results[targetKey]) return;
+        results[targetKey].voteTotal += Number(v.total || 0);
+        results[targetKey].criteriaTotal += Number(v.criteriaTotal || 0);
+        results[targetKey].bestBonusTotal += Number(v.bestGroupBonus || 0);
+        results[targetKey].voteCount += 1;
+        if(v.comment) results[targetKey].comments.push(`${v.voterName || voterName}: ${v.comment}`);
+      });
+    });
+  }
+
+  Object.keys(results).forEach(k=>{
+    const r = results[k];
+    r.average = r.voteCount ? (r.voteTotal / r.voteCount) : 0;
+    r.finalScore = r.teacherPoints + r.voteTotal;
+  });
+
+  return results;
+}
+
+function renderStudentResults(){
+  const content = document.getElementById('studentResultsContent');
+  if(!content) return;
+
+  const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
+  const results = calculateVotingResults(classData);
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore || a.groupNum-b.groupNum);
+  const title = currentVoteSystem === 'battle' ? '⚔️ Group Work VS Group Work Results' : '🗳 Peer Assessment Results';
+
+  let pairHtml = '';
+  if(currentVoteSystem === 'battle'){
+    [[1,2],[3,4],[5,6],[7,8],[9,10]].forEach(pair=>{
+      const a = results['group'+pair[0]], b = results['group'+pair[1]];
+      const maxScore = Math.max(a.finalScore, b.finalScore);
+      const hasScore = maxScore > 0 || a.voteCount > 0 || b.voteCount > 0;
+      let winner = 'No winner yet';
+      if(hasScore){
+        winner = (a.finalScore === b.finalScore) ? `Tie: Group ${a.groupNum} & Group ${b.groupNum}` : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+      }
+      pairHtml += `<tr><td>Group ${pair[0]} VS Group ${pair[1]}</td><td>Group ${a.groupNum}: ${a.finalScore}<br>Group ${b.groupNum}: ${b.finalScore}</td><td><b>${winner}</b></td></tr>`;
+    });
+  }
+
+  const topScore = sorted.length ? sorted[0].finalScore : 0;
+  const wholeWinners = topScore > 0 ? sorted.filter(r=>r.finalScore === topScore).map(r=>'Group '+r.groupNum).join(', ') : 'No winner yet';
+
+  let html = `<h3>${title}</h3><div class="resultFormulaBox">Final Total = Voting Points + Teacher Mark. If the teacher did not mark a group, teacher mark counts as 0.</div>`;
+  html += `<div class="winnerBox">🏆 Whole Class Winner: ${escapeHtml(wholeWinners)}</div>`;
+
+  if(pairHtml){
+    html += `<h3>⚔️ Competitive Teams Results</h3><table class="resultTable"><tr><th>Battle</th><th>Scores</th><th>Winner</th></tr>${pairHtml}</table>`;
+    html += `<div class="certActions">
+      <button onclick="checkBattleAchievement()">🏅 Check My Battle Certificate</button>
+      <div id="battleCertMsg" class="certMsg">This checks only your group battle result.</div>
+    </div>`;
+  }
+
+  html += '<h3>🌟 Whole Class Results</h3><table class="resultTable"><tr><th>Rank</th><th>Group</th><th>Criteria Pts</th><th>Best Group Bonus</th><th>Voting Points</th><th>Teacher Mark</th><th>Final Total</th></tr>';
+  sorted.forEach((r,idx)=>{
+    html += `<tr>
+      <td>${idx+1}</td>
+      <td>Group ${r.groupNum}</td>
+      <td>${r.criteriaTotal}</td>
+      <td>${r.bestBonusTotal}</td>
+      <td>${r.voteTotal} pts<br><small>${r.voteCount} vote(s)</small></td>
+      <td>${r.teacherPoints || 0}</td>
+      <td><b>${r.finalScore}</b></td>
+    </tr>`;
+  });
+  html += '</table>';
+  html += `<div class="certActions">
+      <button onclick="checkWholeClassAchievement()">🏆 Check My Whole Class Certificate</button>
+      <div id="wholeCertMsg" class="certMsg">This checks only your group whole-class result.</div>
+    </div>`;
+  content.innerHTML = html;
+}
+
+function getCurrentResults(){
+  const classData = {groups:latestClassGroups, votes:latestClassVotes, battleVotes:latestClassVotes, settings:{voteSystem:currentVoteSystem}};
+  return calculateVotingResults(classData);
+}
+
+function getMyBattlePair(){
+  const n = Number(currentGroup);
+  if(!n) return null;
+  return n % 2 === 1 ? [n, n+1] : [n-1, n];
+}
+
+function checkBattleAchievement(){
+  const msg = document.getElementById('battleCertMsg');
+  const results = getCurrentResults();
+  const pair = getMyBattlePair();
+  if(!pair || !results['group'+pair[0]] || !results['group'+pair[1]]){
+    if(msg) msg.innerHTML = 'No battle result found for your group.';
+    return;
+  }
+
+  const a = results['group'+pair[0]];
+  const b = results['group'+pair[1]];
+  const my = results['group'+currentGroup];
+  const maxScore = Math.max(a.finalScore, b.finalScore);
+  const hasScore = maxScore > 0 || a.voteCount > 0 || b.voteCount > 0;
+
+  if(!hasScore){
+    if(msg) msg.innerHTML = 'Your battle does not have results yet.';
+    return;
+  }
+
+  if(my.finalScore === maxScore){
+    const isTie = a.finalScore === b.finalScore;
+    downloadCertificate({
+      certType:'Battle Winner Certificate',
+      title:isTie ? 'Battle Tie Winner' : 'Battle Winner',
+      subtitle:`Group ${pair[0]} VS Group ${pair[1]}`,
+      detail:`Final Battle Score: Group ${a.groupNum} = ${a.finalScore}, Group ${b.groupNum} = ${b.finalScore}`,
+      note:isTie ? 'Awarded because your group tied for the highest battle score.' : 'Awarded because your group won this battle.'
+    });
+    if(msg) msg.innerHTML = '✅ Congratulations! Your battle certificate has been downloaded.';
+  }else{
+    if(msg) msg.innerHTML = '⭐ Great effort! Your group did not win this battle certificate this time.';
+  }
+}
+
+function checkWholeClassAchievement(){
+  const msg = document.getElementById('wholeCertMsg');
+  const results = getCurrentResults();
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore || a.groupNum-b.groupNum);
+  if(!sorted.length || sorted[0].finalScore <= 0){
+    if(msg) msg.innerHTML = 'Whole class results are not ready yet.';
+    return;
+  }
+
+  const topScore = sorted[0].finalScore;
+  const my = results['group'+currentGroup];
+  const winnerGroups = sorted.filter(r=>r.finalScore === topScore).map(r=>r.groupNum);
+
+  if(my && my.finalScore === topScore){
+    const isTie = winnerGroups.length > 1;
+    downloadCertificate({
+      certType:'Whole Class Winner Certificate',
+      title:isTie ? 'Whole Class Tie Winner' : 'Whole Class First Winner',
+      subtitle:`Skill Clash Whole Class Results`,
+      detail:`Final Total: ${my.finalScore} points`,
+      note:isTie ? `Awarded because your group tied for first place with Group ${winnerGroups.join(', Group ')}.` : 'Awarded because your group achieved first place in the whole class.'
+    });
+    if(msg) msg.innerHTML = '✅ Congratulations! Your whole class certificate has been downloaded.';
+  }else{
+    if(msg) msg.innerHTML = '⭐ Great effort! Your group did not receive the whole class winner certificate this time.';
+  }
+}
+
+function getMyGroupMembersForCertificate(){
+  const g = (latestClassGroups || {})['group' + currentGroup] || {};
+  const students = g.students || latestStudents || {};
+  return Object.keys(students).filter(Boolean);
+}
+
+function downloadCertificate(info){
+  const safeGroup = escapeHtml(currentGroup || '');
+  const members = getMyGroupMembersForCertificate();
+  const memberList = members.length ? members : [currentStudent || 'Student'];
+  const dateText = new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'});
+  const fileName = `${(info.title || 'Skill Clash Certificate').replace(/[^a-z0-9]+/gi,'_')}_Group_${safeGroup}.html`;
+
+  const memberClass = memberList.length === 1 ? 'oneMember' : (memberList.length === 2 ? 'twoMembers' : 'manyMembers');
+  const memberHtml = memberList.map(name => `<span>${escapeHtml(name)}</span>`).join('');
+
+  const certHtml = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${escapeHtml(info.title)}</title>
+  <style>
+    @page{size:A4 portrait;margin:0}
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:#e9eef7;
+      color:#071f4a;
+      font-family:Georgia,'Times New Roman',serif;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding:22px;
+    }
+    .printBtn{
+      position:fixed;
+      top:14px;
+      right:14px;
+      z-index:20;
+      background:#0b3b82;
+      color:#fff;
+      border:0;
+      border-radius:12px;
+      padding:12px 18px;
+      font-family:Arial,sans-serif;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow:0 8px 20px rgba(0,0,0,.18);
+    }
+    .cert{
+      width:900px;
+      min-height:1250px;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255,255,255,.96), rgba(255,248,236,.96) 45%, rgba(255,255,255,.97)),
+        linear-gradient(135deg,#fffdf7,#fff7e8);
+      border:10px solid #08285f;
+      border-radius:8px;
+      padding:44px 54px 38px;
+      text-align:center;
+      position:relative;
+      overflow:hidden;
+      box-shadow:0 24px 80px rgba(0,0,0,.2);
+    }
+    .cert:before{
+      content:"";
+      position:absolute;
+      inset:24px;
+      border:3px solid #c9962d;
+      border-radius:4px;
+      pointer-events:none;
+      z-index:1;
+    }
+    .cert:after{
+      content:"";
+      position:absolute;
+      width:420px;height:420px;
+      right:-160px;bottom:-135px;
+      border-radius:50%;
+      border:55px solid #08285f;
+      box-shadow:0 0 0 16px #d6a33b, 0 0 0 28px #08285f;
+      opacity:.96;
+      z-index:0;
+    }
+    .goldSweep{
+      position:absolute;
+      left:-100px;top:-92px;
+      width:520px;height:220px;
+      background:linear-gradient(135deg,#09265b 0%,#09265b 45%,#d9aa45 46%,#ffe3a4 54%,#09265b 55%);
+      transform:rotate(-22deg);
+      border-radius:0 0 70% 0;
+      z-index:0;
+    }
+    .content{position:relative;z-index:2}
+    .crest{
+      width:150px;height:150px;
+      margin:6px auto 12px;
+      border-radius:50%;
+      background:linear-gradient(145deg,#09265b,#0b3b82);
+      border:6px solid #d6a33b;
+      color:#ffd773;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex-direction:column;
+      box-shadow:0 12px 22px rgba(0,0,0,.16);
+    }
+    .crest .cup{font-size:52px;line-height:1}
+    .crest .brand{font-family:Arial,sans-serif;font-size:13px;color:white;font-weight:900;letter-spacing:1px;margin-top:6px}
+    .titleMain{
+      font-size:76px;
+      letter-spacing:7px;
+      line-height:.9;
+      color:#061e4c;
+      margin:20px 0 12px;
+      text-shadow:0 3px 0 rgba(0,0,0,.06);
+      font-weight:700;
+    }
+    .titleSub{
+      font-size:35px;
+      letter-spacing:8px;
+      color:#a36a0a;
+      margin-bottom:22px;
+      font-weight:700;
+    }
+    .flourish{color:#c9962d;font-size:28px;margin:8px 0 16px}
+    .presented{font-family:Arial,sans-serif;font-size:20px;color:#1f2937;margin:14px 0 10px}
+    .groupName{
+      font-size:68px;
+      color:#061e4c;
+      font-weight:800;
+      letter-spacing:4px;
+      margin:8px 0 8px;
+    }
+    .awardLine{font-family:Arial,sans-serif;font-size:21px;color:#1f2937;margin:8px 0}
+    .subtitle{
+      font-family:Arial,sans-serif;
+      color:#061e4c;
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:2px;
+      margin:8px 0 14px;
+      text-transform:uppercase;
+    }
+    .memberTitle{
+      display:inline-block;
+      margin:12px auto 10px;
+      background:#09265b;
+      color:white;
+      border:2px solid #d6a33b;
+      padding:8px 28px;
+      border-radius:999px;
+      font-size:20px;
+      font-weight:900;
+      letter-spacing:1px;
+    }
+    .membersBox{
+      width:76%;
+      margin:0 auto 18px;
+      border:2px solid #d6a33b;
+      border-radius:14px;
+      padding:14px 22px;
+      display:grid;
+      gap:10px 16px;
+      background:rgba(255,255,255,.72);
+      font-family:Arial,sans-serif;
+      font-size:18px;
+      color:#071f4a;
+      line-height:1.35;
+      align-items:center;
+      justify-content:center;
+    }
+    .membersBox.oneMember{
+      grid-template-columns:minmax(220px, 1fr);
+      max-width:520px;
+      text-align:center;
+    }
+    .membersBox.twoMembers{
+      grid-template-columns:repeat(2, minmax(180px, 1fr));
+      max-width:640px;
+      text-align:center;
+    }
+    .membersBox.manyMembers{
+      grid-template-columns:repeat(3,1fr);
+      text-align:center;
+    }
+    .membersBox span{
+      padding:8px 14px;
+      font-weight:700;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      min-height:38px;
+    }
+    .membersBox.twoMembers span:first-child,
+    .membersBox.manyMembers span:not(:nth-child(3n)){
+      border-right:1px solid rgba(201,150,45,.45);
+    }
+    .membersBox.oneMember span{
+      border-right:0;
+      font-size:22px;
+    }
+    .note{
+      font-family:Arial,sans-serif;
+      max-width:690px;
+      margin:16px auto 8px;
+      font-size:21px;
+      line-height:1.55;
+      color:#1f2937;
+    }
+    .congrats{
+      font-size:30px;
+      color:#a36a0a;
+      font-style:italic;
+      margin:12px 0 24px;
+      font-weight:700;
+    }
+    .seal{
+      width:112px;height:112px;
+      margin:8px auto 20px;
+      border-radius:50%;
+      background:radial-gradient(circle,#ffe9a6 0%,#d5a13a 50%,#9b6a10 100%);
+      border:6px double #fff0bd;
+      display:flex;align-items:center;justify-content:center;
+      color:#7a4b05;
+      font-size:48px;
+      box-shadow:0 9px 20px rgba(0,0,0,.17);
+    }
+    .signatures{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-top:24px;
+      gap:34px;
+      font-family:Arial,sans-serif;
+    }
+    .sig{width:38%;text-align:center;color:#071f4a}
+    .sig .script{
+      font-family:'Brush Script MT','Segoe Script',cursive;
+      font-size:28px;
+      color:#08285f;
+      margin-bottom:7px;
+    }
+    .sig .line{border-top:2px solid #c9962d;margin:0 auto 8px;width:86%}
+    .sig .name{font-size:19px;font-weight:700;margin-bottom:5px}
+    .sig .role{font-size:17px;color:#8a5b0d}
+    .date{
+      font-family:Arial,sans-serif;
+      margin-top:34px;
+      font-size:18px;
+      color:#1f2937;
+    }
+    @media(max-width:700px){
+      body{padding:0}.cert{width:100%;min-height:100vh;border-radius:0;padding:28px 24px}.cert:before{inset:12px}.titleMain{font-size:48px}.titleSub{font-size:24px}.groupName{font-size:42px}.membersBox{width:100%;grid-template-columns:1fr!important;font-size:16px}.membersBox.oneMember,.membersBox.twoMembers{max-width:100%}.membersBox span{border-right:0!important}.signatures{gap:10px}.sig{width:48%}.sig .script{font-size:22px}
+    }
+    @media print{
+      body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
+    }
+  </style></head><body>
+  <button class="printBtn" onclick="window.print()">Print / Save PDF</button>
+  <div class="cert">
+    <div class="goldSweep"></div>
+    <div class="content">
+      <div class="crest"><div class="cup">🏆</div><div class="brand">SKILL CLASH HUB</div></div>
+      <div class="titleMain">CERTIFICATE</div>
+      <div class="titleSub">OF ACHIEVEMENT</div>
+      <div class="flourish">──── ✦ ────</div>
+      <div class="presented">This certificate is proudly presented to</div>
+      <div class="groupName">GROUP ${safeGroup}</div>
+      <div class="awardLine">for being the</div>
+      <div class="subtitle">${escapeHtml(info.title)}</div>
+      <div class="awardLine">${escapeHtml(info.subtitle)}</div>
+      <div class="memberTitle">GROUP MEMBERS</div>
+      <div class="membersBox ${memberClass}">${memberHtml}</div>
+      <div class="note">Your outstanding teamwork, strong performance, and excellent collaboration have led your group to victory.</div>
+      <div class="congrats">Congratulations on your achievement!</div>
+      <div class="seal">★</div>
+      <div class="signatures">
+        <div class="sig">
+          <div class="script">Ms. Shawqeya Al hosani</div>
+          <div class="line"></div>
+          <div class="name">Ms. Shawqeya Al hosani</div>
+          <div class="role">School Principal</div>
+        </div>
+        <div class="sig">
+          <div class="script">Ms. Saidah Khwar</div>
+          <div class="line"></div>
+          <div class="name">Ms. Saidah Khwar</div>
+          <div class="role">English Teacher</div>
+        </div>
+      </div>
+      <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
+    </div>
+  </div></body></html>`;
+
+  const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = fileName;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>{
+    URL.revokeObjectURL(a.href);
+    a.remove();
+  }, 500);
+}
+
+
+
+
+async function saveMyWork(){
+  const answer = document.getElementById('myAnswerBox').value.trim();
+  let uploadedFile = null;
+  const fileInput = document.getElementById('studentWorkFile');
+  if(fileInput && fileInput.files && fileInput.files[0]){
+    try{
+      uploadedFile = await readAnyFileAsDataUrl(fileInput.files[0], 4);
+    }catch(err){
+      alert(err.message || 'Could not upload your file.');
+      return;
+    }
+  }
+
+  const updateData = {
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    answer,
+    status:'in progress',
+    updatedAt:Date.now()
+  };
+
+  if(uploadedFile){
+    updateData.workFile = uploadedFile;
+  }
+
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update(updateData);
+
+  if(fileInput) fileInput.value = '';
+  const preview = document.getElementById('studentUploadPreview');
+  if(preview) preview.innerText = uploadedFile ? ('Saved: ' + uploadedFile.name) : 'No new file uploaded. Previous file stays if it exists.';
+  alert('✅ Your work is saved.');
+}
+
+
+function updateLeaderFinalArea(){
+
+  const leaderBox = document.getElementById('leaderFinalSection');
+  const memberBox = document.getElementById('memberWaitingBox');
+  const finalBox = document.getElementById('leaderFinalAnswerBox');
+
+  if(!leaderBox || !memberBox) return;
+
+  if(currentRole === 'leader'){
+    leaderBox.classList.remove('hidden');
+    memberBox.classList.add('hidden');
+
+    const groupData = latestClassGroups['group'+currentGroup] || {};
+
+    if(finalBox && !document.activeElement.matches('#leaderFinalAnswerBox')){
+      finalBox.value = groupData.finalAnswer || '';
+    }
+
+  }else{
+    leaderBox.classList.add('hidden');
+    memberBox.classList.remove('hidden');
+  }
+}
+
+async function submitLeaderFinalWork(){
+
+  if(currentRole !== 'leader'){
+    alert('Only the group leader can submit the final answer.');
+    return;
+  }
+
+  const finalText = document.getElementById('leaderFinalAnswerBox').value.trim();
+
+  if(!finalText){
+    alert('Write the final group answer first.');
+    return;
+  }
+
+  await hubRef.child(
+    `classes/${currentClass}/groups/group${currentGroup}`
+  ).update({
+    finalAnswer: finalText,
+    finalSubmitted: true,
+    finalSubmittedAt: Date.now(),
+    finalSubmittedBy: currentStudent
+  });
+
+  alert('Final group answer submitted successfully.');
+}
+
+
+function renderMembersWork(){
+  let html = '<h3>👥 Group Members Work</h3>';
+
+  Object.keys(latestStudents || {}).forEach(id=>{
+    const s = latestStudents[id] || {};
+    const displayName = s.name || id;
+    html += `<div class="workItem"><b>${escapeHtml(displayName)} ${s.role==='leader'?'👑':''}</b> <span class="smallNote">ID: ${escapeHtml(id)}</span><br>${escapeHtml(s.answer || 'No saved work yet.')}<br>${fileDownloadHtml(s.workFile, 'Student Work File')}</div>`;
+  });
+
+  if(currentRole === 'leader'){
+    const groupData = latestClassGroups['group'+currentGroup] || {};
+    html += `
+      <div class="leaderFinalSection">
+        <h3>📌 Final Group Answer Submission</h3>
+        <p class="smallNote">
+          Review all members’ work together. When your group agrees on the final answer,
+          submit the final version here.
+        </p>
+        <textarea id="leaderFinalAnswerBox" placeholder="Write or combine the final agreed group answer here...">${escapeHtml(groupData.finalAnswer || '')}</textarea>
+        <button class="green finalSubmitBtn" onclick="submitLeaderFinalWork()">✅ Submit Final Group Answer</button>
+      </div>`;
+  }else{
+    html += `
+      <div class="memberWaitingBox">
+        👑 Only the group leader can submit the final answer after discussion and agreement.
+      </div>`;
+  }
+
+  document.getElementById('membersWorkBox').innerHTML = html;
+}
+function toggleMembersWork(){
+  document.getElementById('membersWorkBox').classList.toggle('open');
+  renderMembersWork();
+}
+
+async function submitFinalWork(){
+  if(currentRole !== 'leader'){
+    alert('Only the group leader can submit final work.');
+    return;
+  }
+
+  const criteria = document.querySelectorAll('#criteriaItems input[type="checkbox"]');
+  for(const c of criteria){
+    if(!c.checked){
+      alert('Please tick all success criteria before submitting.');
+      return;
+    }
+  }
+
+  let finalText = '';
+  Object.keys(latestStudents || {}).forEach(name=>{
+    finalText += name + ':\n' + ((latestStudents[name] || {}).answer || 'No saved work.') + '\n\n';
+  });
+
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`).update({
+    finalAnswer:finalText,
+    finalSubmitted:true,
+    submittedBy:currentStudent,
+    submittedAt:Date.now()
+  });
+
+  alert('✅ Final group work submitted.');
+}
+
+function leaveGroup(){
+  sessionStorage.removeItem('skillClass');
+  sessionStorage.removeItem('skillGroup');
+  sessionStorage.removeItem('skillStudent');
+  sessionStorage.removeItem('skillRole');
+  currentClass='';currentGroup='';currentStudent='';currentRole='';
+  if(groupListener) groupListener.off();
+  if(chatListener) chatListener.off();
+  if(settingsListener) settingsListener.off();
+  showOnly('studentLoginPage');
+}
+
+function toggleChat(){
+  document.getElementById('chatPopup').classList.toggle('hidden');
+}
+function listenChat(){
+  if(chatListener) chatListener.off();
+  const ref = hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat`);
+  chatListener = ref;
+  ref.on('value', snap=>{
+    const data = snap.val() || {};
+    let html = '';
+    Object.keys(data).forEach(id=>{
+      const m = data[id] || {};
+      const mine = m.name === currentStudent;
+      html += `<div class="chatMsg">
+        <b>${escapeHtml(m.name)}</b><br>${escapeHtml(m.text)}
+        ${mine ? `<div class="chatActions">
+          <button class="blue" onclick="editChat('${id}','${escapeHtml(m.text).replace(/'/g,"&#39;")}')">Edit</button>
+          <button class="red" onclick="deleteChat('${id}')">Delete</button>
+        </div>` : ''}
+      </div>`;
+    });
+    document.getElementById('chatMessages').innerHTML = html || '<p>No messages yet.</p>';
+  });
+}
+async function sendChat(){
+  const text = document.getElementById('chatInput').value.trim();
+  if(!text) return;
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat`).push({
+    name:currentStudent,
+    text,
+    time:Date.now()
+  });
+  document.getElementById('chatInput').value='';
+}
+async function editChat(id, oldText){
+  const next = prompt('Edit your message:', oldText);
+  if(next === null) return;
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat/${id}`).update({
+    text:next,
+    editedAt:Date.now()
+  });
+}
+async function deleteChat(id){
+  if(!confirm('Delete this message?')) return;
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat/${id}`).remove();
+}
+
+function loginTeacher(){
+  const pass = document.getElementById('teacherPassword').value;
+  if(pass !== 'Welcome@2020'){
+    alert('Incorrect password.');
+    return;
+  }
+  teacherLoggedIn = true;
+  showOnly('teacherDashboard');
+  renderTeacherDashboard();
+  loadActivityLibrary();
+  toggleActivityType();
+}
+
+function leaveTeacher(){
+  teacherLoggedIn=false;
+  showOnly('studentLoginPage');
+}
+
+function renderTeacherDashboard(){
+  hubRef.child('classes').on('value', snap=>{
+    const classes = snap.val() || {};
+    renderCurrentActivity(classes);
+    renderClassCards(classes);
+    if(selectedTeacherClass) renderSelectedClass(classes[selectedTeacherClass] || {});
+  });
+}
+
+function renderCurrentActivity(classes){
+  const all = ['9-1','9-2','9-3','9-4'];
+  const assigned = all.map(c=>({className:c, activity:(classes[c] || {}).currentActivity})).filter(x=>x.activity);
+  if(!assigned.length){
+    document.getElementById('currentActivityContent').innerHTML = '<p>No activity assigned yet.</p>';
+    latestTeacherActivityForPopup = null;
+    latestTeacherAssignedTo = '-';
+    updateTimerPopupActivity();
+    return;
+  }
+  assigned.sort((a,b)=>(b.activity.assignedAt||0)-(a.activity.assignedAt||0));
+  const a = assigned[0].activity;
+  const assignedTo = assigned.map(x=>classDisplay(x.className)).join(', ');
+  latestTeacherActivityForPopup = a;
+  latestTeacherAssignedTo = assignedTo;
+  updateTimerPopupActivity();
+  const desc = a.taskType === 'different'
+    ? 'Different tasks are assigned to groups. Students write, save, check criteria, and the leader submits.'
+    : 'All groups complete the same task. Students write, save, check criteria, and the leader submits.';
+  document.getElementById('currentActivityContent').innerHTML =
+    `${a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : ''}
+    <div class="currentGrid">
+      <div class="currentMini"><b>📌 Activity Name</b><span>${escapeHtml(a.title || 'Activity')}</span></div>
+      <div class="currentMini"><b>⏱ Timer</b><span id="currentTimerMini">${formatTeacherTime(teacherTimerSeconds)}</span></div>
+      <div class="currentMini"><b>📋 Instructions</b><span>${escapeHtml((a.instructions || '').slice(0,160))}</span></div>
+      <div class="currentMini"><b>🤖 Short Description</b><span>${escapeHtml(desc)}</span></div>
+    </div>
+    <p style="margin-top:8px;color:#475569">Assigned to: ${escapeHtml(assignedTo)}</p>`;
+}
+
+function renderClassCards(classes){
+  const list = ['9-1','9-2','9-3','9-4'];
+  let html = '';
+  list.forEach(cls=>{
+    const c = classes[cls] || {};
+    const groups = c.groups || {};
+    let joined = 0, final = 0, marked = 0;
+    Object.keys(groups).forEach(g=>{
+      if(Object.keys(groups[g].students || {}).length) joined++;
+      if(groups[g].finalSubmitted) final++;
+      if(groups[g].teacherPoints) marked++;
+    });
+    const activity = c.currentActivity?.title || 'No activity assigned';
+    html += `<div class="classCard" onclick="openClass('${cls}')">
+      <h3>Class ${classDisplay(cls)}</h3>
+      <span class="pill pillYellow">${joined} joined groups</span>
+      <span class="pill pillGreen">${final} final submitted</span>
+      <span class="pill pillPurple">${marked} marked</span>
+      <p><b>Activity:</b> ${escapeHtml(activity)}</p>
+      <p>Click to view all groups.</p>
+    </div>`;
+  });
+  document.getElementById('classCards').innerHTML = html;
+}
+
+function openClass(cls){
+  selectedTeacherClass = cls;
+  document.getElementById('classGroupsPanel').classList.remove('hidden');
+  document.getElementById('selectedClassTitle').innerText = `📚 Class ${classDisplay(cls)} Groups`;
+  hubRef.child(`classes/${cls}`).once('value', snap => {
+    const data = snap.val() || {};
+    const timer = (data.settings || {}).timer || {};
+    teacherTimerSeconds = getTimerSecondsFromSettings(timer);
+    teacherTimerPaused = timer.state === 'paused';
+    teacherTimerLastSetSeconds = Number(timer.duration || teacherTimerSeconds || 0);
+    updateTeacherTimerDisplay();
+    renderSelectedClass(data);
+  });
+}
+
+function backToDashboard(){
+  document.getElementById('classGroupsPanel').classList.add('hidden');
+  showOnly('teacherDashboard');
+}
+
+function renderSelectedClass(classData){
+  if(!selectedTeacherClass) return;
+  const groups = classData.groups || {};
+  let html = '';
+  for(let i=1;i<=10;i++){
+    const g = groups['group'+i] || {};
+    const students = g.students || {};
+    const names = Object.keys(students);
+    html += `<div class="groupCard">
+      <h3>Group ${i}</h3>
+      <p><b>Members:</b> ${names.join(', ') || 'No students joined yet'}</p>
+      <p><b>Status:</b> ${g.finalSubmitted ? '✅ Final submitted' : names.length ? '✍️ In progress' : 'Empty'}</p>
+      <p><b>Teacher Points:</b> ${g.teacherPoints || 'Not marked'}</p>
+      <details>
+        <summary>👀 Check Group Work</summary>
+        <h4>Saved Work</h4>
+        <div class="answerPreview">${escapeHtml(savedWorkText(students))}</div>
+        <h4>Final Work</h4>
+        <div class="answerPreview">${escapeHtml(g.finalAnswer || 'No final answer yet.')}</div>
+        <label>Teacher Points</label>
+        <input id="points_${i}" type="number" value="${escapeHtml(g.teacherPoints || '')}">
+        <label>Teacher Comment</label>
+        <textarea id="comment_${i}">${escapeHtml(g.teacherComment || '')}</textarea>
+        <button class="green" onclick="saveTeacherFeedback(${i})">Save Points + Comment</button>
+      </details>
+    </div>`;
+  }
+  document.getElementById('groupCards').innerHTML = html;
+}
+function savedWorkText(students){
+  let txt = '';
+  Object.keys(students || {}).forEach(n=>{
+    txt += n + ':\n' + ((students[n] || {}).answer || 'No saved work') + '\n\n';
+  });
+  return txt || 'No saved work yet.';
+}
+async function saveTeacherFeedback(groupNum){
+  const points = document.getElementById('points_'+groupNum).value;
+  const comment = document.getElementById('comment_'+groupNum).value;
+  await hubRef.child(`classes/${selectedTeacherClass}/groups/group${groupNum}`).update({
+    teacherPoints:points,
+    teacherComment:comment,
+    markedAt:Date.now()
+  });
+  alert('✅ Feedback saved.');
+}
+
+
+function readImageAsDataUrl(file, maxWidth = 1000, quality = 0.82){
+  return new Promise((resolve, reject)=>{
+    if(!file){ resolve(''); return; }
+    if(!file.type || !file.type.startsWith('image/')){
+      reject(new Error('Please choose an image file.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const img = new Image();
+      img.onload = function(){
+        const scale = Math.min(1, maxWidth / img.width);
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = ()=>reject(new Error('Could not read this image.'));
+      img.src = e.target.result;
+    };
+    reader.onerror = ()=>reject(new Error('Could not upload this image.'));
+    reader.readAsDataURL(file);
+  });
+}
+function imageHtml(src, className, altText){
+  if(!src) return '';
+  const id = 'activity_img_' + Math.random().toString(36).slice(2,10);
+  const cls = className || 'activityImg';
+  return `<div class="imagePreviewBox">
+    <img id="${id}" class="${cls}" src="${src}" alt="${escapeHtml(altText || 'Activity picture')}" onclick="toggleActivityImage(this.nextElementSibling,'${id}')">
+    <button type="button" class="imageToggleBtn" onclick="toggleActivityImage(this,'${id}')">🔍 View</button>
+  </div>`;
+}
+
+function readAnyFileAsDataUrl(file, maxMB=4){
+  return new Promise((resolve,reject)=>{
+    if(!file){reject(new Error('No file selected.'));return;}
+    const allowed = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ];
+    const isImage = file.type && file.type.startsWith('image/');
+    const ok = isImage || allowed.includes(file.type) || /\.(doc|docx|pdf|ppt|pptx)$/i.test(file.name || '');
+    if(!ok){
+      reject(new Error('Only Word, PDF, PPT, or picture files are allowed.'));
+      return;
+    }
+    if(file.size > maxMB * 1024 * 1024){
+      reject(new Error('File is too large. Please use a file under '+maxMB+' MB.'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => resolve({
+      name:file.name || 'attached-file',
+      type:file.type || 'application/octet-stream',
+      size:file.size || 0,
+      data:e.target.result,
+      uploadedAt:Date.now()
+    });
+    reader.onerror = ()=>reject(new Error('Could not read this file.'));
+    reader.readAsDataURL(file);
+  });
+}
+function fileDownloadHtml(fileObj, label){
+  if(!fileObj || !fileObj.data) return '';
+  const name = escapeHtml(fileObj.name || label || 'Download file');
+  return `<a class="resourceLink" href="${fileObj.data}" download="${name}" target="_blank">📎 Download ${name}</a>`;
+}
+function linkHtml(url, label){
+  if(!url) return '';
+  const safe = escapeHtml(url);
+  return `<a class="resourceLink" href="${safe}" target="_blank" rel="noopener">🔗 ${escapeHtml(label || 'Open Link')}</a>`;
+}
+function renderTeacherResources(a){
+  let html = '';
+  const links = [];
+  if(a.hybridLink) links.push(linkHtml(a.hybridLink, 'Open Hybrid Link'));
+  if(a.attachedFile) links.push(fileDownloadHtml(a.attachedFile, 'Teacher File'));
+  if(links.length){
+    html += `<div class="resourceBox"><h3>📚 Teacher Resources</h3>${links.join('')}</div>`;
+  }
+  return html;
+}
+function renderFilePreviewBox(boxId, fileObj){
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  if(fileObj && fileObj.data){
+    box.classList.remove('hidden');
+    box.innerHTML = `<b>Attached:</b> ${escapeHtml(fileObj.name || 'file')}<br>${fileDownloadHtml(fileObj,'Preview file')}`;
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+async function handleSameTaskFileUpload(input){
+  try{
+    builderSameFileData = await readAnyFileAsDataUrl(input.files && input.files[0], 4);
+    renderFilePreviewBox('builderSameFilePreview', builderSameFileData);
+  }catch(err){
+    alert(err.message || 'File upload failed.');
+    input.value = '';
+  }
+}
+function clearSameTaskFile(){
+  builderSameFileData = null;
+  const input = document.getElementById('builderSameFile');
+  if(input) input.value = '';
+  renderFilePreviewBox('builderSameFilePreview', builderSameFileData);
+}
+async function handleGroupTaskFileUpload(i, input){
+  try{
+    builderGroupFileData['group'+i] = await readAnyFileAsDataUrl(input.files && input.files[0], 4);
+    renderFilePreviewBox('groupFilePreview_'+i, builderGroupFileData['group'+i]);
+  }catch(err){
+    alert(err.message || 'File upload failed.');
+    input.value = '';
+  }
+}
+function clearGroupTaskFile(i){
+  delete builderGroupFileData['group'+i];
+  const input = document.getElementById('groupFile_'+i);
+  if(input) input.value = '';
+  renderFilePreviewBox('groupFilePreview_'+i, null);
+}
+async function previewStudentUpload(input){
+  const box = document.getElementById('studentUploadPreview');
+  const file = input.files && input.files[0];
+  if(!file){
+    if(box) box.innerText = 'No file uploaded yet.';
+    return;
+  }
+  if(box) box.innerText = 'Selected: ' + file.name + ' — click Save My Work.';
+}
+
+function renderMainImagePreview(){
+  const box = document.getElementById('builderMainImagePreview');
+  if(!box) return;
+  if(builderMainImageData){
+    box.classList.remove('hidden');
+    box.innerHTML = imageHtml(builderMainImageData, 'activityImg', 'Main activity picture');
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function renderGroupImagePreview(i){
+  const box = document.getElementById('groupImagePreview_'+i);
+  if(!box) return;
+  const src = builderGroupImageData['group'+i] || '';
+  if(src){
+    box.classList.remove('hidden');
+    box.innerHTML = imageHtml(src, 'groupTaskImg', 'Group '+i+' task picture');
+  }else{
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  }
+}
+function renderAllGroupImagePreviews(){
+  for(let i=1;i<=10;i++) renderGroupImagePreview(i);
+}
+async function handleMainActivityImageUpload(input){
+  try{
+    builderMainImageData = await readImageAsDataUrl(input.files && input.files[0], 1000, 0.82);
+    renderMainImagePreview();
+  renderFilePreviewBox('builderSameFilePreview', builderSameFileData);
+  }catch(err){
+    alert(err.message || 'Image upload failed.');
+    input.value = '';
+  }
+}
+async function handleGroupTaskImageUpload(i, input){
+  try{
+    builderGroupImageData['group'+i] = await readImageAsDataUrl(input.files && input.files[0], 900, 0.82);
+    renderGroupImagePreview(i);
+  }catch(err){
+    alert(err.message || 'Image upload failed.');
+    input.value = '';
+  }
+}
+function clearMainActivityImage(){
+  builderMainImageData = '';
+  const input = document.getElementById('builderMainImage');
+  if(input) input.value = '';
+  renderMainImagePreview();
+}
+function clearGroupTaskImage(i){
+  delete builderGroupImageData['group'+i];
+  const input = document.getElementById('groupImage_'+i);
+  if(input) input.value = '';
+  renderGroupImagePreview(i);
+}
+
+function showBuilder(){
+  showOnly('builderPage');
+  buildGroupTaskInputs();
+  buildAssignGroupChecks();
+  loadActivityLibrary();
+}
+function toggleActivityType(){
+  const activityType = document.getElementById('builderActivityType')?.value || 'writing';
+  const readingArea = document.getElementById('readingBuilderArea');
+  if(readingArea) readingArea.classList.toggle('hidden', activityType !== 'reading');
+  toggleActivityType();
+}
+function toggleTaskType(){
+  const type = document.getElementById('builderTaskType').value;
+  const activityType = document.getElementById('builderActivityType')?.value || 'writing';
+  document.getElementById('sameTaskArea').classList.toggle('hidden', type !== 'same');
+  document.getElementById('differentTaskArea').classList.toggle('hidden', type !== 'different');
+  const readingSameBox = document.getElementById('readingSameBox');
+  const readingDifferentNote = document.getElementById('readingDifferentNote');
+  if(readingSameBox) readingSameBox.classList.toggle('hidden', !(activityType === 'reading' && type === 'same'));
+  if(readingDifferentNote) readingDifferentNote.classList.toggle('hidden', !(activityType === 'reading' && type === 'different'));
+}
+function toggleAssignMode(){
+  document.getElementById('assignGroupsArea').classList.toggle('hidden', document.getElementById('assignMode').value !== 'groups');
+}
+function buildGroupTaskInputs(){
+  let html = '';
+  for(let i=1;i<=10;i++){
+    html += `<div class="groupTaskMiniCard">
+      <label>Group ${i} Activity</label>
+      <textarea id="groupTask_${i}"></textarea>
+
+      <label>🔗 Group ${i} Hybrid Link</label>
+      <input id="groupLink_${i}" type="url" placeholder="Paste link for Group ${i}">
+
+      <label>📎 Group ${i} Word / PDF / PPT / Picture</label>
+      <input id="groupFile_${i}" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleGroupTaskFileUpload(${i}, this)">
+      <div id="groupFilePreview_${i}" class="fileMini hidden"></div>
+      <button type="button" class="smallImageBtn" onclick="clearGroupTaskFile(${i})">Remove File</button>
+
+      <label>📷 Group ${i} Picture</label>
+      <input id="groupImage_${i}" type="file" accept="image/*" onchange="handleGroupTaskImageUpload(${i}, this)">
+      <div id="groupImagePreview_${i}" class="imagePreviewBox hidden"></div>
+      <button type="button" class="smallImageBtn" onclick="clearGroupTaskImage(${i})">Remove Picture</button>
+
+      <div class="readingBuilderBox">
+        <b>📖 Reading Task for Group ${i}</b>
+        <label>Upload Group ${i} Reading PDF</label>
+        <input id="readingPdf_group${i}" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingText_group${i}')">
+        <label>Group ${i} Reading Text</label>
+        <textarea id="readingText_group${i}" placeholder="Paste or extract reading text for Group ${i}."></textarea>
+        <button type="button" class="purple" onclick="generateGroupReadingQuestions(${i})">✨ Generate Group ${i} Questions</button>
+        <div id="readingPreview_group${i}" class="resourceBox hidden"></div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('groupTaskGrid').innerHTML = html;
+  renderAllGroupImagePreviews();
+  for(let i=1;i<=10;i++) renderFilePreviewBox('groupFilePreview_'+i, builderGroupFileData['group'+i]);
+}
+function buildAssignGroupChecks(){
+  let html = '';
+  for(let i=1;i<=10;i++){
+    html += `<label class="checkCard"><input type="checkbox" class="assignGroup" value="${i}">Group ${i}</label>`;
+  }
+  document.getElementById('assignGroupChecks').innerHTML = html;
+}
+
+function getSelectedReadingSkills(){
+  const checked = Array.from(document.querySelectorAll('.readingSkill:checked')).map(x=>x.value);
+  return checked.length ? checked : ['mainIdea','supportingDetails','vocabulary','grammar'];
+}
+async function extractReadingPdfToTextarea(input, textareaId){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!window.pdfjsLib){
+    alert('PDF reader is still loading. Please try again.');
+    return;
+  }
+  try{
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data:buffer}).promise;
+    let text = '';
+    for(let p=1; p<=pdf.numPages; p++){
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      text += content.items.map(item=>item.str).join(' ') + '\n\n';
+    }
+    const box = document.getElementById(textareaId);
+    if(box) box.value = text.trim();
+    alert('PDF text extracted. Now click Generate Reading Questions.');
+  }catch(err){
+    alert('Could not extract this PDF. You can paste the text manually.');
+  }
+}
+function cleanReadingText(text){
+  return String(text || '').replace(/\s+/g,' ').trim();
+}
+function splitSentences(text){
+  return cleanReadingText(text).split(/(?<=[.!?])\s+/).map(s=>s.trim()).filter(s=>s.length > 25);
+}
+function pickWords(text){
+  const stop = new Set('the a an and or but because with without from into onto under over this that these those there their about after before during while have has had was were are is be been being you your they them we our for not can will would should could may might very more most some any each every'.split(' '));
+  return cleanReadingText(text).toLowerCase().replace(/[^a-zA-Z ]/g,' ').split(/\s+/)
+    .filter(w=>w.length>=5 && !stop.has(w))
+    .filter((w,i,arr)=>arr.indexOf(w)===i)
+    .slice(0,20);
+}
+function makeQuestion(id,type,format,question,options,answer){
+  return {id,type,format,question,options:options || [],answer};
+}
+function generateReadingQuestionsFromText(text, skills){
+  const sentences = splitSentences(text);
+  const words = pickWords(text);
+  const qs = [];
+  const first = sentences[0] || cleanReadingText(text).slice(0,160);
+  const second = sentences[1] || first;
+  const third = sentences[2] || second;
+  let id = 1;
+
+  if(skills.includes('mainIdea')){
+    qs.push(makeQuestion('q'+(id++),'Main Idea','mcq','What is the main idea of the text?',[
+      first.slice(0,150),
+      'The text is mainly about a small unrelated detail.',
+      'The text is mainly a list of random events.',
+      'The text is mainly about something not mentioned.'
+    ],0));
+    qs.push(makeQuestion('q'+(id++),'Main Idea','tf','The whole text focuses on one clear topic.',[],true));
+  }
+
+  if(skills.includes('supportingDetails')){
+    qs.push(makeQuestion('q'+(id++),'Supporting Details','mcq','Which detail is mentioned in the text?',[
+      second.slice(0,150),
+      'A detail that is not stated in the text.',
+      'A different opinion from another topic.',
+      'A date and place that are not mentioned.'
+    ],0));
+    qs.push(makeQuestion('q'+(id++),'Supporting Details','tf','This statement is supported by the text: '+ third.slice(0,120),[],true));
+  }
+
+  if(skills.includes('vocabulary')){
+    const w = words[0] || 'important';
+    const w2 = words[1] || 'different';
+    qs.push(makeQuestion('q'+(id++),'Vocabulary','mcq','Which word from the text is closest to an important keyword?',[
+      w,
+      'banana',
+      'window',
+      'running'
+    ],0));
+    qs.push(makeQuestion('q'+(id++),'Vocabulary','tf','The word "'+w2+'" appears or connects to the reading text.',[],true));
+  }
+
+  if(skills.includes('grammar')){
+    qs.push(makeQuestion('q'+(id++),'Basic Grammar','mcq','Which sentence starts with a capital letter and ends with correct punctuation?',[
+      first.charAt(0).toUpperCase()+first.slice(1).replace(/[.!?]*$/,'.'),
+      first.toLowerCase().replace(/[.!?]*$/,''),
+      'because the students and teacher',
+      'the answer are correct.'
+    ],0));
+    qs.push(makeQuestion('q'+(id++),'Basic Grammar','tf','A complete English sentence usually needs a subject and a verb.',[],true));
+  }
+
+  qs.push({
+    id:'selfEval',
+    type:'Self Evaluation',
+    format:'self',
+    question:'How was this reading activity for you?',
+    options:['Easy','Some','Difficult'],
+    answer:null,
+    noMarks:true
+  });
+
+  return qs;
+}
+function renderQuestionPreview(boxId, questions){
+  const box = document.getElementById(boxId);
+  if(!box) return;
+  box.classList.remove('hidden');
+  let html = '<h3>✅ Generated Questions Preview</h3>';
+  questions.forEach((q,i)=>{
+    html += `<div class="previewQuestion"><b>${i+1}. ${escapeHtml(q.type)}</b><br>${escapeHtml(q.question)}<br><small>${q.noMarks?'No marks':'Answer: '+escapeHtml(q.format==='tf' ? (q.answer?'True':'False') : (q.options[q.answer] || ''))}</small></div>`;
+  });
+  box.innerHTML = html;
+}
+function generateSameReadingQuestions(){
+  const text = document.getElementById('readingSameText').value.trim();
+  if(!text){alert('Upload or paste the reading text first.');return;}
+  const skills = getSelectedReadingSkills();
+  builderReadingSameQuestions = generateReadingQuestionsFromText(text, skills);
+  builderReadingTexts.same = text;
+  renderQuestionPreview('readingSamePreview', builderReadingSameQuestions);
+}
+function generateGroupReadingQuestions(i){
+  const text = document.getElementById('readingText_group'+i).value.trim();
+  if(!text){alert('Upload or paste Group '+i+' reading text first.');return;}
+  const skills = getSelectedReadingSkills();
+  builderGroupReadingQuestions['group'+i] = generateReadingQuestionsFromText(text, skills);
+  builderReadingTexts['group'+i] = text;
+  renderQuestionPreview('readingPreview_group'+i, builderGroupReadingQuestions['group'+i]);
+}
+function renderReadingStudentQuiz(a){
+  const box = document.getElementById('readingQuizBox');
+  if(!box) return;
+  if(!a || a.activityType !== 'reading'){
+    box.classList.add('hidden');
+    box.innerHTML = '';
+    return;
+  }
+  box.classList.remove('hidden');
+  const questions = a.readingQuestions || [];
+  let html = '<h2>📖 Reading Questions</h2>';
+  if(a.readingText){
+    html += `<details><summary>📄 View Reading Text</summary><div class="readingTextBox">${escapeHtml(a.readingText)}</div></details>`;
+  }
+  if(!questions.length){
+    html += '<p>No reading questions generated yet.</p>';
+    box.innerHTML = html;
+    return;
+  }
+  questions.forEach((q,i)=>{
+    html += `<div class="quizQuestion"><b>${i+1}. ${escapeHtml(q.question)}</b><p class="smallNote">${escapeHtml(q.type)} ${q.noMarks?'· No marks':'· 1 mark'}</p>`;
+    if(q.format === 'mcq'){
+      (q.options || []).forEach((op,idx)=>{
+        html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="${idx}"> ${escapeHtml(op)}</label>`;
+      });
+    }else if(q.format === 'tf'){
+      html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="true"> True</label>`;
+      html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="false"> False</label>`;
+    }else if(q.format === 'self'){
+      (q.options || ['Easy','Some','Difficult']).forEach(op=>{
+        html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="${escapeHtml(op)}"> ${escapeHtml(op)}</label>`;
+      });
+    }
+    html += '</div>';
+  });
+  html += '<button class="green" style="width:100%" onclick="submitReadingQuiz()">✅ Submit Reading Answers</button><div id="readingResultBox"></div>';
+  box.innerHTML = html;
+}
+async function submitReadingQuiz(){
+  const a = latestAssignedActivity || {};
+  const questions = a.readingQuestions || [];
+  if(!questions.length){alert('No questions found.');return;}
+  let score = 0;
+  let total = 0;
+  const answers = {};
+  let selfEval = '';
+  for(const q of questions){
+    const chosen = document.querySelector(`input[name="read_${q.id}"]:checked`);
+    if(!chosen){
+      alert('Please answer all questions, including self-evaluation.');
+      return;
+    }
+    let val = chosen.value;
+    answers[q.id] = val;
+    if(q.noMarks){
+      selfEval = val;
+    }else{
+      total++;
+      if(q.format === 'mcq' && Number(val) === Number(q.answer)) score++;
+      if(q.format === 'tf' && String(val) === String(!!q.answer)) score++;
+    }
+  }
+  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    readingAnswers: answers,
+    readingScore: score,
+    readingTotal: total,
+    selfEvaluation: selfEval,
+    answer: `Reading Quiz Score: ${score}/${total} | Self-evaluation: ${selfEval}`,
+    status:'reading submitted',
+    updatedAt:Date.now()
+  });
+  const result = document.getElementById('readingResultBox');
+  if(result) result.innerHTML = `<div class="quizResultBox">✅ Marked instantly: ${score}/${total}<br>Self-evaluation: ${escapeHtml(selfEval)}</div>`;
+  alert('✅ Reading answers submitted and marked instantly.');
+}
+
+async function collectActivity(){
+  const title = document.getElementById('builderActivityName').value.trim();
+  const instructions = document.getElementById('builderInstructions').value.trim();
+  const activityType = document.getElementById('builderActivityType') ? document.getElementById('builderActivityType').value : 'writing';
+  const taskType = document.getElementById('builderTaskType').value;
+  const sameTask = document.getElementById('builderSameTask').value.trim();
+  const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
+  const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
+
+  const mainInput = document.getElementById('builderMainImage');
+  if(mainInput && mainInput.files && mainInput.files[0]){
+    builderMainImageData = await readImageAsDataUrl(mainInput.files[0], 1000, 0.82);
+  }
+
+  const groupTasks = {};
+  const groupTaskImages = {};
+  const groupTaskLinks = {};
+  const groupTaskFiles = {};
+  for(let i=1;i<=10;i++){
+    const el = document.getElementById('groupTask_'+i);
+    const imgInput = document.getElementById('groupImage_'+i);
+    if(imgInput && imgInput.files && imgInput.files[0]){
+      builderGroupImageData['group'+i] = await readImageAsDataUrl(imgInput.files[0], 900, 0.82);
+    }
+    const linkEl = document.getElementById('groupLink_'+i);
+    groupTasks['group'+i] = el ? el.value.trim() : '';
+    groupTaskImages['group'+i] = builderGroupImageData['group'+i] || '';
+    groupTaskLinks['group'+i] = linkEl ? linkEl.value.trim() : '';
+    groupTaskFiles['group'+i] = builderGroupFileData['group'+i] || null;
+  }
+
+  return {
+    id:currentActivityId || 'activity_'+Date.now(),
+    title,
+    instructions,
+    activityType,
+    taskType,
+    sameTask,
+    sameHybridLink,
+    sameAttachedFile: builderSameFileData || null,
+    mainImage: builderMainImageData || '',
+    groupTasks,
+    groupTaskImages,
+    groupTaskLinks,
+    groupTaskFiles,
+    readingText: builderReadingTexts.same || (document.getElementById('readingSameText') ? document.getElementById('readingSameText').value.trim() : ''),
+    readingQuestions: builderReadingSameQuestions || [],
+    groupReadingTexts: builderReadingTexts || {},
+    groupReadingQuestions: builderGroupReadingQuestions || {},
+    criteria,
+    votingCriteria
+  };
+}
+async function saveActivityToLibrary(){
+  const a = await collectActivity();
+  if(!a.title){alert('Write activity name.');return}
+  if(a.activityType !== 'reading' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
+  if(a.activityType === 'reading' && a.taskType === 'same' && (!a.readingQuestions || !a.readingQuestions.length)){alert('Generate reading questions first.');return}
+  currentActivityId = a.id;
+  await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
+  alert('✅ Activity saved to library.');
+  loadActivityLibrary();
+}
+function loadActivityLibrary(){
+  hubRef.child('activityLibrary').once('value', snap=>{
+    const data = snap.val() || {};
+    let html = '<option value="">Choose saved activity</option>';
+    Object.keys(data).forEach(id=>{
+      const a = data[id];
+      html += `<option value="${id}">${escapeHtml(a.title || 'Activity')}</option>`;
+    });
+    document.getElementById('savedActivities').innerHTML = html;
+  });
+}
+async function loadActivity(){
+  const id = document.getElementById('savedActivities').value;
+  if(!id){alert('Choose saved activity.');return}
+  const snap = await hubRef.child('activityLibrary/'+id).once('value');
+  const a = snap.val();
+  if(!a) return;
+  currentActivityId = id;
+  document.getElementById('builderActivityName').value = a.title || '';
+  document.getElementById('builderInstructions').value = a.instructions || '';
+  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = a.activityType || 'writing';
+  document.getElementById('builderTaskType').value = a.taskType || 'same';
+  document.getElementById('builderSameTask').value = a.sameTask || '';
+  if(document.getElementById('builderSameLink')) document.getElementById('builderSameLink').value = a.sameHybridLink || '';
+  document.getElementById('builderCriteria').value = (a.criteria || []).join('\n');
+  document.getElementById('builderVotingCriteria').value = (a.votingCriteria || []).join('\n');
+  builderMainImageData = a.mainImage || '';
+  builderGroupImageData = Object.assign({}, a.groupTaskImages || {});
+  builderSameFileData = a.sameAttachedFile || null;
+  builderGroupFileData = Object.assign({}, a.groupTaskFiles || {});
+  builderReadingSameQuestions = a.readingQuestions || [];
+  builderGroupReadingQuestions = Object.assign({}, a.groupReadingQuestions || {});
+  builderReadingTexts = Object.assign({}, a.groupReadingTexts || {});
+  if(a.readingText) builderReadingTexts.same = a.readingText;
+  if(document.getElementById('readingSameText')) document.getElementById('readingSameText').value = builderReadingTexts.same || '';
+  renderQuestionPreview('readingSamePreview', builderReadingSameQuestions || []);
+  const mainInput = document.getElementById('builderMainImage');
+  if(mainInput) mainInput.value = '';
+  renderMainImagePreview();
+  buildGroupTaskInputs();
+  for(let i=1;i<=10;i++){
+    const el = document.getElementById('groupTask_'+i);
+    if(el) el.value = (a.groupTasks || {})['group'+i] || '';
+    const linkEl = document.getElementById('groupLink_'+i);
+    if(linkEl) linkEl.value = (a.groupTaskLinks || {})['group'+i] || '';
+    const readingTextEl = document.getElementById('readingText_group'+i);
+    if(readingTextEl) readingTextEl.value = (builderReadingTexts || {})['group'+i] || '';
+    renderQuestionPreview('readingPreview_group'+i, (builderGroupReadingQuestions || {})['group'+i] || []);
+    renderFilePreviewBox('groupFilePreview_'+i, builderGroupFileData['group'+i]);
+    const fileInput = document.getElementById('groupFile_'+i);
+    if(fileInput) fileInput.value = '';
+    const imgInput = document.getElementById('groupImage_'+i);
+    if(imgInput) imgInput.value = '';
+    renderGroupImagePreview(i);
+  }
+  toggleTaskType();
+  alert('✅ Activity loaded.');
+}
+async function deleteActivity(){
+  const id = document.getElementById('savedActivities').value;
+  if(!id){alert('Choose activity.');return}
+  if(!confirm('Delete this activity from library?')) return;
+  await hubRef.child('activityLibrary/'+id).remove();
+  loadActivityLibrary();
+}
+
+async function assignCurrentActivity(){
+  const a = await collectActivity();
+  if(!a.title){alert('Write activity name.');return}
+
+  const classes = Array.from(document.querySelectorAll('.assignClass:checked')).map(x=>x.value);
+  if(!classes.length){alert('Choose at least one class.');return}
+
+  const mode = document.getElementById('assignMode').value;
+  let groups = [];
+  if(mode === 'groups'){
+    groups = Array.from(document.querySelectorAll('.assignGroup:checked')).map(x=>Number(x.value));
+    if(!groups.length){alert('Choose at least one group.');return}
+  }else{
+    groups = [1,2,3,4,5,6,7,8,9,10];
+  }
+
+  const updates = {};
+  classes.forEach(cls=>{
+    groups.forEach(i=>{
+      const groupTask = a.taskType === 'same' ? a.sameTask : (a.groupTasks['group'+i] || '');
+      const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})['group'+i] || '');
+      const hybridLink = a.taskType === 'same' ? (a.sameHybridLink || '') : ((a.groupTaskLinks || {})['group'+i] || '');
+      const attachedFile = a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})['group'+i] || null);
+      const readingText = a.taskType === 'same' ? (a.readingText || '') : ((a.groupReadingTexts || {})['group'+i] || '');
+      const readingQuestions = a.taskType === 'same' ? (a.readingQuestions || []) : ((a.groupReadingQuestions || {})['group'+i] || []);
+      updates[`classes/${cls}/assignedActivities/group${i}`] = {
+        title:a.title,
+        instructions:a.instructions,
+        mainImage:a.mainImage || '',
+        groupTask,
+        groupTaskImage,
+        hybridLink,
+        attachedFile,
+        readingText,
+        readingQuestions,
+        criteria:a.criteria,
+        votingCriteria:a.votingCriteria,
+        taskType:a.taskType,
+        assignedAt:Date.now(),
+        assignedBy:'Ms. Saidah Khwar'
+      };
+    });
+    updates[`classes/${cls}/currentActivity`] = {
+      title:a.title,
+      instructions:a.instructions,
+      mainImage:a.mainImage || '',
+      taskType:a.taskType,
+      criteria:a.criteria,
+      votingCriteria:a.votingCriteria,
+      assignedAt:Date.now()
+    };
+    updates[`classes/${cls}/settings/stage`] = 'work';
+    updates[`classes/${cls}/settings/resultsReleased`] = false;
+  });
+
+  await hubRef.update(updates);
+  await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), assignedAt:Date.now(), assignedClasses:classes});
+  currentActivityId = a.id;
+  alert('✅ Activity assigned successfully.');
+  showOnly('teacherDashboard');
+}
+
+async function setStage(stage){
+  if(!selectedTeacherClass) return;
+
+  const updates = {};
+  const voteSystem = document.getElementById('teacherVoteSystem')?.value || 'peer';
+  updates[`classes/${selectedTeacherClass}/settings/stage`] = stage;
+  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/voteSystem`] = voteSystem;
+  if(stage === 'work') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
+  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
+
+  await hubRef.update(updates);
+
+  if(stage === 'voting') renderTeacherVotingResults(false);
+  alert(stage === 'voting' ? (voteSystem === 'battle' ? '⚔️ Group VS Group voting is open for students.' : '🗳 Peer Assessment voting is open for students.') : 'Stage changed to '+stage);
+}
+
+async function showVotingResults(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+
+  await hubRef.update({
+    [`classes/${selectedTeacherClass}/settings/stage`]:'results',
+    [`classes/${selectedTeacherClass}/settings/resultsReleased`]:true,
+    [`classes/${selectedTeacherClass}/settings/resultsReleasedAt`]:Date.now()
+  });
+
+  renderTeacherVotingResults(true);
+}
+
+async function renderTeacherVotingResults(showPanel){
+  if(!selectedTeacherClass) return;
+
+  const snap = await hubRef.child(`classes/${selectedTeacherClass}`).once('value');
+  const classData = snap.val() || {};
+  const voteSystem = (classData.settings || {}).voteSystem || 'peer';
+  const results = calculateVotingResults(classData);
+  const sorted = Object.values(results).sort((a,b)=>b.finalScore-a.finalScore);
+
+  const panel = document.getElementById('votingResultsPanel');
+  if(!panel) return;
+  panel.classList.toggle('hidden', !showPanel);
+
+  let pairHtml = '';
+  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  pairs.forEach(pair=>{
+    const a = results['group'+pair[0]];
+    const b = results['group'+pair[1]];
+    const winner = (a.finalScore === b.finalScore) ? 'Tie' : (a.finalScore > b.finalScore ? 'Group '+a.groupNum : 'Group '+b.groupNum);
+    pairHtml += `<tr>
+      <td>Group ${pair[0]} VS Group ${pair[1]}</td>
+      <td>Group ${a.groupNum}: ${a.finalScore}<br>Group ${b.groupNum}: ${b.finalScore}</td>
+      <td><b>${winner}</b></td>
+    </tr>`;
+  });
+
+  let fullHtml = '';
+  sorted.forEach((r,idx)=>{
+    fullHtml += `<tr>
+      <td>${idx+1}</td>
+      <td>Group ${r.groupNum}</td>
+      <td>${r.criteriaTotal} + ${r.bestBonusTotal} bonus<br>${r.voteTotal} / ${r.voteCount} vote(s)</td>
+      <td>${r.teacherPoints}</td>
+      <td><b>${r.finalScore}</b></td>
+      <td>${escapeHtml((r.comments || []).slice(0,3).join(' | ') || '-')}</td>
+    </tr>`;
+  });
+
+  panel.innerHTML =
+    `<h2>📊 Voting Results - Class ${classDisplay(selectedTeacherClass)}</h2>
+     <p class="note"><b>Voting System:</b> ${voteSystem === 'battle' ? 'System 1 - Group Work VS Group Work' : 'System 2 - Peer Assessment'}</p>
+     <div class="resultFormulaBox">Final Total = Voting Points + Teacher Mark. If teacher mark is empty, it counts as 0.</div>
+     <div class="winnerBox">🏆 Whole Class Winner: ${sorted[0] ? 'Group '+sorted[0].groupNum : 'No votes yet'}</div>
+
+     <h3>⚔️ Competitive Teams Results</h3>
+     <table class="resultTable">
+      <tr><th>Battle</th><th>Scores</th><th>Winner</th></tr>
+      ${pairHtml}
+     </table>
+
+     <h3>🌟 Whole Class Results</h3>
+     <table class="resultTable">
+      <tr><th>Rank</th><th>Group</th><th>Voting Points</th><th>Teacher Mark</th><th>Final Total</th><th>Comments</th></tr>
+      ${fullHtml}
+     </table>`;
+}
+function formatTeacherTime(totalSeconds){
+  totalSeconds = Math.max(0, Number(totalSeconds || 0));
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+}
+
+function renderStudentHeaderTimer(seconds, state){
+  const studentTimer = document.getElementById('studentTimer');
+  const box = document.getElementById('studentHeaderTimer');
+  const status = document.getElementById('studentTimerStatus');
+  const sec = Math.max(0, Number(seconds || 0));
+  const txt = sec > 0 ? formatTeacherTime(sec) : 'Not started';
+  if(studentTimer) studentTimer.innerText = txt;
+  if(box){
+    box.classList.remove('running','paused','finished');
+    if(state === 'running' && sec > 0) box.classList.add('running');
+    else if(state === 'paused' && sec > 0) box.classList.add('paused');
+    else if(state === 'finished') box.classList.add('finished');
+  }
+  if(status){
+    if(state === 'running' && sec > 0) status.innerText = 'Running now';
+    else if(state === 'paused' && sec > 0) status.innerText = 'Paused by teacher';
+    else if(state === 'finished') status.innerText = 'Time is up';
+    else status.innerText = 'Teacher timer';
+  }
+}
+
+function getTimerSecondsFromSettings(timer){
+  timer = timer || {};
+  const remaining = Number(timer.remaining || 0);
+  if(timer.state === 'running'){
+    const elapsed = Math.floor((Date.now() - Number(timer.updatedAt || Date.now())) / 1000);
+    return Math.max(0, remaining - elapsed);
+  }
+  return Math.max(0, remaining);
+}
+
+function syncStudentTimerFromSettings(settings){
+  latestClassTimer = (settings && settings.timer) || latestClassTimer || {};
+  if(studentTimerInterval) clearInterval(studentTimerInterval);
+  const tick = ()=>{
+    const sec = getTimerSecondsFromSettings(latestClassTimer);
+    let state = latestClassTimer.state || 'not_started';
+    if(state === 'running' && sec <= 0) state = 'finished';
+    renderStudentHeaderTimer(sec, state);
+  };
+  tick();
+  if((latestClassTimer.state || '') === 'running'){
+    studentTimerInterval = setInterval(tick,1000);
+  }
+}
+
+function updateTeacherTimerDisplay(){
+  const txt = teacherTimerSeconds > 0 ? formatTeacherTime(teacherTimerSeconds) : '00:00';
+  const teacherTimer = document.getElementById('teacherTimer');
+  const bigTimer = document.getElementById('bigTeacherTimer');
+  const label = document.getElementById('bigTeacherTimerLabel');
+  const mini = document.getElementById('currentTimerMini');
+  if(teacherTimer) teacherTimer.innerText = teacherTimerSeconds > 0 ? txt : 'Not started';
+  if(bigTimer) bigTimer.innerText = txt;
+  if(mini) mini.innerText = txt;
+  if(label){
+    if(teacherTimerSeconds <= 0) label.innerText = 'Timer not started or finished';
+    else if(teacherTimerPaused) label.innerText = 'Timer paused';
+    else label.innerText = 'Timer running';
+  }
+}
+
+function getTeacherTimerClass(){
+  if(selectedTeacherClass) return selectedTeacherClass;
+  alert('Please open a class first, then start the timer so students in that class can see it.');
+  return '';
+}
+
+async function saveTimerToFirebase(state){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  await hubRef.child(`classes/${cls}/settings/timer`).set({
+    state,
+    remaining: Math.max(0, Number(teacherTimerSeconds || 0)),
+    duration: Math.max(0, Number(teacherTimerLastSetSeconds || teacherTimerSeconds || 0)),
+    updatedAt: Date.now(),
+    updatedBy: 'Ms. Saidah Khwar'
+  });
+}
+
+async function startTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  const mins = prompt('Set timer minutes:', '15');
+  if(mins === null) return;
+  const n = Math.max(1, parseInt(mins,10) || 15);
+  teacherTimerSeconds = n * 60;
+  teacherTimerLastSetSeconds = teacherTimerSeconds;
+  teacherTimerPaused = false;
+  if(teacherTimerInterval) clearInterval(teacherTimerInterval);
+  await saveTimerToFirebase('running');
+  teacherTimerInterval = setInterval(async ()=>{
+    if(!teacherTimerPaused && teacherTimerSeconds > 0){
+      teacherTimerSeconds--;
+      updateTeacherTimerDisplay();
+      if(teacherTimerSeconds % 5 === 0){
+        saveTimerToFirebase('running');
+      }
+      if(teacherTimerSeconds <= 0){
+        clearInterval(teacherTimerInterval);
+        teacherTimerInterval = null;
+        await saveTimerToFirebase('finished');
+        alert('⏱ Time is up!');
+      }
+    }
+  },1000);
+  updateTeacherTimerDisplay();
+  openTimerPopup();
+}
+
+async function pauseTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  teacherTimerPaused = true;
+  updateTeacherTimerDisplay();
+  await saveTimerToFirebase('paused');
+}
+async function resumeTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  if(teacherTimerSeconds <= 0 && teacherTimerLastSetSeconds > 0){
+    teacherTimerSeconds = teacherTimerLastSetSeconds;
+  }
+  teacherTimerPaused = false;
+  await saveTimerToFirebase('running');
+  if(!teacherTimerInterval && teacherTimerSeconds > 0){
+    teacherTimerInterval = setInterval(async ()=>{
+      if(!teacherTimerPaused && teacherTimerSeconds > 0){
+        teacherTimerSeconds--;
+        updateTeacherTimerDisplay();
+        if(teacherTimerSeconds % 5 === 0){
+          saveTimerToFirebase('running');
+        }
+        if(teacherTimerSeconds <= 0){
+          clearInterval(teacherTimerInterval);
+          teacherTimerInterval = null;
+          await saveTimerToFirebase('finished');
+          alert('⏱ Time is up!');
+        }
+      }
+    },1000);
+  }
+  updateTeacherTimerDisplay();
+}
+async function resetTeacherTimer(){
+  const cls = getTeacherTimerClass();
+  if(!cls) return;
+  if(teacherTimerInterval) clearInterval(teacherTimerInterval);
+  teacherTimerInterval = null;
+  teacherTimerSeconds = 0;
+  teacherTimerPaused = false;
+  updateTeacherTimerDisplay();
+  await saveTimerToFirebase('reset');
+}
+
+function openTimerPopup(){
+  updateTimerPopupActivity();
+  updateTeacherTimerDisplay();
+  const pop = document.getElementById('teacherTimerPopup');
+  if(pop) pop.classList.remove('hidden');
+}
+function closeTimerPopup(){
+  const pop = document.getElementById('teacherTimerPopup');
+  if(pop) pop.classList.add('hidden');
+}
+function updateTimerPopupActivity(){
+  const a = latestTeacherActivityForPopup || {};
+  const name = document.getElementById('popupActivityName');
+  const assigned = document.getElementById('popupAssignedTo');
+  const instructions = document.getElementById('popupInstructions');
+  const details = document.getElementById('popupActivityDetails');
+  const criteria = document.getElementById('popupSuccessCriteria');
+  if(name) name.innerText = a.title || 'No activity assigned yet.';
+  if(assigned) assigned.innerText = latestTeacherAssignedTo || '-';
+  if(instructions) instructions.innerHTML = `${a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : ''}${escapeHtml(a.instructions || 'No instructions.')}`;
+  const detailText = a.taskType === 'different'
+    ? 'Different tasks are assigned to groups. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.'
+    : 'All groups complete the same task. Students discuss, write their own part, save work, review members’ work, and the leader submits the final answer.';
+  if(details) details.innerText = detailText;
+  if(criteria){
+    const list = (a.criteria || []).filter(Boolean);
+    criteria.innerHTML = list.length ? list.map(x=>'✅ '+escapeHtml(x)).join('<br>') : 'No criteria assigned.';
+  }
+}
+function finishActivity(){
+  exportCSV();
+  alert('✅ Activity finished. Excel CSV downloaded.');
+}
+async function exportCSV(){
+  const snap = await hubRef.child('classes').once('value');
+  const classes = snap.val() || {};
+  let rows = [['Class','Group','Members','Saved Work','Final Work','Teacher Points','Teacher Comment']];
+  Object.keys(classes).forEach(cls=>{
+    const groups = classes[cls].groups || {};
+    Object.keys(groups).forEach(gk=>{
+      const g = groups[gk] || {};
+      rows.push([
+        cls,
+        gk.replace('group','Group '),
+        Object.keys(g.students || {}).join(' | '),
+        savedWorkText(g.students || {}).replace(/\n/g,' / '),
+        (g.finalAnswer || '').replace(/\n/g,' / '),
+        g.teacherPoints || '',
+        g.teacherComment || ''
+      ]);
+    });
+  });
+  const csv = rows.map(r=>r.map(x=>`"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'skill-clash-results.csv';
+  a.click();
+}
+async function resetSelectedClass(){
+  if(!selectedTeacherClass) return;
+  if(!confirm('Reset this class? This clears groups and assignments.')) return;
+  await hubRef.child('classes/'+selectedTeacherClass).remove();
+}
+window.addEventListener('load',()=>{
+  buildGroupTaskInputs();
+  buildAssignGroupChecks();
+  toggleTaskType();
+  toggleAssignMode();
+  updateTeacherTimerDisplay();
+
+  if(currentClass && currentGroup && currentStudent){
+    showOnly('workPage');
+    listenGroup();
+  }else{
+    showOnly('studentLoginPage');
+  }
+});
+</script>
 </body>
 </html>
