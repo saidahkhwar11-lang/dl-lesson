@@ -5742,17 +5742,16 @@ function downloadLessonPlan(){
 
     const topicText = lessonTitle;
 
-    const hotQuestion =
 function generateHOTQuestion(title, objectives, stations){
 
   const allText = (
     title + ' ' +
     objectives.join(' ') + ' ' +
-    stations.map(s =>
-      (s.title || '') + ' ' +
-      (s.details || '') + ' ' +
-      (s.objective || '')
-    ).join(' ')
+    stations.map(function(s){
+      return (s.title || '') + ' ' +
+             (s.details || '') + ' ' +
+             (s.objective || '');
+    }).join(' ')
   ).toLowerCase();
 
   if(allText.includes('technology')){
@@ -5790,7 +5789,7 @@ function generateHOTQuestion(title, objectives, stations){
   return 'How can today’s lesson help you think differently about real-life situations?';
 }
 
-const hotQuestion = generateHOTQuestion(
+    const hotQuestion = generateHOTQuestion(
   lessonTitle,
   objectives,
   stations
