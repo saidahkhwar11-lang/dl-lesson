@@ -1812,6 +1812,64 @@ button:hover{filter:brightness(.96)}
   font-weight:800;
 }
 
+
+/* ===== Reading final-exam style: one question at a time ===== */
+.readingStepBox{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:14px;
+  margin-top:12px;
+}
+.readingStepTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.readingStepBadge{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:900;
+}
+.examSkillTag{
+  display:inline-block;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:900;
+}
+.readingStepActions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.readingStepActions button{margin:0}
+.readingStepActions.three{grid-template-columns:1fr 1fr 1fr}
+.selfEvalBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:12px;
+}
+.readingQuestionFeedback{
+  margin-top:8px;
+  padding:8px;
+  border-radius:10px;
+  font-weight:800;
+}
+.feedbackCorrect{background:#ecfdf5;color:#065f46;border:1px solid #86efac}
+.feedbackWrong{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2621,9 +2679,9 @@ function buildStudentParagraphQuestionsHtml(assigned, myData){
   });
 
   html += `<label>Self-evaluation</label>
-    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Easy"> Easy</label>
-    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Some"> Some</label>
-    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="Difficult"> Difficult</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="I did well"> ✅ I did well</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="I understood some"> 🙂 I understood some parts</label>
+    <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="It was very difficult"> 😟 It was very difficult</label>
     <button class="green" style="width:100%" onclick="submitParagraphReadingQuestions()">✅ Submit My Questions</button>
     <div id="paragraphReadingResult"></div>`;
 
@@ -3858,7 +3916,7 @@ async function submitLeaderFinalWork(){
   }
 
   if(latestAssignedActivity && latestAssignedActivity.activityType === 'readingParagraph' && !allGroupSummariesSaved()){
-    if(!confirm('Some group members have not saved their summaries yet. Submit final answer anyway?')) return;
+    if(!confirm('I understood some group members have not saved their summaries yet. Submit final answer anyway?')) return;
   }
 
   await hubRef.child(
@@ -4599,6 +4657,84 @@ function getStudentReadingAssignment(a){
   const paragraphNumber = nums[base % nums.length];
   return a.paragraphReading.find(p=>Number(p.paragraphNumber) === Number(paragraphNumber)) || a.paragraphReading[0];
 }
+
+let paragraphQuizStep = 0;
+let paragraphQuizDraftAnswers = {};
+
+function getCurrentParagraphQuestions(){
+  const a = latestAssignedActivity || {};
+  const assigned = getStudentReadingAssignment(a);
+  return assigned ? (assigned.questions || []) : [];
+}
+function saveCurrentStepAnswer(){
+  const questions = getCurrentParagraphQuestions();
+  const q = questions[paragraphQuizStep];
+  if(!q) return true;
+
+  const chosen = document.querySelector(`input[name="para_${q.id}"]:checked`);
+  if(!chosen){
+    alert('Choose an answer before moving to the next question.');
+    return false;
+  }
+  paragraphQuizDraftAnswers[q.id] = chosen.value;
+  return true;
+}
+function goReadingQuestionStep(direction){
+  const questions = getCurrentParagraphQuestions();
+  if(direction > 0 && !saveCurrentStepAnswer()) return;
+  paragraphQuizStep = Math.max(0, Math.min(questions.length - 1, paragraphQuizStep + direction));
+  renderParagraphReadingStudent(latestAssignedActivity);
+}
+function renderOneQuestionAtATime(assigned){
+  const questions = assigned.questions || [];
+  if(!questions.length) return '<p>No questions generated for this paragraph.</p>';
+
+  if(paragraphQuizStep >= questions.length) paragraphQuizStep = questions.length - 1;
+  if(paragraphQuizStep < 0) paragraphQuizStep = 0;
+
+  const q = questions[paragraphQuizStep];
+  const saved = paragraphQuizDraftAnswers[q.id] || '';
+  let html = `<div class="readingStepBox">
+    <div class="readingStepTop">
+      <span class="readingStepBadge">Question ${paragraphQuizStep + 1} / ${questions.length}</span>
+      <span class="examSkillTag">${escapeHtml(q.type)} · 1 point</span>
+    </div>
+    <div class="quizQuestion"><b>${escapeHtml(q.question)}</b>`;
+
+  if(q.format === 'mcq'){
+    (q.options || []).forEach((op,idx)=>{
+      const checked = String(saved) === String(idx) ? 'checked' : '';
+      html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="${idx}" ${checked}> ${escapeHtml(op)}</label>`;
+    });
+  }else if(q.format === 'tf'){
+    html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="true" ${saved==='true'?'checked':''}> True</label>`;
+    html += `<label class="quizOption"><input type="radio" name="para_${q.id}" value="false" ${saved==='false'?'checked':''}> False</label>`;
+  }
+
+  html += '</div>';
+
+  if(paragraphQuizStep === questions.length - 1){
+    html += `<div class="selfEvalBox">
+      <h3>🌟 Self Evaluation</h3>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="I did well"> ✅ I did well</label>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="I understood some"> 🙂 I understood some parts</label>
+      <label class="quizOption"><input type="radio" name="paragraphSelfEval" value="It was very difficult"> 😟 It was very difficult</label>
+    </div>`;
+  }
+
+  html += `<div class="readingStepActions ${paragraphQuizStep === questions.length - 1 ? 'three' : ''}">
+    <button class="gray" onclick="goReadingQuestionStep(-1)" ${paragraphQuizStep === 0 ? 'disabled' : ''}>⬅ Previous</button>`;
+
+  if(paragraphQuizStep === questions.length - 1){
+    html += `<button class="green" onclick="submitParagraphReadingQuestions()">✅ Submit Answers</button>`;
+  }else{
+    html += `<button class="blue" onclick="goReadingQuestionStep(1)">Next ➡</button>`;
+  }
+
+  html += `</div><div id="paragraphReadingResult"></div></div>`;
+  return html;
+}
+
 function renderParagraphReadingStudent(a){
   const box = document.getElementById('readingMainWorkBox');
   if(!box) return;
@@ -4635,7 +4771,7 @@ function renderParagraphReadingStudent(a){
         </div>
 
         <div class="readingPanel">
-          ${buildStudentParagraphQuestionsHtml(assigned, myData)}
+          ${submitted ? buildStudentParagraphQuestionsHtml(assigned, myData) : renderOneQuestionAtATime(assigned)}
         </div>
 
         <div class="studentSummaryBox">
@@ -4673,25 +4809,27 @@ async function submitParagraphReadingQuestions(){
   const assigned = getStudentReadingAssignment(a);
   if(!assigned){alert('No paragraph assigned.');return;}
 
+  if(!saveCurrentStepAnswer()) return;
+
   let score = 0;
   let total = 0;
   const answers = {};
 
   for(const q of (assigned.questions || [])){
-    const chosen = document.querySelector(`input[name="para_${q.id}"]:checked`);
-    if(!chosen){
+    const val = paragraphQuizDraftAnswers[q.id];
+    if(val === undefined || val === ''){
       alert('Please answer all questions.');
       return;
     }
-    answers[q.id] = chosen.value;
+    answers[q.id] = val;
     total++;
-    if(q.format === 'mcq' && Number(chosen.value) === Number(q.answer)) score++;
-    if(q.format === 'tf' && String(chosen.value) === String(!!q.answer)) score++;
+    if(q.format === 'mcq' && Number(val) === Number(q.answer)) score++;
+    if(q.format === 'tf' && String(val) === String(!!q.answer)) score++;
   }
 
   const self = document.querySelector('input[name="paragraphSelfEval"]:checked');
   if(!self){
-    alert('Choose self-evaluation: Easy, Some, or Difficult.');
+    alert('Choose your self evaluation.');
     return;
   }
 
@@ -4710,9 +4848,12 @@ async function submitParagraphReadingQuestions(){
     updatedAt:Date.now()
   });
 
+  paragraphQuizStep = 0;
+  paragraphQuizDraftAnswers = {};
+
   const result = document.getElementById('paragraphReadingResult');
   if(result) result.innerHTML = `<div class="quizResultBox">✅ Marked instantly: ${score}/${total}</div>`;
-  alert('✅ Your questions were submitted and marked instantly.');
+  alert('✅ Your answers were submitted and marked instantly.');
   renderParagraphReadingStudent(latestAssignedActivity);
 }
 async function saveParagraphSummary(){
@@ -4765,7 +4906,7 @@ async function submitLeaderReadingFinalSummary(){
   }
 
   if(!allGroupSummariesSaved()){
-    if(!confirm('Some group members have not saved their summaries yet. Submit final summary anyway?')) return;
+    if(!confirm('I understood some group members have not saved their summaries yet. Submit final summary anyway?')) return;
   }
 
   await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`).update({
@@ -4861,62 +5002,132 @@ function generateReadingQuestionsFromText(text, skills){
   const sentences = splitSentences(text);
   const words = pickWords(text);
   const qs = [];
-  const first = sentences[0] || cleanReadingText(text).slice(0,160);
+  const clean = cleanReadingText(text);
+  const first = sentences[0] || clean.slice(0,180);
   const second = sentences[1] || first;
   const third = sentences[2] || second;
+  const last = sentences[sentences.length - 1] || third;
   let id = 1;
 
+  function trimSentence(s, n=180){
+    return String(s || '').replace(/\s+/g,' ').trim().slice(0,n);
+  }
+
+  function makeFalseOption(base){
+    return 'Information that is not mentioned in the paragraph.';
+  }
+
+  function simpleMeaning(word, sentence){
+    const lower = String(word || '').toLowerCase();
+    const map = {
+      active:'busy and working',
+      professional:'related to work or a job',
+      environment:'the place or situation around someone',
+      identify:'find or recognize',
+      problem:'something difficult that needs a solution',
+      concentrate:'focus carefully',
+      practical:'useful and realistic',
+      answer:'solution or response',
+      effective:'successful or useful',
+      require:'need',
+      quick:'fast',
+      logical:'clear and reasonable',
+      immediate:'happening right away',
+      action:'something done',
+      communicate:'share ideas or information',
+      emotions:'feelings',
+      reduce:'make less',
+      stress:'pressure or worry',
+      perspectives:'ways of thinking',
+      teamwork:'working together',
+      supportive:'helpful and encouraging',
+      differences:'ways things are not the same',
+      successful:'doing well',
+      benefit:'get help or advantage',
+      combining:'putting together',
+      approaches:'ways of doing something',
+      recognizing:'noticing or accepting',
+      respecting:'showing care and value',
+      organizations:'groups or companies',
+      productive:'able to do useful work',
+      inclusive:'welcoming and including everyone',
+      dreams:'thoughts, pictures, or stories during sleep',
+      brain:'the organ used for thinking',
+      rests:'relaxes or stops working hard',
+      experiences:'events or things that happen to someone',
+      strange:'unusual',
+      unrealistic:'not like real life',
+      unusual:'not normal or common'
+    };
+    if(map[lower]) return map[lower];
+
+    if(/tion$|sion$|ment$|ness$/.test(lower)) return 'an idea, state, or process connected to the sentence';
+    if(/ive$|ful$|ous$|al$/.test(lower)) return 'a describing word that fits the paragraph context';
+    return 'the meaning that best fits the sentence in the paragraph';
+  }
+
+  function vocabDistractors(correct){
+    return [
+      correct,
+      'the opposite meaning in this context',
+      'a random place or object',
+      'a person’s name'
+    ];
+  }
+
+  function chooseVocabWord(){
+    const priority = words.filter(w=>w.length >= 6);
+    return priority[0] || words[0] || 'important';
+  }
+
   if(skills.includes('mainIdea')){
-    qs.push(makeQuestion('q'+(id++),'Main Idea','mcq','What is the main idea of the text?',[
-      first.slice(0,150),
-      'The text is mainly about a small unrelated detail.',
-      'The text is mainly a list of random events.',
-      'The text is mainly about something not mentioned.'
+    qs.push(makeQuestion('q'+(id++),'Main Idea','mcq','What is the best main idea of this paragraph?',[
+      trimSentence(first),
+      'The paragraph mainly gives an unrelated small detail.',
+      'The paragraph mainly lists random events without a clear idea.',
+      'The paragraph is mainly about a topic not mentioned in the text.'
     ],0));
-    qs.push(makeQuestion('q'+(id++),'Main Idea','tf','The whole text focuses on one clear topic.',[],true));
+
+    qs.push(makeQuestion('q'+(id++),'Main Idea','tf','The paragraph has one main idea supported by information from the text.',[],true));
   }
 
   if(skills.includes('supportingDetails')){
-    qs.push(makeQuestion('q'+(id++),'Supporting Details','mcq','Which detail is mentioned in the text?',[
-      second.slice(0,150),
-      'A detail that is not stated in the text.',
-      'A different opinion from another topic.',
+    qs.push(makeQuestion('q'+(id++),'Supporting Details','mcq','Which information is stated in the paragraph?',[
+      trimSentence(second),
+      makeFalseOption(),
+      'A different opinion from another text.',
       'A date and place that are not mentioned.'
     ],0));
-    qs.push(makeQuestion('q'+(id++),'Supporting Details','tf','This statement is supported by the text: '+ third.slice(0,120),[],true));
+
+    qs.push(makeQuestion('q'+(id++),'Supporting Details','tf','This information is supported by the paragraph: '+trimSentence(third,130),[],true));
   }
 
   if(skills.includes('vocabulary')){
-    const w = words[0] || 'important';
-    const w2 = words[1] || 'different';
-    qs.push(makeQuestion('q'+(id++),'Vocabulary','mcq','Which word from the text is closest to an important keyword?',[
-      w,
-      'banana',
-      'window',
-      'running'
+    const w = chooseVocabWord();
+    const sentenceWithWord = sentences.find(s=>String(s).toLowerCase().includes(w.toLowerCase())) || first;
+    const meaning = simpleMeaning(w, sentenceWithWord);
+
+    qs.push(makeQuestion('q'+(id++),'Vocabulary in Context','mcq','What does the word "'+w+'" mean as used in the paragraph?',vocabDistractors(meaning),0));
+
+    qs.push(makeQuestion('q'+(id++),'Vocabulary in Context','mcq','Which clue helps you understand the word "'+w+'" in the paragraph?',[
+      trimSentence(sentenceWithWord,160),
+      'A sentence from a different topic',
+      'A word that does not appear in the paragraph',
+      'A random title with no connection'
     ],0));
-    qs.push(makeQuestion('q'+(id++),'Vocabulary','tf','The word "'+w2+'" appears or connects to the reading text.',[],true));
   }
 
   if(skills.includes('grammar')){
-    qs.push(makeQuestion('q'+(id++),'Basic Grammar','mcq','Which sentence starts with a capital letter and ends with correct punctuation?',[
-      first.charAt(0).toUpperCase()+first.slice(1).replace(/[.!?]*$/,'.'),
-      first.toLowerCase().replace(/[.!?]*$/,''),
-      'because the students and teacher',
-      'the answer are correct.'
+    const goodSentence = trimSentence(last).replace(/[.!?]*$/,'.').replace(/^./, c=>c.toUpperCase());
+    qs.push(makeQuestion('q'+(id++),'Basic Grammar','mcq','Which sentence from the paragraph is written correctly?',[
+      goodSentence,
+      goodSentence.toLowerCase().replace(/[.!?]*$/,''),
+      'Because the idea and the paragraph.',
+      'The students was reading carefully.'
     ],0));
-    qs.push(makeQuestion('q'+(id++),'Basic Grammar','tf','A complete English sentence usually needs a subject and a verb.',[],true));
-  }
 
-  qs.push({
-    id:'selfEval',
-    type:'Self Evaluation',
-    format:'self',
-    question:'How was this reading activity for you?',
-    options:['Easy','Some','Difficult'],
-    answer:null,
-    noMarks:true
-  });
+    qs.push(makeQuestion('q'+(id++),'Basic Grammar','tf','A complete sentence usually expresses a complete idea.',[],true));
+  }
 
   return qs;
 }
@@ -4980,7 +5191,7 @@ function renderReadingStudentQuiz(a){
       html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="true"> True</label>`;
       html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="false"> False</label>`;
     }else if(q.format === 'self'){
-      (q.options || ['Easy','Some','Difficult']).forEach(op=>{
+      (q.options || ['I did well','I understood some','It was very difficult']).forEach(op=>{
         html += `<label class="quizOption"><input type="radio" name="read_${q.id}" value="${escapeHtml(op)}"> ${escapeHtml(op)}</label>`;
       });
     }
@@ -5732,9 +5943,24 @@ async function exportCSV(){
   a.click();
 }
 async function resetSelectedClass(){
-  if(!selectedTeacherClass) return;
-  if(!confirm('Reset this class? This clears groups and assignments.')) return;
-  await hubRef.child('classes/'+selectedTeacherClass).remove();
+  if(!selectedTeacherClass){alert('Choose a class first.');return;}
+  if(!confirm('Reset this class? This will delete all student names, saved answers, summaries, scores, final work, chat, votes, and group data for this class.')) return;
+
+  await hubRef.child(`classes/${selectedTeacherClass}`).update({
+    groups:null,
+    votes:null,
+    battleVotes:null,
+    chat:null,
+    settings:{
+      stage:'work',
+      voteSystem:'battle',
+      resultsReleased:false,
+      timer:null
+    }
+  });
+
+  alert('✅ Class reset. All student work and group data were removed.');
+  backToDashboard();
 }
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
