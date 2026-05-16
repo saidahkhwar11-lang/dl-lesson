@@ -2073,6 +2073,7 @@ let currentVoteSystem = 'peer';
 let selectedBattleKey = '';
 let battleVotingStarted = false;
 let latestAssignedActivity = {};
+let assignedActivityListener = null;
 let teacherLoggedIn = false;
 let latestTeacherActivityForPopup = null;
 let latestTeacherAssignedTo = '-';
@@ -2219,14 +2220,22 @@ function listenGroup(){
 }
 
 function listenAssignedActivity(){
-  hubRef.child(`classes/${currentClass}/assignedActivities/group${currentGroup}`).on('value', snap=>{
+  if(assignedActivityListener) assignedActivityListener.off();
+
+  const ref = hubRef.child(`classes/${currentClass}/assignedActivities/group${currentGroup}`);
+  assignedActivityListener = ref;
+
+  ref.on('value', snap=>{
     const a = snap.val() || {};
     latestAssignedActivity = a;
+
     document.getElementById('activityNameBox').innerText = a.title || 'No activity assigned';
     document.getElementById('activityInstructionsBox').innerText = a.instructions || 'No instructions';
+
     const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
-    const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'activityImg', 'Group task picture') : '';
+    const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'groupTaskImg', 'Group activity picture') : '';
     const resources = renderTeacherResources(a);
+
     if(a.activityType === 'reading'){
       document.getElementById('groupTaskBox').innerHTML =
         `${mainImg}<b>📖 Reading Activity</b><br>${escapeHtml(a.groupTask || 'Answer the reading questions below.')}${groupImg}${resources}`;
@@ -2252,6 +2261,7 @@ function listenAssignedActivity(){
 
 function listenClassSettings(){
   if(settingsListener) settingsListener.off();
+    if(assignedActivityListener) assignedActivityListener.off();
 
   const ref = hubRef.child(`classes/${currentClass}`);
   settingsListener = ref;
@@ -4273,7 +4283,7 @@ async function previewDashboardActivity(){
   `;
 }
 
-function buildAssignedActivityForGroup(a, i){
+function buildAssignedActivityForGroup(a, i, activationId){
   const groupKey = 'group'+i;
   const groupTask = a.taskType === 'same' ? (a.sameTask || 'Answer the activity below.') : ((a.groupTasks || {})[groupKey] || '');
   const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})[groupKey] || '');
@@ -4284,6 +4294,7 @@ function buildAssignedActivityForGroup(a, i){
 
   return {
     id: a.id || '',
+    activationId: activationId || ('act_' + Date.now()),
     title: a.title || 'Activity',
     instructions: a.instructions || '',
     activityType: a.activityType || 'writing',
@@ -4322,14 +4333,16 @@ async function activateSavedActivityForSelectedClasses(){
     return;
   }
 
+  const activationId = 'act_' + Date.now();
   const updates = {};
   classes.forEach(cls=>{
     for(let i=1;i<=10;i++){
-      updates[`classes/${cls}/assignedActivities/group${i}`] = buildAssignedActivityForGroup(a, i);
+      updates[`classes/${cls}/assignedActivities/group${i}`] = buildAssignedActivityForGroup(a, i, activationId);
     }
 
     updates[`classes/${cls}/currentActivity`] = {
       id: activityId,
+      activationId: activationId,
       title: a.title || 'Activity',
       instructions: a.instructions || '',
       activityType: a.activityType || 'writing',
