@@ -2350,6 +2350,38 @@ button:hover{filter:brightness(.96)}
   line-height:1.55!important;
   font-size:15px!important;
 }
+  /* ===== Compact top timer info ===== */
+.compactTopCard{
+  padding:14px!important;
+}
+
+.compactInfoGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+
+.compactMiniBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+
+.compactMiniBox h3{
+  margin-bottom:10px!important;
+}
+
+.compactMiniBox .activityPopupText{
+  min-height:auto!important;
+  max-height:180px!important;
+}
+
+@media(max-width:760px){
+  .compactInfoGrid{
+    grid-template-columns:1fr;
+  }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2906,18 +2938,26 @@ Grammar and spelling are checked"></textarea>
 
     <div class="activityPopupGrid">
 
-  <div class="activityPopupCard">
-    <h3>📌 Activity Name</h3>
-    <div id="popupActivityName" class="activityPopupText">
-      No activity assigned yet.
-    </div>
-  </div>
+  <div class="activityPopupCard full compactTopCard">
 
-  <div class="activityPopupCard">
-    <h3>✅ Success Criteria</h3>
-    <div id="popupSuccessCriteria" class="activityPopupText">
-      No criteria assigned.
+    <div class="compactInfoGrid">
+
+      <div class="compactMiniBox">
+        <h3>📌 Activity Name</h3>
+        <div id="popupActivityName" class="activityPopupText">
+          No activity assigned yet.
+        </div>
+      </div>
+
+      <div class="compactMiniBox">
+        <h3>✅ Success Criteria</h3>
+        <div id="popupSuccessCriteria" class="activityPopupText">
+          No criteria assigned.
+        </div>
+      </div>
+
     </div>
+
   </div>
 
   <div class="activityPopupCard full">
@@ -2927,7 +2967,7 @@ Grammar and spelling are checked"></textarea>
     </div>
   </div>
 
-  <div class="activityPopupCard detailsWide">
+  <div class="activityPopupCard full">
     <h3>📝 Activity Details</h3>
     <div id="popupActivityDetails" class="activityPopupText">
       Students write, save, review group work, and submit final answer.
@@ -7862,7 +7902,41 @@ async function refreshTeacherPage(){
   }
 }
 
+/* ===== FIX: Keep activated activity after teacher refresh ===== */
 
+async function loadAllActivatedActivitiesSafe(){
+  if(!hubRef) return;
+
+  const classes = ['9-1','9-2','9-3','9-4'];
+
+  for(const cls of classes){
+    const snap = await hubRef.child(`classes/${cls}/assignedActivities/group1`).once('value');
+    const activity = snap.val();
+
+    if(activity && activity.title){
+      const card = document.querySelector(`[data-class="${cls}"]`);
+      if(card){
+        const activityLine = card.querySelector('.classActivityLine');
+        if(activityLine){
+          activityLine.innerHTML = `<b>Activity:</b> ${escapeHtml(activity.title || 'No activity assigned')}`;
+        }
+      }
+    }
+  }
+}
+
+const oldRenderTeacherDashboardKeepActivity = window.renderTeacherDashboard;
+window.renderTeacherDashboard = async function(){
+  if(typeof oldRenderTeacherDashboardKeepActivity === 'function'){
+    await oldRenderTeacherDashboardKeepActivity.apply(this, arguments);
+  }
+
+  setTimeout(loadAllActivatedActivitiesSafe, 300);
+};
+
+window.addEventListener('load', function(){
+  setTimeout(loadAllActivatedActivitiesSafe, 800);
+});
 
 </script>
 </body>
