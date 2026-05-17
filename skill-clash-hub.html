@@ -2329,48 +2329,6 @@ button:hover{filter:brightness(.96)}
   }
 }
 
-  /* ===== FIX: Teacher dashboard buttons + classes visible ===== */
-.teacherTopActions{
-  display:grid!important;
-  grid-template-columns:repeat(5, 1fr)!important;
-  gap:14px!important;
-  align-items:center!important;
-}
-
-.refreshTeacherBtn{
-  width:auto!important;
-  min-width:210px!important;
-  max-width:260px!important;
-  padding:12px 16px!important;
-  font-size:15px!important;
-  margin-top:14px!important;
-}
-
-.teacherHero{
-  padding-bottom:18px!important;
-}
-
-.classGrid{
-  display:grid!important;
-  grid-template-columns:repeat(4, 1fr)!important;
-  gap:12px!important;
-  margin-top:12px!important;
-}
-
-@media(max-width:900px){
-  .teacherTopActions,
-  .classGrid{
-    grid-template-columns:1fr 1fr!important;
-  }
-}
-
-@media(max-width:560px){
-  .teacherTopActions,
-  .classGrid{
-    grid-template-columns:1fr!important;
-  }
-}
-
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2930,20 +2888,21 @@ Grammar and spelling are checked"></textarea>
         <h3>📌 Activity Name</h3>
         <div id="popupActivityName" class="activityPopupText">No activity assigned yet.</div>
       </div>
-
       <div class="activityPopupCard">
-        <h3>✅ Success Criteria</h3>
-        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
+        <h3>👥 Assigned To</h3>
+        <div id="popupAssignedTo" class="activityPopupText">-</div>
       </div>
-      
       <div class="activityPopupCard full">
         <h3>📋 Instructions</h3>
         <div id="popupInstructions" class="activityPopupText">No instructions.</div>
       </div>
-      
       <div class="activityPopupCard">
         <h3>📝 Activity Details</h3>
         <div id="popupActivityDetails" class="activityPopupText">Students write, save, review group work, and submit final answer.</div>
+      </div>
+      <div class="activityPopupCard">
+        <h3>✅ Success Criteria</h3>
+        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
       </div>
     </div>
   </div>
@@ -7677,6 +7636,7 @@ function updateTimerPopupActivity(){
   const a = data.activity || {};
 
   const name = document.getElementById('popupActivityName');
+  const assigned = document.getElementById('popupAssignedTo');
   const instructions = document.getElementById('popupInstructions');
   const details = document.getElementById('popupActivityDetails');
   const criteria = document.getElementById('popupSuccessCriteria');
