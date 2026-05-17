@@ -2150,6 +2150,29 @@ button:hover{filter:brightness(.96)}
   display:none!important;
 }
 
+
+/* ===== Bulk Reading Questions Parser ===== */
+.bulkQuestionBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.bulkQuestionBox textarea{
+  min-height:220px;
+  font-family:ui-monospace,Consolas,monospace;
+}
+.bulkParseHint{
+  background:white;
+  border:1px dashed #fb923c;
+  border-radius:12px;
+  padding:10px;
+  color:#9a3412;
+  font-weight:700;
+  margin:8px 0;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2565,6 +2588,28 @@ button:hover{filter:brightness(.96)}
             </button>
 
             <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
+
+            <div class="bulkQuestionBox">
+              <h2>4️⃣ Paste All Questions with Answer Keys</h2>
+              <div class="bulkParseHint">
+                Format example:<br>
+                Paragraph 1<br>
+                Q1. What is the main idea?<br>
+                A) ...<br>
+                B) ...<br>
+                C) ...<br>
+                D) ...<br>
+                Answer: B<br><br>
+                Paragraph 2<br>
+                Q1. True or False: The text says ...<br>
+                Answer: True
+              </div>
+              <textarea id="bulkReadingQuestionsBox" placeholder="Paste all paragraph questions here. Use headings: Paragraph 1, Paragraph 2... and write Answer: A / B / C / D / True / False after each question."></textarea>
+              <button type="button" class="green" style="width:100%;font-size:16px;padding:14px" onclick="organizeBulkReadingQuestions()">
+                🧠 Organize Questions Under Paragraphs
+              </button>
+            </div>
+
           </div>
 
           <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
@@ -5517,6 +5562,131 @@ function renderManualQuestionEditor(p){
 
   html += `<button type="button" class="green" onclick="addManualQuestion(${p.paragraphNumber})">➕ Add Question to Paragraph ${p.paragraphNumber}</button></div>`;
   return html;
+}
+
+
+function letterToIndex(ans){
+  ans = String(ans || '').trim().toUpperCase();
+  if(ans === 'A') return 0;
+  if(ans === 'B') return 1;
+  if(ans === 'C') return 2;
+  if(ans === 'D') return 3;
+  return 0;
+}
+function cleanQuestionLine(line){
+  return String(line || '').replace(/^Q\s*\d+\s*[\.\)\-:]\s*/i,'').trim();
+}
+function parseBulkQuestionBlock(block, paragraphNumber){
+  const lines = String(block || '').split(/\n/).map(x=>x.trim()).filter(Boolean);
+  const questions = [];
+  let current = null;
+
+  function pushCurrent(){
+    if(!current || !current.question) return;
+    const isTF = current.format === 'tf' || current.options.length <= 2 || /^(true|false)$/i.test(current.answerRaw || '');
+    if(isTF){
+      const answerText = /false/i.test(current.answerRaw || '') ? 'False' : 'True';
+      current.format = 'tf';
+      current.options = ['True','False'];
+      current.answer = answerText === 'True' ? 0 : 1;
+    }else{
+      current.format = 'mcq';
+      while(current.options.length < 4) current.options.push('');
+      current.options = current.options.slice(0,4);
+      current.answer = letterToIndex(current.answerRaw);
+    }
+    current.type = current.type || 'Reading Comprehension';
+    current.id = 'p'+paragraphNumber+'_bulk_'+(questions.length+1)+'_'+Date.now();
+    current.paragraphNumber = paragraphNumber;
+    questions.push(current);
+  }
+
+  lines.forEach(line=>{
+    if(/^Q\s*\d+[\.\)\-:]/i.test(line) || line.endsWith('?')){
+      if(current) pushCurrent();
+      current = {
+        question: cleanQuestionLine(line),
+        options: [],
+        answerRaw: '',
+        type: detectQuestionType(line),
+        format:'mcq'
+      };
+      return;
+    }
+
+    if(/^(A|B|C|D)\s*[\.\)\-:]/i.test(line)){
+      if(!current) current = {question:'', options:[], answerRaw:'', type:'Reading Comprehension', format:'mcq'};
+      current.options.push(line.replace(/^(A|B|C|D)\s*[\.\)\-:]\s*/i,'').trim());
+      return;
+    }
+
+    if(/^answer\s*[:\-]/i.test(line) || /^key\s*[:\-]/i.test(line)){
+      if(!current) return;
+      current.answerRaw = line.replace(/^(answer|key)\s*[:\-]\s*/i,'').trim();
+      if(/true|false/i.test(current.answerRaw)) current.format = 'tf';
+      return;
+    }
+
+    if(/^type\s*[:\-]/i.test(line)){
+      if(current) current.type = line.replace(/^type\s*[:\-]\s*/i,'').trim();
+      return;
+    }
+
+    // If there is a continuation line after question, add to question text.
+    if(current && !current.options.length && !/^paragraph\s*\d+/i.test(line)){
+      current.question += ' ' + line;
+    }
+  });
+
+  if(current) pushCurrent();
+  return questions;
+}
+function detectQuestionType(text){
+  text = String(text || '').toLowerCase();
+  if(text.includes('main idea')) return 'Main Idea';
+  if(text.includes('detail') || text.includes('mentioned') || text.includes('according to')) return 'Supporting Details';
+  if(text.includes('mean') || text.includes('vocabulary') || text.includes('word')) return 'Vocabulary in Context';
+  if(text.includes('grammar') || text.includes('sentence') || text.includes('punctuation') || text.includes('capital')) return 'Basic Grammar';
+  if(text.includes('true') || text.includes('false')) return 'True / False';
+  return 'Reading Comprehension';
+}
+function organizeBulkReadingQuestions(){
+  if(!builderParagraphReading || !builderParagraphReading.length){
+    alert('Divide the reading text into paragraphs first.');
+    return;
+  }
+  const raw = document.getElementById('bulkReadingQuestionsBox')?.value || '';
+  if(!raw.trim()){
+    alert('Paste your questions first.');
+    return;
+  }
+
+  const sectionRegex = /(?:^|\n)\s*paragraph\s*(\d+)\s*[:\-]?\s*\n/ig;
+  const matches = [];
+  let m;
+  while((m = sectionRegex.exec(raw)) !== null){
+    matches.push({num:Number(m[1]), start:m.index, contentStart:sectionRegex.lastIndex});
+  }
+
+  if(!matches.length){
+    alert('Please title each section with Paragraph 1, Paragraph 2, etc.');
+    return;
+  }
+
+  let total = 0;
+  matches.forEach((sec, idx)=>{
+    const end = idx + 1 < matches.length ? matches[idx+1].start : raw.length;
+    const block = raw.slice(sec.contentStart, end).trim();
+    const pIndex = getParagraphBuildIndex(sec.num);
+    if(pIndex < 0) return;
+
+    const qs = parseBulkQuestionBlock(block, sec.num);
+    builderParagraphReading[pIndex].questions = qs;
+    total += qs.length;
+  });
+
+  renderParagraphReadingPreview();
+  alert('✅ Organized ' + total + ' questions under the correct paragraphs.');
 }
 
 function renderParagraphReadingPreview(){
