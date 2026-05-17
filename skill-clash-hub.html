@@ -2328,6 +2328,28 @@ button:hover{filter:brightness(.96)}
     width:100%!important;
   }
 }
+  /* ===== FIX: wider activity details box ===== */
+.activityPopupGrid{
+  grid-template-columns:1fr 1fr!important;
+}
+
+/* Make instructions full width */
+.activityPopupCard.full{
+  grid-column:1 / -1!important;
+}
+
+/* Make activity details wider */
+.activityPopupCard.detailsWide{
+  grid-column:1 / 3!important;
+}
+
+/* Better text fitting */
+#popupActivityDetails{
+  max-height:none!important;
+  min-height:120px!important;
+  line-height:1.55!important;
+  font-size:15px!important;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2883,27 +2905,36 @@ Grammar and spelling are checked"></textarea>
     </div>
 
     <div class="activityPopupGrid">
-      <div class="activityPopupCard">
-        <h3>📌 Activity Name</h3>
-        <div id="popupActivityName" class="activityPopupText">No activity assigned yet.</div>
-      </div>
 
-      <div class="activityPopupCard">
-        <h3>✅ Success Criteria</h3>
-        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
-      </div>
-      
-      <div class="activityPopupCard full">
-        <h3>📋 Instructions</h3>
-        <div id="popupInstructions" class="activityPopupText">No instructions.</div>
-      </div>
-      <div class="activityPopupCard">
-        <h3>📝 Activity Details</h3>
-        <div id="popupActivityDetails" class="activityPopupText">Students write, save, review group work, and submit final answer.</div>
-      </div>
-      
+  <div class="activityPopupCard">
+    <h3>📌 Activity Name</h3>
+    <div id="popupActivityName" class="activityPopupText">
+      No activity assigned yet.
     </div>
   </div>
+
+  <div class="activityPopupCard">
+    <h3>✅ Success Criteria</h3>
+    <div id="popupSuccessCriteria" class="activityPopupText">
+      No criteria assigned.
+    </div>
+  </div>
+
+  <div class="activityPopupCard full">
+    <h3>📋 Instructions</h3>
+    <div id="popupInstructions" class="activityPopupText">
+      No instructions.
+    </div>
+  </div>
+
+  <div class="activityPopupCard detailsWide">
+    <h3>📝 Activity Details</h3>
+    <div id="popupActivityDetails" class="activityPopupText">
+      Students write, save, review group work, and submit final answer.
+    </div>
+  </div>
+
+</div>
 </div>
 
 <script>
@@ -7760,7 +7791,76 @@ window.addEventListener('load',function(){
   showOnly('studentLoginPage');
 });
 
+/* ===== FIX: Do not lose teacher activity/classes on refresh ===== */
+function saveTeacherSession(){
+  localStorage.setItem('skillClashTeacherSession','yes');
+  localStorage.setItem('skillClashTeacherSavedAt', String(Date.now()));
 
+  if(selectedTeacherClass){
+    localStorage.setItem('skillClashSelectedTeacherClass', selectedTeacherClass);
+  }
+}
+
+function restoreTeacherSessionIfExists(){
+  if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
+    selectedTeacherClass = localStorage.getItem('skillClashSelectedTeacherClass') || selectedTeacherClass || '';
+
+    showOnly('teacherDashboard');
+
+    if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+
+    if(selectedTeacherClass){
+      setTimeout(async function(){
+        const cls = activeTeacherClassKey();
+        const snap = await hubRef.child(`classes/${cls}`).once('value');
+        if(typeof renderSelectedClass === 'function'){
+          renderSelectedClass(snap.val() || {});
+        }
+      }, 300);
+    }
+
+    if(typeof loadLibraryToDashboard === 'function') loadLibraryToDashboard();
+    return true;
+  }
+  return false;
+}
+
+/* Only Leave Dashboard should clear teacher session */
+function clearTeacherSession(){
+  localStorage.removeItem('skillClashTeacherSession');
+  localStorage.removeItem('skillClashSelectedTeacherClass');
+  localStorage.removeItem('skillClashTeacherSavedAt');
+}
+
+/* Save teacher class whenever teacher opens a class */
+const oldRenderSelectedClassSafe = window.renderSelectedClass;
+window.renderSelectedClass = function(data){
+  if(selectedTeacherClass){
+    localStorage.setItem('skillClashSelectedTeacherClass', selectedTeacherClass);
+  }
+  return oldRenderSelectedClassSafe.apply(this, arguments);
+};
+
+/* Safe refresh: refresh only, never delete */
+async function refreshTeacherPage(){
+  saveTeacherSession();
+
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+
+  if(selectedTeacherClass){
+    const cls = activeTeacherClassKey();
+    const snap = await hubRef.child(`classes/${cls}`).once('value');
+    if(typeof renderSelectedClass === 'function') renderSelectedClass(snap.val() || {});
+  }
+
+  if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
+
+  const msg = document.getElementById('teacherRefreshMsg');
+  if(msg){
+    msg.innerText = '✅ Refreshed';
+    setTimeout(()=>{msg.innerText='';},1500);
+  }
+}
 
 
 
