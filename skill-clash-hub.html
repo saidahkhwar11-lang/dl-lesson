@@ -72,6 +72,13 @@ async function showClassReadingPerformance(){
   panel.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+
+function winnerGroupStudentNames(groupObj){
+  const students = (groupObj || {}).students || {};
+  const names = Object.keys(students).map(id=>studentDisplayName(students[id], id));
+  return names.length ? names.join(', ') : 'Winning Group Students';
+}
+
 </script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -2107,6 +2114,15 @@ button:hover{filter:brightness(.96)}
   text-align:center;
 }
 
+
+.studentIdTag{
+  opacity:.75;
+  font-size:11px;
+  margin-left:4px;
+  font-weight:700;
+}
+.miniMember .studentIdTag{font-size:10px}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -3507,7 +3523,7 @@ function renderBattleVoting(){
 
   function membersText(groupObj){
     const names = Object.keys((groupObj || {}).students || {});
-    return names.length ? names.map(n=>`<span class="miniMember">${escapeHtml(n)}</span>`).join('') : '<span class="smallNote">No members joined.</span>';
+    return names.length ? names.map(n=>`<span class="miniMember">${studentNameWithId(((groupObj || {}).students || {})[n], n)}</span>`).join('') : '<span class="smallNote">No members joined.</span>';
   }
 
   function scoreCard(num){
@@ -3794,7 +3810,7 @@ function calculateVotingResults(classData){
             results[groupKey].voteCount += 1;
           });
           if(v.comment && v.winnerGroup && results['group'+v.winnerGroup]){
-            results['group'+v.winnerGroup].comments.push(`${v.voterName || voterName}: ${v.comment}`);
+            results['group'+v.winnerGroup].comments.push(`${v.voterDisplayName || v.voterName || voterName}: ${v.comment}`);
           }
         });
       });
@@ -3809,7 +3825,7 @@ function calculateVotingResults(classData){
         results[targetKey].criteriaTotal += Number(v.criteriaTotal || 0);
         results[targetKey].bestBonusTotal += Number(v.bestGroupBonus || 0);
         results[targetKey].voteCount += 1;
-        if(v.comment) results[targetKey].comments.push(`${v.voterName || voterName}: ${v.comment}`);
+        if(v.comment) results[targetKey].comments.push(`${v.voterDisplayName || v.voterName || voterName}: ${v.comment}`);
       });
     });
   }
@@ -4638,6 +4654,29 @@ function backToDashboard(){
   showOnly('teacherDashboard');
 }
 
+
+function studentDisplayName(studentObj, id){
+  const s = studentObj || {};
+  const name = (s.name || '').trim();
+  return name || id || 'Student';
+}
+function studentNameWithId(studentObj, id){
+  const name = studentDisplayName(studentObj, id);
+  return `${name} <small class="studentIdTag">ID: ${escapeHtml(id || '')}</small>`;
+}
+function groupMemberNames(groupObj){
+  const students = (groupObj || {}).students || {};
+  const ids = Object.keys(students);
+  if(!ids.length) return 'No students joined yet';
+  return ids.map(id=>escapeHtml(studentDisplayName(students[id], id))).join(', ');
+}
+function groupMemberNamesWithIds(groupObj){
+  const students = (groupObj || {}).students || {};
+  const ids = Object.keys(students);
+  if(!ids.length) return 'No students joined yet';
+  return ids.map(id=>`<span class="miniMember">${studentNameWithId(students[id], id)}</span>`).join(' ');
+}
+
 function renderSelectedClass(classData){
   if(!selectedTeacherClass) return;
   captureTeacherOpenDetails();
@@ -4646,11 +4685,12 @@ function renderSelectedClass(classData){
   for(let i=1;i<=10;i++){
     const g = groups['group'+i] || {};
     const students = g.students || {};
-    const names = Object.keys(students);
+    const ids = Object.keys(students);
+    const names = ids.map(id=>studentDisplayName(students[id], id));
     const detailOpen = teacherOpenGroupDetails[String(i)] ? 'open' : '';
     html += `<div class="groupCard">
       <h3>Group ${i}</h3>
-      <p><b>Members:</b> ${names.join(', ') || 'No students joined yet'}</p>
+      <p><b>Members:</b> ${names.length ? names.map(escapeHtml).join(', ') : 'No students joined yet'}</p>
       <p><b>Status:</b> ${g.finalSubmitted ? '✅ Final submitted' : names.length ? '✍️ In progress' : 'Empty'}</p>
       <p><b>Teacher Points:</b> ${g.teacherPoints || 'Not marked'}</p>
       <details data-group="${i}" ${detailOpen} ontoggle="teacherOpenGroupDetails[String(${i})]=this.open">
@@ -4673,8 +4713,10 @@ function renderSelectedClass(classData){
 }
 function savedWorkText(students){
   let txt = '';
-  Object.keys(students || {}).forEach(n=>{
-    txt += n + ':\n' + ((students[n] || {}).answer || 'No saved work') + '\n\n';
+  Object.keys(students || {}).forEach(id=>{
+    const s = students[id] || {};
+    const name = studentDisplayName(s, id);
+    txt += name + ' (ID: ' + id + '):\n' + (s.answer || s.paragraphSummary || 'No saved work') + '\n\n';
   });
   return txt || 'No saved work yet.';
 }
@@ -6478,7 +6520,7 @@ async function renderTeacherVotingControl(){
     statusHtml += `<div class="voterStatusCard ${v.done?'voterDone':'voterWait'}">
       <b>Group ${v.group}</b><br>
       <span>${label}</span><br>
-      <small>Members: ${v.ids.length ? v.ids.map(escapeHtml).join(', ') : 'No students'}</small>
+      <small>Members: ${v.ids.length ? v.ids.map(id=>escapeHtml(studentDisplayName(((groups['group'+v.group]||{}).students||{})[id], id))).join(', ') : 'No students'}</small>
     </div>`;
   });
 
