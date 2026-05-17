@@ -2001,6 +2001,21 @@ button:hover{filter:brightness(.96)}
 }
 .chatNotifyBadge.show{display:flex}
 
+
+/* ===== Visible refresh buttons ===== */
+.refreshTeacherBtn,.refreshStudentBtn{
+  background:#64748b!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:16px!important;
+  padding:14px 18px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  box-shadow:0 8px 18px rgba(15,23,42,.12)!important;
+}
+.refreshTeacherBtn{min-width:190px}
+.refreshStudentBtn{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2098,6 +2113,7 @@ button:hover{filter:brightness(.96)}
         <span id="infoVotes"></span>
       </div>
       <div class="memberLine" id="infoMembers"></div>
+      <button class="refreshStudentBtn" onclick="studentRefreshPage()">🔄 Refresh Student Page</button>
     </div>
 
     <div id="readingMainWorkBox" class="card hidden"></div>
@@ -2269,6 +2285,7 @@ button:hover{filter:brightness(.96)}
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
+        <button class="refreshTeacherBtn" onclick="refreshTeacherPage()">🔄 Refresh Teacher Page</button>
       </div>
 
       <div class="note teacherTimerLine">
@@ -2557,6 +2574,16 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
+function refreshTeacherPage(){
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
+}
+function studentRefreshPage(){
+  if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+  setTimeout(()=>location.reload(),250);
+}
+
+
+
 function safeClassKey(value){
   return String(value || '').replace('/', '-').trim();
 }
@@ -2566,13 +2593,8 @@ function activeClassKey(){
 function activeTeacherClassKey(){
   return safeClassKey(selectedTeacherClass);
 }
-function refreshTeacherPage(){
-  location.reload();
-}
-function studentRefreshPage(){
-  forceLoadStudentActiveActivity();
-  setTimeout(()=>location.reload(), 250);
-}
+
+
 
 
 const firebaseConfig = {
@@ -2606,6 +2628,7 @@ let currentVoteSystem = 'peer';
 let selectedBattleKey = '';
 let battleVotingStarted = false;
 let latestAssignedActivity = {};
+let teacherDashboardRef = null;
 let assignedActivityListener = null;
 let classActiveActivityListener = null;
 let teacherLoggedIn = false;
@@ -4258,14 +4281,21 @@ function leaveTeacher(){
   showOnly('studentLoginPage');
 }
 
-function renderTeacherDashboard(){
-  hubRef.child('classes').on('value', snap=>{
+
+function renderTeacherDashboard(silent){
+  if(teacherDashboardRef) teacherDashboardRef.off();
+  teacherDashboardRef = hubRef.child('classes');
+
+  teacherDashboardRef.on('value', snap=>{
     const classes = snap.val() || {};
     renderCurrentActivity(classes);
     renderClassCards(classes);
-    if(selectedTeacherClass) renderSelectedClass(classes[activeTeacherClassKey()] || {});
+    if(selectedTeacherClass){
+      renderSelectedClass(classes[activeTeacherClassKey()] || {});
+    }
   });
 }
+
 
 
 function renderCurrentActivity(classes){
@@ -4305,19 +4335,26 @@ function renderCurrentActivity(classes){
 }
 
 
+
 function renderClassCards(classes){
   const list = ['9-1','9-2','9-3','9-4'];
   let html = '';
+
   list.forEach(cls=>{
     const c = classes[cls] || {};
     const groups = c.groups || {};
     let joined = 0, final = 0, marked = 0;
+
     Object.keys(groups).forEach(g=>{
-      if(Object.keys(groups[g].students || {}).length) joined++;
-      if(groups[g].finalSubmitted) final++;
-      if(groups[g].teacherPoints) marked++;
+      const group = groups[g] || {};
+      const students = group.students || {};
+      if(Object.keys(students).length) joined++;
+      if(group.finalSubmitted) final++;
+      if(group.teacherPoints) marked++;
     });
+
     const activity = (c.activeActivity && c.activeActivity.title) ? c.activeActivity.title : 'No activity assigned';
+
     html += `<div class="classCard" onclick="openClass('${cls}')">
       <h3>Class ${classDisplay(cls)}</h3>
       <span class="pill pillYellow">${joined} joined groups</span>
@@ -4327,8 +4364,11 @@ function renderClassCards(classes){
       <p>Click to view all groups.</p>
     </div>`;
   });
-  document.getElementById('classCards').innerHTML = html;
+
+  const cards = document.getElementById('classCards');
+  if(cards) cards.innerHTML = html;
 }
+
 
 function openClass(cls){
   cls = safeClassKey(cls);
@@ -6036,7 +6076,7 @@ async function activateSavedActivityForSelectedClasses(){
 
   alert('✅ Activity activated for: ' + classes.map(classDisplay).join(', '));
   document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
-  refreshTeacherPage();
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
 }
 
 
@@ -6416,21 +6456,19 @@ async function exportCSV(){
 }
 
 
+
 async function resetSelectedClass(){
   if(!selectedTeacherClass){
     alert('Choose a class first.');
     return;
   }
 
-  if(!confirm('Reset this class completely? This will delete all students, groups, saved work, summaries, scores, votes, chat messages, final answers, active activity, and timer for this class.')){
+  if(!confirm('Reset this class completely? This will delete all students, joined groups, saved work, summaries, scores, votes, chat messages, final answers, active activity, and timer for this class.')){
     return;
   }
 
   const cls = activeTeacherClassKey();
-
-  await hubRef.child(`classes/${cls}`).remove();
-
-  await hubRef.child(`classes/${cls}/settings`).set({
+  const blankSettings = {
     stage:'work',
     voteSystem:'battle',
     resultsReleased:false,
@@ -6438,12 +6476,33 @@ async function resetSelectedClass(){
     activationId:'',
     activeActivityChangedAt:Date.now(),
     timer:null
+  };
+
+  // Delete the whole class node first.
+  await hubRef.child(`classes/${cls}`).remove();
+
+  // Extra cleanup for every child that may have been recreated by live listeners.
+  await hubRef.update({
+    [`classes/${cls}/groups`]: null,
+    [`classes/${cls}/votes`]: null,
+    [`classes/${cls}/battleVotes`]: null,
+    [`classes/${cls}/chat`]: null,
+    [`classes/${cls}/activeActivity`]: null,
+    [`classes/${cls}/currentActivity`]: null,
+    [`classes/${cls}/activeActivityGroups`]: null,
+    [`classes/${cls}/assignedActivities`]: null,
+    [`classes/${cls}/settings`]: blankSettings
   });
 
-  alert('✅ Class reset completely. All students, work, chat, marks, and active activity were deleted.');
   selectedTeacherClass = '';
-  refreshTeacherPage();
+  const panel = document.getElementById('classGroupsPanel');
+  if(panel) panel.classList.add('hidden');
+
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
+
+  alert('✅ Class reset completely. Old students and old work were deleted.');
 }
+
 
 
 window.addEventListener('load',()=>{
