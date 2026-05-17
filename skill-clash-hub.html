@@ -2060,6 +2060,53 @@ button:hover{filter:brightness(.96)}
   border-color:#fb923c!important;
 }
 
+
+/* ===== Teacher controlled battle voting ===== */
+.teacherVotingControl{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:16px;
+  margin:14px 0;
+}
+.teacherVotingControl.hidden{display:none!important}
+.battleControlGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+@media(max-width:900px){.battleControlGrid{grid-template-columns:1fr}}
+.voterStatusGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.voterStatusCard{
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  background:white;
+  font-weight:800;
+}
+.voterDone{background:#ecfdf5;border-color:#86efac;color:#065f46}
+.voterWait{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.teacherBattleMini{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.studentWaitBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:16px;
+  padding:18px;
+  font-weight:900;
+  text-align:center;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2387,11 +2434,12 @@ button:hover{filter:brightness(.96)}
       </div>
       <div class="btnRow">
         <button class="green" onclick="setStage('work')">✍️ Open Work Stage</button>
-        <button class="blue" onclick="setStage('voting')">🗳 Activate Selected Voting System</button>
+        <button class="blue" onclick="activateTeacherBattleVoting()">🗳 Activate Selected Voting System</button>
         <button class="blue" onclick="showVotingResults()">📊 Voting Results</button>
         <button class="purple" onclick="showClassReadingPerformance()">📖 Reading Performance</button>
         <button class="red" onclick="resetSelectedClass()">🗑 Reset This Class</button>
       </div>
+      <div id="teacherVotingControlPanel" class="teacherVotingControl hidden"></div>
       <div id="groupCards" class="groupCards"></div>
       <div id="votingResultsPanel" class="card hidden"></div>
     </div>
@@ -2718,6 +2766,7 @@ let latestStudents = {};
 let groupListener = null;
 let chatListener = null;
 let settingsListener = null;
+let latestClassSettings = {};
 let latestClassGroups = {};
 let latestClassVotes = {};
 let currentStage = 'work';
@@ -3111,13 +3160,16 @@ function listenClassSettings(){
     const cls = snap.val() || {};
     const settings = cls.settings || {};
     latestClassGroups = cls.groups || {};
+    latestClassSettings = settings || {};
     currentStage = settings.stage || 'work';
     currentVoteSystem = 'battle';
     latestClassTimer = settings.timer || {};
     syncStudentTimerFromSettings(settings);
     latestClassVotes = cls.battleVotes || {};
+    if(settings.currentBattleKey) selectedBattleKey = settings.currentBattleKey;
 
     updateStageUI(settings);
+    if(currentStage === 'voting') renderBattleVoting();
   });
 }
 
@@ -3382,7 +3434,16 @@ function renderBattleVoting(){
   const box = document.getElementById('battleVoteContent');
   if(!title || !box) return;
 
-  const availablePairs = getAvailableBattlePairs();
+  
+  const teacherBattleKey = (latestClassSettings || {}).currentBattleKey || '';
+  let availablePairs = [];
+  if(teacherBattleKey && teacherBattleKey.includes('vs')){
+    const pair = teacherBattleKey.split('vs').map(Number);
+    availablePairs = [pair];
+    selectedBattleKey = teacherBattleKey;
+  }else{
+    availablePairs = getAvailableBattlePairs();
+  }
   const items = getVotingCriteria();
   const votes = latestClassVotes || {};
 
@@ -3393,6 +3454,14 @@ function renderBattleVoting(){
   }
 
   const validKeys = availablePairs.map(pair=>`${pair[0]}vs${pair[1]}`);
+  if(teacherBattleKey){
+    const currentPair = teacherBattleKey.split('vs').map(String);
+    if(currentPair.includes(String(currentGroup))){
+      title.innerHTML = `<b>Current Battle:</b> Group ${currentPair[0]} VS Group ${currentPair[1]}`;
+      box.innerHTML = `<div class="studentWaitBox">⏳ The teacher selected your own battle, so you cannot vote for yourself. Please wait until the teacher moves to the next battle.</div>`;
+      return;
+    }
+  }
   if(!selectedBattleKey || !validKeys.includes(selectedBattleKey)){
     const firstNotVoted = availablePairs.find(pair=>{
       const key = `${pair[0]}vs${pair[1]}`;
@@ -3410,8 +3479,8 @@ function renderBattleVoting(){
   let chooser = `
     <div class="battleChooser compactChooser">
       <div>
-        <label style="margin-top:0">⚔️ Choose Battle</label>
-        <select id="battlePairSelect" onchange="selectBattlePair(this.value)">`;
+        <label style="margin-top:0">⚔️ Teacher Selected Battle</label>
+        <select id="battlePairSelect" disabled>`;
 
   availablePairs.forEach(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
@@ -3508,7 +3577,7 @@ function renderBattleVoting(){
 
     <div class="clearSaveBar compactSaveBar">
       <button class="green compactActionBtn" onclick="submitBattleVote(${a},${b})">✅ Submit Vote</button>
-      <button class="blue compactActionBtn" onclick="goToNextBattle()">➡️ Next Battle</button>
+      <button class="blue compactActionBtn" onclick="renderBattleVoting()">⏳ Wait / Refresh Battle</button>
       <div id="battleMsg_${battleKey}" class="note ${existing ? '' : 'hidden'}">${existing ? '✅ Your vote for this battle is already saved. You can update it before results are released.' : ''}</div>
     </div>
   </div>`;
@@ -3682,21 +3751,7 @@ async function submitBattleVote(a,b){
     msg.innerHTML = `✅ Vote saved for <b>Group ${a} VS Group ${b}</b>. Winner: <b>Group ${escapeHtml(winnerGroup)}</b>. Winner score from you: <b>${winnerScore}</b> points.`;
   }
 
-  alert('✅ Your vote is saved. Now choose the next battle.');
-
-  const availablePairs = getAvailableBattlePairs();
-  const snap = await hubRef.child(`classes/${activeClassKey()}/battleVotes`).once('value');
-  const freshVotes = snap.val() || {};
-  const nextPair = availablePairs.find(pair=>{
-    const key = `${pair[0]}vs${pair[1]}`;
-    return !((((freshVotes || {})[key] || {})['group'+currentGroup] || {})[currentStudentId]);
-  });
-
-  if(nextPair){
-    selectedBattleKey = `${nextPair[0]}vs${nextPair[1]}`;
-  }else{
-    selectedBattleKey = battleKey;
-  }
+  alert('✅ Your vote is saved. Wait for your teacher to choose the next battle.');
 
   renderBattleVoting();
 }
@@ -4613,6 +4668,8 @@ function renderSelectedClass(classData){
     </div>`;
   }
   document.getElementById('groupCards').innerHTML = html;
+  if((classData.settings || {}).stage === 'voting') renderTeacherVotingControl();
+  else { const p=document.getElementById('teacherVotingControlPanel'); if(p) p.classList.add('hidden'); }
 }
 function savedWorkText(students){
   let txt = '';
@@ -6341,17 +6398,129 @@ async function assignCurrentActivity(){
   showOnly('teacherDashboard');
 }
 
+
+function getAllBattlePairs(){
+  return [[1,2],[3,4],[5,6],[7,8],[9,10]];
+}
+function battleKeyFromPair(pair){
+  return `${pair[0]}vs${pair[1]}`;
+}
+async function setTeacherCurrentBattle(key){
+  if(!selectedTeacherClass) return;
+  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
+  await hubRef.update({
+    [`classes/${cls}/settings/currentBattleKey`]: key,
+    [`classes/${cls}/settings/currentBattleChangedAt`]: Date.now(),
+    [`classes/${cls}/settings/stage`]: 'voting',
+    [`classes/${cls}/settings/voteSystem`]: 'battle',
+    [`classes/${cls}/settings/resultsReleased`]: false
+  });
+  renderTeacherVotingControl();
+}
+async function activateTeacherBattleVoting(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
+  const firstKey = '1vs2';
+  const snap = await hubRef.child(`classes/${cls}/settings/currentBattleKey`).once('value');
+  const currentKey = snap.val() || firstKey;
+
+  await hubRef.update({
+    [`classes/${cls}/settings/stage`]: 'voting',
+    [`classes/${cls}/settings/voteSystem`]: 'battle',
+    [`classes/${cls}/settings/currentBattleKey`]: currentKey,
+    [`classes/${cls}/settings/currentBattleChangedAt`]: Date.now(),
+    [`classes/${cls}/settings/resultsReleased`]: false
+  });
+
+  const panel = document.getElementById('teacherVotingControlPanel');
+  if(panel) panel.classList.remove('hidden');
+  renderTeacherVotingControl();
+  alert('✅ Voting stage is open. Choose the battle students should vote on.');
+}
+async function renderTeacherVotingControl(){
+  const panel = document.getElementById('teacherVotingControlPanel');
+  if(!panel || !selectedTeacherClass) return;
+
+  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
+  const snap = await hubRef.child(`classes/${cls}`).once('value');
+  const data = snap.val() || {};
+  const groups = data.groups || {};
+  const settings = data.settings || {};
+  const votes = data.battleVotes || {};
+  const pairs = getAllBattlePairs();
+  const currentKey = settings.currentBattleKey || '1vs2';
+
+  let options = '';
+  pairs.forEach(pair=>{
+    const key = battleKeyFromPair(pair);
+    options += `<option value="${key}" ${key===currentKey?'selected':''}>Group ${pair[0]} VS Group ${pair[1]}</option>`;
+  });
+
+  const [a,b] = currentKey.split('vs').map(Number);
+  const voters = [];
+  for(let i=1;i<=10;i++){
+    if(i===a || i===b) continue;
+    const g = groups['group'+i] || {};
+    const students = g.students || {};
+    const ids = Object.keys(students);
+    const groupVoteObj = (((votes || {})[currentKey] || {})['group'+i] || {});
+    const votedIds = Object.keys(groupVoteObj);
+    const done = votedIds.length > 0;
+    voters.push({group:i, ids, done, votedIds});
+  }
+
+  let statusHtml = '';
+  voters.forEach(v=>{
+    const label = v.done ? `✅ Voted (${v.votedIds.length})` : '⏳ Waiting';
+    statusHtml += `<div class="voterStatusCard ${v.done?'voterDone':'voterWait'}">
+      <b>Group ${v.group}</b><br>
+      <span>${label}</span><br>
+      <small>Members: ${v.ids.length ? v.ids.map(escapeHtml).join(', ') : 'No students'}</small>
+    </div>`;
+  });
+
+  const completed = voters.filter(v=>v.done).length;
+  const total = voters.length;
+
+  panel.classList.remove('hidden');
+  panel.innerHTML = `
+    <h2>🗳 Teacher Voting Control - Class ${classDisplay(cls)}</h2>
+    <p class="smallNote">Teacher chooses one battle at a time. Students will automatically see only the selected battle. They vote, save, and wait for you to move to the next battle.</p>
+    <div class="battleControlGrid">
+      <div class="teacherBattleMini">
+        <label>⚔️ Current Battle Students Must Vote On</label>
+        <select id="teacherCurrentBattleSelect" onchange="setTeacherCurrentBattle(this.value)">
+          ${options}
+        </select>
+        <p><b>Current:</b> Group ${a} VS Group ${b}</p>
+      </div>
+      <div class="teacherBattleMini">
+        <h3>Voting Progress</h3>
+        <p><b>${completed} / ${total}</b> eligible groups voted on this battle.</p>
+        <p class="smallNote">Groups in the battle cannot vote for themselves.</p>
+      </div>
+    </div>
+    <h3>Who voted / who is waiting</h3>
+    <div class="voterStatusGrid">${statusHtml}</div>
+  `;
+}
+
 async function setStage(stage){
   if(!selectedTeacherClass) return;
 
   const updates = {};
   const voteSystem = document.getElementById('teacherVoteSystem')?.value || 'peer';
-  updates[`classes/${selectedTeacherClass}/settings/stage`] = stage;
-  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/voteSystem`] = voteSystem;
-  if(stage === 'work') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
-  if(stage === 'voting') updates[`classes/${selectedTeacherClass}/settings/resultsReleased`] = false;
+  updates[`classes/${activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass}/settings/stage`] = stage;
+  if(stage === 'voting') updates[`classes/${activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass}/settings/voteSystem`] = voteSystem;
+  if(stage === 'work') updates[`classes/${activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass}/settings/resultsReleased`] = false;
+  if(stage === 'voting') updates[`classes/${activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass}/settings/resultsReleased`] = false;
 
   await hubRef.update(updates);
+  const panel = document.getElementById('teacherVotingControlPanel');
+  if(panel) panel.classList.toggle('hidden', stage !== 'voting');
 
   if(stage === 'voting') renderTeacherVotingResults(false);
   alert(stage === 'voting' ? (voteSystem === 'battle' ? '⚔️ Group VS Group voting is open for students.' : '🗳 Peer Assessment voting is open for students.') : 'Stage changed to '+stage);
