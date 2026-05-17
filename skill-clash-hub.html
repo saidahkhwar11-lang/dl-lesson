@@ -6499,6 +6499,18 @@ function getTimerPopupActivityFromActiveClasses(){
   return {activity:latestTeacherActivityForPopup || {}, assignedTo:latestTeacherAssignedTo || '-'};
 }
 
+
+function generateTimerActivityExplanation(a){
+  a = a || {};
+  const type = a.activityType || 'writing';
+
+  if(type === 'readingParagraph' || type === 'reading'){
+    return `Reading Activity: The teacher divides one reading text into different paragraphs. Each student in the same group receives a different paragraph with her own questions. Students read carefully, answer their questions, and get instant marks for the questions. After that, each student writes a short summary and saves it so group members can read it. The group leader collects all members’ summaries, combines the important ideas, and submits one final group summary. The teacher checks students’ summaries, participation, and final group work.`;
+  }
+
+  return `Writing Battle Activity: Groups compete in a Group VS Group writing challenge. Each student writes her own part about the assigned topic and clicks “Save My Work” so group members can read it. Students can use the Chatroom to discuss ideas, improve answers, and support each other. The group leader reviews all members’ work, chooses the strongest ideas, corrects mistakes if needed, combines the ideas into one organized final group answer, and submits it for the group. After the writing stage, the teacher opens voting. Students read the competing groups’ work and vote for the strongest answer. Total writing marks come from other groups’ votes plus teacher marks.`;
+}
+
 function updateTimerPopupActivity(){
   const data = getTimerPopupActivityFromActiveClasses();
   const a = data.activity || {};
@@ -6514,10 +6526,7 @@ function updateTimerPopupActivity(){
   if(instructions) instructions.innerText = a.instructions || 'No instructions.';
 
   if(details){
-    const detailText = (a.activityType === 'readingParagraph' || a.activityType === 'reading')
-      ? 'Reading Activity: each student receives one paragraph, answers questions, writes a summary, then the leader submits the final group summary.'
-      : (a.groupTask || a.sameTask || 'All groups complete the assigned writing task. Students discuss, save their own work, review members’ work, and the leader submits the final answer.');
-    details.innerText = detailText;
+    details.innerText = generateTimerActivityExplanation(a);
   }
 
   if(criteria){
