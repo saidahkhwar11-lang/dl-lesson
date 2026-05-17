@@ -2411,6 +2411,27 @@ button:hover{filter:brightness(.96)}
   margin-bottom:6px;
   color:#9a3412;
 }
+  /* ===== Activity details inside success criteria box ===== */
+.miniDetailsInside{
+  margin-top:12px;
+  background:#f8fbff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px 12px;
+  line-height:1.5;
+  color:#18376b;
+}
+
+.miniDetailsInside b{
+  display:block;
+  margin-bottom:6px;
+  color:#1d4ed8;
+}
+
+#popupActivityDetails{
+  white-space:pre-wrap;
+  line-height:1.5;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2983,19 +3004,25 @@ Grammar and spelling are checked"></textarea>
 </div>
 
     <div class="timerInfoMini">
-      <h3>✅ Success Criteria</h3>
-      <div id="popupSuccessCriteria" class="timerInfoText">No criteria assigned.</div>
+
+  <h3>✅ Success Criteria</h3>
+
+  <div id="popupSuccessCriteria" class="timerInfoText">
+    No criteria assigned.
+  </div>
+
+  <div class="miniDetailsInside">
+    <b>📝 Activity Details</b>
+
+    <div id="popupActivityDetails">
+      Students write, save, review group work, and submit final answer.
     </div>
   </div>
 
 </div>
-
-  <div class="activityPopupCard full">
-    <h3>📝 Activity Details</h3>
-    <div id="popupActivityDetails" class="activityPopupText">
-      Students write, save, review group work, and submit final answer.
-    </div>
   </div>
+
+</div>
 
 </div>
 </div>
