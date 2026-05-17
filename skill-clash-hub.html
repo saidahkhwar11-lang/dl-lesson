@@ -1949,6 +1949,38 @@ button:hover{filter:brightness(.96)}
 .forceHidden{display:none!important}
 @media(max-width:800px){.readingStudentActions{grid-template-columns:1fr}}
 
+
+/* ===== Active activity sync + chat notification ===== */
+.refreshStudentBtn{
+  background:#64748b!important;
+  color:white!important;
+  border:none!important;
+  border-radius:14px!important;
+  padding:12px 16px!important;
+  font-weight:900!important;
+  width:100%;
+  margin:10px 0!important;
+}
+.chatBtnWrap{position:relative}
+.chatNotifyBadge{
+  position:absolute;
+  top:-8px;
+  right:-8px;
+  min-width:22px;
+  height:22px;
+  border-radius:999px;
+  background:#ef4444;
+  color:white;
+  font-size:12px;
+  font-weight:900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:2px solid white;
+  box-shadow:0 3px 8px rgba(0,0,0,.18);
+}
+.chatNotifyBadge.show{display:flex}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2069,7 +2101,7 @@ button:hover{filter:brightness(.96)}
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
             <button class="green" onclick="saveMyWork()">💾 Save My Work</button>
             
-            <button class="purple" onclick="toggleChat()">💬 Chatroom</button>
+            <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
           </div>
 
           <div class="leaveRow">
@@ -2777,24 +2809,21 @@ async function findLatestLibraryActivityForClass(cls){
 
 
 
+
+
 async function forceLoadStudentActiveActivity(){
   if(!currentClass || !currentGroup) return;
   try{
-    const gSnap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
-    const g = gSnap.val() || {};
-    if(g && g.title){ renderAssignedActivityOnStudent(g); return; }
-
-    const cSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
-    const c = cSnap.val() || {};
-    if(c && c.title){ renderAssignedActivityOnStudent(c); return; }
-
-    const oldSnap = await hubRef.child(`classes/${currentClass}/assignedActivities/group${currentGroup}`).once('value');
-    const old = oldSnap.val() || {};
-    renderAssignedActivityOnStudent(old || {});
+    const snap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+    const a = snap.val() || {};
+    renderAssignedActivityOnStudent(a && a.title ? a : {});
   }catch(err){
     console.log('forceLoadStudentActiveActivity error', err);
+    renderAssignedActivityOnStudent({});
   }
 }
+
+
 
 
 
@@ -2830,6 +2859,8 @@ function openMembersWorkFromReading(){
 }
 
 
+
+
 function listenAssignedActivity(){
   if(assignedActivityListener) assignedActivityListener.off();
   if(classActiveActivityListener) classActiveActivityListener.off();
@@ -2839,26 +2870,21 @@ function listenAssignedActivity(){
 
   groupRef.on('value', snap=>{
     const a = snap.val() || {};
-    if(a && a.title){
-      renderAssignedActivityOnStudent(a);
-    }else{
-      forceLoadStudentActiveActivity();
-    }
+    renderAssignedActivityOnStudent(a && a.title ? a : {});
   });
 
-  const classRef = hubRef.child(`classes/${currentClass}/activeActivity`);
-  classActiveActivityListener = classRef;
-  classRef.on('value', snap=>{
-    const classA = snap.val() || {};
-    hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value', gs=>{
-      const groupA = gs.val() || {};
-      renderAssignedActivityOnStudent((groupA && groupA.title) ? groupA : (classA || {}));
-    });
+  const changedRef = hubRef.child(`classes/${currentClass}/settings/activeActivityChangedAt`);
+  classActiveActivityListener = changedRef;
+  changedRef.on('value', ()=>{
+    forceLoadStudentActiveActivity();
   });
 
-  setTimeout(forceLoadStudentActiveActivity, 300);
-  setTimeout(forceLoadStudentActiveActivity, 1200);
+  setTimeout(forceLoadStudentActiveActivity, 200);
+  setTimeout(forceLoadStudentActiveActivity, 1000);
 }
+
+
+
 
 
 
@@ -2888,7 +2914,9 @@ function renderAssignedActivityOnStudent(a){
 
     const items = a.criteria || [];
     let criteriaHtml = '';
-    items.forEach((c,i)=>{ criteriaHtml += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`; });
+    items.forEach((c,i)=>{
+      criteriaHtml += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`;
+    });
     const criteriaItems = document.getElementById('criteriaItems');
     if(criteriaItems) criteriaItems.innerHTML = criteriaHtml || '<p>No criteria assigned.</p>';
   }
@@ -2896,6 +2924,7 @@ function renderAssignedActivityOnStudent(a){
   if(typeof renderVoteCriteria === 'function') renderVoteCriteria();
   if(typeof renderMyGroupFinalPreview === 'function') renderMyGroupFinalPreview();
 }
+
 
 
 
@@ -4092,6 +4121,30 @@ function leaveGroup(){
 function toggleChat(){
   document.getElementById('chatPopup').classList.toggle('hidden');
 }
+
+let lastSeenChatCount = Number(localStorage.getItem('skillClashLastSeenChatCount') || 0);
+
+function updateChatNotification(){
+  try{
+    const count = latestChat ? Object.keys(latestChat).length : 0;
+    const badge = document.getElementById('chatNotifyBadge');
+    if(!badge) return;
+    if(count > lastSeenChatCount){
+      badge.classList.add('show');
+      badge.innerText = count - lastSeenChatCount;
+    }else{
+      badge.classList.remove('show');
+    }
+  }catch(e){}
+}
+function clearChatNotification(){
+  const count = latestChat ? Object.keys(latestChat).length : 0;
+  lastSeenChatCount = count;
+  localStorage.setItem('skillClashLastSeenChatCount', String(count));
+  const badge = document.getElementById('chatNotifyBadge');
+  if(badge) badge.classList.remove('show');
+}
+
 function listenChat(){
   if(chatListener) chatListener.off();
   const ref = hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat`);
@@ -4163,6 +4216,7 @@ function renderTeacherDashboard(){
   });
 }
 
+
 function renderCurrentActivity(classes){
   const box = document.getElementById('currentActivityContent');
   if(!box) return;
@@ -4172,7 +4226,8 @@ function renderCurrentActivity(classes){
   let any = false;
 
   list.forEach(cls=>{
-    const a = ((classes || {})[cls] || {}).currentActivity || {};
+    const c = (classes || {})[cls] || {};
+    const a = c.activeActivity || {};
     if(a && a.title){
       any = true;
       html += `<div class="currentMini">
@@ -4190,13 +4245,14 @@ function renderCurrentActivity(classes){
 
   const active = [];
   Object.keys(classes || {}).forEach(cls=>{
-    const a = (classes[cls] || {}).currentActivity || {};
+    const a = (classes[cls] || {}).activeActivity || {};
     if(a && a.title) active.push(`${classDisplay(cls)}: ${a.title}`);
   });
   latestTeacherAssignedTo = active.length ? active.join(' | ') : '-';
   latestTeacherActivityForPopup = {title:'Active class activities', instructions:'See current activity details by class.'};
   if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
 }
+
 
 function renderClassCards(classes){
   const list = ['9-1','9-2','9-3','9-4'];
@@ -4210,7 +4266,7 @@ function renderClassCards(classes){
       if(groups[g].finalSubmitted) final++;
       if(groups[g].teacherPoints) marked++;
     });
-    const activity = (c.activeActivity && c.activeActivity.title) ? c.activeActivity.title : (c.currentActivity?.title || 'No activity assigned');
+    const activity = (c.activeActivity && c.activeActivity.title) ? c.activeActivity.title : 'No activity assigned';
     html += `<div class="classCard" onclick="openClass('${cls}')">
       <h3>Class ${classDisplay(cls)}</h3>
       <span class="pill pillYellow">${joined} joined groups</span>
@@ -4972,7 +5028,7 @@ function renderParagraphReadingStudent(a){
     <div class="readingStudentActions">
       <button class="blue" onclick="openMembersWorkFromReading()">👀 Members’ Work</button>
       <button class="green" onclick="saveParagraphSummary()">💾 Save My Work</button>
-      <button class="purple" onclick="toggleChat()">💬 Chatroom</button>
+      <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
     </div>
 
     <div class="readingMainLayout">
@@ -5701,6 +5757,59 @@ async function getActiveClassActivityForStudent(){
   return {};
 }
 
+
+function makeStudentActiveActivity(a, groupNo, activationId){
+  a = a || {};
+  const groupKey = 'group' + groupNo;
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+
+  const groupTask = isReading
+    ? 'Each student receives one paragraph from the same full text.'
+    : (a.taskType === 'same'
+      ? (a.sameTask || a.groupTask || 'Activity assigned. Follow the instructions.')
+      : ((a.groupTasks || {})[groupKey] || a.groupTask || ''));
+
+  return {
+    id: a.id || '',
+    activationId: activationId || ('act_' + Date.now()),
+    title: a.title || 'Activity',
+    instructions: a.instructions || '',
+    activityType: isReading ? 'readingParagraph' : 'writing',
+    readingWorkMode: isReading ? 'paragraph' : '',
+    taskType: a.taskType || 'same',
+    mainImage: a.mainImage || '',
+    groupTask: groupTask,
+    groupTaskImage: isReading ? '' : (a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})[groupKey] || '')),
+    hybridLink: a.taskType === 'same' ? (a.sameHybridLink || '') : ((a.groupTaskLinks || {})[groupKey] || ''),
+    attachedFile: a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})[groupKey] || null),
+    paragraphReading: a.paragraphReading || [],
+    readingText: a.readingText || '',
+    readingQuestions: a.readingQuestions || [],
+    criteria: isReading ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary'] : (a.criteria || []),
+    votingCriteria: a.votingCriteria || [],
+    assignedAt: Date.now(),
+    assignedBy: 'Ms. Saidah Khwar'
+  };
+}
+
+async function loadLatestActiveActivityForStudent(){
+  if(!currentClass || !currentGroup) return {};
+  const snap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+  const a = snap.val() || {};
+  if(a && a.title) return a;
+
+  const cSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
+  const c = cSnap.val() || {};
+  if(c && c.title) return c;
+
+  return {};
+}
+
+function studentRefreshPage(){
+  forceLoadStudentActiveActivity();
+  setTimeout(()=>location.reload(), 300);
+}
+
 function buildAssignedActivityForGroup(a, i, activationId){
   const groupKey = 'group'+i;
   const isReading = (a.activityType === 'reading' || a.activityType === 'readingParagraph');
@@ -5747,41 +5856,100 @@ function buildAssignedActivityForGroup(a, i, activationId){
 }
 
 
+
+
+function normalizeClassKey(cls){
+  return String(cls || '').replace('/', '-').trim();
+}
+
+function strictBuildActiveActivity(a, groupNo, activationId){
+  a = a || {};
+  const groupKey = 'group' + groupNo;
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+
+  const groupTask = isReading
+    ? 'Each student receives one paragraph from the same full text.'
+    : (a.taskType === 'same'
+      ? (a.sameTask || a.groupTask || 'Activity assigned. Follow the instructions.')
+      : ((a.groupTasks || {})[groupKey] || a.groupTask || ''));
+
+  const groupTaskImage = isReading
+    ? ''
+    : (a.taskType === 'same'
+      ? (a.mainImage || '')
+      : ((a.groupTaskImages || {})[groupKey] || ''));
+
+  return {
+    id: a.id || '',
+    activationId: activationId || ('act_' + Date.now()),
+    title: a.title || 'Activity',
+    instructions: a.instructions || '',
+    activityType: isReading ? 'readingParagraph' : 'writing',
+    readingWorkMode: isReading ? 'paragraph' : '',
+    taskType: a.taskType || 'same',
+    mainImage: a.mainImage || '',
+    groupTask: groupTask,
+    groupTaskImage: groupTaskImage,
+    hybridLink: a.taskType === 'same' ? (a.sameHybridLink || '') : ((a.groupTaskLinks || {})[groupKey] || ''),
+    attachedFile: a.taskType === 'same' ? (a.sameAttachedFile || null) : ((a.groupTaskFiles || {})[groupKey] || null),
+    paragraphReading: isReading ? (a.paragraphReading || []) : [],
+    readingText: isReading ? (a.readingText || '') : '',
+    readingQuestions: isReading ? (a.readingQuestions || []) : [],
+    criteria: isReading
+      ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary']
+      : (a.criteria || []),
+    votingCriteria: a.votingCriteria || [],
+    assignedAt: Date.now(),
+    assignedBy: 'Ms. Saidah Khwar'
+  };
+}
+
+
 async function activateSavedActivityForSelectedClasses(){
   const activityId = document.getElementById('dashboardSavedActivities')?.value || '';
-  if(!activityId){ alert('Choose an activity from the library.'); return; }
+  if(!activityId){
+    alert('Choose an activity from the library.');
+    return;
+  }
 
-  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>x.value);
-  if(!classes.length){ alert('Choose at least one class.'); return; }
+  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>normalizeClassKey(x.value));
+  if(!classes.length){
+    alert('Choose at least one class.');
+    return;
+  }
 
   const snap = await hubRef.child('activityLibrary/' + activityId).once('value');
   const a = snap.val();
-  if(!a){ alert('Activity not found.'); return; }
+  if(!a){
+    alert('Activity not found.');
+    return;
+  }
 
   a.id = activityId;
   const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
 
   if(isReading && (!a.paragraphReading || !a.paragraphReading.length)){
-    alert('This reading activity has no generated paragraphs. Open it in Activity Builder, divide the text, generate paragraph questions, then save again.');
+    alert('This reading activity has no paragraphs/questions. Open it in Activity Builder, divide the text, add questions, then save again.');
     return;
   }
-
-  if(isReading) a.activityType = 'readingParagraph';
 
   const activationId = 'act_' + Date.now();
   const updates = {};
 
   classes.forEach(cls=>{
-    const classActive = buildActiveActivityForGroup(a, 1, activationId);
+    const classActive = strictBuildActiveActivity(a, 1, activationId);
     classActive.assignedClasses = classes;
     classActive.assignedToText = classes.map(classDisplay).join(', ');
 
+    // STRICT source of truth for dashboards and students
     updates[`classes/${cls}/activeActivity`] = classActive;
     updates[`classes/${cls}/currentActivity`] = classActive;
 
     for(let i=1;i<=10;i++){
-      const groupActive = buildActiveActivityForGroup(a, i, activationId);
+      const groupActive = strictBuildActiveActivity(a, i, activationId);
       updates[`classes/${cls}/activeActivityGroups/group${i}`] = groupActive;
+
+      // compatibility path, overwritten too
       updates[`classes/${cls}/assignedActivities/group${i}`] = groupActive;
     }
 
@@ -5790,6 +5958,7 @@ async function activateSavedActivityForSelectedClasses(){
     updates[`classes/${cls}/settings/resultsReleased`] = false;
     updates[`classes/${cls}/settings/activeActivityId`] = activityId;
     updates[`classes/${cls}/settings/activationId`] = activationId;
+    updates[`classes/${cls}/settings/activeActivityChangedAt`] = Date.now();
   });
 
   updates[`activityLibrary/${activityId}/lastActivatedAt`] = Date.now();
@@ -5797,7 +5966,7 @@ async function activateSavedActivityForSelectedClasses(){
 
   await hubRef.update(updates);
 
-  latestTeacherActivityForPopup = { title: a.title || 'Activity', instructions: a.instructions || '' };
+  latestTeacherActivityForPopup = {title:a.title || 'Activity', instructions:a.instructions || ''};
   latestTeacherAssignedTo = classes.map(classDisplay).join(', ');
   if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
 
@@ -5805,6 +5974,8 @@ async function activateSavedActivityForSelectedClasses(){
   document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
 }
+
+
 
 
 async function assignCurrentActivity(){
@@ -6177,26 +6348,49 @@ async function exportCSV(){
   a.download = 'skill-clash-results.csv';
   a.click();
 }
-async function resetSelectedClass(){
-  if(!selectedTeacherClass){alert('Choose a class first.');return;}
-  if(!confirm('Reset this class? This will delete all student names, saved answers, summaries, scores, final work, chat, votes, and group data for this class.')) return;
 
-  await hubRef.child(`classes/${selectedTeacherClass}`).update({
-    groups:null,
-    votes:null,
-    battleVotes:null,
-    chat:null,
+async function resetSelectedClass(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+
+  if(!confirm('Reset this class completely? This will delete all students, groups, saved work, summaries, scores, votes, chat messages, final answers, active activity, and timer for this class.')){
+    return;
+  }
+
+  const cls = normalizeClassKey(selectedTeacherClass);
+
+  // Fully delete the class node first
+  await hubRef.child(`classes/${cls}`).remove();
+
+  // Recreate only a clean empty shell
+  await hubRef.child(`classes/${cls}`).set({
     settings:{
       stage:'work',
       voteSystem:'battle',
       resultsReleased:false,
+      activeActivityId:'',
+      activationId:'',
+      activeActivityChangedAt:Date.now(),
       timer:null
-    }
+    },
+    groups:null,
+    votes:null,
+    battleVotes:null,
+    chat:null,
+    activeActivity:null,
+    currentActivity:null,
+    activeActivityGroups:null,
+    assignedActivities:null
   });
 
-  alert('✅ Class reset. All student work and group data were removed.');
-  backToDashboard();
+  alert('✅ Class reset completely. All students, work, chat, marks, and active activity were deleted.');
+  selectedTeacherClass = '';
+  if(typeof backToDashboard === 'function') backToDashboard();
+  if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
 }
+
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
   buildAssignGroupChecks();
