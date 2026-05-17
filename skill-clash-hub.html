@@ -1942,6 +1942,13 @@ button:hover{filter:brightness(.96)}
   line-height:1.55;
 }
 
+
+/* ===== Student activity switch fix ===== */
+.readingStudentActions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.readingStudentActions button{margin:0}
+.forceHidden{display:none!important}
+@media(max-width:800px){.readingStudentActions{grid-template-columns:1fr}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2680,15 +2687,7 @@ function listenGroup(){
 }
 
 
-function setReadingModeUI(isReading){
-  const readingBox = document.getElementById('readingMainWorkBox');
-  const writingBox = document.querySelector('.card.myAnswer');
-  const detailsCards = document.querySelectorAll('.studentLayout > div:nth-child(2) > .card, .studentLayout > div:nth-child(2) > details');
 
-  if(readingBox) readingBox.classList.toggle('hidden', !isReading);
-  if(writingBox) writingBox.classList.toggle('readingHiddenForMode', isReading);
-  detailsCards.forEach(el=>el.classList.toggle('readingHiddenForMode', isReading));
-}
 
 function getReadingChecklistHtml(){
   return `<div class="readingChecklistBox">
@@ -2777,37 +2776,58 @@ async function findLatestLibraryActivityForClass(cls){
 }
 
 
+
 async function forceLoadStudentActiveActivity(){
   if(!currentClass || !currentGroup) return;
-
   try{
-    const active = await getActiveClassActivityForStudent();
-    if(active && active.title){
-      renderAssignedActivityOnStudent(active);
-      return;
-    }
+    const gSnap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+    const g = gSnap.val() || {};
+    if(g && g.title){ renderAssignedActivityOnStudent(g); return; }
 
-    const clsSnap = await hubRef.child(`classes/${currentClass}`).once('value');
-    const cls = clsSnap.val() || {};
-    const current = cls.currentActivity || {};
-    const assigned = ((cls.assignedActivities || {})['group'+currentGroup]) || {};
+    const cSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
+    const c = cSnap.val() || {};
+    if(c && c.title){ renderAssignedActivityOnStudent(c); return; }
 
-    if(assigned && assigned.title){
-      renderAssignedActivityOnStudent(assigned);
-    }else if(current && current.title){
-      renderAssignedActivityOnStudent(current);
-    }else{
-      renderAssignedActivityOnStudent({});
-      const taskBox = document.getElementById('groupTaskBox');
-      if(taskBox){
-        taskBox.innerHTML = `<div class="studentSyncNote">No active activity found for Class ${classDisplay(currentClass)} / Group ${currentGroup}. Ask teacher to click Activate for Selected Classes again.</div>`;
-      }
-    }
+    const oldSnap = await hubRef.child(`classes/${currentClass}/assignedActivities/group${currentGroup}`).once('value');
+    const old = oldSnap.val() || {};
+    renderAssignedActivityOnStudent(old || {});
   }catch(err){
     console.log('forceLoadStudentActiveActivity error', err);
   }
 }
 
+
+
+
+
+function hardSwitchStudentLayout(activityType){
+  const isReading = activityType === 'readingParagraph' || activityType === 'reading';
+  const readingBox = document.getElementById('readingMainWorkBox');
+  const writingBox = document.querySelector('.card.myAnswer');
+  const rightColumn = document.querySelector('.studentLayout > div:nth-child(2)');
+  const studentLayout = document.querySelector('.studentLayout');
+
+  if(readingBox) readingBox.classList.toggle('hidden', !isReading);
+  if(writingBox) writingBox.classList.toggle('forceHidden', isReading);
+  if(rightColumn) rightColumn.classList.toggle('forceHidden', isReading);
+  if(studentLayout) studentLayout.classList.toggle('forceHidden', isReading);
+
+  if(!isReading && readingBox){
+    readingBox.classList.add('hidden');
+    readingBox.innerHTML = '';
+  }
+}
+function setReadingModeUI(isReading){
+  hardSwitchStudentLayout(isReading ? 'readingParagraph' : 'writing');
+}
+function openMembersWorkFromReading(){
+  const box = document.getElementById('membersWorkBox');
+  if(box){
+    box.classList.remove('hidden');
+    renderMembersWork();
+    box.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
 
 
 function listenAssignedActivity(){
@@ -2828,25 +2848,27 @@ function listenAssignedActivity(){
 
   const classRef = hubRef.child(`classes/${currentClass}/activeActivity`);
   classActiveActivityListener = classRef;
-
   classRef.on('value', snap=>{
-    const a = snap.val() || {};
-    if(a && a.title){
-      hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value', gs=>{
-        const g = gs.val() || {};
-        renderAssignedActivityOnStudent((g && g.title) ? g : a);
-      });
-    }
+    const classA = snap.val() || {};
+    hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value', gs=>{
+      const groupA = gs.val() || {};
+      renderAssignedActivityOnStudent((groupA && groupA.title) ? groupA : (classA || {}));
+    });
   });
 
-  setTimeout(forceLoadStudentActiveActivity, 500);
-  setTimeout(forceLoadStudentActiveActivity, 1500);
+  setTimeout(forceLoadStudentActiveActivity, 300);
+  setTimeout(forceLoadStudentActiveActivity, 1200);
 }
+
+
 
 
 function renderAssignedActivityOnStudent(a){
   a = a || {};
   latestAssignedActivity = a;
+
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length;
+  hardSwitchStudentLayout(isReading ? 'readingParagraph' : 'writing');
 
   const nameBox = document.getElementById('activityNameBox');
   const instructionBox = document.getElementById('activityInstructionsBox');
@@ -2855,39 +2877,26 @@ function renderAssignedActivityOnStudent(a){
   if(nameBox) nameBox.innerText = a.title || 'No activity assigned';
   if(instructionBox) instructionBox.innerText = a.instructions || 'No instructions';
 
-  const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
-  const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'groupTaskImg', 'Group activity picture') : '';
-  const resources = renderTeacherResources(a);
-
-  if(typeof renderReadingStudentQuiz === 'function') renderReadingStudentQuiz(null);
-  if(typeof renderParagraphReadingStudent === 'function') renderParagraphReadingStudent(null);
-
-  if((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length){
-    if(taskBox){
-      taskBox.innerHTML =
-        `${mainImg}<b>📖 Paragraph Reading Activity</b><br>${escapeHtml(a.groupTask || 'Each student receives one paragraph, answers the questions, then writes a summary.')}${groupImg}${resources}`;
-    }
-    if(typeof renderParagraphReadingStudent === 'function') renderParagraphReadingStudent(a);
+  if(isReading){
+    if(typeof renderReadingStudentQuiz === 'function') renderReadingStudentQuiz(null);
+    renderParagraphReadingStudent(a);
   }else{
-    setReadingModeUI(false);
-    if(taskBox){
-      taskBox.innerHTML = `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}${resources}`;
-    }
-  }
+    const mainImg = a.mainImage ? imageHtml(a.mainImage, 'activityImg', 'Main activity picture') : '';
+    const groupImg = a.groupTaskImage ? imageHtml(a.groupTaskImage, 'groupTaskImg', 'Group activity picture') : '';
+    const resources = renderTeacherResources(a);
+    if(taskBox) taskBox.innerHTML = `${mainImg}${escapeHtml(a.groupTask || 'No group task')}${groupImg}${resources}`;
 
-  const items = ((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length)
-    ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary']
-    : (a.criteria || []);
-  let criteriaHtml = '';
-  items.forEach((c,i)=>{
-    criteriaHtml += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`;
-  });
-  const criteriaItems = document.getElementById('criteriaItems');
-  if(criteriaItems) criteriaItems.innerHTML = criteriaHtml || '<p>No criteria assigned.</p>';
+    const items = a.criteria || [];
+    let criteriaHtml = '';
+    items.forEach((c,i)=>{ criteriaHtml += `<label class="criteriaItem"><input type="checkbox" id="criteria_${i}"> ${escapeHtml(c)}</label>`; });
+    const criteriaItems = document.getElementById('criteriaItems');
+    if(criteriaItems) criteriaItems.innerHTML = criteriaHtml || '<p>No criteria assigned.</p>';
+  }
 
   if(typeof renderVoteCriteria === 'function') renderVoteCriteria();
   if(typeof renderMyGroupFinalPreview === 'function') renderMyGroupFinalPreview();
 }
+
 
 
 function listenClassSettings(){
@@ -4959,6 +4968,12 @@ function renderParagraphReadingStudent(a){
 
   let html = `<h2>📖 ${escapeHtml(a.title || 'Reading Activity')}</h2>
     <p class="smallNote">${escapeHtml(a.instructions || 'Read your assigned paragraph, answer the questions, then write your summary.')}</p>
+
+    <div class="readingStudentActions">
+      <button class="blue" onclick="openMembersWorkFromReading()">👀 Members’ Work</button>
+      <button class="green" onclick="saveParagraphSummary()">💾 Save My Work</button>
+      <button class="purple" onclick="toggleChat()">💬 Chatroom</button>
+    </div>
 
     <div class="readingMainLayout">
       <div>
