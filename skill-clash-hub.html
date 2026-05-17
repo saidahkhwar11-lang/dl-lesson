@@ -2016,6 +2016,50 @@ button:hover{filter:brightness(.96)}
 .refreshTeacherBtn{min-width:190px}
 .refreshStudentBtn{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
 
+
+/* ===== Cleaner final answer area ===== */
+.finalGroupPreviewBox{
+  max-height:260px!important;
+  min-height:150px!important;
+  overflow:auto!important;
+  white-space:pre-wrap!important;
+  line-height:1.55!important;
+  font-size:15px!important;
+  padding:14px!important;
+}
+.finalGroupPreviewBox.expanded{
+  max-height:620px!important;
+  min-height:320px!important;
+}
+.finalToggleBtn{
+  width:100%;
+  margin-top:8px!important;
+  background:#243b6b!important;
+  color:white!important;
+  border:none!important;
+  border-radius:12px!important;
+  padding:10px!important;
+  font-weight:900!important;
+}
+.leaderMembersPreview{
+  display:none!important;
+}
+
+
+/* Stable visual feedback for selected voting criteria */
+.battleCriterion:checked + span,
+.clearBestChoice input:checked + span{
+  font-weight:900;
+}
+.clearCriterion:has(input:checked){
+  background:#ecfdf5!important;
+  border-color:#86efac!important;
+}
+.clearBestChoice:has(input:checked){
+  background:#fff7ed!important;
+  border-color:#fb923c!important;
+}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -3192,11 +3236,28 @@ function previewVoteTarget(){
      <div class="voteFinal">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
 }
 
+
+function toggleFinalPreviewBox(){
+  const box = document.getElementById('finalGroupPreviewBox');
+  if(box) box.classList.toggle('expanded');
+}
+
 function renderMyGroupFinalPreview(){
   const box = document.getElementById('myGroupFinalPreview');
   if(!box) return;
-  const g = latestClassGroups['group'+currentGroup] || {};
-  box.innerHTML = `<b>My Group ${escapeHtml(currentGroup)} Answer</b><div style="margin-top:6px">${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+
+  const group = latestClassGroups['group'+currentGroup] || {};
+  const finalAnswer = group.finalAnswer || '';
+
+  if(!finalAnswer){
+    box.innerHTML = '<p>No final answer submitted yet.</p>';
+    return;
+  }
+
+  box.innerHTML = `
+    <div id="finalGroupPreviewBox" class="finalGroupPreviewBox">${escapeHtml(finalAnswer)}</div>
+    <button class="finalToggleBtn" onclick="toggleFinalPreviewBox()">🔎 Open / Close Final Answer</button>
+  `;
 }
 
 function getVotingCriteria(){
@@ -3256,6 +3317,66 @@ function goToNextBattle(){
   renderBattleVoting();
 }
 
+
+/* ===== Stable voting draft + teacher open details state ===== */
+let battleVoteDrafts = {};
+let teacherOpenGroupDetails = {};
+
+function getBattleDraftKey(battleKey){
+  return `${activeClassKey()}__group${currentGroup}__${currentStudentId}__${battleKey}`;
+}
+function getBattleDraft(battleKey){
+  const key = getBattleDraftKey(battleKey);
+  if(!battleVoteDrafts[key]){
+    try{
+      battleVoteDrafts[key] = JSON.parse(sessionStorage.getItem('battleDraft_'+key) || '{}');
+    }catch(e){
+      battleVoteDrafts[key] = {};
+    }
+  }
+  return battleVoteDrafts[key];
+}
+function saveBattleDraft(battleKey, draft){
+  const key = getBattleDraftKey(battleKey);
+  battleVoteDrafts[key] = draft || {};
+  sessionStorage.setItem('battleDraft_'+key, JSON.stringify(battleVoteDrafts[key]));
+}
+function clearBattleDraft(battleKey){
+  const key = getBattleDraftKey(battleKey);
+  delete battleVoteDrafts[key];
+  sessionStorage.removeItem('battleDraft_'+key);
+}
+function updateBattleCriterionDraft(cb){
+  const battleKey = cb.dataset.battle;
+  const groupNum = cb.dataset.group;
+  const idx = cb.value;
+  const draft = getBattleDraft(battleKey);
+  draft.groupScores = draft.groupScores || {};
+  draft.groupScores['group'+groupNum] = draft.groupScores['group'+groupNum] || {criteriaChecked:{}};
+  draft.groupScores['group'+groupNum].criteriaChecked = draft.groupScores['group'+groupNum].criteriaChecked || {};
+  if(cb.checked) draft.groupScores['group'+groupNum].criteriaChecked[idx] = true;
+  else delete draft.groupScores['group'+groupNum].criteriaChecked[idx];
+  saveBattleDraft(battleKey, draft);
+}
+function updateBattleWinnerDraft(input){
+  const battleKey = input.name.replace('battleWinner_','');
+  const draft = getBattleDraft(battleKey);
+  draft.winnerGroup = input.value;
+  saveBattleDraft(battleKey, draft);
+}
+function updateBattleCommentDraft(textarea){
+  const battleKey = textarea.id.replace('battleComment_','');
+  const draft = getBattleDraft(battleKey);
+  draft.comment = textarea.value;
+  saveBattleDraft(battleKey, draft);
+}
+function captureTeacherOpenDetails(){
+  teacherOpenGroupDetails = {};
+  document.querySelectorAll('#groupCards details[data-group]').forEach(d=>{
+    if(d.open) teacherOpenGroupDetails[d.dataset.group] = true;
+  });
+}
+
 function renderBattleVoting(){
   const title = document.getElementById('battlePairTitle');
   const box = document.getElementById('battleVoteContent');
@@ -3309,9 +3430,11 @@ function renderBattleVoting(){
   const [a,b] = selectedBattleKey.split('vs').map(Number);
   const battleKey = selectedBattleKey;
   const existing = ((((votes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudentId]) || null;
+  const draft = getBattleDraft(battleKey);
+  const activeVote = existing || draft;
   const gA = latestClassGroups['group'+a] || {};
   const gB = latestClassGroups['group'+b] || {};
-  const comment = existing ? (existing.comment || '') : '';
+  const comment = activeVote ? (activeVote.comment || '') : '';
 
   function membersText(groupObj){
     const names = Object.keys((groupObj || {}).students || {});
@@ -3322,9 +3445,9 @@ function renderBattleVoting(){
     let html = `<div class="clearScoreCard compactScoreCard">
       <h3>✅ Score Group ${num}</h3>`;
     items.forEach((c,i)=>{
-      const checked = (existing && existing.groupScores && existing.groupScores['group'+num] && existing.groupScores['group'+num].criteriaChecked && existing.groupScores['group'+num].criteriaChecked[i]) ? 'checked' : '';
+      const checked = (activeVote && activeVote.groupScores && activeVote.groupScores['group'+num] && activeVote.groupScores['group'+num].criteriaChecked && activeVote.groupScores['group'+num].criteriaChecked[i]) ? 'checked' : '';
       html += `<label class="clearCriterion compactCriterion">
-        <input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked}>
+        <input type="checkbox" class="battleCriterion" data-battle="${battleKey}" data-group="${num}" value="${i}" ${checked} onchange="updateBattleCriterionDraft(this)">
         <span>${escapeHtml(c)}</span>
         <span class="pointBadge">+1</span>
       </label>`;
@@ -3333,8 +3456,8 @@ function renderBattleVoting(){
     return html;
   }
 
-  const bestA = existing && String(existing.winnerGroup) === String(a) ? 'checked' : '';
-  const bestB = existing && String(existing.winnerGroup) === String(b) ? 'checked' : '';
+  const bestA = activeVote && String(activeVote.winnerGroup) === String(a) ? 'checked' : '';
+  const bestB = activeVote && String(activeVote.winnerGroup) === String(b) ? 'checked' : '';
   const formHiddenClass = battleVotingStarted ? '' : 'hidden';
   const startHiddenClass = battleVotingStarted ? 'hidden' : '';
 
@@ -3374,13 +3497,13 @@ function renderBattleVoting(){
       <div class="clearBestSection compactBestSection">
         <h3>⭐ Step 2: Choose the stronger group for 5 bonus points</h3>
         <div class="clearBestChoices compactBestChoices">
-          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${a}" ${bestA}> Group ${a} is stronger (+5)</label>
-          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${b}" ${bestB}> Group ${b} is stronger (+5)</label>
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${a}" ${bestA} onchange="updateBattleWinnerDraft(this)"> Group ${a} is stronger (+5)</label>
+          <label class="clearBestChoice"><input type="radio" name="battleWinner_${battleKey}" value="${b}" ${bestB} onchange="updateBattleWinnerDraft(this)"> Group ${b} is stronger (+5)</label>
         </div>
       </div>
 
       <label>💬 Positive comment about this battle</label>
-      <textarea class="compactComment" id="battleComment_${battleKey}" maxlength="300" placeholder="Write one short positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
+      <textarea class="compactComment" id="battleComment_${battleKey}" oninput="updateBattleCommentDraft(this)" maxlength="300" placeholder="Write one short positive comment about the stronger work or the battle.">${escapeHtml(comment)}</textarea>
     </div>
 
     <div class="clearSaveBar compactSaveBar">
@@ -3502,6 +3625,12 @@ async function submitBattleVote(a,b){
   }
 
   const battleKey = `${a}vs${b}`;
+  // Save current screen choices before validation so live refresh does not erase them.
+  document.querySelectorAll(`.battleCriterion[data-battle="${battleKey}"]`).forEach(cb=>updateBattleCriterionDraft(cb));
+  const checkedWinnerForDraft = document.querySelector(`input[name="battleWinner_${battleKey}"]:checked`);
+  if(checkedWinnerForDraft) updateBattleWinnerDraft(checkedWinnerForDraft);
+  const commentBoxForDraft = document.getElementById(`battleComment_${battleKey}`);
+  if(commentBoxForDraft) updateBattleCommentDraft(commentBoxForDraft);
   const winnerInput = document.querySelector(`input[name="battleWinner_${battleKey}"]:checked`);
   if(!winnerInput){
     alert('Choose the best group for this battle.');
@@ -3544,6 +3673,8 @@ async function submitBattleVote(a,b){
     winnerGroup,
     groupScores
   });
+
+  clearBattleDraft(battleKey);
 
   const msg = document.getElementById(`battleMsg_${battleKey}`);
   if(msg){
@@ -4184,7 +4315,7 @@ function renderMembersWork(){
       <div class="leaderFinalSection">
         <h3>📌 Final Group Answer Submission</h3>
         <p class="smallNote">
-          Review members’ work below. Click Collect Members’ Work to place all answers neatly in one final box, then submit.
+          Click Collect Members’ Work to place all members’ answers neatly in one final box. Edit or rewrite the final group answer, then submit.
         </p>
         <textarea id="leaderFinalAnswerBox" placeholder="Write or combine the final agreed group answer here...">${escapeHtml(groupData.finalAnswer || '')}</textarea>
         <div id="leaderFinalPreview">${buildLeaderFinalPreviewHtml()}</div>
@@ -4454,18 +4585,20 @@ function backToDashboard(){
 
 function renderSelectedClass(classData){
   if(!selectedTeacherClass) return;
+  captureTeacherOpenDetails();
   const groups = classData.groups || {};
   let html = '';
   for(let i=1;i<=10;i++){
     const g = groups['group'+i] || {};
     const students = g.students || {};
     const names = Object.keys(students);
+    const detailOpen = teacherOpenGroupDetails[String(i)] ? 'open' : '';
     html += `<div class="groupCard">
       <h3>Group ${i}</h3>
       <p><b>Members:</b> ${names.join(', ') || 'No students joined yet'}</p>
       <p><b>Status:</b> ${g.finalSubmitted ? '✅ Final submitted' : names.length ? '✍️ In progress' : 'Empty'}</p>
       <p><b>Teacher Points:</b> ${g.teacherPoints || 'Not marked'}</p>
-      <details>
+      <details data-group="${i}" ${detailOpen} ontoggle="teacherOpenGroupDetails[String(${i})]=this.open">
         <summary>👀 Check Group Work</summary>
         <h4>Saved Work</h4>
         <div class="answerPreview">${escapeHtml(savedWorkText(students))}</div>
@@ -4491,11 +4624,12 @@ function savedWorkText(students){
 async function saveTeacherFeedback(groupNum){
   const points = document.getElementById('points_'+groupNum).value;
   const comment = document.getElementById('comment_'+groupNum).value;
-  await hubRef.child(`classes/${selectedTeacherClass}/groups/group${groupNum}`).update({
+  await hubRef.child(`classes/${activeTeacherClassKey()}/groups/group${groupNum}`).update({
     teacherPoints:points,
     teacherComment:comment,
     markedAt:Date.now()
   });
+  teacherOpenGroupDetails[String(groupNum)] = true;
   alert('✅ Feedback saved.');
 }
 
@@ -5205,7 +5339,7 @@ function renderParagraphReadingStudent(a){
 
         ${isLeader ? `<div class="leaderSummaryBox">
           <h3>👑 Leader Final Group Summary</h3>
-          <p class="smallNote">Collect members’ work here, edit if needed, then submit one final group answer.</p>
+          <p class="smallNote">Collect members’ work, edit or rewrite the final group answer, then submit.</p>
           <div id="leaderReadingPreview">${buildLeaderFinalPreviewHtml()}</div>
           <button class="blue" onclick="document.getElementById('leaderReadingFinalBox').value = buildLeaderFinalSummaryFromMembers()">📚 Collect Members’ Work</button>
           <textarea id="leaderReadingFinalBox" placeholder="Final group answer...">${escapeHtml(((latestClassGroups['group'+currentGroup] || {}).finalAnswer) || '')}</textarea>
@@ -5359,7 +5493,7 @@ function buildLeaderFinalSummaryFromMembers(){
 }
 
 function buildLeaderFinalPreviewHtml(){
-  let html = '<div class="finalCollectPreview">';
+  let html = '<div class="finalCollectPreview leaderMembersPreview">';
   Object.keys(latestStudents || {}).forEach(id=>{
     const s = latestStudents[id] || {};
     const name = s.name || id;
