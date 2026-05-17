@@ -2395,6 +2395,22 @@ button:hover{filter:brightness(.96)}
     grid-template-columns:1fr!important;
   }
 }
+  /* ===== Instructions inside activity name box ===== */
+.miniInstructionInside{
+  margin-top:12px;
+  background:#fffaf0;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:10px 12px;
+  line-height:1.5;
+  color:#7c2d12;
+}
+
+.miniInstructionInside b{
+  display:block;
+  margin-bottom:6px;
+  color:#9a3412;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2952,9 +2968,19 @@ Grammar and spelling are checked"></textarea>
 
   <div class="timerInfoInsideBox">
     <div class="timerInfoMini">
-      <h3>📌 Activity Name</h3>
-      <div id="popupActivityName" class="timerInfoText">No activity assigned yet.</div>
+  <h3>📌 Activity Name</h3>
+
+  <div id="popupActivityName" class="timerInfoText">
+    No activity assigned yet.
+  </div>
+
+  <div class="miniInstructionInside">
+    <b>📋 Instructions</b>
+    <div id="popupInstructions">
+      No instructions.
     </div>
+  </div>
+</div>
 
     <div class="timerInfoMini">
       <h3>✅ Success Criteria</h3>
@@ -2963,13 +2989,6 @@ Grammar and spelling are checked"></textarea>
   </div>
 
 </div>
-
-<div class="activityPopupGrid">
-
-  <div class="activityPopupCard full">
-    <h3>📋 Instructions</h3>
-    <div id="popupInstructions" class="activityPopupText">No instructions.</div>
-  </div>
 
   <div class="activityPopupCard full">
     <h3>📝 Activity Details</h3>
