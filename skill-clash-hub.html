@@ -2630,7 +2630,7 @@ async function joinGroup(){
 
   currentStudentId = currentStudentId.replace(/[^a-zA-Z0-9_-]/g,'_');
 
-  const groupPath = `classes/${currentClass}/groups/group${currentGroup}/students`;
+  const groupPath = `classes/${activeClassKey()}/groups/group${currentGroup}/students`;
   const studentsSnap = await hubRef.child(groupPath).once('value');
   const existingStudents = studentsSnap.val() || {};
   const existingLeader = Object.keys(existingStudents).find(id => {
@@ -2650,7 +2650,7 @@ async function joinGroup(){
   sessionStorage.setItem('skillStudentId',currentStudentId);
   sessionStorage.setItem('skillRole',currentRole);
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
     name: currentStudent,
     role: currentRole,
@@ -2664,7 +2664,7 @@ async function joinGroup(){
 
 function listenGroup(){
   if(groupListener) groupListener.off();
-  const ref = hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`);
+  const ref = hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}`);
   groupListener = ref;
   ref.on('value', snap=>{
     const data = snap.val() || {};
@@ -2811,17 +2811,41 @@ async function findLatestLibraryActivityForClass(cls){
 
 
 
+
 async function forceLoadStudentActiveActivity(){
   if(!currentClass || !currentGroup) return;
   try{
-    const snap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
-    const a = snap.val() || {};
-    renderAssignedActivityOnStudent(a && a.title ? a : {});
+    const cls = activeClassKey();
+
+    let snap = await hubRef.child(`classes/${cls}/activeActivityGroups/group${currentGroup}`).once('value');
+    let a = snap.val() || {};
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+      return;
+    }
+
+    snap = await hubRef.child(`classes/${cls}/activeActivity`).once('value');
+    a = snap.val() || {};
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+      return;
+    }
+
+    // Compatibility fallback for older saved structure
+    snap = await hubRef.child(`classes/${cls}/assignedActivities/group${currentGroup}`).once('value');
+    a = snap.val() || {};
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+      return;
+    }
+
+    renderAssignedActivityOnStudent({});
   }catch(err){
     console.log('forceLoadStudentActiveActivity error', err);
     renderAssignedActivityOnStudent({});
   }
 }
+
 
 
 
@@ -2861,20 +2885,28 @@ function openMembersWorkFromReading(){
 
 
 
+
 function listenAssignedActivity(){
   if(assignedActivityListener) assignedActivityListener.off();
   if(classActiveActivityListener) classActiveActivityListener.off();
 
-  const groupRef = hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`);
+  const cls = activeClassKey();
+
+  const groupRef = hubRef.child(`classes/${cls}/activeActivityGroups/group${currentGroup}`);
   assignedActivityListener = groupRef;
 
   groupRef.on('value', snap=>{
     const a = snap.val() || {};
-    renderAssignedActivityOnStudent(a && a.title ? a : {});
+    if(a && a.title){
+      renderAssignedActivityOnStudent(a);
+    }else{
+      forceLoadStudentActiveActivity();
+    }
   });
 
-  const changedRef = hubRef.child(`classes/${currentClass}/settings/activeActivityChangedAt`);
+  const changedRef = hubRef.child(`classes/${cls}/settings/activeActivityChangedAt`);
   classActiveActivityListener = changedRef;
+
   changedRef.on('value', ()=>{
     forceLoadStudentActiveActivity();
   });
@@ -2882,6 +2914,7 @@ function listenAssignedActivity(){
   setTimeout(forceLoadStudentActiveActivity, 200);
   setTimeout(forceLoadStudentActiveActivity, 1000);
 }
+
 
 
 
@@ -3310,9 +3343,9 @@ async function saveVoteRecord(target, checked, criteriaTotal, bestGroupBonus, co
   };
 
   if(currentVoteSystem === 'battle' && extra && extra.battleKey){
-    await hubRef.child(`classes/${currentClass}/battleVotes/${extra.battleKey}/group${currentGroup}/${currentStudentId}`).set(payload);
+    await hubRef.child(`classes/${activeClassKey()}/battleVotes/${extra.battleKey}/group${currentGroup}/${currentStudentId}`).set(payload);
   }else{
-    await hubRef.child(`classes/${currentClass}/votes/group${currentGroup}/${currentStudentId}`).set(payload);
+    await hubRef.child(`classes/${activeClassKey()}/votes/group${currentGroup}/${currentStudentId}`).set(payload);
   }
   return total;
 }
@@ -3426,7 +3459,7 @@ async function submitBattleVote(a,b){
   alert('✅ Your vote is saved. Now choose the next battle.');
 
   const availablePairs = getAvailableBattlePairs();
-  const snap = await hubRef.child(`classes/${currentClass}/battleVotes`).once('value');
+  const snap = await hubRef.child(`classes/${activeClassKey()}/battleVotes`).once('value');
   const freshVotes = snap.val() || {};
   const nextPair = availablePairs.find(pair=>{
     const key = `${pair[0]}vs${pair[1]}`;
@@ -3972,7 +4005,7 @@ async function saveMyWork(){
     updateData.workFile = uploadedFile;
   }
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update(updateData);
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update(updateData);
 
   if(fileInput) fileInput.value = '';
   const preview = document.getElementById('studentUploadPreview');
@@ -4024,7 +4057,7 @@ async function submitLeaderFinalWork(){
   }
 
   await hubRef.child(
-    `classes/${currentClass}/groups/group${currentGroup}`
+    `classes/${activeClassKey()}/groups/group${currentGroup}`
   ).update({
     finalAnswer: finalText,
     finalSubmitted: true,
@@ -4096,7 +4129,7 @@ async function submitFinalWork(){
     finalText += name + ':\n' + ((latestStudents[name] || {}).answer || 'No saved work.') + '\n\n';
   });
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}`).update({
     finalAnswer:finalText,
     finalSubmitted:true,
     submittedBy:currentStudent,
@@ -4147,7 +4180,7 @@ function clearChatNotification(){
 
 function listenChat(){
   if(chatListener) chatListener.off();
-  const ref = hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat`);
+  const ref = hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/chat`);
   chatListener = ref;
   ref.on('value', snap=>{
     const data = snap.val() || {};
@@ -4169,7 +4202,7 @@ function listenChat(){
 async function sendChat(){
   const text = document.getElementById('chatInput').value.trim();
   if(!text) return;
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat`).push({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/chat`).push({
     name:currentStudent,
     text,
     time:Date.now()
@@ -4179,14 +4212,14 @@ async function sendChat(){
 async function editChat(id, oldText){
   const next = prompt('Edit your message:', oldText);
   if(next === null) return;
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat/${id}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/chat/${id}`).update({
     text:next,
     editedAt:Date.now()
   });
 }
 async function deleteChat(id){
   if(!confirm('Delete this message?')) return;
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/chat/${id}`).remove();
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/chat/${id}`).remove();
 }
 
 function loginTeacher(){
@@ -5102,7 +5135,7 @@ async function submitParagraphReadingQuestions(){
     return;
   }
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
     name: currentStudent,
     role: currentRole,
@@ -5133,7 +5166,7 @@ async function saveParagraphSummary(){
     return;
   }
   const assigned = getStudentReadingAssignment(latestAssignedActivity || {});
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
     name: currentStudent,
     role: currentRole,
@@ -5178,7 +5211,7 @@ async function submitLeaderReadingFinalSummary(){
     if(!confirm('I understood some group members have not saved their summaries yet. Submit final summary anyway?')) return;
   }
 
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}`).update({
     finalAnswer: finalText,
     finalSubmitted: true,
     finalSubmittedAt: Date.now(),
@@ -5514,7 +5547,7 @@ async function submitReadingQuiz(){
       if(q.format === 'tf' && String(val) === String(!!q.answer)) score++;
     }
   }
-  await hubRef.child(`classes/${currentClass}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
     name: currentStudent,
     role: currentRole,
@@ -5746,11 +5779,11 @@ function buildActiveActivityForGroup(a, i, activationId){
 
 async function getActiveClassActivityForStudent(){
   if(!currentClass || !currentGroup) return {};
-  const groupSnap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+  const groupSnap = await hubRef.child(`classes/${activeClassKey()}/activeActivityGroups/group${currentGroup}`).once('value');
   const groupActive = groupSnap.val() || {};
   if(groupActive && groupActive.title) return groupActive;
 
-  const classSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
+  const classSnap = await hubRef.child(`classes/${activeClassKey()}/activeActivity`).once('value');
   const classActive = classSnap.val() || {};
   if(classActive && classActive.title) return classActive;
 
@@ -5794,11 +5827,11 @@ function makeStudentActiveActivity(a, groupNo, activationId){
 
 async function loadLatestActiveActivityForStudent(){
   if(!currentClass || !currentGroup) return {};
-  const snap = await hubRef.child(`classes/${currentClass}/activeActivityGroups/group${currentGroup}`).once('value');
+  const snap = await hubRef.child(`classes/${activeClassKey()}/activeActivityGroups/group${currentGroup}`).once('value');
   const a = snap.val() || {};
   if(a && a.title) return a;
 
-  const cSnap = await hubRef.child(`classes/${currentClass}/activeActivity`).once('value');
+  const cSnap = await hubRef.child(`classes/${activeClassKey()}/activeActivity`).once('value');
   const c = cSnap.val() || {};
   if(c && c.title) return c;
 
@@ -5858,8 +5891,19 @@ function buildAssignedActivityForGroup(a, i, activationId){
 
 
 
+
+function safeClassKey(value){
+  return String(value || '').replace('/', '-').trim();
+}
+function activeClassKey(){
+  return safeClassKey(currentClass);
+}
+function activeTeacherClassKey(){
+  return safeClassKey(selectedTeacherClass);
+}
+
 function normalizeClassKey(cls){
-  return String(cls || '').replace('/', '-').trim();
+  return safeClassKey(cls);
 }
 
 function strictBuildActiveActivity(a, groupNo, activationId){
@@ -5905,6 +5949,7 @@ function strictBuildActiveActivity(a, groupNo, activationId){
 }
 
 
+
 async function activateSavedActivityForSelectedClasses(){
   const activityId = document.getElementById('dashboardSavedActivities')?.value || '';
   if(!activityId){
@@ -5912,7 +5957,7 @@ async function activateSavedActivityForSelectedClasses(){
     return;
   }
 
-  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>normalizeClassKey(x.value));
+  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>safeClassKey(x.value));
   if(!classes.length){
     alert('Choose at least one class.');
     return;
@@ -5934,22 +5979,22 @@ async function activateSavedActivityForSelectedClasses(){
   }
 
   const activationId = 'act_' + Date.now();
+  const changedAt = Date.now();
   const updates = {};
 
   classes.forEach(cls=>{
     const classActive = strictBuildActiveActivity(a, 1, activationId);
     classActive.assignedClasses = classes;
     classActive.assignedToText = classes.map(classDisplay).join(', ');
+    classActive.activeActivityChangedAt = changedAt;
 
-    // STRICT source of truth for dashboards and students
     updates[`classes/${cls}/activeActivity`] = classActive;
     updates[`classes/${cls}/currentActivity`] = classActive;
 
     for(let i=1;i<=10;i++){
       const groupActive = strictBuildActiveActivity(a, i, activationId);
+      groupActive.activeActivityChangedAt = changedAt;
       updates[`classes/${cls}/activeActivityGroups/group${i}`] = groupActive;
-
-      // compatibility path, overwritten too
       updates[`classes/${cls}/assignedActivities/group${i}`] = groupActive;
     }
 
@@ -5958,10 +6003,10 @@ async function activateSavedActivityForSelectedClasses(){
     updates[`classes/${cls}/settings/resultsReleased`] = false;
     updates[`classes/${cls}/settings/activeActivityId`] = activityId;
     updates[`classes/${cls}/settings/activationId`] = activationId;
-    updates[`classes/${cls}/settings/activeActivityChangedAt`] = Date.now();
+    updates[`classes/${cls}/settings/activeActivityChangedAt`] = changedAt;
   });
 
-  updates[`activityLibrary/${activityId}/lastActivatedAt`] = Date.now();
+  updates[`activityLibrary/${activityId}/lastActivatedAt`] = changedAt;
   updates[`activityLibrary/${activityId}/lastActivatedClasses`] = classes;
 
   await hubRef.update(updates);
@@ -5974,6 +6019,7 @@ async function activateSavedActivityForSelectedClasses(){
   document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
 }
+
 
 
 
@@ -6359,7 +6405,7 @@ async function resetSelectedClass(){
     return;
   }
 
-  const cls = normalizeClassKey(selectedTeacherClass);
+  const cls = activeTeacherClassKey();
 
   // Fully delete the class node first
   await hubRef.child(`classes/${cls}`).remove();
