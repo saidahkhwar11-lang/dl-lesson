@@ -24,7 +24,2248 @@ async function showClassReadingPerformance(){
 
   let html = `<h2>📖 Reading Performance - Class ${classDisplay(selectedTeacherClass)}</h2>`;
   html += `<p><b>Active Activity:</b> ${escapeHtml(assigned.title || 'No active reading activity')}</p>`;
-  html += `
+  html += `<div class="shareAnswersBox">Teacher view: check question marks, paragraph numbers, self-evaluation, and student summaries. The leader final group summary appears under each group if submitted.</div>`;
+
+  Object.keys(groups).sort().forEach(gKey=>{
+    const g = groups[gKey] || {};
+    const students = g.students || {};
+    html += `<div class="teacherPerformanceBox">
+      <h3>👥 ${escapeHtml(gKey.replace('group','Group '))}</h3>
+      <table class="performanceTable">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>ID</th>
+            <th>Paragraph</th>
+            <th>Question Marks</th>
+            <th>Self-Eval</th>
+            <th>Summary</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    Object.keys(students).forEach(id=>{
+      const s = students[id] || {};
+      html += `<tr>
+        <td>${escapeHtml(s.name || id)} ${s.role === 'leader' ? '👑' : ''}</td>
+        <td>${escapeHtml(id)}</td>
+        <td>${escapeHtml(s.assignedParagraphNumber || '-')}</td>
+        <td>${escapeHtml((s.readingScore ?? '-') + ' / ' + (s.readingTotal ?? '-'))}</td>
+        <td>${escapeHtml(s.selfEvaluation || '-')}</td>
+        <td class="summaryCell">${escapeHtml(s.paragraphSummary || 'No summary saved yet.')}</td>
+      </tr>`;
+    });
+
+    html += `</tbody></table>`;
+
+    if(g.finalSubmitted || g.finalAnswer){
+      html += `<div class="finalSummaryCard"><b>📌 Leader Final Group Summary:</b><br>${escapeHtml(g.finalAnswer || 'No final answer submitted yet.')}</div>`;
+    }else{
+      html += `<div class="readingStatusWarn">Leader has not submitted the final group summary yet.</div>`;
+    }
+
+    html += `</div>`;
+  });
+
+  panel.classList.remove('hidden');
+  panel.innerHTML = html;
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+
+function winnerGroupStudentNames(groupObj){
+  const students = (groupObj || {}).students || {};
+  const names = Object.keys(students).map(id=>studentDisplayName(students[id], id));
+  return names.length ? names.join(', ') : 'Winning Group Students';
+}
+
+
+function hideStudentUploadBoxesSafely(){
+  try{
+    const all = Array.from(document.querySelectorAll('div,section,article'));
+    all.forEach(function(el){
+      const text = (el.innerText || '').trim();
+      if(text.includes('Upload your work file / picture') || text.includes('Allowed: Word, PDF, PPT, or picture')){
+        el.style.display = 'none';
+      }
+    });
+  }catch(e){}
+}
+setInterval(hideStudentUploadBoxesSafely, 1000);
+window.addEventListener('load', hideStudentUploadBoxesSafely);
+
+</script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#eef4fb;
+  color:#10233f;
+  font-size:14px;
+}
+.topbar{
+  background:linear-gradient(135deg,#263f78,#5b8fea);
+  color:white;
+  text-align:center;
+  padding:12px;
+  font-size:24px;
+  font-weight:800;
+}
+.container{
+  max-width:1180px;
+  margin:auto;
+  padding:14px;
+}
+.card{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:0 5px 18px rgba(36,59,107,.07);
+}
+.hidden{display:none!important}
+h1,h2,h3{margin:0 0 10px;color:#18376b}
+h1{font-size:24px}
+h2{font-size:20px}
+h3{font-size:16px}
+p{margin:6px 0;line-height:1.45}
+label{display:block;font-weight:700;margin-top:8px;color:#18376b}
+input,select,textarea{
+  width:100%;
+  border:1px solid #cad9ee;
+  border-radius:12px;
+  padding:10px;
+  font-size:14px;
+  margin-top:5px;
+  background:white;
+}
+textarea{min-height:95px;resize:vertical}
+button{
+  border:0;
+  border-radius:12px;
+  padding:10px 14px;
+  color:white;
+  font-weight:700;
+  font-size:14px;
+  cursor:pointer;
+  margin-top:8px;
+}
+button:hover{filter:brightness(.96)}
+.blue{background:#243b6b}
+.green{background:#23823d}
+.red{background:#c12a20}
+.purple{background:#7c3aed}
+.orange{background:#f59e0b}
+.gray{background:#64748b}
+.btnRow{display:flex;gap:10px;flex-wrap:wrap}
+.btnRow button{flex:1;min-width:140px}
+.loginTabs{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-bottom:12px;
+}
+.loginTabs button{margin:0}
+.loginGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.note{
+  background:#fff8e8;
+  border:1px solid #f4d28b;
+  border-radius:14px;
+  padding:10px;
+  color:#7c4a05;
+  margin-top:12px;
+}
+.joinBtn{
+  width:100%;
+  background:linear-gradient(135deg,#2d6fc2,#72a8f3);
+  padding:13px;
+  font-size:16px;
+}
+.groupHeader{
+  background:linear-gradient(135deg,#274690,#5c8eea);
+  color:white;
+  border-radius:22px;
+  padding:16px;
+  margin-bottom:14px;
+}
+.titleLine{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:10px;
+}
+.titleLine h1{color:white;font-size:28px}
+.statusBadge{
+  background:#fff3c4;
+  color:#92400e;
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:800;
+}
+.infoLine{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.infoLine span{
+  background:rgba(255,255,255,.17);
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:999px;
+  padding:7px 10px;
+  color:white;
+}
+.roleBadge{
+  background:#ffe8f2;
+  color:#9d174d;
+  border-radius:999px;
+  padding:4px 8px;
+  font-weight:800;
+  margin-left:4px;
+}
+.memberLine{margin-top:10px;color:white}
+.memberLine .pill{
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.25);
+  padding:5px 9px;
+  border-radius:999px;
+  margin:2px;
+  display:inline-block;
+}
+.studentLayout{
+  display:grid;
+  grid-template-columns:1.35fr .8fr;
+  gap:14px;
+}
+.myAnswer textarea{min-height:190px}
+.actions{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.actions button{margin:0}
+.leaveRow{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:10px;
+}
+.leaveRow button{min-width:145px}
+.activityName{
+  background:#fff;
+  border:1px solid #d6e3fa;
+  border-radius:14px;
+  padding:12px;
+  font-size:18px;
+  font-weight:800;
+  color:#18376b;
+}
+.instructionBox{
+  background:#eaf3ff;
+  border:1px solid #bed6ff;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+  line-height:1.55;
+}
+.taskBox{
+  background:#fff9ec;
+  border:1px solid #f0d180;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+  line-height:1.55;
+  white-space:pre-wrap;
+}
+.criteriaBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-top:10px;
+}
+.criteriaItem{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:7px 0;
+  font-weight:700;
+}
+.criteriaItem input{width:auto;margin:0}
+.memberWorkBox{
+  display:none;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-top:12px;
+}
+.memberWorkBox.open{display:block}
+.workItem{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+  white-space:pre-wrap;
+}
+.teacherHero{
+  background:linear-gradient(135deg,#f8fbff,#eef4ff);
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.teacherTopActions{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-top:12px;
+}
+.currentBox{
+  background:linear-gradient(135deg,#fff7ed,#eff6ff);
+  border:1px solid #fed7aa;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.currentGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+}
+.currentMini{
+  background:white;
+  border:1px solid #dbeafe;
+  border-radius:14px;
+  padding:10px;
+}
+.currentMini b{display:block;color:#18376b;margin-bottom:5px}
+.classGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.classCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:14px;
+  cursor:pointer;
+}
+.classCard h3{font-size:22px}
+.pill{
+  display:inline-block;
+  border-radius:999px;
+  padding:4px 8px;
+  margin:3px;
+  font-size:12px;
+  font-weight:800;
+}
+.pillYellow{background:#fef3c7;color:#92400e}
+.pillGreen{background:#d1fae5;color:#065f46}
+.pillPurple{background:#ede9fe;color:#5b21b6}
+.builderPanel,.reviewPanel{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.builderGrid{
+  display:grid;
+  grid-template-columns:1fr 260px;
+  gap:12px;
+}
+.groupTaskGrid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.groupTaskGrid textarea{min-height:80px;font-size:12px}
+.assignChecks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.checkCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px 16px;
+  font-weight:800;
+}
+.checkCard input{width:auto;margin:0 5px 0 0}
+.groupCards{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+.groupCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+}
+.answerPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  max-height:220px;
+  overflow:auto;
+}
+.chatPopup{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  width:330px;
+  max-width:calc(100vw - 36px);
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  box-shadow:0 12px 30px rgba(0,0,0,.18);
+  overflow:hidden;
+  z-index:9999;
+}
+.chatHead{
+  background:#7c3aed;
+  color:white;
+  padding:12px;
+  font-weight:800;
+  display:flex;
+  justify-content:space-between;
+}
+.chatHead button{padding:3px 8px;margin:0;background:#c12a20}
+.chatMessages{
+  height:230px;
+  overflow:auto;
+  padding:10px;
+  background:#f8fbff;
+}
+.chatMsg{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:8px;
+  margin-bottom:8px;
+}
+.chatActions button{font-size:11px;padding:5px 8px;margin-right:5px}
+.chatInput{padding:10px}
+.chatInput textarea{min-height:60px}
+.achievement{
+  background:#fff4f7;
+  border:1px solid #ffcbd7;
+  border-radius:16px;
+  padding:14px;
+  margin-top:14px;
+}
+.achievement button{
+  width:100%;
+  background:linear-gradient(135deg,#f59e0b,#ec4899);
+}
+
+.votePanel{
+  background:#f0f7ff;
+  border:1px solid #bcd7ff;
+  border-radius:16px;
+  padding:14px;
+  margin-top:14px;
+}
+.voteTarget{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.voteFinal{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:12px;
+  padding:10px;
+  white-space:pre-wrap;
+  max-height:160px;
+  overflow:auto;
+  margin-top:8px;
+}
+.scoreGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.resultTable{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:10px;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+}
+.resultTable th,.resultTable td{
+  border:1px solid #d8e5f6;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+.resultTable th{
+  background:#eaf3ff;
+  color:#18376b;
+}
+
+.votingHeader{background:linear-gradient(135deg,#243b6b,#4f7dd8)}
+.topVotingRules{
+  margin-top:12px;
+  background:rgba(255,255,255,.16);
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:16px;
+  padding:12px;
+  display:grid;
+  grid-template-columns:1.2fr .8fr;
+  gap:12px;
+  align-items:start;
+}
+.topVotingRules h3{color:white;margin:0 0 6px}
+.topVotingRules p{color:white;margin:0;line-height:1.45}
+.topMyAnswer{
+  background:rgba(255,255,255,.18);
+  border:1px solid rgba(255,255,255,.22);
+  border-radius:14px;
+  padding:10px;
+  color:white;
+}
+.topMyAnswer summary{cursor:pointer;font-weight:800}
+.topMyAnswer .voteFinal{
+  background:white;
+  color:#10233f;
+  margin-top:8px;
+  max-height:120px;
+}
+.votingLayout{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:14px;
+}
+.voteMainCard,.voteSideCard{margin-bottom:14px}
+.smallNote{color:#64748b;font-size:13px}
+.voteCriteriaList{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:8px;
+}
+.voteCriteriaItem{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  margin:7px 0;
+  font-weight:700;
+}
+.voteCriteriaItem input,.bestGroupBox input{width:auto;margin:0}
+ .voteSystemBox{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px;
+  margin:10px 0;
+}
+.battleGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.battleAnswerCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.battleAnswerCard.own{opacity:.68}
+.battleAnswerCard h3{margin-bottom:8px}
+.battleLock{
+  background:#fff3c4;
+  border:1px solid #f4d28b;
+  border-radius:10px;
+  padding:8px;
+  color:#92400e;
+  font-weight:800;
+}
+.bestGroupBox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:11px;
+  margin:12px 0;
+  font-weight:800;
+  color:#92400e;
+}
+
+.battleChooser{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.battleStepBar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+.battleStep{
+  background:#eef2ff;
+  border:1px solid #c7d2fe;
+  color:#243b6b;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:800;
+  font-size:12px;
+}
+.battleStep.active{
+  background:#fff7ed;
+  border-color:#fdba74;
+  color:#9a3412;
+}
+.battleStep.done{
+  background:#dcfce7;
+  border-color:#86efac;
+  color:#166534;
+}
+.battleClearSteps{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:10px 0 12px;
+}
+.battleClearSteps div{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:12px;
+  padding:10px;
+  font-weight:800;
+  color:#18376b;
+  text-align:center;
+}
+.battleCompareBox{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin-top:10px;
+}
+.battleAnswerCard h3{
+  background:#eaf3ff;
+  border-radius:10px;
+  padding:8px;
+  margin-bottom:8px;
+}
+.battleRubric{
+  margin-top:14px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  overflow:hidden;
+}
+.battleRubric table{
+  width:100%;
+  border-collapse:collapse;
+}
+.battleRubric th{
+  background:#eaf3ff;
+  color:#18376b;
+  padding:10px;
+  font-size:14px;
+}
+.battleRubric td{
+  border-top:1px solid #d8e5f6;
+  padding:10px;
+  vertical-align:middle;
+}
+.battleRubric .criteriaText{
+  font-weight:800;
+  color:#18376b;
+}
+.scoreCheck{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:6px;
+  font-weight:800;
+  color:#166534;
+}
+.scoreCheck input{width:auto;margin:0;transform:scale(1.25)}
+.bestChoiceRow{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin:12px 0;
+}
+.bestChoiceRow label{
+  margin:0;
+}
+.nextBattleBtn{
+  width:100%;
+  background:#243b6b;
+  margin-top:8px;
+}
+@media(max-width:900px){
+  .battleClearSteps,.battleCompareBox,.bestChoiceRow{grid-template-columns:1fr}
+  .battleRubric table,.battleRubric thead,.battleRubric tbody,.battleRubric tr,.battleRubric th,.battleRubric td{display:block;width:100%}
+  .battleRubric tr{border-top:1px solid #d8e5f6;padding:8px}
+  .battleRubric td{border-top:0;padding:7px}
+}
+
+@media(max-width:900px){.votingLayout,.battleGrid,.topVotingRules{grid-template-columns:1fr}}
+
+
+/* ===== Clear Battle Voting Page Upgrade ===== */
+#battleVoteCard{
+  background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+  border:1px solid #cfe0f7;
+}
+.votingLayout{
+  grid-template-columns:1fr;
+}
+.battleChooser{
+  background:linear-gradient(135deg,#eff6ff,#ffffff);
+  border:1px solid #bfdbfe;
+  box-shadow:0 6px 16px rgba(36,59,107,.06);
+}
+.battleChooser select{
+  font-size:16px;
+  font-weight:800;
+  color:#18376b;
+  background:white;
+}
+.battleInstructionBanner{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+.battleInstructionBanner div{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  font-weight:900;
+  color:#18376b;
+  box-shadow:0 3px 10px rgba(36,59,107,.04);
+}
+.battleVoteMainTitle{
+  background:linear-gradient(135deg,#243b6b,#4f7dd8);
+  color:white;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.battleVoteMainTitle h2{color:white;margin:0}
+.battleVoteMainTitle p{color:#eaf3ff;margin:6px 0 0}
+.battleReadGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:14px 0;
+}
+.clearAnswerCard{
+  background:white;
+  border:2px solid #d8e5f6;
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 5px 16px rgba(36,59,107,.06);
+}
+.clearAnswerHead{
+  background:#eaf3ff;
+  padding:12px 14px;
+  font-size:17px;
+  font-weight:900;
+  color:#18376b;
+  border-bottom:1px solid #d8e5f6;
+}
+.clearAnswerText{
+  min-height:160px;
+  max-height:260px;
+  overflow:auto;
+  padding:14px;
+  white-space:pre-wrap;
+  line-height:1.55;
+  background:#fbfdff;
+}
+.clearScoreSection{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin:14px 0;
+}
+.clearScoreCard{
+  background:#ffffff;
+  border:2px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.clearScoreCard h3{
+  background:#eef6ff;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:10px;
+  color:#18376b;
+}
+.clearCriterion{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  align-items:center;
+  gap:10px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+  cursor:pointer;
+  font-weight:800;
+  color:#18376b;
+}
+.clearCriterion:hover{background:#eef6ff}
+.clearCriterion input{width:auto;margin:0;transform:scale(1.25)}
+.pointBadge{
+  background:#dcfce7;
+  color:#166534;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:900;
+}
+.clearBestSection{
+  background:#fff7ed;
+  border:2px solid #fed7aa;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.clearBestSection h3{color:#9a3412;margin-bottom:8px}
+.clearBestChoices{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+.clearBestChoice{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:white;
+  border:2px solid #fed7aa;
+  border-radius:14px;
+  padding:14px;
+  font-size:16px;
+  font-weight:900;
+  color:#9a3412;
+  cursor:pointer;
+}
+.clearBestChoice input{width:auto;margin:0;transform:scale(1.25)}
+.clearSaveBar{
+  position:sticky;
+  bottom:8px;
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:12px;
+  box-shadow:0 8px 24px rgba(15,23,42,.13);
+  margin-top:12px;
+}
+.clearSaveBar button{font-size:16px;padding:13px}
+.resultFormulaBox{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px;
+  color:#18376b;
+  font-weight:800;
+  margin:10px 0;
+}
+@media(max-width:900px){
+  .battleInstructionBanner,.battleReadGrid,.clearScoreSection,.clearBestChoices{grid-template-columns:1fr}
+}
+
+.winnerBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:800;
+}
+
+.certActions{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin:12px 0 16px;
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.certActions button{
+  margin:0;
+  min-width:230px;
+  background:linear-gradient(135deg,#f59e0b,#ec4899);
+}
+.certMsg{
+  flex:1;
+  min-width:240px;
+  font-weight:800;
+  color:#92400e;
+}
+
+
+
+/* Student cute header timer linked with teacher timer */
+.groupHeader{position:relative; padding-right:230px;}
+.studentHeaderTimer{
+  position:absolute;
+  right:18px;
+  top:18px;
+  min-width:190px;
+  background:linear-gradient(135deg,#fff7ed,#fef3c7);
+  border:1px solid rgba(255,255,255,.55);
+  color:#7c2d12;
+  border-radius:18px;
+  padding:10px 14px;
+  box-shadow:0 8px 18px rgba(0,0,0,.10);
+  text-align:center;
+}
+.studentHeaderTimer .timerIcon{font-size:20px;line-height:1}
+.studentHeaderTimer .timerText{
+  display:block;
+  font-size:24px;
+  font-weight:900;
+  color:#18376b;
+  letter-spacing:.5px;
+  margin-top:2px;
+}
+.studentHeaderTimer .timerStatus{
+  display:block;
+  font-size:11px;
+  font-weight:900;
+  color:#92400e;
+  margin-top:2px;
+}
+.studentHeaderTimer.running{background:linear-gradient(135deg,#dcfce7,#f0fdf4);color:#065f46;}
+.studentHeaderTimer.running .timerStatus{color:#166534;}
+.studentHeaderTimer.paused{background:linear-gradient(135deg,#fef3c7,#fff7ed);}
+.studentHeaderTimer.finished{background:linear-gradient(135deg,#fee2e2,#fff1f2);}
+.studentHeaderTimer.finished .timerText{color:#b91c1c;}
+@media(max-width:760px){
+  .groupHeader{padding-right:16px;}
+  .studentHeaderTimer{position:static;margin:12px 0 0;min-width:0;width:100%;}
+}
+
+/* Teacher timer maximize popup */
+.teacherTimerLine{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.timerMiniBtn{
+  background:#243b6b;
+  padding:8px 12px;
+  border-radius:10px;
+  font-size:13px;
+  margin:0;
+}
+.timerPill{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  background:#ecfeff;
+  border:1px solid #bae6fd;
+  color:#075985;
+  padding:7px 10px;
+  border-radius:999px;
+  font-weight:900;
+}
+.timerModalOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(6,18,46,.62);
+  z-index:99999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+.timerModal{
+  width:min(980px,96vw);
+  max-height:92vh;
+  overflow:auto;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid #cfe0fb;
+  border-radius:26px;
+  box-shadow:0 24px 70px rgba(0,0,0,.28);
+}
+.timerModalHeader{
+  background:linear-gradient(135deg,#18376b,#5b8fea);
+  color:white;
+  padding:20px;
+  border-radius:26px 26px 0 0;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+}
+.timerModalHeader h1{color:white;margin:0;font-size:28px}
+.timerModalHeader p{color:#eaf3ff;margin:5px 0 0}
+.timerCloseBtn{
+  background:#dc2626;
+  margin:0;
+  border-radius:12px;
+  padding:9px 13px;
+}
+.bigTimerBox{
+  margin:18px;
+  background:linear-gradient(135deg,#fff7ed,#eff6ff);
+  border:2px solid #fed7aa;
+  border-radius:24px;
+  text-align:center;
+  padding:22px;
+}
+.bigTimerTime{
+  font-size:64px;
+  line-height:1;
+  font-weight:900;
+  color:#18376b;
+  letter-spacing:2px;
+}
+.bigTimerLabel{
+  color:#92400e;
+  font-weight:900;
+  margin-top:8px;
+}
+.timerControlRow{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.timerControlRow button{min-width:135px;margin:0}
+.activityPopupGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  padding:0 18px 18px;
+}
+.activityPopupCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+}
+.activityPopupCard.full{grid-column:1/-1}
+.activityPopupCard h3{font-size:16px;margin-bottom:8px;color:#18376b}
+.activityPopupText{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  min-height:58px;
+  white-space:pre-wrap;
+  line-height:1.5;
+}
+@media(max-width:760px){
+  .activityPopupGrid{grid-template-columns:1fr}
+  .bigTimerTime{font-size:46px}
+}
+
+@media(max-width:900px){
+  .studentLayout,.builderGrid{grid-template-columns:1fr}
+  .classGrid,.groupCards,.groupTaskGrid,.currentGrid{grid-template-columns:1fr 1fr}
+  .teacherTopActions,.actions{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .loginGrid,.classGrid,.groupCards,.groupTaskGrid,.currentGrid,.teacherTopActions,.actions{grid-template-columns:1fr}
+}
+
+/* Clean compact battle voting update */
+.compactChooser{
+  display:grid;
+  grid-template-columns:minmax(240px, 1.2fr) 170px 1fr;
+  gap:14px;
+  align-items:end;
+  padding:12px;
+}
+.compactChooser select{height:46px;font-weight:800;color:#18376b}
+.miniProgress{
+  background:#eff6ff;
+  border:1px solid #bfdbfe;
+  border-radius:14px;
+  padding:10px 12px;
+  text-align:center;
+  color:#18376b;
+}
+.miniProgress b{display:block;font-size:20px}
+.miniProgress span{font-size:12px;color:#64748b;font-weight:800}
+.miniHint{
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  color:#166534;
+  border-radius:14px;
+  padding:10px 12px;
+  font-weight:800;
+}
+.cleanBattleCard{padding:12px 14px 0;overflow:hidden}
+.compactTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px 14px;
+  margin-bottom:12px;
+}
+.compactTitle h2{margin:0;font-size:22px}.compactTitle p{margin:0;color:#475569}
+.compactReadGrid{gap:12px;margin-bottom:12px}
+.clearAnswerBlue{border-color:#bfdbfe}.clearAnswerGreen{border-color:#bbf7d0}
+.largeAnswerText{
+  min-height:230px;
+  max-height:360px;
+  font-size:15px;
+  line-height:1.65;
+  padding:16px;
+}
+.submittedLine{
+  padding:9px 12px;
+  border-top:1px solid #e2e8f0;
+  background:#fbfdff;
+  color:#18376b;
+}
+.miniMember{
+  display:inline-block;
+  background:#eaf3ff;
+  color:#1d4ed8;
+  border-radius:999px;
+  padding:4px 9px;
+  margin:3px;
+  font-size:12px;
+  font-weight:800;
+}
+.clearAnswerGreen .miniMember{background:#dcfce7;color:#166534}
+.startVotingPanel{
+  text-align:center;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  padding:26px 14px;
+  margin:10px 0 14px;
+}
+.startIcon{
+  width:56px;height:56px;line-height:56px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2d6fc2,#1d4ed8);
+  color:white;
+  margin:0 auto 8px;
+  font-size:22px;
+  font-weight:900;
+}
+.startVoteBtn{min-width:180px;padding:12px 22px;font-size:16px}
+.compactStepTitle{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  font-size:18px;
+  font-weight:900;
+  color:#18376b;
+  margin:8px 0 10px;
+}
+.compactStepTitle span{font-size:13px;color:#475569;background:#eff6ff;border-radius:999px;padding:5px 10px}
+.compactScoreSection{gap:12px;margin:10px 0}
+.compactScoreCard{padding:10px;border-radius:16px}
+.compactScoreCard h3{font-size:16px;padding:8px 10px;margin-bottom:7px}
+.compactCriterion{padding:8px 10px;margin:6px 0;font-size:13px}
+.compactCriterion input{transform:scale(1.08)}
+.compactBestSection{padding:10px;margin:10px 0;border-radius:16px}
+.compactBestSection h3{font-size:16px;margin-bottom:8px}
+.compactBestChoices{gap:10px}.compactBestChoices .clearBestChoice{padding:10px;font-size:15px}
+.compactComment{min-height:74px;max-height:110px}
+.compactSaveBar{
+  position:static;
+  display:grid;
+  grid-template-columns:180px 180px 1fr;
+  align-items:center;
+  gap:10px;
+  border-radius:0;
+  margin:12px -14px 0;
+  padding:12px 18px;
+  box-shadow:none;
+  background:#f8fbff;
+  border-left:0;border-right:0;border-bottom:0;
+}
+.compactSaveBar .note{margin:0;padding:8px 10px;font-size:13px}
+.compactActionBtn{
+  width:100%!important;
+  margin:0;
+  padding:10px 12px!important;
+  font-size:14px!important;
+  border-radius:12px;
+}
+@media(max-width:900px){
+  .compactChooser{grid-template-columns:1fr}.compactTitle{display:block}.largeAnswerText{min-height:180px}.compactSaveBar{grid-template-columns:1fr 1fr}.compactSaveBar .note{grid-column:1/-1}
+}
+
+/* ===== Activity image upload/display upgrade ===== */
+.imageUploadBox{
+  background:#f8fbff;
+  border:1px dashed #bcd7ff;
+  border-radius:14px;
+  padding:10px;
+  margin-top:8px;
+}
+.imagePreviewBox{
+  margin-top:8px;
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+.activityImg{
+  width:100%;
+  max-height:240px;
+  object-fit:contain;
+  display:block;
+  background:#f8fbff;
+}
+.groupTaskImg{
+  width:100%;
+  max-height:160px;
+  object-fit:contain;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  background:#f8fbff;
+  margin-top:8px;
+}
+.smallImageBtn{
+  background:#64748b;
+  padding:7px 10px;
+  font-size:12px;
+  margin-top:6px;
+}
+.groupTaskMiniCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+
+
+.activityImageWrap{
+  margin-top:12px;
+  position:relative;
+}
+.activityImageSmall{
+  width:180px;
+  max-width:100%;
+  border-radius:14px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:.25s;
+  display:block;
+}
+.activityImageSmall.maximized{
+  width:100%;
+  max-height:70vh;
+  object-fit:contain;
+}
+.imageToggleBtn{
+  margin-top:8px;
+  background:#243b6b;
+  padding:7px 12px;
+  font-size:12px;
+}
+
+
+/* ===== FINAL FIX: small activity pictures + maximize/minimize ===== */
+.imagePreviewBox{
+  margin-top:10px;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  background:#f8fbff;
+  padding:8px;
+  overflow:visible;
+  display:inline-block;
+  max-width:100%;
+}
+.activityImg,
+.groupTaskImg{
+  width:180px !important;
+  max-width:100% !important;
+  max-height:130px !important;
+  object-fit:contain !important;
+  display:block;
+  background:white;
+  border-radius:12px;
+  border:1px solid #d8e5f6;
+  cursor:pointer;
+  transition:all .25s ease;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  width:100% !important;
+  max-width:100% !important;
+  max-height:70vh !important;
+}
+.imageToggleBtn{
+  display:block;
+  width:180px;
+  max-width:100%;
+  margin-top:7px;
+  background:#243b6b;
+  color:white;
+  border-radius:10px;
+  padding:7px 10px;
+  font-size:12px;
+}
+
+
+/* ===== CLEAN FINAL IMAGE STYLE: compact thumbnail + neat maximize ===== */
+.imagePreviewBox{
+  margin:6px 12px 6px 0 !important;
+  padding:0 !important;
+  border:0 !important;
+  background:transparent !important;
+  display:inline-flex !important;
+  flex-direction:column !important;
+  align-items:center !important;
+  gap:5px !important;
+  max-width:140px !important;
+  float:left !important;
+}
+.activityImg,
+.groupTaskImg{
+  width:120px !important;
+  height:90px !important;
+  max-width:120px !important;
+  max-height:90px !important;
+  object-fit:contain !important;
+  display:block !important;
+  background:white !important;
+  border:1px solid #cfe0f7 !important;
+  border-radius:10px !important;
+  padding:3px !important;
+  cursor:pointer !important;
+  box-shadow:0 2px 8px rgba(36,59,107,.08) !important;
+}
+.imageToggleBtn{
+  width:120px !important;
+  min-width:0 !important;
+  margin:0 !important;
+  padding:5px 7px !important;
+  font-size:11px !important;
+  border-radius:9px !important;
+  background:#243b6b !important;
+  line-height:1.15 !important;
+}
+.activityImg.maximized,
+.groupTaskImg.maximized{
+  position:fixed !important;
+  z-index:999999 !important;
+  left:50% !important;
+  top:50% !important;
+  transform:translate(-50%,-50%) !important;
+  width:auto !important;
+  height:auto !important;
+  max-width:88vw !important;
+  max-height:82vh !important;
+  background:white !important;
+  padding:12px !important;
+  border:3px solid #243b6b !important;
+  border-radius:18px !important;
+  box-shadow:0 20px 60px rgba(0,0,0,.35) !important;
+}
+.imagePreviewBox:has(.maximized)::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:rgba(15,23,42,.55);
+  z-index:999998;
+}
+.instructionBox::after,
+.taskBox::after{
+  content:"";
+  display:block;
+  clear:both;
+}
+.instructionBox,
+.taskBox{
+  overflow:auto !important;
+}
+
+
+/* ===== Final submission inside members work ===== */
+.leaderFinalSection{
+  margin-top:14px;
+  padding-top:14px;
+  border-top:2px dashed #d8e5f6;
+}
+.leaderFinalSection textarea{
+  min-height:140px;
+  margin-top:10px;
+}
+.finalSubmitBtn{
+  width:100%;
+  margin-top:10px;
+  font-size:15px;
+  padding:13px;
+}
+.memberWaitingBox{
+  margin-top:14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:14px;
+  padding:12px;
+  font-weight:800;
+}
+
+
+.pill small{
+  opacity:.75;
+  font-weight:700;
+  margin-left:4px;
+}
+
+/* ===== Teacher resources + student uploads ===== */
+.resourceBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.resourceBox h3{margin:0 0 8px;color:#18376b;font-size:15px}
+.resourceLink{
+  display:inline-block;
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:7px 10px;
+  margin:4px 4px 4px 0;
+  text-decoration:none;
+  font-weight:800;
+  font-size:13px;
+}
+.resourceLink:hover{background:#dbeafe}
+.fileMini{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+}
+.fileMini b{color:#9a3412}
+.uploadStudentBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.uploadStudentBox input{background:white}
+.studentUploadPreview{
+  margin-top:7px;
+  font-size:13px;
+  font-weight:800;
+  color:#18376b;
+}
+.groupTaskMiniCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+.groupTaskMiniCard input[type="url"]{font-size:12px}
+.smallHint{
+  font-size:12px;
+  color:#64748b;
+  margin-top:4px;
+}
+
+
+/* ===== Reading Activity Type + Auto Marking ===== */
+.readingBuilderBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.skillCheckGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin:8px 0;
+}
+.skillCheck{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  font-weight:800;
+  color:#18376b;
+}
+.skillCheck input{width:auto;margin:0 6px 0 0}
+.quizCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.quizQuestion{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:11px;
+  margin:9px 0;
+}
+.quizQuestion b{color:#18376b}
+.quizOption{
+  display:block;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:10px;
+  padding:8px;
+  margin:6px 0;
+  font-weight:700;
+}
+.quizOption input{width:auto;margin:0 7px 0 0}
+.quizResultBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:900;
+}
+.readingTextBox{
+  background:#fff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  max-height:260px;
+  overflow:auto;
+  white-space:pre-wrap;
+  line-height:1.6;
+}
+.previewQuestion{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  margin:7px 0;
+  font-size:13px;
+}
+@media(max-width:900px){
+  .skillCheckGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .skillCheckGrid{grid-template-columns:1fr}
+}
+
+
+/* ===== Dashboard Activity Activation Panel ===== */
+.activationPanel{
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid #cfe0f7;
+  border-radius:18px;
+  padding:14px;
+  margin:14px 0;
+}
+.activationGrid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:12px;
+  align-items:end;
+}
+.activationClassChecks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.activationPreview{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+  color:#92400e;
+  font-weight:800;
+}
+@media(max-width:900px){.activationGrid{grid-template-columns:1fr}}
+
+.teacherTopActions{grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){.teacherTopActions{grid-template-columns:1fr 1fr}}
+
+/* ===== Paragraph Reading System ===== */
+.paragraphReadingBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.paragraphGrid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-top:10px;
+}
+.paragraphCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
+.paragraphCard h3{
+  margin:0 0 8px;
+  color:#18376b;
+}
+.paragraphTextPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:9px;
+  max-height:120px;
+  overflow:auto;
+  white-space:pre-wrap;
+  font-size:13px;
+}
+.studentParagraphBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  padding:12px;
+  margin:12px 0;
+}
+.studentParagraphBox h3{
+  color:#9a3412;
+  margin-bottom:8px;
+}
+.studentSummaryBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.readingStatusGood{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+  font-weight:900;
+}
+.readingStatusWarn{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:12px;
+  padding:9px;
+  margin-top:8px;
+  font-weight:900;
+}
+.finalSummaryCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin:8px 0;
+}
+@media(max-width:900px){.paragraphGrid{grid-template-columns:1fr}}
+
+
+/* ===== Clean Reading Builder Mode ===== */
+#readingBuilderArea{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+  margin-top:12px;
+}
+.readingCleanBox{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:10px;
+}
+.readingCleanTitle{
+  background:linear-gradient(135deg,#eef6ff,#ffffff);
+  border:1px solid #bfdbfe;
+  border-radius:16px;
+  padding:12px;
+  margin-bottom:12px;
+}
+.readingCleanTitle h2{margin:0;color:#18376b}
+.readingCleanTitle p{margin:6px 0 0;color:#475569}
+.teacherPerformanceBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin-top:14px;
+}
+.performanceTable{
+  width:100%;
+  border-collapse:collapse;
+  background:white;
+  border-radius:12px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.performanceTable th,.performanceTable td{
+  border:1px solid #d8e5f6;
+  padding:8px;
+  text-align:left;
+  vertical-align:top;
+}
+.performanceTable th{
+  background:#eaf3ff;
+  color:#18376b;
+}
+.summaryCell{
+  white-space:pre-wrap;
+  max-width:360px;
+}
+.shareAnswersBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:12px;
+  padding:10px;
+  margin-top:10px;
+  font-weight:800;
+}
+
+
+/* ===== Reading-only student page layout ===== */
+.readingMainLayout{
+  display:grid;
+  grid-template-columns:1fr .85fr;
+  gap:14px;
+}
+.readingPanel{
+  background:#ffffff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:14px;
+  margin-bottom:12px;
+}
+.readingPanel h2,.readingPanel h3{color:#18376b}
+.readingChecklistBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.readingChecklistBox label{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  font-weight:800;
+  margin:8px 0;
+}
+.readingChecklistBox input{width:auto;margin:0}
+.readingQuestionFeedback{
+  margin-top:8px;
+  padding:8px;
+  border-radius:10px;
+  font-weight:800;
+}
+.feedbackCorrect{background:#ecfdf5;color:#065f46;border:1px solid #86efac}
+.feedbackWrong{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}
+.leaderSummaryBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:16px;
+  padding:12px;
+  margin-top:12px;
+}
+.readingHiddenForMode{display:none!important}
+@media(max-width:900px){.readingMainLayout{grid-template-columns:1fr}}
+
+
+/* ===== Strong student active activity sync ===== */
+.studentSyncNote{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#92400e;
+  border-radius:12px;
+  padding:8px;
+  margin-top:8px;
+  font-size:12px;
+  font-weight:800;
+}
+
+
+/* ===== Reading final-exam style: one question at a time ===== */
+.readingStepBox{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:14px;
+  margin-top:12px;
+}
+.readingStepTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.readingStepBadge{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:6px 10px;
+  font-weight:900;
+}
+.examSkillTag{
+  display:inline-block;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:999px;
+  padding:4px 8px;
+  font-size:12px;
+  font-weight:900;
+}
+.readingStepActions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:12px;
+}
+.readingStepActions button{margin:0}
+.readingStepActions.three{grid-template-columns:1fr 1fr 1fr}
+.selfEvalBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:12px;
+}
+.readingQuestionFeedback{
+  margin-top:8px;
+  padding:8px;
+  border-radius:10px;
+  font-weight:800;
+}
+.feedbackCorrect{background:#ecfdf5;color:#065f46;border:1px solid #86efac}
+.feedbackWrong{background:#fff1f2;color:#991b1b;border:1px solid #fecdd3}
+
+
+/* ===== Manual paragraph question builder ===== */
+.manualQBuilder{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:10px;
+}
+.manualQItem{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  margin-top:8px;
+}
+.manualQItem h4{
+  margin:0 0 8px;
+  color:#18376b;
+}
+.manualQOptions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.manualQActions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.manualQActions button{margin:0}
+@media(max-width:700px){.manualQOptions{grid-template-columns:1fr}}
+
+
+/* ===== Clean final group answer collection ===== */
+.finalCollectPreview{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin:10px 0;
+}
+.finalMemberBlock{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+  margin:10px 0;
+  box-shadow:0 4px 12px rgba(36,59,107,.06);
+}
+.finalMemberName{
+  display:inline-block;
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:999px;
+  padding:6px 12px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+.finalMemberWork{
+  white-space:pre-wrap;
+  line-height:1.55;
+  color:#0b1b33;
+}
+#leaderFinalAnswerBox,
+#leaderReadingFinalBox{
+  min-height:220px;
+  line-height:1.55;
+}
+
+
+/* ===== Student activity switch fix ===== */
+.readingStudentActions{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.readingStudentActions button{margin:0}
+.forceHidden{display:none!important}
+@media(max-width:800px){.readingStudentActions{grid-template-columns:1fr}}
+
+
+/* ===== Active activity sync + chat notification ===== */
+.refreshStudentBtn{
+  background:#64748b!important;
+  color:white!important;
+  border:none!important;
+  border-radius:14px!important;
+  padding:12px 16px!important;
+  font-weight:900!important;
+  width:100%;
+  margin:10px 0!important;
+}
+.chatBtnWrap{position:relative}
+.chatNotifyBadge{
+  position:absolute;
+  top:-8px;
+  right:-8px;
+  min-width:22px;
+  height:22px;
+  border-radius:999px;
+  background:#ef4444;
+  color:white;
+  font-size:12px;
+  font-weight:900;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  border:2px solid white;
+  box-shadow:0 3px 8px rgba(0,0,0,.18);
+}
+.chatNotifyBadge.show{display:flex}
+
+
+/* ===== Final sync + refresh fix ===== */
+.refreshStudentBtn,.refreshTeacherBtn{
+  background:#64748b!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:14px!important;
+  padding:12px 16px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+}
+.refreshTeacherBtn{min-width:180px}
+.chatBtnWrap{position:relative;display:inline-block}
+.chatNotifyBadge{
+  position:absolute;top:-8px;right:-8px;min-width:22px;height:22px;border-radius:999px;
+  background:#ef4444;color:white;font-size:12px;font-weight:900;display:none;
+  align-items:center;justify-content:center;border:2px solid #fff;box-shadow:0 3px 8px rgba(0,0,0,.18)
+}
+.chatNotifyBadge.show{display:flex}
+
+
+/* ===== Visible refresh buttons ===== */
+.refreshTeacherBtn,.refreshStudentBtn{
+  background:#64748b!important;
+  color:#fff!important;
+  border:0!important;
+  border-radius:16px!important;
+  padding:14px 18px!important;
+  font-weight:900!important;
+  cursor:pointer!important;
+  box-shadow:0 8px 18px rgba(15,23,42,.12)!important;
+}
+.refreshTeacherBtn{min-width:190px}
+.refreshStudentBtn{display:inline-flex!important;align-items:center;justify-content:center;gap:6px}
+
+
+/* ===== Cleaner final answer area ===== */
+.finalGroupPreviewBox{
+  max-height:260px!important;
+  min-height:150px!important;
+  overflow:auto!important;
+  white-space:pre-wrap!important;
+  line-height:1.55!important;
+  font-size:15px!important;
+  padding:14px!important;
+}
+.finalGroupPreviewBox.expanded{
+  max-height:620px!important;
+  min-height:320px!important;
+}
+.finalToggleBtn{
+  width:100%;
+  margin-top:8px!important;
+  background:#243b6b!important;
+  color:white!important;
+  border:none!important;
+  border-radius:12px!important;
+  padding:10px!important;
+  font-weight:900!important;
+}
+.leaderMembersPreview{
+  display:none!important;
+}
+
+
+/* Stable visual feedback for selected voting criteria */
+.battleCriterion:checked + span,
+.clearBestChoice input:checked + span{
+  font-weight:900;
+}
+.clearCriterion:has(input:checked){
+  background:#ecfdf5!important;
+  border-color:#86efac!important;
+}
+.clearBestChoice:has(input:checked){
+  background:#fff7ed!important;
+  border-color:#fb923c!important;
+}
+
+
+/* ===== Teacher controlled battle voting ===== */
+.teacherVotingControl{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:16px;
+  margin:14px 0;
+}
+.teacherVotingControl.hidden{display:none!important}
+.battleControlGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+@media(max-width:900px){.battleControlGrid{grid-template-columns:1fr}}
+.voterStatusGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px;
+  margin-top:12px;
+}
+.voterStatusCard{
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  background:white;
+  font-weight:800;
+}
+.voterDone{background:#ecfdf5;border-color:#86efac;color:#065f46}
+.voterWait{background:#fff7ed;border-color:#fed7aa;color:#9a3412}
+.teacherBattleMini{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:12px;
+}
+.studentWaitBox{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:16px;
+  padding:18px;
+  font-weight:900;
+  text-align:center;
+}
+
+
+.studentIdTag{
+  opacity:.75;
+  font-size:11px;
+  margin-left:4px;
+  font-weight:700;
+}
+.miniMember .studentIdTag{font-size:10px}
+
+
+/* ===== Hide student upload area safely ===== */
+.studentUploadBox,
+#studentUploadBox,
+#uploadWorkBox,
+#studentFileBox,
+#studentFilePreview,
+#studentFileInput,
+#myFileInput{
+  display:none!important;
+}
+
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+</head>
+
+<body>
+<div class="topbar">⚔️ Skill Clash Hub</div>
+
+<div class="container">
+
+  <div id="mainTabs" class="loginTabs">
+    <button class="blue" onclick="showStudentLogin()">🎮 Student Login</button>
+    <button class="blue" onclick="showTeacherLogin()">👩‍🏫 Teacher Login</button>
+  </div>
+
+  <div id="studentLoginPage" class="card">
+    <h1>🎮 Join Skill Clash</h1>
+    <p>Choose your class, name, role, and group number.</p>
+
+    <div class="loginGrid">
+      <div>
+        <label>📚 Class</label>
+        <select id="className">
+          <option value="">Choose class</option>
+          <option value="9-1">9/1</option>
+          <option value="9-2">9/2</option>
+          <option value="9-3">9/3</option>
+          <option value="9-4">9/4</option>
+        </select>
+      </div>
+
+      <div>
+        <label>👥 Group Number</label>
+        <select id="studentGroup">
+          <option value="">Choose group</option>
+          <option value="1">Group 1</option>
+          <option value="2">Group 2</option>
+          <option value="3">Group 3</option>
+          <option value="4">Group 4</option>
+          <option value="5">Group 5</option>
+          <option value="6">Group 6</option>
+          <option value="7">Group 7</option>
+          <option value="8">Group 8</option>
+          <option value="9">Group 9</option>
+          <option value="10">Group 10</option>
+        </select>
+      </div>
+
+      <div>
+        <label>🌸 Student Name</label>
+        <input id="studentName" placeholder="Write your name">
+      </div>
+
+      <div>
+        <label>🆔 Student ID</label>
+        <input id="studentId" placeholder="Write your ID number">
+      </div>
+
+      <div>
+        <label>⭐ Group Role</label>
+        <select id="studentRole">
+          <option value="member">Group Member</option>
+          <option value="leader">Group Leader</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="note">💡 Decide who is the leader before joining. Members appear automatically after joining the same group.<br>🆔 Use the same Student ID every day to restore your saved work, even if your name spelling changes.</div>
+
+    <button class="joinBtn" onclick="joinGroup()">✨ Join My Group Work</button>
+  </div>
+
+  <div id="teacherLoginPage" class="card hidden">
+    <h1>👩‍🏫 Teacher Login</h1>
+    <label>Password</label>
+    <input id="teacherPassword" type="password" placeholder="Enter password">
+    <button class="green" onclick="loginTeacher()">Login</button>
+  </div>
+
+  <div id="workPage" class="hidden">
+    <div class="groupHeader">
+      <div class="titleLine">
+        <h1 id="workTitle">Group Work</h1>
+        <span class="statusBadge" id="statusBadge">✍️ In Progress</span>
+      </div>
+      <div id="studentHeaderTimer" class="studentHeaderTimer">
+        <div class="timerIcon">⏱️</div>
+        <span id="studentTimer" class="timerText">Not started</span>
+        <span id="studentTimerStatus" class="timerStatus">Teacher timer</span>
+      </div>
+      <div class="infoLine">
+        <span id="infoClass"></span>
+        <span id="infoGroup"></span>
+        <span id="infoLeader"></span>
+        <span id="infoYou"></span>
+        <span id="infoVotes"></span>
+      </div>
+      <div class="memberLine" id="infoMembers"></div>
+      <button class="refreshStudentBtn" onclick="studentRefreshPage()">🔄 Refresh Student Page</button><span id="studentRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
+    </div>
+
+    <div id="readingMainWorkBox" class="card hidden"></div>
+
+    <div class="studentLayout">
+      <div>
+        <div class="card myAnswer">
+          <h2>✍️ My Answer</h2>
+          <p>Write your part. Click <b>Save My Work</b> so your group can see it.</p>
+          <label id="myWorkLabel">My Work</label>
+          <textarea id="myAnswerBox" placeholder="Write your answer here..."></textarea>
+
+          <div class="uploadStudentBox">
+            <label>📎 Upload your work file / picture</label>
+            <input id="studentWorkFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="previewStudentUpload(this)">
+            <div id="studentUploadPreview" class="studentUploadPreview">No file uploaded yet.</div>
+            <p class="smallHint">Allowed: Word, PDF, PPT, or picture. Click Save My Work after choosing the file.</p>
+          </div>
 
           <div class="actions">
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
@@ -468,35 +2709,35 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
-/* ===== FINAL HARD REFRESH LOGIN PERSISTENCE ===== */
-function autoPersistSkillSession(){
+/* ===== SAFE HARD REFRESH LOGIN PERSISTENCE ===== */
+function safeAutoPersistSkillSession(){
   try{
-    if(currentClass && currentGroup && currentStudent && currentStudentId){
+    if(window.currentClass && window.currentGroup && window.currentStudent && window.currentStudentId){
       const data = {
-        className: currentClass,
-        group: currentGroup,
-        student: currentStudent,
-        studentId: currentStudentId,
-        role: currentRole || 'member',
+        className: window.currentClass,
+        group: window.currentGroup,
+        student: window.currentStudent,
+        studentId: window.currentStudentId,
+        role: window.currentRole || 'member',
         savedAt: Date.now()
       };
       localStorage.setItem('skillClashStudentSession', JSON.stringify(data));
-      sessionStorage.setItem('skillClass', currentClass);
-      sessionStorage.setItem('skillGroup', currentGroup);
-      sessionStorage.setItem('skillStudent', currentStudent);
-      sessionStorage.setItem('skillStudentId', currentStudentId);
-      sessionStorage.setItem('skillRole', currentRole || 'member');
+      sessionStorage.setItem('skillClass', data.className);
+      sessionStorage.setItem('skillGroup', data.group);
+      sessionStorage.setItem('skillStudent', data.student);
+      sessionStorage.setItem('skillStudentId', data.studentId);
+      sessionStorage.setItem('skillRole', data.role);
     }
   }catch(e){}
 }
-window.addEventListener('beforeunload', autoPersistSkillSession);
-setInterval(autoPersistSkillSession, 1500);
+window.addEventListener('beforeunload', safeAutoPersistSkillSession);
+setInterval(safeAutoPersistSkillSession, 2000);
 
-function restoreStudentImmediately(){
+function safeRestoreStudentSession(){
   try{
     let data = null;
-    const localData = localStorage.getItem('skillClashStudentSession');
-    if(localData) data = JSON.parse(localData);
+    const raw = localStorage.getItem('skillClashStudentSession');
+    if(raw) data = JSON.parse(raw);
 
     const sClass = sessionStorage.getItem('skillClass');
     const sGroup = sessionStorage.getItem('skillGroup');
@@ -510,20 +2751,22 @@ function restoreStudentImmediately(){
 
     if(!data || !data.className || !data.group || !data.student || !data.studentId) return false;
 
-    currentClass = data.className;
-    currentGroup = data.group;
-    currentStudent = data.student;
-    currentStudentId = data.studentId;
-    currentRole = data.role || 'member';
+    window.currentClass = data.className;
+    window.currentGroup = data.group;
+    window.currentStudent = data.student;
+    window.currentStudentId = data.studentId;
+    window.currentRole = data.role || 'member';
 
     showOnly('workPage');
 
-    setTimeout(()=>{
-      if(typeof listenGroup === 'function') listenGroup();
-      if(typeof listenClassSettings === 'function') listenClassSettings();
-      if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
-      if(typeof listenChat === 'function') listenChat();
-      if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+    setTimeout(function(){
+      try{
+        if(typeof listenGroup === 'function') listenGroup();
+        if(typeof listenClassSettings === 'function') listenClassSettings();
+        if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
+        if(typeof listenChat === 'function') listenChat();
+        if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+      }catch(e){}
     },100);
 
     return true;
@@ -894,6 +3137,8 @@ async function joinGroup(){
 
   saveSkillSession();
   autoPersistSkillSession();
+  saveSkillSession();
+  safeAutoPersistSkillSession();
   showOnly('workPage');
   listenGroup();
 }
@@ -2882,7 +5127,7 @@ async function previewStudentUpload(input){
   const box = document.getElementById('studentUploadPreview');
   const file = input.files && input.files[0];
   if(!file){
-    if(box) box.innerText = '';
+    if(box) box.innerText = 'No file uploaded yet.';
     return;
   }
   if(box) box.innerText = 'Selected: ' + file.name + ' — click Save My Work.';
@@ -4984,7 +7229,7 @@ async function resetSelectedClass(){
 
 
 
-window.addEventListener('load',()=>{
+window.addEventListener('load',function(){
   try{
     buildGroupTaskInputs();
     buildAssignGroupChecks();
@@ -4993,7 +7238,7 @@ window.addEventListener('load',()=>{
     updateTeacherTimerDisplay();
   }catch(e){}
 
-  if(restoreStudentImmediately()) return;
+  if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) return;
 
   try{
     if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
