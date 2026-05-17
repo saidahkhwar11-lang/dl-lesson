@@ -2517,6 +2517,25 @@ button:hover{filter:brightness(.96)}
 .activityPopupCard{
   padding:10px 12px!important;
 }
+  /* ===== Cute mini timer inside details box ===== */
+.detailsMiniTimer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  background:linear-gradient(135deg,#1e3a8a,#2563eb);
+  color:white;
+  border-radius:14px;
+  padding:10px 14px;
+  font-size:22px;
+  font-weight:700;
+  margin-bottom:14px;
+  box-shadow:0 6px 16px rgba(37,99,235,.18);
+}
+
+#popupMiniTimer{
+  letter-spacing:1px;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -3104,8 +3123,13 @@ Grammar and spelling are checked"></textarea>
   <!-- RIGHT SIDE -->
   <div class="timerInfoMini">
 
-    <div class="miniDetailsInside">
-      <b>📝 Activity Details</b>
+<div class="miniDetailsInside">
+
+  <div class="detailsMiniTimer">
+    ⏰ <span id="popupMiniTimer">00:00</span>
+  </div>
+  
+    <b>📝 Activity Details</b>
 
       <div id="popupActivityDetails">
         Students write, save, review group work, and submit final answer.
@@ -7684,7 +7708,7 @@ function updateTeacherTimerDisplay(){
   const teacherTimer = document.getElementById('teacherTimer');
   const bigTimer = document.getElementById('bigTeacherTimer');
   const label = document.getElementById('bigTeacherTimerLabel');
-  const mini = document.getElementById('currentTimerMini');
+  const mini = document.getElementById('popupMiniTimer');
   if(teacherTimer) teacherTimer.innerText = teacherTimerSeconds > 0 ? txt : 'Not started';
   if(bigTimer) bigTimer.innerText = txt;
   if(mini) mini.innerText = txt;
