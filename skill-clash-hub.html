@@ -2536,6 +2536,37 @@ button:hover{filter:brightness(.96)}
 #popupMiniTimer{
   letter-spacing:1px;
 }
+  /* ===== Cute numbered activity details ===== */
+.detailStep{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid #dbeafe;
+}
+
+.detailStep:last-child{
+  border-bottom:none;
+}
+
+.detailNum{
+  min-width:28px;
+  height:28px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+  font-size:13px;
+  box-shadow:0 3px 8px rgba(37,99,235,.18);
+}
+
+.detailStep span:last-child{
+  flex:1;
+  line-height:1.45;
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -7881,9 +7912,24 @@ function updateTimerPopupActivity(){
   if(assigned) assigned.innerText = data.assignedTo || '-';
   if(instructions) instructions.innerText = a.instructions || 'No instructions.';
 
-  if(details){
-    details.innerText = generateTimerActivityExplanation(a);
-  }
+ if(details){
+
+  const clean = (generateTimerActivityExplanation(a) || '')
+    .replace(/\n/g,' ')
+    .split('.')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+  details.innerHTML = clean.map(function(step,i){
+    return `
+      <div class="detailStep">
+        <span class="detailNum">${i+1}</span>
+        <span>${step}.</span>
+      </div>
+    `;
+  }).join('');
+
+}
 
   if(criteria){
     const list = a.criteria || [];
