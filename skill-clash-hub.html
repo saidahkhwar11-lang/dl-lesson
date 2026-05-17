@@ -2113,7 +2113,7 @@ button:hover{filter:brightness(.96)}
         <span id="infoVotes"></span>
       </div>
       <div class="memberLine" id="infoMembers"></div>
-      <button class="refreshStudentBtn" onclick="studentRefreshPage()">🔄 Refresh Student Page</button>
+      <button class="refreshStudentBtn" onclick="studentRefreshPage()">🔄 Refresh Student Page</button><span id="studentRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
     </div>
 
     <div id="readingMainWorkBox" class="card hidden"></div>
@@ -2285,7 +2285,7 @@ button:hover{filter:brightness(.96)}
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
-        <button class="refreshTeacherBtn" onclick="refreshTeacherPage()">🔄 Refresh Teacher Page</button>
+        <button class="refreshTeacherBtn" onclick="refreshTeacherPage()">🔄 Refresh Teacher Page</button><span id="teacherRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
       </div>
 
       <div class="note teacherTimerLine">
@@ -2574,13 +2574,42 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
-function refreshTeacherPage(){
+async function refreshTeacherPage(){
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
+  if(selectedTeacherClass){
+    const cls = activeTeacherClassKey();
+    const snap = await hubRef.child(`classes/${cls}`).once('value');
+    if(typeof renderSelectedClass === 'function') renderSelectedClass(snap.val() || {});
+  }
+  const msg = document.getElementById('teacherRefreshMsg');
+  if(msg){
+    msg.innerText = '✅ Refreshed';
+    setTimeout(()=>{msg.innerText='';},1500);
+  }
 }
-function studentRefreshPage(){
-  if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
-  setTimeout(()=>location.reload(),250);
+
+async function studentRefreshPage(){
+  if(!currentClass || !currentGroup || !currentStudent){
+    showOnly('studentLoginPage');
+    return;
+  }
+
+  // Keep student online and reload live data only.
+  if(typeof forceLoadStudentActiveActivity === 'function') await forceLoadStudentActiveActivity();
+
+  if(typeof listenGroup === 'function') listenGroup();
+
+  const msg = document.getElementById('studentRefreshMsg');
+  if(msg){
+    msg.innerText = '✅ Refreshed';
+    setTimeout(()=>{msg.innerText='';},1500);
+  }
 }
+
+
+
+
+
 
 
 
@@ -4282,6 +4311,7 @@ function leaveTeacher(){
 }
 
 
+
 function renderTeacherDashboard(silent){
   if(teacherDashboardRef) teacherDashboardRef.off();
   teacherDashboardRef = hubRef.child('classes');
@@ -4295,6 +4325,7 @@ function renderTeacherDashboard(silent){
     }
   });
 }
+
 
 
 
@@ -6457,6 +6488,7 @@ async function exportCSV(){
 
 
 
+
 async function resetSelectedClass(){
   if(!selectedTeacherClass){
     alert('Choose a class first.');
@@ -6478,11 +6510,10 @@ async function resetSelectedClass(){
     timer:null
   };
 
-  // Delete the whole class node first.
   await hubRef.child(`classes/${cls}`).remove();
 
-  // Extra cleanup for every child that may have been recreated by live listeners.
   await hubRef.update({
+    [`classes/${cls}/settings`]: blankSettings,
     [`classes/${cls}/groups`]: null,
     [`classes/${cls}/votes`]: null,
     [`classes/${cls}/battleVotes`]: null,
@@ -6490,8 +6521,7 @@ async function resetSelectedClass(){
     [`classes/${cls}/activeActivity`]: null,
     [`classes/${cls}/currentActivity`]: null,
     [`classes/${cls}/activeActivityGroups`]: null,
-    [`classes/${cls}/assignedActivities`]: null,
-    [`classes/${cls}/settings`]: blankSettings
+    [`classes/${cls}/assignedActivities`]: null
   });
 
   selectedTeacherClass = '';
@@ -6500,8 +6530,9 @@ async function resetSelectedClass(){
 
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
 
-  alert('✅ Class reset completely. Old students and old work were deleted.');
+  alert('✅ Class reset completely. Old students, assigned work, and marks were deleted.');
 }
+
 
 
 
