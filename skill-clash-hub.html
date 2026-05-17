@@ -2213,6 +2213,121 @@ button:hover{filter:brightness(.96)}
 }
 @media(max-width:700px){.studentBattleProgress{grid-template-columns:1fr}}
 
+/* ===== FIX: Compact Teacher Timer Popup ===== */
+.timerModal{
+  width:min(920px,96vw)!important;
+  max-height:92vh!important;
+}
+
+.timerModalHeader{
+  padding:16px 20px!important;
+}
+
+.timerModalHeader h1{
+  font-size:26px!important;
+}
+
+.timerModalHeader p{
+  font-size:16px!important;
+  margin-top:4px!important;
+}
+
+.bigTimerBox{
+  margin:14px 18px!important;
+  padding:18px!important;
+  border-radius:22px!important;
+}
+
+.bigTimerTime{
+  font-size:58px!important;
+}
+
+.bigTimerLabel{
+  margin-top:5px!important;
+  font-size:16px!important;
+}
+
+.timerControlRow{
+  margin-top:12px!important;
+  gap:10px!important;
+}
+
+.timerControlRow button{
+  min-width:145px!important;
+  padding:11px 14px!important;
+  font-size:15px!important;
+}
+
+.activityPopupGrid{
+  padding:0 18px 18px!important;
+  gap:12px!important;
+  grid-template-columns:1fr 1fr!important;
+}
+
+.activityPopupCard{
+  padding:12px 14px!important;
+  border-radius:18px!important;
+}
+
+.activityPopupCard h3{
+  font-size:17px!important;
+  margin-bottom:8px!important;
+}
+
+.activityPopupText{
+  min-height:auto!important;
+  padding:12px 14px!important;
+  font-size:15px!important;
+  line-height:1.45!important;
+}
+
+/* Activity name + assigned to should be short boxes */
+#popupActivityName,
+#popupAssignedTo{
+  min-height:54px!important;
+}
+
+/* Instructions full width but not huge */
+.activityPopupCard.full .activityPopupText{
+  min-height:auto!important;
+}
+
+/* Details and success criteria fit better */
+#popupActivityDetails,
+#popupSuccessCriteria{
+  max-height:210px!important;
+  overflow:auto!important;
+}
+
+/* Make long text cleaner */
+#popupActivityDetails{
+  font-size:14px!important;
+  line-height:1.45!important;
+}
+
+#popupSuccessCriteria{
+  font-size:15px!important;
+  line-height:1.55!important;
+}
+
+/* Remove extra empty bottom space */
+.timerModal .activityPopupCard:last-child{
+  margin-bottom:0!important;
+}
+
+@media(max-width:760px){
+  .activityPopupGrid{
+    grid-template-columns:1fr!important;
+  }
+
+  .bigTimerTime{
+    font-size:44px!important;
+  }
+
+  .timerControlRow button{
+    width:100%!important;
+  }
+}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2772,10 +2887,12 @@ Grammar and spelling are checked"></textarea>
         <h3>📌 Activity Name</h3>
         <div id="popupActivityName" class="activityPopupText">No activity assigned yet.</div>
       </div>
+
       <div class="activityPopupCard">
-        <h3>👥 Assigned To</h3>
-        <div id="popupAssignedTo" class="activityPopupText">-</div>
+        <h3>✅ Success Criteria</h3>
+        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
       </div>
+      
       <div class="activityPopupCard full">
         <h3>📋 Instructions</h3>
         <div id="popupInstructions" class="activityPopupText">No instructions.</div>
@@ -2784,10 +2901,7 @@ Grammar and spelling are checked"></textarea>
         <h3>📝 Activity Details</h3>
         <div id="popupActivityDetails" class="activityPopupText">Students write, save, review group work, and submit final answer.</div>
       </div>
-      <div class="activityPopupCard">
-        <h3>✅ Success Criteria</h3>
-        <div id="popupSuccessCriteria" class="activityPopupText">No criteria assigned.</div>
-      </div>
+      
     </div>
   </div>
 </div>
