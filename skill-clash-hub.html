@@ -2682,6 +2682,90 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
+/* ===== FINAL AUTO SESSION PERSIST FIX ===== */
+function autoPersistSkillSession(){
+  try{
+    if(currentClass && currentGroup && currentStudent && currentStudentId){
+      const data = {
+        className: currentClass,
+        group: currentGroup,
+        student: currentStudent,
+        studentId: currentStudentId,
+        role: currentRole || 'member',
+        savedAt: Date.now()
+      };
+
+      localStorage.setItem('skillClashStudentSession', JSON.stringify(data));
+
+      sessionStorage.setItem('skillClass', currentClass);
+      sessionStorage.setItem('skillGroup', currentGroup);
+      sessionStorage.setItem('skillStudent', currentStudent);
+      sessionStorage.setItem('skillStudentId', currentStudentId);
+      sessionStorage.setItem('skillRole', currentRole || 'member');
+    }
+  }catch(e){}
+}
+
+window.addEventListener('beforeunload', autoPersistSkillSession);
+setInterval(autoPersistSkillSession, 2000);
+
+function restoreStudentImmediately(){
+  try{
+    let data = null;
+
+    const localData = localStorage.getItem('skillClashStudentSession');
+    if(localData){
+      data = JSON.parse(localData);
+    }
+
+    const sClass = sessionStorage.getItem('skillClass');
+    const sGroup = sessionStorage.getItem('skillGroup');
+    const sStudent = sessionStorage.getItem('skillStudent');
+    const sId = sessionStorage.getItem('skillStudentId');
+    const sRole = sessionStorage.getItem('skillRole');
+
+    if(sClass && sGroup && sStudent && sId){
+      data = {
+        className:sClass,
+        group:sGroup,
+        student:sStudent,
+        studentId:sId,
+        role:sRole || 'member'
+      };
+    }
+
+    if(!data) return false;
+
+    if(!data.className || !data.group || !data.student || !data.studentId){
+      return false;
+    }
+
+    currentClass = data.className;
+    currentGroup = data.group;
+    currentStudent = data.student;
+    currentStudentId = data.studentId;
+    currentRole = data.role || 'member';
+
+    showOnly('workPage');
+
+    setTimeout(()=>{
+      try{
+        if(typeof listenGroup === 'function') listenGroup();
+        if(typeof listenClassSettings === 'function') listenClassSettings();
+        if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
+        if(typeof listenChat === 'function') listenChat();
+        if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+      }catch(e){}
+    },100);
+
+    return true;
+  }catch(e){
+    return false;
+  }
+}
+
+
+
 /* ===== Login persistence: clear only on Leave buttons ===== */
 function saveSkillSession(){
   const data = {
@@ -2917,6 +3001,7 @@ async function joinGroup(){
   currentGroup = document.getElementById('studentGroup').value;
   currentStudent = document.getElementById('studentName').value.trim();
   currentStudentId = document.getElementById('studentId').value.trim();
+  autoPersistSkillSession();
   currentRole = document.getElementById('studentRole').value;
 
   if(!currentClass || !currentGroup || !currentStudent || !currentStudentId){
@@ -2955,6 +3040,8 @@ async function joinGroup(){
     lastSeenAt: Date.now()
   });
 
+  saveSkillSession();
+  autoPersistSkillSession();
   showOnly('workPage');
   listenGroup();
 }
@@ -4510,6 +4597,7 @@ async function submitFinalWork(){
 
 function leaveGroup(){
   clearSkillStudentSession();
+  clearSkillStudentSession();
   sessionStorage.removeItem('skillClass');
   sessionStorage.removeItem('skillGroup');
   sessionStorage.removeItem('skillStudent');
@@ -4607,6 +4695,7 @@ function loginTeacher(){
 }
 
 function leaveTeacher(){
+  clearTeacherSession();
   clearTeacherSession();
   teacherLoggedIn=false;
   showOnly('studentLoginPage');
@@ -7041,18 +7130,33 @@ async function resetSelectedClass(){
 
 
 
-window.addEventListener('load',()=>{
-  buildGroupTaskInputs();
-  buildAssignGroupChecks();
-  toggleTaskType();
-  toggleAssignMode();
-  updateTeacherTimerDisplay();
 
-  if(restoreStudentSessionIfExists()) return;
-  if(restoreTeacherSessionIfExists()) return;
+window.addEventListener('load',()=>{
+
+  try{
+    buildGroupTaskInputs();
+    buildAssignGroupChecks();
+    toggleTaskType();
+    toggleAssignMode();
+    updateTeacherTimerDisplay();
+  }catch(e){}
+
+  // Restore student first after refresh
+  if(restoreStudentImmediately()) return;
+
+  // Restore teacher dashboard
+  try{
+    if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
+      showOnly('teacherDashboard');
+      if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+      if(typeof loadLibraryToDashboard === 'function') loadLibraryToDashboard();
+      return;
+    }
+  }catch(e){}
 
   showOnly('studentLoginPage');
 });
+
 
 
 
