@@ -2295,7 +2295,7 @@ button:hover{filter:brightness(.96)}
 }
 
 /* Make long text cleaner */
-#popupActivityDetails{
+
   font-size:14px!important;
   line-height:1.45!important;
 }
@@ -2385,10 +2385,7 @@ button:hover{filter:brightness(.96)}
   grid-template-columns:1fr!important;
 }
 
-#popupActivityDetails{
-  max-height:190px!important;
-  overflow:auto!important;
-}
+
 
 @media(max-width:760px){
   .timerInfoInsideBox{
@@ -2536,36 +2533,39 @@ button:hover{filter:brightness(.96)}
 #popupMiniTimer{
   letter-spacing:1px;
 }
-  /* ===== Cute numbered activity details ===== */
+
+/* ===== Compact activity details like success criteria ===== */
+#popupActivityDetails{
+  max-height:none!important;
+  overflow:visible!important;
+}
+
 .detailStep{
   display:flex;
   align-items:flex-start;
-  gap:10px;
-  padding:10px 0;
-  border-bottom:1px solid #dbeafe;
-}
-
-.detailStep:last-child{
-  border-bottom:none;
+  gap:8px;
+  padding:5px 0;
+  border-bottom:none!important;
 }
 
 .detailNum{
-  min-width:28px;
-  height:28px;
+  min-width:22px;
+  height:22px;
   border-radius:50%;
-  background:linear-gradient(135deg,#2563eb,#1d4ed8);
+  background:#2563eb;
   color:white;
   display:flex;
   align-items:center;
   justify-content:center;
   font-weight:700;
-  font-size:13px;
-  box-shadow:0 3px 8px rgba(37,99,235,.18);
+  font-size:11px;
+  margin-top:1px;
 }
 
 .detailStep span:last-child{
   flex:1;
-  line-height:1.45;
+  line-height:1.3;
+  font-size:13px;
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
