@@ -2235,7 +2235,7 @@ button:hover{filter:brightness(.96)}
 
           <div class="uploadStudentBox">
             <label>📎 Upload your work file / picture</label>
-            <input id="studentWorkFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="previewStudentUpload(this)">
+            
             <div id="studentUploadPreview" class="studentUploadPreview">No file uploaded yet.</div>
             <p class="smallHint">Allowed: Word, PDF, PPT, or picture. Click Save My Work after choosing the file.</p>
           </div>
@@ -2513,7 +2513,7 @@ button:hover{filter:brightness(.96)}
             <h2>1️⃣ Upload or Paste Full Reading Text</h2>
 
             <label>📄 Upload PDF Reading Text</label>
-            <input id="readingSamePdf" type="file" accept=".pdf,.txt,application/pdf,text/plain" onchange="handleReadingTextFileUpload(this)">
+            
             <p class="smallHint">You can upload PDF or TXT. If PDF extraction does not work, paste the text manually below.</p>
 
             <label>✍️ Full Reading Text</label>
@@ -2545,7 +2545,7 @@ button:hover{filter:brightness(.96)}
 <div id="writingBuilderFields">
 <label>📷 Main Activity Details Picture</label>
         <div class="imageUploadBox">
-          <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
+          
           <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
           <button type="button" class="smallImageBtn" onclick="clearMainActivityImage()">Remove Main Picture</button>
         </div>
@@ -2558,7 +2558,7 @@ button:hover{filter:brightness(.96)}
           <input id="builderSameLink" type="url" placeholder="Paste lesson link / Teams / website / activity link">
 
           <label>📎 Attach Word / PDF / PPT / Picture for the Main Question</label>
-          <input id="builderSameFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleSameTaskFileUpload(this)">
+          
           <div id="builderSameFilePreview" class="fileMini hidden"></div>
           <button type="button" class="smallImageBtn" onclick="clearSameTaskFile()">Remove File</button>
         </div>
@@ -2588,7 +2588,7 @@ button:hover{filter:brightness(.96)}
           <div class="note">📌 Reading Type uses one clear system: each student receives a different paragraph from the same full text, answers auto-marked questions, then writes a short summary.</div>
 
           <label>📄 Upload Full Reading PDF</label>
-          <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
+          
 
           <label>Full Reading Text</label>
           <textarea id="readingSameText" placeholder="PDF text will appear here. You can also paste the full reading text manually."></textarea>
@@ -5026,15 +5026,7 @@ function clearGroupTaskFile(i){
   if(input) input.value = '';
   renderFilePreviewBox('groupFilePreview_'+i, null);
 }
-async function previewStudentUpload(input){
-  const box = document.getElementById('studentUploadPreview');
-  const file = input.files && input.files[0];
-  if(!file){
-    if(box) box.innerText = 'No file uploaded yet.';
-    return;
-  }
-  if(box) box.innerText = 'Selected: ' + file.name + ' — click Save My Work.';
-}
+async 
 
 function renderMainImagePreview(){
   const box = document.getElementById('builderMainImagePreview');
@@ -5145,19 +5137,19 @@ function buildGroupTaskInputs(){
       <input id="groupLink_${i}" type="url" placeholder="Paste link for Group ${i}">
 
       <label>📎 Group ${i} Word / PDF / PPT / Picture</label>
-      <input id="groupFile_${i}" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleGroupTaskFileUpload(${i}, this)">
+      
       <div id="groupFilePreview_${i}" class="fileMini hidden"></div>
       <button type="button" class="smallImageBtn" onclick="clearGroupTaskFile(${i})">Remove File</button>
 
       <label>📷 Group ${i} Picture</label>
-      <input id="groupImage_${i}" type="file" accept="image/*" onchange="handleGroupTaskImageUpload(${i}, this)">
+      
       <div id="groupImagePreview_${i}" class="imagePreviewBox hidden"></div>
       <button type="button" class="smallImageBtn" onclick="clearGroupTaskImage(${i})">Remove Picture</button>
 
       <div class="readingBuilderBox">
         <b>📖 Reading Task for Group ${i}</b>
         <label>Upload Group ${i} Reading PDF</label>
-        <input id="readingPdf_group${i}" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingText_group${i}')">
+        
         <label>Group ${i} Reading Text</label>
         <textarea id="readingText_group${i}" placeholder="Paste or extract reading text for Group ${i}."></textarea>
         <button type="button" class="purple" onclick="generateGroupReadingQuestions(${i})">✨ Generate Group ${i} Questions</button>
