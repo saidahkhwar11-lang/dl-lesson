@@ -2754,6 +2754,49 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
+/* ===== Class Reset Kick System ===== */
+let currentClassResetToken = localStorage.getItem('skillClassResetToken') || '';
+
+function saveCurrentResetToken(token){
+  currentClassResetToken = String(token || '');
+  localStorage.setItem('skillClassResetToken', currentClassResetToken);
+}
+
+function clearStudentAfterTeacherReset(){
+  try{
+    localStorage.removeItem('skillClashStudentSession');
+    sessionStorage.removeItem('skillClass');
+    sessionStorage.removeItem('skillGroup');
+    sessionStorage.removeItem('skillStudent');
+    sessionStorage.removeItem('skillStudentId');
+    sessionStorage.removeItem('skillRole');
+    localStorage.removeItem('skillClassResetToken');
+  }catch(e){}
+
+  currentClass = '';
+  currentGroup = '';
+  currentStudent = '';
+  currentStudentId = '';
+  currentRole = 'member';
+
+  alert('🔄 Your teacher reset this class. Please login again to start the new activity.');
+  showOnly('studentLoginPage');
+}
+
+
+
+function skillClassKey(v){
+  return String(v || '').replace('/', '-').trim();
+}
+function currentStudentClassKey(){
+  return skillClassKey(currentClass);
+}
+function currentTeacherClassKey(){
+  return skillClassKey(selectedTeacherClass);
+}
+
+
+
 /* ===== SAFE HARD REFRESH LOGIN PERSISTENCE ===== */
 function safeAutoPersistSkillSession(){
   try{
@@ -2811,6 +2854,7 @@ function safeRestoreStudentSession(){
         if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
         if(typeof listenChat === 'function') listenChat();
         if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+        if(typeof listenClassSettings === 'function') listenClassSettings();
       }catch(e){}
     },100);
 
@@ -3184,6 +3228,10 @@ async function joinGroup(){
   autoPersistSkillSession();
   saveSkillSession();
   safeAutoPersistSkillSession();
+  
+  const resetSnap = await hubRef.child(`classes/${currentStudentClassKey ? currentStudentClassKey() : String(currentClass).replace('/','-')}/settings/resetToken`).once('value');
+  saveCurrentResetToken(resetSnap.val() || '');
+
   showOnly('workPage');
   listenGroup();
 }
@@ -3466,29 +3514,54 @@ function renderAssignedActivityOnStudent(a){
 
 
 
+
 function listenClassSettings(){
   if(settingsListener) settingsListener.off();
 
-  const clsKey = activeClassKey();
-  const ref = hubRef.child(`classes/${clsKey}`);
+  const clsKey = currentStudentClassKey();
+  const ref = hubRef.child(`classes/${clsKey}/settings`);
   settingsListener = ref;
 
   ref.on('value', snap=>{
-    const cls = snap.val() || {};
-    const settings = cls.settings || {};
-    latestClassGroups = cls.groups || {};
+    const settings = snap.val() || {};
+
+    // If teacher reset this class, kick current students back to login and clear saved session.
+    const resetToken = String(settings.resetToken || '');
+    const savedResetToken = String(localStorage.getItem('skillClassResetToken') || '');
+    if(resetToken && savedResetToken && resetToken !== savedResetToken){
+      clearStudentAfterTeacherReset();
+      return;
+    }
+    if(resetToken && !savedResetToken){
+      saveCurrentResetToken(resetToken);
+    }
     latestClassSettings = settings || {};
     currentStage = settings.stage || 'work';
-    currentVoteSystem = 'battle';
+    currentVoteSystem = settings.voteSystem || 'battle';
+
+    if(settings.currentBattleKey){
+      selectedBattleKey = settings.currentBattleKey;
+      battleVotingStarted = true;
+    }
+
     latestClassTimer = settings.timer || {};
     syncStudentTimerFromSettings(settings);
-    latestClassVotes = cls.battleVotes || {};
-    if(settings.currentBattleKey) selectedBattleKey = settings.currentBattleKey;
 
-    updateStageUI(settings);
-    if(currentStage === 'voting') renderBattleVoting();
+    hubRef.child(`classes/${clsKey}`).once('value', classSnap=>{
+      const cls = classSnap.val() || {};
+      latestClassGroups = cls.groups || {};
+      latestClassVotes = cls.battleVotes || {};
+      updateStageUI(settings);
+
+      if(currentStage === 'voting'){
+        showOnly('votingPage');
+        switchVotingModeUI();
+        renderBattleVoting();
+      }
+    });
   });
 }
+
 
 
 function updateStageUI(settings){
@@ -3500,6 +3573,7 @@ function updateStageUI(settings){
   routeStudentStage();
 }
 
+
 function routeStudentStage(){
   if(!currentClass || !currentGroup || !currentStudent) return;
 
@@ -3510,15 +3584,15 @@ function routeStudentStage(){
     showOnly('votingPage');
     document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
     document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
-    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+
     if(resultsPanel) resultsPanel.classList.add('hidden');
     if(votingLayout) votingLayout.classList.remove('hidden');
+
     switchVotingModeUI();
-    buildVoteTargets();
     renderVoteCriteria();
     renderMyGroupFinalPreview();
     renderBattleVoting();
-    checkMyVoteStatus();
     return;
   }
 
@@ -3526,7 +3600,8 @@ function routeStudentStage(){
     showOnly('votingPage');
     document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
     document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
-    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudentId}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+
     if(votingLayout) votingLayout.classList.add('hidden');
     if(resultsPanel) resultsPanel.classList.remove('hidden');
     renderStudentResults();
@@ -3539,6 +3614,7 @@ function routeStudentStage(){
   if(votingLayout) votingLayout.classList.remove('hidden');
   if(resultsPanel) resultsPanel.classList.add('hidden');
 }
+
 
 function getActiveVoteBucket(){
   return currentVoteSystem === 'battle' ? 'battleVotes' : 'votes';
@@ -3771,6 +3847,14 @@ function renderBattleVoting(){
   }
 
   const validKeys = availablePairs.map(pair=>`${pair[0]}vs${pair[1]}`);
+  if(teacherBattleKey){
+    const pairGroups = teacherBattleKey.split('vs').map(String);
+    if(pairGroups.includes(String(currentGroup))){
+      title.innerHTML = `<b>Current Battle:</b> Group ${pairGroups[0]} VS Group ${pairGroups[1]}`;
+      box.innerHTML = `<div class="studentWaitBox">⏳ The teacher selected your own group battle. You cannot vote for yourself. Please wait for the next battle.</div>`;
+      return;
+    }
+  }
   if(teacherBattleKey){
     const currentPair = teacherBattleKey.split('vs').map(String);
     if(currentPair.includes(String(currentGroup))){
@@ -6878,46 +6962,13 @@ function getAllBattlePairs(){
 function battleKeyFromPair(pair){
   return `${pair[0]}vs${pair[1]}`;
 }
-async function setTeacherCurrentBattle(key){
-  if(!selectedTeacherClass) return;
-  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
-  await hubRef.update({
-    [`classes/${cls}/settings/currentBattleKey`]: key,
-    [`classes/${cls}/settings/currentBattleChangedAt`]: Date.now(),
-    [`classes/${cls}/settings/stage`]: 'voting',
-    [`classes/${cls}/settings/voteSystem`]: 'battle',
-    [`classes/${cls}/settings/resultsReleased`]: false
-  });
-  renderTeacherVotingControl();
-}
-async function activateTeacherBattleVoting(){
-  if(!selectedTeacherClass){
-    alert('Choose a class first.');
-    return;
-  }
-  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
-  const firstKey = '1vs2';
-  const snap = await hubRef.child(`classes/${cls}/settings/currentBattleKey`).once('value');
-  const currentKey = snap.val() || firstKey;
 
-  await hubRef.update({
-    [`classes/${cls}/settings/stage`]: 'voting',
-    [`classes/${cls}/settings/voteSystem`]: 'battle',
-    [`classes/${cls}/settings/currentBattleKey`]: currentKey,
-    [`classes/${cls}/settings/currentBattleChangedAt`]: Date.now(),
-    [`classes/${cls}/settings/resultsReleased`]: false
-  });
 
-  const panel = document.getElementById('teacherVotingControlPanel');
-  if(panel) panel.classList.remove('hidden');
-  renderTeacherVotingControl();
-  alert('✅ Voting stage is open. Choose the battle students should vote on.');
-}
 async function renderTeacherVotingControl(){
   const panel = document.getElementById('teacherVotingControlPanel');
   if(!panel || !selectedTeacherClass) return;
 
-  const cls = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
+  const cls = currentTeacherClassKey();
   const snap = await hubRef.child(`classes/${cls}`).once('value');
   const data = snap.val() || {};
   const groups = data.groups || {};
@@ -6979,6 +7030,51 @@ async function renderTeacherVotingControl(){
     <h3>Who voted / who is waiting</h3>
     <div class="voterStatusGrid">${statusHtml}</div>
   `;
+}
+
+
+async function activateTeacherBattleVoting(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+
+  const cls = currentTeacherClassKey();
+  const battleSelect = document.getElementById('teacherCurrentBattleSelect');
+  const chosenBattle = battleSelect ? battleSelect.value : '';
+
+  const snap = await hubRef.child(`classes/${cls}/settings/currentBattleKey`).once('value');
+  const existingBattle = snap.val();
+  const battleKey = chosenBattle || existingBattle || '1vs2';
+
+  await hubRef.update({
+    [`classes/${cls}/settings/stage`]:'voting',
+    [`classes/${cls}/settings/voteSystem`]:'battle',
+    [`classes/${cls}/settings/currentBattleKey`]:battleKey,
+    [`classes/${cls}/settings/currentBattleChangedAt`]:Date.now(),
+    [`classes/${cls}/settings/resultsReleased`]:false
+  });
+
+  const panel = document.getElementById('teacherVotingControlPanel');
+  if(panel) panel.classList.remove('hidden');
+
+  if(typeof renderTeacherVotingControl === 'function') renderTeacherVotingControl();
+  alert('✅ Voting stage is open. Students will move to the selected battle automatically.');
+}
+
+async function setTeacherCurrentBattle(key){
+  if(!selectedTeacherClass) return;
+
+  const cls = currentTeacherClassKey();
+  await hubRef.update({
+    [`classes/${cls}/settings/stage`]:'voting',
+    [`classes/${cls}/settings/voteSystem`]:'battle',
+    [`classes/${cls}/settings/currentBattleKey`]:key,
+    [`classes/${cls}/settings/currentBattleChangedAt`]:Date.now(),
+    [`classes/${cls}/settings/resultsReleased`]:false
+  });
+
+  if(typeof renderTeacherVotingControl === 'function') renderTeacherVotingControl();
 }
 
 async function setStage(stage){
@@ -7347,39 +7443,34 @@ async function exportCSV(){
 
 
 
+
 async function resetSelectedClass(){
   if(!selectedTeacherClass){
     alert('Choose a class first.');
     return;
   }
 
-  if(!confirm('Reset this class completely? This will delete all students, joined groups, saved work, summaries, scores, votes, chat messages, final answers, active activity, and timer for this class.')){
+  if(!confirm('Reset this class completely? This will delete all students, groups, saved work, votes, chat, marks, active activity, and kick all students back to login.')){
     return;
   }
 
-  const cls = activeTeacherClassKey();
-  const blankSettings = {
+  const cls = (typeof currentTeacherClassKey === 'function') ? currentTeacherClassKey() : String(selectedTeacherClass || '').replace('/','-').trim();
+  const resetToken = 'reset_' + Date.now();
+
+  // Delete all class data first.
+  await hubRef.child(`classes/${cls}`).remove();
+
+  // Recreate only clean settings with a new resetToken.
+  await hubRef.child(`classes/${cls}/settings`).set({
     stage:'work',
     voteSystem:'battle',
     resultsReleased:false,
     activeActivityId:'',
     activationId:'',
     activeActivityChangedAt:Date.now(),
+    resetToken: resetToken,
+    resetAt: Date.now(),
     timer:null
-  };
-
-  await hubRef.child(`classes/${cls}`).remove();
-
-  await hubRef.update({
-    [`classes/${cls}/settings`]: blankSettings,
-    [`classes/${cls}/groups`]: null,
-    [`classes/${cls}/votes`]: null,
-    [`classes/${cls}/battleVotes`]: null,
-    [`classes/${cls}/chat`]: null,
-    [`classes/${cls}/activeActivity`]: null,
-    [`classes/${cls}/currentActivity`]: null,
-    [`classes/${cls}/activeActivityGroups`]: null,
-    [`classes/${cls}/assignedActivities`]: null
   });
 
   selectedTeacherClass = '';
@@ -7388,8 +7479,9 @@ async function resetSelectedClass(){
 
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
 
-  alert('✅ Class reset completely. Old students, assigned work, and marks were deleted.');
+  alert('✅ Class reset completely. All students were kicked out and must login again as a new start.');
 }
+
 
 
 
