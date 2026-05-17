@@ -2682,6 +2682,98 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
+/* ===== Login persistence: clear only on Leave buttons ===== */
+function saveSkillSession(){
+  const data = {
+    className: currentClass || '',
+    group: currentGroup || '',
+    student: currentStudent || '',
+    studentId: currentStudentId || '',
+    role: currentRole || 'member',
+    savedAt: Date.now()
+  };
+  if(data.className && data.group && data.student && data.studentId){
+    localStorage.setItem('skillClashStudentSession', JSON.stringify(data));
+    sessionStorage.setItem('skillClass', data.className);
+    sessionStorage.setItem('skillGroup', data.group);
+    sessionStorage.setItem('skillStudent', data.student);
+    sessionStorage.setItem('skillStudentId', data.studentId);
+    sessionStorage.setItem('skillRole', data.role);
+  }
+}
+function loadSkillSession(){
+  let data = null;
+  try{ data = JSON.parse(localStorage.getItem('skillClashStudentSession') || 'null'); }
+  catch(e){ data = null; }
+
+  const sClass = sessionStorage.getItem('skillClass');
+  const sGroup = sessionStorage.getItem('skillGroup');
+  const sStudent = sessionStorage.getItem('skillStudent');
+  const sId = sessionStorage.getItem('skillStudentId');
+  const sRole = sessionStorage.getItem('skillRole');
+
+  if(sClass && sGroup && sStudent && sId){
+    data = {className:sClass, group:sGroup, student:sStudent, studentId:sId, role:sRole || 'member'};
+  }
+  return data;
+}
+function restoreStudentSessionIfExists(){
+  const data = loadSkillSession();
+  if(!data || !data.className || !data.group || !data.student || !data.studentId) return false;
+
+  currentClass = data.className;
+  currentGroup = data.group;
+  currentStudent = data.student;
+  currentStudentId = data.studentId;
+  currentRole = data.role || 'member';
+
+  const classInput = document.getElementById('className');
+  const groupInput = document.getElementById('studentGroup');
+  const nameInput = document.getElementById('studentName');
+  const idInput = document.getElementById('studentId');
+  const roleInput = document.getElementById('studentRole');
+
+  if(classInput) classInput.value = currentClass;
+  if(groupInput) groupInput.value = currentGroup;
+  if(nameInput) nameInput.value = currentStudent;
+  if(idInput) idInput.value = currentStudentId;
+  if(roleInput) roleInput.value = currentRole;
+
+  showOnly('workPage');
+  listenGroup();
+  if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+  return true;
+}
+function clearSkillStudentSession(){
+  localStorage.removeItem('skillClashStudentSession');
+  sessionStorage.removeItem('skillClass');
+  sessionStorage.removeItem('skillGroup');
+  sessionStorage.removeItem('skillStudent');
+  sessionStorage.removeItem('skillStudentId');
+  sessionStorage.removeItem('skillRole');
+}
+function saveTeacherSession(){
+  localStorage.setItem('skillClashTeacherSession','yes');
+}
+function restoreTeacherSessionIfExists(){
+  if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
+    showOnly('teacherDashboard');
+    if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
+    if(typeof loadLibraryToDashboard === 'function') loadLibraryToDashboard();
+    return true;
+  }
+  return false;
+}
+function clearTeacherSession(){
+  localStorage.removeItem('skillClashTeacherSession');
+}
+
+
+
+
+
+
+
 
 async function refreshTeacherPage(){
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
@@ -2704,37 +2796,16 @@ async function refreshTeacherPage(){
 
 
 async function studentRefreshPage(){
-  // Keep student inside the live lesson page.
-  const savedClass = sessionStorage.getItem('skillClass') || currentClass;
-  const savedGroup = sessionStorage.getItem('skillGroup') || currentGroup;
-  const savedName = sessionStorage.getItem('skillStudent') || currentStudent;
-  const savedId = sessionStorage.getItem('skillStudentId') || currentStudentId;
-  const savedRole = sessionStorage.getItem('skillRole') || currentRole;
+  saveSkillSession();
+  showOnly('workPage');
+  if(typeof forceLoadStudentActiveActivity === 'function') await forceLoadStudentActiveActivity();
+  if(typeof listenGroup === 'function') listenGroup();
 
-  if(savedClass && savedGroup && savedName && savedId){
-    currentClass = savedClass;
-    currentGroup = savedGroup;
-    currentStudent = savedName;
-    currentStudentId = savedId;
-    currentRole = savedRole || 'member';
-
-    showOnly('workPage');
-
-    if(typeof forceLoadStudentActiveActivity === 'function') await forceLoadStudentActiveActivity();
-    if(typeof listenGroup === 'function') listenGroup();
-    if(typeof listenClassSettings === 'function') listenClassSettings();
-    if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
-    if(typeof listenChat === 'function') listenChat();
-
-    const msg = document.getElementById('studentRefreshMsg');
-    if(msg){
-      msg.innerText = '✅ Refreshed';
-      setTimeout(()=>{msg.innerText='';},1500);
-    }
-    return;
+  const msg = document.getElementById('studentRefreshMsg');
+  if(msg){
+    msg.innerText = '✅ Refreshed';
+    setTimeout(()=>{msg.innerText='';},1500);
   }
-
-  showOnly('studentLoginPage');
 }
 
 
@@ -2874,6 +2945,7 @@ async function joinGroup(){
   sessionStorage.setItem('skillStudent',currentStudent);
   sessionStorage.setItem('skillStudentId',currentStudentId);
   sessionStorage.setItem('skillRole',currentRole);
+  saveSkillSession();
 
   await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
@@ -4437,6 +4509,7 @@ async function submitFinalWork(){
 }
 
 function leaveGroup(){
+  clearSkillStudentSession();
   sessionStorage.removeItem('skillClass');
   sessionStorage.removeItem('skillGroup');
   sessionStorage.removeItem('skillStudent');
@@ -4526,6 +4599,7 @@ function loginTeacher(){
     return;
   }
   teacherLoggedIn = true;
+  saveTeacherSession();
   showOnly('teacherDashboard');
   renderTeacherDashboard();
   loadActivityLibrary();
@@ -4533,6 +4607,7 @@ function loginTeacher(){
 }
 
 function leaveTeacher(){
+  clearTeacherSession();
   teacherLoggedIn=false;
   showOnly('studentLoginPage');
 }
@@ -6964,6 +7039,8 @@ async function resetSelectedClass(){
 
 
 
+
+
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
   buildAssignGroupChecks();
@@ -6971,25 +7048,13 @@ window.addEventListener('load',()=>{
   toggleAssignMode();
   updateTeacherTimerDisplay();
 
-  const savedClass = sessionStorage.getItem('skillClass');
-  const savedGroup = sessionStorage.getItem('skillGroup');
-  const savedName = sessionStorage.getItem('skillStudent');
-  const savedId = sessionStorage.getItem('skillStudentId');
-  const savedRole = sessionStorage.getItem('skillRole');
+  if(restoreStudentSessionIfExists()) return;
+  if(restoreTeacherSessionIfExists()) return;
 
-  if(savedClass && savedGroup && savedName && savedId){
-    currentClass = savedClass;
-    currentGroup = savedGroup;
-    currentStudent = savedName;
-    currentStudentId = savedId;
-    currentRole = savedRole || 'member';
-    showOnly('workPage');
-    listenGroup();
-    forceLoadStudentActiveActivity();
-  }else{
-    showOnly('studentLoginPage');
-  }
+  showOnly('studentLoginPage');
 });
+
+
 
 </script>
 </body>
