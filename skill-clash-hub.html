@@ -98,7 +98,8 @@ window.addEventListener('load', hideStudentUploadBoxesSafely);
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-*{box-sizing:border-box}
+*{
+  if(studentHasLeftGroup && studentHasLeftGroup()){ showOnly('studentLoginPage'); return; }box-sizing:border-box}
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -2173,6 +2174,45 @@ button:hover{filter:brightness(.96)}
   margin:8px 0;
 }
 
+
+/* ===== Hide student upload box safely ===== */
+.studentUploadBox,#studentUploadBox,#uploadWorkBox,#studentFileBox,#studentFilePreview,#studentFileInput,#myFileInput{
+  display:none!important;
+}
+
+
+/* ===== Student voting progress + locked battle ===== */
+.studentBattleProgress{
+  background:#eef6ff;
+  border:1px solid #bfdbfe;
+  color:#18376b;
+  border-radius:16px;
+  padding:12px;
+  margin:10px 0;
+  font-weight:900;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.studentBattleProgress .progressMini{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  text-align:center;
+}
+.votedLockedBox{
+  background:#ecfdf5;
+  border:1px solid #86efac;
+  color:#065f46;
+  border-radius:16px;
+  padding:16px;
+  margin:12px 0;
+  font-weight:900;
+  text-align:center;
+}
+@media(max-width:700px){.studentBattleProgress{grid-template-columns:1fr}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2754,6 +2794,40 @@ Grammar and spelling are checked"></textarea>
 
 <script>
 
+/* ===== Leave Group must require new login ===== */
+function markStudentLeftGroup(){
+  try{
+    localStorage.setItem('skillClashStudentLeftGroup','yes');
+    localStorage.removeItem('skillClashStudentSession');
+    sessionStorage.removeItem('skillClass');
+    sessionStorage.removeItem('skillGroup');
+    sessionStorage.removeItem('skillStudent');
+    sessionStorage.removeItem('skillStudentId');
+    sessionStorage.removeItem('skillRole');
+    localStorage.removeItem('skillClassResetToken');
+  }catch(e){}
+
+  currentClass = '';
+  currentGroup = '';
+  currentStudent = '';
+  currentStudentId = '';
+  currentRole = 'member';
+}
+function allowStudentAutoLoginAgain(){
+  try{
+    localStorage.removeItem('skillClashStudentLeftGroup');
+  }catch(e){}
+}
+function studentHasLeftGroup(){
+  try{
+    return localStorage.getItem('skillClashStudentLeftGroup') === 'yes';
+  }catch(e){
+    return false;
+  }
+}
+
+
+
 /* ===== Class Reset Kick System ===== */
 let currentClassResetToken = localStorage.getItem('skillClassResetToken') || '';
 
@@ -2799,6 +2873,7 @@ function currentTeacherClassKey(){
 
 /* ===== SAFE HARD REFRESH LOGIN PERSISTENCE ===== */
 function safeAutoPersistSkillSession(){
+  if(studentHasLeftGroup && studentHasLeftGroup()) return;
   try{
     if(window.currentClass && window.currentGroup && window.currentStudent && window.currentStudentId){
       const data = {
@@ -2822,6 +2897,7 @@ window.addEventListener('beforeunload', safeAutoPersistSkillSession);
 setInterval(safeAutoPersistSkillSession, 2000);
 
 function safeRestoreStudentSession(){
+  if(studentHasLeftGroup && studentHasLeftGroup()) return false;
   try{
     let data = null;
     const raw = localStorage.getItem('skillClashStudentSession');
@@ -2868,6 +2944,7 @@ function safeRestoreStudentSession(){
 
 /* ===== FINAL AUTO SESSION PERSIST FIX ===== */
 function autoPersistSkillSession(){
+  if(studentHasLeftGroup && studentHasLeftGroup()) return;
   try{
     if(currentClass && currentGroup && currentStudent && currentStudentId){
       const data = {
@@ -2894,6 +2971,7 @@ window.addEventListener('beforeunload', autoPersistSkillSession);
 setInterval(autoPersistSkillSession, 2000);
 
 function restoreStudentImmediately(){
+  if(studentHasLeftGroup && studentHasLeftGroup()) return false;
   try{
     let data = null;
 
@@ -2986,6 +3064,7 @@ function loadSkillSession(){
   return data;
 }
 function restoreStudentSessionIfExists(){
+  if(studentHasLeftGroup && studentHasLeftGroup()) return false;
   const data = loadSkillSession();
   if(!data || !data.className || !data.group || !data.student || !data.studentId) return false;
 
@@ -3232,6 +3311,10 @@ async function joinGroup(){
   const resetSnap = await hubRef.child(`classes/${currentStudentClassKey ? currentStudentClassKey() : String(currentClass).replace('/','-')}/settings/resetToken`).once('value');
   saveCurrentResetToken(resetSnap.val() || '');
 
+  allowStudentAutoLoginAgain();
+  saveSkillSession && saveSkillSession();
+  if(typeof autoPersistSkillSession === 'function') autoPersistSkillSession();
+  if(typeof safeAutoPersistSkillSession === 'function') safeAutoPersistSkillSession();
   showOnly('workPage');
   listenGroup();
 }
@@ -3822,6 +3905,25 @@ function captureTeacherOpenDetails(){
   });
 }
 
+
+function getStudentEligibleBattlePairs(){
+  const pairs = [[1,2],[3,4],[5,6],[7,8],[9,10]];
+  return pairs.filter(pair => !pair.map(String).includes(String(currentGroup)));
+}
+function studentBattleVoteExists(battleKey){
+  return !!((((latestClassVotes || {})[battleKey] || {})['group'+currentGroup] || {})[currentStudentId]);
+}
+function getStudentVotingProgressHtml(currentBattleKey){
+  const eligible = getStudentEligibleBattlePairs();
+  const finished = eligible.filter(pair=>studentBattleVoteExists(`${pair[0]}vs${pair[1]}`)).length;
+  const total = eligible.length;
+  const already = currentBattleKey ? studentBattleVoteExists(currentBattleKey) : false;
+  return `<div class="studentBattleProgress">
+    <div class="progressMini">✅ Finished Battles<br><b>${finished} / ${total}</b></div>
+    <div class="progressMini">⚔️ Current Battle<br><b>${escapeHtml((currentBattleKey || '-').replace('vs',' VS Group ').replace(/^/,'Group '))}</b>${already ? '<br><span style="color:#065f46">Already submitted</span>' : '<br><span style="color:#9a3412">Waiting for your vote</span>'}</div>
+  </div>`;
+}
+
 function renderBattleVoting(){
   const title = document.getElementById('battlePairTitle');
   const box = document.getElementById('battleVoteContent');
@@ -3839,6 +3941,7 @@ function renderBattleVoting(){
   }
   const items = getVotingCriteria();
   const votes = latestClassVotes || {};
+  const teacherBattleKeyForProgress = (latestClassSettings || {}).currentBattleKey || selectedBattleKey || '';
 
   if(!availablePairs.length){
     title.innerHTML = `<b>No available battle:</b> Your own battle is hidden for fairness.`;
@@ -3895,7 +3998,7 @@ function renderBattleVoting(){
       <div class="miniHint">Your own battle is hidden, so you cannot vote for yourself.</div>
     </div>`;
 
-  title.innerHTML = chooser;
+  title.innerHTML = getStudentVotingProgressHtml(selectedBattleKey || teacherBattleKeyForProgress) + chooser;
 
   const [a,b] = selectedBattleKey.split('vs').map(Number);
   const battleKey = selectedBattleKey;
@@ -3905,6 +4008,28 @@ function renderBattleVoting(){
   const gA = latestClassGroups['group'+a] || {};
   const gB = latestClassGroups['group'+b] || {};
   const comment = activeVote ? (activeVote.comment || '') : '';
+  const alreadySubmittedThisBattle = !!existing;
+  if(alreadySubmittedThisBattle){
+    box.innerHTML = `
+      <div class="card cleanBattleCard" style="grid-column:1/-1">
+        ${getStudentVotingProgressHtml(battleKey)}
+        <div class="votedLockedBox">
+          ✅ You already submitted your vote for Group ${a} VS Group ${b}.<br>
+          Your vote is saved. Please wait for your teacher to move to the next battle.
+        </div>
+        <div class="battleReadGrid compactReadGrid">
+          <div class="clearAnswerCard clearAnswerBlue">
+            <div class="clearAnswerHead">👥 Group ${a} Final Answer</div>
+            <div class="clearAnswerText largeAnswerText">${escapeHtml(gA.finalAnswer || 'No final answer submitted yet.')}</div>
+          </div>
+          <div class="clearAnswerCard clearAnswerGreen">
+            <div class="clearAnswerHead">👥 Group ${b} Final Answer</div>
+            <div class="clearAnswerText largeAnswerText">${escapeHtml(gB.finalAnswer || 'No final answer submitted yet.')}</div>
+          </div>
+        </div>
+      </div>`;
+    return;
+  }
 
   function membersText(groupObj){
     const names = Object.keys((groupObj || {}).students || {});
@@ -4095,6 +4220,12 @@ async function submitBattleVote(a,b){
   }
 
   const battleKey = `${a}vs${b}`;
+  const alreadySavedVoteSnap = await hubRef.child(`classes/${activeClassKey()}/battleVotes/${battleKey}/group${currentGroup}/${currentStudentId}`).once('value');
+  if(alreadySavedVoteSnap.exists()){
+    alert('✅ You already voted on this battle. Please wait for your teacher to move to the next battle.');
+    renderBattleVoting();
+    return;
+  }
   // Save current screen choices before validation so live refresh does not erase them.
   document.querySelectorAll(`.battleCriterion[data-battle="${battleKey}"]`).forEach(cb=>updateBattleCriterionDraft(cb));
   const checkedWinnerForDraft = document.querySelector(`input[name="battleWinner_${battleKey}"]:checked`);
@@ -4822,6 +4953,7 @@ async function submitFinalWork(){
 }
 
 function leaveGroup(){
+  markStudentLeftGroup();
   clearSkillStudentSession();
   clearSkillStudentSession();
   sessionStorage.removeItem('skillClass');
