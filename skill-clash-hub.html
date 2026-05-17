@@ -2395,42 +2395,54 @@ button:hover{filter:brightness(.96)}
     grid-template-columns:1fr!important;
   }
 }
-  /* ===== Instructions inside activity name box ===== */
-.miniInstructionInside{
+
+.miniCriteriaInside{
   margin-top:12px;
-  background:#fffaf0;
-  border:1px solid #fed7aa;
+  background:#eefbf3;
+  border:1px solid #b7ebc6;
   border-radius:14px;
   padding:10px 12px;
   line-height:1.5;
-  color:#7c2d12;
+  color:#166534;
 }
 
-.miniInstructionInside b{
+.miniCriteriaInside b{
   display:block;
   margin-bottom:6px;
-  color:#9a3412;
+  color:#15803d;
 }
-  /* ===== Activity details inside success criteria box ===== */
+
 .miniDetailsInside{
-  margin-top:12px;
   background:#f8fbff;
   border:1px solid #bfdbfe;
   border-radius:14px;
-  padding:10px 12px;
-  line-height:1.5;
+  padding:12px 14px;
+  line-height:1.55;
   color:#18376b;
+  height:100%;
 }
 
 .miniDetailsInside b{
   display:block;
-  margin-bottom:6px;
+  margin-bottom:8px;
   color:#1d4ed8;
 }
 
 #popupActivityDetails{
+  max-height:320px;
+  overflow:auto;
+  white-space:pre-wrap;
+}
+
+#popupSuccessCriteria{
   white-space:pre-wrap;
   line-height:1.5;
+}
+
+@media(max-width:760px){
+  .timerInfoInsideBox{
+    grid-template-columns:1fr!important;
+  }
 }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -2988,38 +3000,45 @@ Grammar and spelling are checked"></textarea>
   </div>
 
   <div class="timerInfoInsideBox">
-    <div class="timerInfoMini">
-  <h3>📌 Activity Name</h3>
 
-  <div id="popupActivityName" class="timerInfoText">
-    No activity assigned yet.
-  </div>
+  <!-- LEFT SIDE -->
+  <div class="timerInfoMini">
 
-  <div class="miniInstructionInside">
-    <b>📋 Instructions</b>
-    <div id="popupInstructions">
-      No instructions.
+    <h3>📌 Activity Name</h3>
+
+    <div id="popupActivityName" class="timerInfoText">
+      No activity assigned yet.
     </div>
-  </div>
-</div>
 
-    <div class="timerInfoMini">
+    <div class="miniInstructionInside">
+      <b>📋 Instructions</b>
 
-  <h3>✅ Success Criteria</h3>
-
-  <div id="popupSuccessCriteria" class="timerInfoText">
-    No criteria assigned.
-  </div>
-
-  <div class="miniDetailsInside">
-    <b>📝 Activity Details</b>
-
-    <div id="popupActivityDetails">
-      Students write, save, review group work, and submit final answer.
+      <div id="popupInstructions">
+        No instructions.
+      </div>
     </div>
+
+    <div class="miniCriteriaInside">
+      <b>✅ Success Criteria</b>
+
+      <div id="popupSuccessCriteria">
+        No criteria assigned.
+      </div>
+    </div>
+
   </div>
 
-</div>
+  <!-- RIGHT SIDE -->
+  <div class="timerInfoMini">
+
+    <div class="miniDetailsInside">
+      <b>📝 Activity Details</b>
+
+      <div id="popupActivityDetails">
+        Students write, save, review group work, and submit final answer.
+      </div>
+    </div>
+
   </div>
 
 </div>
