@@ -2281,11 +2281,6 @@ button:hover{filter:brightness(.96)}
   line-height:1.45!important;
 }
 
-/* Activity name + assigned to should be short boxes */
-#popupActivityName,
-#popupAssignedTo{
-  min-height:54px!important;
-}
 
 /* Instructions full width but not huge */
 .activityPopupCard.full .activityPopupText{
@@ -2328,10 +2323,6 @@ button:hover{filter:brightness(.96)}
     width:100%!important;
   }
 }
-  /* ===== FIX: wider activity details box ===== */
-.activityPopupGrid{
-  grid-template-columns:1fr 1fr!important;
-}
 
 /* Make instructions full width */
 .activityPopupCard.full{
@@ -2350,36 +2341,58 @@ button:hover{filter:brightness(.96)}
   line-height:1.55!important;
   font-size:15px!important;
 }
-  /* ===== Compact top timer info ===== */
-.compactTopCard{
-  padding:14px!important;
+  /* ===== FINAL TIMER POPUP: put activity info inside timer box ===== */
+.bigTimerBox{
+  padding:16px 18px!important;
 }
 
-.compactInfoGrid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:14px;
+.timerInfoInsideBox{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:12px!important;
+  margin-top:14px!important;
+  text-align:left!important;
 }
 
-.compactMiniBox{
-  background:#f8fbff;
-  border:1px solid #d8e5f6;
-  border-radius:18px;
-  padding:14px;
+.timerInfoMini{
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid #d8e5f6!important;
+  border-radius:18px!important;
+  padding:12px 14px!important;
 }
 
-.compactMiniBox h3{
-  margin-bottom:10px!important;
+.timerInfoMini h3{
+  margin:0 0 8px!important;
+  color:#18376b!important;
+  font-size:16px!important;
 }
 
-.compactMiniBox .activityPopupText{
-  min-height:auto!important;
-  max-height:180px!important;
+.timerInfoText{
+  background:#f8fbff!important;
+  border:1px solid #d8e5f6!important;
+  border-radius:14px!important;
+  padding:10px 12px!important;
+  min-height:48px!important;
+  max-height:120px!important;
+  overflow:auto!important;
+  font-size:15px!important;
+  line-height:1.45!important;
+  color:#001b3d!important;
+  white-space:pre-wrap!important;
+}
+
+.activityPopupGrid{
+  grid-template-columns:1fr!important;
+}
+
+#popupActivityDetails{
+  max-height:190px!important;
+  overflow:auto!important;
 }
 
 @media(max-width:760px){
-  .compactInfoGrid{
-    grid-template-columns:1fr;
+  .timerInfoInsideBox{
+    grid-template-columns:1fr!important;
   }
 }
 </style>
@@ -2926,45 +2939,36 @@ Grammar and spelling are checked"></textarea>
     </div>
 
     <div class="bigTimerBox">
-      <div id="bigTeacherTimer" class="bigTimerTime">00:00</div>
-      <div id="bigTeacherTimerLabel" class="bigTimerLabel">Timer not started</div>
-      <div class="timerControlRow">
-        <button class="green" onclick="startTimer()">▶ Start / Set Timer</button>
-        <button class="orange" onclick="pauseTeacherTimer()">⏸ Pause</button>
-        <button class="blue" onclick="resumeTeacherTimer()">▶ Resume</button>
-        <button class="red" onclick="resetTeacherTimer()">↺ Reset</button>
-      </div>
-    </div>
 
-    <div class="activityPopupGrid">
+  <div id="bigTeacherTimer" class="bigTimerTime">00:00</div>
+  <div id="bigTeacherTimerLabel" class="bigTimerLabel">Timer not started</div>
 
-  <div class="activityPopupCard full compactTopCard">
-
-    <div class="compactInfoGrid">
-
-      <div class="compactMiniBox">
-        <h3>📌 Activity Name</h3>
-        <div id="popupActivityName" class="activityPopupText">
-          No activity assigned yet.
-        </div>
-      </div>
-
-      <div class="compactMiniBox">
-        <h3>✅ Success Criteria</h3>
-        <div id="popupSuccessCriteria" class="activityPopupText">
-          No criteria assigned.
-        </div>
-      </div>
-
-    </div>
-
+  <div class="timerControlRow">
+    <button class="green" onclick="startTimer()">▶ Start / Set Timer</button>
+    <button class="orange" onclick="pauseTeacherTimer()">⏸ Pause</button>
+    <button class="blue" onclick="resumeTeacherTimer()">▶ Resume</button>
+    <button class="red" onclick="resetTeacherTimer()">↺ Reset</button>
   </div>
+
+  <div class="timerInfoInsideBox">
+    <div class="timerInfoMini">
+      <h3>📌 Activity Name</h3>
+      <div id="popupActivityName" class="timerInfoText">No activity assigned yet.</div>
+    </div>
+
+    <div class="timerInfoMini">
+      <h3>✅ Success Criteria</h3>
+      <div id="popupSuccessCriteria" class="timerInfoText">No criteria assigned.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="activityPopupGrid">
 
   <div class="activityPopupCard full">
     <h3>📋 Instructions</h3>
-    <div id="popupInstructions" class="activityPopupText">
-      No instructions.
-    </div>
+    <div id="popupInstructions" class="activityPopupText">No instructions.</div>
   </div>
 
   <div class="activityPopupCard full">
@@ -2978,6 +2982,7 @@ Grammar and spelling are checked"></textarea>
 </div>
 
 <script>
+
 
 /* ===== Leave Group must require new login ===== */
 function markStudentLeftGroup(){
