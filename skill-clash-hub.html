@@ -5,7 +5,9 @@
 <title>⚔️ Skill Clash Hub - Battle Voting Complete</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
 function getAssignedActivityForSelectedClass(){
   return hubRef.child(`classes/${selectedTeacherClass}/assignedActivities/group1`).once('value').then(s=>s.val() || {});
 }
@@ -93,13 +95,10 @@ function hideStudentUploadBoxesSafely(){
 }
 setInterval(hideStudentUploadBoxesSafely, 1000);
 window.addEventListener('load', hideStudentUploadBoxesSafely);
-
 </script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-*{
-  if(studentHasLeftGroup && studentHasLeftGroup()){ showOnly('studentLoginPage'); return; }box-sizing:border-box}
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -3121,6 +3120,28 @@ button:hover{filter:brightness(.96)}
           </div>
         </div>
         
+
+          <div class="builderCard cleanBuilderBox">
+            <h3>✅ Success Criteria Checklist</h3>
+            <label>Success Criteria - one per line</label>
+            <textarea id="builderCriteria">Opinion is clear
+Reasons are included
+Evidence/examples are included
+Opinion is restated clearly
+Presentation is clear and concise</textarea>
+          </div>
+
+          <div class="builderCard cleanBuilderBox">
+            <h3>⚔️ Voting / Marking Criteria</h3>
+            <label>Voting / Marking Criteria - one per line</label>
+            <textarea id="builderVotingCriteria">Opinion is clear
+Strong reasons included
+Evidence/examples included
+Opinion restated clearly
+Grammar and presentation</textarea>
+            <div class="voteBonusRow">🏆 Stronger Group Bonus = +5 Points</div>
+            <div class="voteTeacherRow">✍️ Teacher Mark = Open Mark Added to Final Total</div>
+          </div>
 
 <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
       </div>
@@ -7137,8 +7158,12 @@ async function collectActivity(){
   const taskType = activityType === 'reading' ? 'same' : document.getElementById('builderTaskType').value;
   const sameTask = activityType === 'reading' ? (readingWorkMode === 'whole' ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph, answers questions, then writes a summary.') : document.getElementById('builderSameTask').value.trim();
   const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
-  const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
-  const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const criteriaEl = document.getElementById('builderCriteria');
+  const votingCriteriaEl = document.getElementById('builderVotingCriteria');
+  const defaultCriteriaText = 'Opinion is clear\nReasons are included\nEvidence/examples are included\nOpinion is restated clearly\nPresentation is clear and concise';
+  const defaultVotingText = 'Opinion is clear\nStrong reasons included\nEvidence/examples included\nOpinion restated clearly\nGrammar and presentation';
+  const criteria = (criteriaEl ? criteriaEl.value : defaultCriteriaText).split('\n').map(x=>x.trim()).filter(Boolean);
+  const votingCriteria = (votingCriteriaEl ? votingCriteriaEl.value : defaultVotingText).split('\n').map(x=>x.trim()).filter(Boolean);
   const groupCount = builderSelectedGroupCount ? builderSelectedGroupCount() : 10;
 
   const mainInput = document.getElementById('builderMainImage');
@@ -7227,8 +7252,8 @@ async function loadActivity(){
   document.getElementById('builderTaskType').value = a.taskType || 'same';
   document.getElementById('builderSameTask').value = a.sameTask || '';
   if(document.getElementById('builderSameLink')) document.getElementById('builderSameLink').value = a.sameHybridLink || '';
-  document.getElementById('builderCriteria').value = (a.criteria || []).join('\n');
-  document.getElementById('builderVotingCriteria').value = (a.votingCriteria || []).join('\n');
+  if(document.getElementById('builderCriteria')) document.getElementById('builderCriteria').value = (a.criteria || []).join('\n');
+  if(document.getElementById('builderVotingCriteria')) document.getElementById('builderVotingCriteria').value = (a.votingCriteria || []).join('\n');
   builderMainImageData = a.mainImage || '';
   builderGroupImageData = Object.assign({}, a.groupTaskImages || {});
   builderSameFileData = a.sameAttachedFile || null;
@@ -8814,6 +8839,77 @@ window.toggleActivityType = function(){
   toggleReadingBuilderMode();
 };
 setTimeout(toggleReadingBuilderMode, 800);
+</script>
+
+
+<script>
+/* ===== FINAL REPAIR: Safe Save Activity to Library ===== */
+async function saveActivityToLibrary(){
+  try{
+    if(typeof hubRef === 'undefined' || !hubRef){
+      alert('Firebase is not connected. Please login as teacher again.');
+      return;
+    }
+
+    const a = await collectActivity();
+
+    if(!a || !a.title){
+      alert('Write activity name.');
+      return;
+    }
+
+    if(!a.groupCount || Number(a.groupCount) < 1){
+      a.groupCount = 10;
+    }
+
+    const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'readingWhole' || a.activityType === 'reading');
+
+    if(!isReading && a.taskType === 'same' && !a.sameTask){
+      alert('Write the writing topic / task.');
+      return;
+    }
+
+    if(a.activityType === 'readingParagraph'){
+      if(!a.paragraphReading || !a.paragraphReading.length){
+        alert('Divide the reading text first.');
+        return;
+      }
+    }
+
+    if(a.activityType === 'readingWhole'){
+      if(!a.readingText){
+        alert('Add the full reading text first.');
+        return;
+      }
+      if(!a.readingQuestions || !a.readingQuestions.length){
+        alert('Add and organize the reading questions first.');
+        return;
+      }
+    }
+
+    if(isReading && typeof validateManualReadingQuestions === 'function'){
+      if(!validateManualReadingQuestions()) return;
+    }
+
+    currentActivityId = a.id || ('activity_' + Date.now());
+    a.id = currentActivityId;
+
+    await hubRef.child('activityLibrary/' + a.id).set({
+      ...a,
+      updatedAt: Date.now(),
+      createdBy: 'Ms. Saidah Khwar'
+    });
+
+    alert('✅ Activity saved to library.');
+
+    if(typeof loadActivityLibrary === 'function') loadActivityLibrary();
+    if(typeof refreshDashboardActivityLibrary === 'function') refreshDashboardActivityLibrary();
+
+  }catch(err){
+    console.error('Save Activity Error:', err);
+    alert('Save Activity error: ' + (err && err.message ? err.message : err));
+  }
+}
 </script>
 
 </body>
