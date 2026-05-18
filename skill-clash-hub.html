@@ -2605,11 +2605,6 @@ button:hover{filter:brightness(.96)}
 </head>
 
 <body>
-  <div class="studentActionBar">
-  <button onclick="leaveGroup()">🚪 Leave Group</button>
-  <button onclick="showReadingActivity()">📖 Reading Activity</button>
-  <button onclick="showReleasedResults()">🏆 View Results</button>
-</div>
 
 <div id="studentReadingBox" class="hidden activityBox">
   <h3>📖 Reading Activity</h3>
@@ -2739,14 +2734,22 @@ button:hover{filter:brightness(.96)}
           <div class="actions">
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
             <button class="green" onclick="saveMyWork()">💾 Save My Work</button>
-            
-            <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
-          </div>
+         <span class="chatBtnWrap">
+  <button class="purple"
+    onclick="toggleChat(); clearChatNotification()">
+    💬 Chatroom
+  </button>
 
-          <div class="leaveRow">
-            <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
-          </div>
+  <span id="chatNotifyBadge"
+    class="chatNotifyBadge">!</span>
+</span>
 
+<button id="leaveGroupBtn"
+  class="red leaveMiniBtn"
+  onclick="leaveGroup()">
+  🚪 Leave Group
+</button> 
+          </div>
           
 <div id="membersWorkBox" class="memberWorkBox">
 
@@ -5390,7 +5393,6 @@ async function submitFinalWork(){
 function leaveGroup(){
   markStudentLeftGroup();
   clearSkillStudentSession();
-  clearSkillStudentSession();
   sessionStorage.removeItem('skillClass');
   sessionStorage.removeItem('skillGroup');
   sessionStorage.removeItem('skillStudent');
@@ -5429,6 +5431,19 @@ function clearChatNotification(){
   if(badge) badge.classList.remove('show');
 }
 
+  function updateLeaveButtonVisibility(){
+
+  const leaveBtn = document.getElementById('leaveGroupBtn');
+  if(!leaveBtn) return;
+
+  const isReading =
+    document.body.innerText.toLowerCase().includes('reading performance') ||
+    document.body.innerText.toLowerCase().includes('reading activity');
+
+  leaveBtn.style.display = isReading ? 'none' : 'inline-flex';
+}
+
+setInterval(updateLeaveButtonVisibility, 1000);
 function listenChat(){
   if(chatListener) chatListener.off();
   const ref = hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/chat`);
