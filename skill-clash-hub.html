@@ -2972,63 +2972,58 @@ button:hover{filter:brightness(.96)}
         <div id="readingBuilderArea" class="readingBuilderBox hidden">
           <div class="readingCleanTitle">
             <h2>📖 Reading Activity Builder</h2>
-            <p><b>Reading activity system:</b> Upload/paste one full text → choose paragraph number → generate questions for each paragraph → save to library. When activated, each student receives one different paragraph.</p>
+            <p><b>Choose one reading system:</b> Type 1 = one full text divided into paragraphs, each student gets a different paragraph. Type 2 = one full text for all students, everyone answers the same questions.</p>
           </div>
 
           <div class="readingCleanBox">
-            <h2>1️⃣ Upload or Paste Full Reading Text</h2>
+            <h2>1️⃣ Choose Reading Type</h2>
+            <label>Reading Activity Type</label>
+            <select id="readingActivityMode" onchange="toggleReadingBuilderMode()">
+              <option value="paragraph">Type 1: Paragraph Expert Group Reading</option>
+              <option value="whole">Type 2: Whole Class Same Text Reading</option>
+            </select>
+            <div id="readingTypeExplanation" class="note"></div>
+          </div>
 
-            <label>📄 Upload PDF Reading Text</label>
+          <div class="readingCleanBox">
+            <h2>2️⃣ Add the Reading Text</h2>
+            <label>📄 Upload PDF / TXT Reading Text</label>
             <input id="readingSamePdf" type="file" accept=".pdf,.txt,application/pdf,text/plain" onchange="handleReadingTextFileUpload(this)">
             <p class="smallHint">You can upload PDF or TXT. If PDF extraction does not work, paste the text manually below.</p>
-
             <label>✍️ Full Reading Text</label>
             <textarea id="readingSameText" placeholder="Paste the full reading text here..."></textarea>
           </div>
 
-          <div class="readingCleanBox">
-            <h2>2️⃣ Paragraph Setup</h2>
-
+          <div id="paragraphModeBox" class="readingCleanBox">
+            <h2>3️⃣ Type 1 Setup: Divide into Paragraphs</h2>
             <label>🔢 Number of Paragraphs / Students per Group</label>
             <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
-            <p class="smallHint">Example: If the group has 4 students, choose 4 paragraphs. Each student receives one paragraph.</p>
-          </div>
-
-          <div class="readingCleanBox">
-            <h2>3️⃣ Divide Text + Add Your Own Questions</h2>
-
-            <div class="note">After dividing the text, add your own MCQ or True/False questions under each paragraph.</div>
-
+            <p class="smallHint">Example: 4 paragraphs = 4 students in each group. Each student receives one different paragraph, answers questions, writes a short summary, and the leader submits the final group summary.</p>
             <button type="button" class="purple" style="width:100%;font-size:16px;padding:14px" onclick="buildParagraphReadingActivity()">
               ✨ Divide Text into Paragraphs
             </button>
+          </div>
 
+          <div id="wholeModeBox" class="readingCleanBox hidden">
+            <h2>3️⃣ Type 2 Setup: Same Text for Everyone</h2>
+            <p class="note">All students read the full text and answer the same teacher questions. Teacher releases Reading Performance results using the same ranking system.</p>
+            <button type="button" class="purple" style="width:100%;font-size:16px;padding:14px" onclick="buildWholeTextReadingActivity()">
+              ✅ Use This Full Text for All Students
+            </button>
+          </div>
+
+          <div class="readingCleanBox">
+            <h2>4️⃣ Add Manual Questions</h2>
+            <div id="bulkQuestionHint" class="bulkParseHint"></div>
+            <textarea id="bulkReadingQuestionsBox" placeholder="Paste your MCQ and True/False questions with Answer keys here..."></textarea>
+            <button type="button" class="green" style="width:100%;font-size:16px;padding:14px" onclick="organizeBulkReadingQuestions()">
+              🧠 Organize Questions
+            </button>
             <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
-
-            <div class="bulkQuestionBox">
-              <h2>4️⃣ Paste All Questions with Answer Keys</h2>
-              <div class="bulkParseHint">
-                Format example:<br>
-                Paragraph 1<br>
-                Q1. What is the main idea?<br>
-                A) ...<br>
-                B) ...<br>
-                C) ...<br>
-                D) ...<br>
-                Answer: B<br><br>
-                Paragraph 2<br>
-                Q1. True or False: The text says ...<br>
-                Answer: True
-              </div>
-              <textarea id="bulkReadingQuestionsBox" placeholder="Paste all paragraph questions here. Use headings: Paragraph 1, Paragraph 2... and write Answer: A / B / C / D / True / False after each question."></textarea>
-              <button type="button" class="green" style="width:100%;font-size:16px;padding:14px" onclick="organizeBulkReadingQuestions()">
-                🧠 Organize Questions Under Paragraphs
-              </button>
-            </div>
-
           </div>
 
           <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
+          <div id="wholeReadingPreview" class="paragraphReadingBox hidden"></div>
         </div>
 <div id="writingBuilderFields" class="cleanWritingBuilder">
           <h2>✍️ Writing Activity Builder</h2>
@@ -3730,7 +3725,7 @@ function listenGroup(){
     }
 
     renderMembersWork();
-    if(latestAssignedActivity && (latestAssignedActivity.activityType === 'readingParagraph' || latestAssignedActivity.activityType === 'reading')){
+    if(latestAssignedActivity && (latestAssignedActivity.activityType === 'readingParagraph' || latestAssignedActivity.activityType === 'reading' || latestAssignedActivity.activityType === 'readingWhole')){
       renderParagraphReadingStudent(latestAssignedActivity);
     }
     routeStudentStage();
@@ -3858,7 +3853,7 @@ async function forceLoadStudentActiveActivity(){
 
 
 function hardSwitchStudentLayout(activityType){
-  const isReading = activityType === 'readingParagraph' || activityType === 'reading';
+  const isReading = activityType === 'readingParagraph' || activityType === 'reading' || activityType === 'readingWhole';
   const readingBox = document.getElementById('readingMainWorkBox');
   const writingBox = document.querySelector('.card.myAnswer');
   const rightColumn = document.querySelector('.studentLayout > div:nth-child(2)');
@@ -3927,7 +3922,7 @@ function renderAssignedActivityOnStudent(a){
   a = a || {};
   latestAssignedActivity = a;
 
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length;
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole') && a.paragraphReading && a.paragraphReading.length;
   hardSwitchStudentLayout(isReading ? 'readingParagraph' : 'writing');
 
   const nameBox = document.getElementById('activityNameBox');
@@ -5172,6 +5167,187 @@ window.addEventListener('load', function(){
 });
 </script>
 
+
+
+<script>
+/* ===== PATCH: Reading Builder 2 Types (Paragraph Expert + Whole Class Same Text) ===== */
+function isReadingActivityObj(a){
+  return !!a && (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
+}
+function isWholeTextReadingActivity(a){
+  return !!a && (a.activityType === 'readingWhole' || a.readingWorkMode === 'whole');
+}
+function toggleReadingBuilderMode(){
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  const paragraphBox = document.getElementById('paragraphModeBox');
+  const wholeBox = document.getElementById('wholeModeBox');
+  const explain = document.getElementById('readingTypeExplanation');
+  const hint = document.getElementById('bulkQuestionHint');
+  if(paragraphBox) paragraphBox.classList.toggle('hidden', mode !== 'paragraph');
+  if(wholeBox) wholeBox.classList.toggle('hidden', mode !== 'whole');
+  if(explain){
+    explain.innerHTML = mode === 'whole'
+      ? '<b>Type 2:</b> Teacher gives one full text to the whole class. Every student reads the full text, answers the same manual questions, then teacher releases Reading Performance results.'
+      : '<b>Type 1:</b> Teacher gives one full text divided into paragraphs. Each student in the group receives a different paragraph, answers manual questions, writes a short summary, and the leader submits the final group summary.';
+  }
+  if(hint){
+    hint.innerHTML = mode === 'whole'
+      ? 'For Type 2, paste questions directly:<br>Q1. ...<br>A) ...<br>B) ...<br>C) ...<br>D) ...<br>Answer: B<br><br>Q2. True or False: ...<br>Answer: True'
+      : 'For Type 1, separate questions by paragraph:<br>Paragraph 1<br>Q1. ...<br>A) ...<br>B) ...<br>C) ...<br>D) ...<br>Answer: B<br><br>Paragraph 2<br>Q1. True or False: ...<br>Answer: False';
+  }
+  const paraPreview = document.getElementById('paragraphReadingPreview');
+  const wholePreview = document.getElementById('wholeReadingPreview');
+  if(paraPreview) paraPreview.classList.toggle('hidden', mode !== 'paragraph' || !(builderParagraphReading || []).length);
+  if(wholePreview) wholePreview.classList.toggle('hidden', mode !== 'whole' || !(builderReadingSameQuestions || []).length);
+}
+function buildWholeTextReadingActivity(){
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  if(!text){ alert('Paste or upload the full reading text first.'); return; }
+  builderReadingTexts.same = text;
+  builderParagraphReading = [];
+  renderWholeTextReadingPreview();
+  toggleReadingBuilderMode();
+}
+function renderWholeTextReadingPreview(){
+  const box = document.getElementById('wholeReadingPreview');
+  if(!box) return;
+  const text = document.getElementById('readingSameText')?.value.trim() || builderReadingTexts.same || '';
+  if(!text){ box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.classList.remove('hidden');
+  let html = `<h2>✅ Whole Class Reading Ready</h2>
+    <p>All students will read the full text and answer the same questions.</p>
+    <div class="paragraphCard"><h3>Full Text Preview</h3><div class="paragraphTextPreview">${escapeHtml(text)}</div><p><b>${(builderReadingSameQuestions || []).length}</b> manual questions added</p></div>`;
+  if((builderReadingSameQuestions || []).length){
+    html += '<div class="manualQBuilder"><h3>📝 Whole Text Questions Preview</h3>';
+    (builderReadingSameQuestions || []).forEach(function(q,i){
+      const answerText = q.format === 'mcq' ? ((q.options || [])[q.answer] || '-') : (q.answer ? 'True' : 'False');
+      html += `<div class="manualQItem"><h4>Question ${i+1}</h4><b>${escapeHtml(q.question || '')}</b><p class="smallNote">${escapeHtml(q.type || 'Reading Comprehension')} · Answer: ${escapeHtml(answerText)}</p></div>`;
+    });
+    html += '</div>';
+  }
+  html += '<div class="readingStatusGood">When the full text and questions are ready, click Save Activity to Library.</div>';
+  box.innerHTML = html;
+}
+const oldOrganizeBulkReadingQuestions = window.organizeBulkReadingQuestions;
+window.organizeBulkReadingQuestions = function(){
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  if(mode !== 'whole'){
+    if(typeof oldOrganizeBulkReadingQuestions === 'function') return oldOrganizeBulkReadingQuestions();
+    return;
+  }
+  const raw = document.getElementById('bulkReadingQuestionsBox')?.value || '';
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  if(!text){ alert('Paste or upload the full reading text first.'); return; }
+  if(!raw.trim()){ alert('Paste your questions first.'); return; }
+  builderReadingTexts.same = text;
+  builderParagraphReading = [];
+  builderReadingSameQuestions = parseBulkQuestionBlock(raw, 1).map(function(q,idx){
+    q.id = 'whole_q' + (idx+1) + '_' + Date.now();
+    q.paragraphNumber = 'Full Text';
+    if(q.format === 'tf' && (q.answer === 0 || q.answer === 1)) q.answer = Number(q.answer) === 0;
+    return q;
+  });
+  renderWholeTextReadingPreview();
+  alert('✅ Organized ' + builderReadingSameQuestions.length + ' whole-text questions.');
+};
+const oldValidateManualReadingQuestions = window.validateManualReadingQuestions;
+window.validateManualReadingQuestions = function(){
+  const activityType = document.getElementById('builderActivityType')?.value || 'writing';
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  if(activityType === 'reading' && mode === 'whole'){
+    const text = document.getElementById('readingSameText')?.value.trim() || builderReadingTexts.same || '';
+    if(!text){ alert('Add the full reading text.'); return false; }
+    if(!builderReadingSameQuestions || !builderReadingSameQuestions.length){ alert('Add at least one question for the whole text.'); return false; }
+    return true;
+  }
+  return typeof oldValidateManualReadingQuestions === 'function' ? oldValidateManualReadingQuestions() : true;
+};
+const oldGetStudentReadingAssignment = window.getStudentReadingAssignment;
+window.getStudentReadingAssignment = function(a){
+  if(isWholeTextReadingActivity(a)){
+    return {
+      paragraphNumber:'Full Text',
+      text:a.readingText || (a.groupReadingTexts || {}).same || '',
+      questions:a.readingQuestions || []
+    };
+  }
+  return typeof oldGetStudentReadingAssignment === 'function' ? oldGetStudentReadingAssignment(a) : null;
+};
+const oldRenderParagraphReadingStudent = window.renderParagraphReadingStudent;
+window.renderParagraphReadingStudent = function(a){
+  if(isWholeTextReadingActivity(a)){
+    const box = document.getElementById('readingMainWorkBox');
+    if(!box) return;
+    setReadingModeUI(true);
+    const assigned = getStudentReadingAssignment(a);
+    const myData = (latestStudents || {})[currentStudentId] || {};
+    const submitted = !!myData.readingParagraphSubmitted;
+    let html = `<h2>📖 ${escapeHtml(a.title || 'Whole Class Reading Activity')}</h2>
+      <p class="smallNote">${escapeHtml(a.instructions || 'Read the full text and answer the questions.')}</p>
+      <div class="readingStudentActions">
+        <button class="blue" onclick="openMembersWorkFromReading()">👀 Members’ Work</button>
+        <button class="green" onclick="submitParagraphReadingQuestions()">✅ Submit Answers</button>
+        <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
+        <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
+      </div>
+      <div class="readingMainLayout"><div>
+        <div class="readingPanel"><h3>📌 Full Reading Text</h3><div class="readingTextBox">${escapeHtml(assigned.text)}</div></div>
+        <div class="readingPanel">${submitted ? buildStudentParagraphQuestionsHtml(assigned, myData) : renderOneQuestionAtATime(assigned)}</div>
+      </div><div><div class="readingPanel">${getReadingChecklistHtml()}</div><div class="readingPanel"><h3>🏆 Reading Performance</h3><p class="smallNote">Teacher will release the final marks when ready.</p></div></div></div>`;
+    box.classList.remove('hidden');
+    box.innerHTML = html;
+    return;
+  }
+  if(typeof oldRenderParagraphReadingStudent === 'function') return oldRenderParagraphReadingStudent(a);
+};
+const oldSubmitParagraphReadingQuestions = window.submitParagraphReadingQuestions;
+window.submitParagraphReadingQuestions = async function(){
+  const a = latestAssignedActivity || {};
+  const assigned = getStudentReadingAssignment(a);
+  if(!assigned){alert('No reading activity assigned.');return;}
+  if(!saveCurrentStepAnswer()) return;
+  let score = 0, total = 0;
+  const answers = {};
+  for(const q of (assigned.questions || [])){
+    const val = paragraphQuizDraftAnswers[q.id];
+    if(val === undefined || val === ''){ alert('Please answer all questions.'); return; }
+    answers[q.id] = val;
+    total++;
+    if(q.format === 'mcq' && Number(val) === Number(q.answer)) score++;
+    if(q.format === 'tf' && String(val) === String(!!q.answer)) score++;
+  }
+  const self = document.querySelector('input[name="paragraphSelfEval"]:checked');
+  if(!self){ alert('Choose your self evaluation.'); return; }
+  const label = isWholeTextReadingActivity(a) ? 'Full Text' : ('Paragraph ' + assigned.paragraphNumber);
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    assignedParagraphNumber: assigned.paragraphNumber,
+    readingParagraphAnswers: answers,
+    readingScore: score,
+    readingTotal: total,
+    selfEvaluation: self.value,
+    readingParagraphSubmitted: true,
+    answer: `${label} Questions Score: ${score}/${total} | Self-evaluation: ${self.value}`,
+    status:'reading questions submitted',
+    updatedAt:Date.now()
+  });
+  paragraphQuizStep = 0;
+  paragraphQuizDraftAnswers = {};
+  const result = document.getElementById('paragraphReadingResult');
+  if(result) result.innerHTML = `<div class="quizResultBox">✅ Marked instantly: ${score}/${total}</div>`;
+  alert('✅ Your answers were submitted and marked instantly.');
+  renderParagraphReadingStudent(latestAssignedActivity);
+};
+const oldToggleActivityType = window.toggleActivityType;
+window.toggleActivityType = function(){
+  if(typeof oldToggleActivityType === 'function') oldToggleActivityType();
+  toggleReadingBuilderMode();
+};
+setTimeout(toggleReadingBuilderMode, 800);
+</script>
+
 </body></html>`;
 
   const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
@@ -5497,7 +5673,7 @@ function renderCurrentActivity(classes){
       html += `<div class="currentMini">
         <b>Class ${classDisplay(cls)}</b>
         ${escapeHtml(a.title || 'No activity')}<br>
-        <span class="smallNote">${escapeHtml((a.activityType === 'readingParagraph' || a.activityType === 'reading') ? 'Reading Paragraphs' : 'Writing Battle')}</span>
+        <span class="smallNote">${escapeHtml((a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole') ? 'Reading Paragraphs' : 'Writing Battle')}</span>
       </div>`;
     }else{
       html += `<div class="currentMini"><b>Class ${classDisplay(cls)}</b>No active activity</div>`;
@@ -6434,7 +6610,7 @@ function renderParagraphReadingStudent(a){
   const box = document.getElementById('readingMainWorkBox');
   if(!box) return;
 
-  if(!a || !((a.activityType === 'readingParagraph' || a.activityType === 'reading') && a.paragraphReading && a.paragraphReading.length)){
+  if(!a || !((a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole') && a.paragraphReading && a.paragraphReading.length)){
     setReadingModeUI(false);
     box.classList.add('hidden');
     box.innerHTML = '';
@@ -7018,9 +7194,9 @@ async function collectActivity(){
   const title = document.getElementById('builderActivityName').value.trim();
   const instructions = document.getElementById('builderInstructions').value.trim();
   const activityType = document.getElementById('builderActivityType') ? document.getElementById('builderActivityType').value : 'writing';
-  const readingWorkMode = 'paragraph';
+  const readingWorkMode = (document.getElementById('readingActivityMode') ? document.getElementById('readingActivityMode').value : 'paragraph');
   const taskType = activityType === 'reading' ? 'same' : document.getElementById('builderTaskType').value;
-  const sameTask = activityType === 'reading' ? 'Each student receives one paragraph, answers questions, then writes a summary.' : document.getElementById('builderSameTask').value.trim();
+  const sameTask = activityType === 'reading' ? (readingWorkMode === 'whole' ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph, answers questions, then writes a summary.') : document.getElementById('builderSameTask').value.trim();
   const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
   const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
   const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
@@ -7053,7 +7229,7 @@ async function collectActivity(){
     title,
     instructions,
     groupCount,
-    activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
+    activityType: activityType === 'reading' ? (readingWorkMode === 'whole' ? 'readingWhole' : 'readingParagraph') : activityType,
     readingWorkMode,
     taskType,
     sameTask,
@@ -7078,7 +7254,8 @@ async function saveActivityToLibrary(){
   if(!a.title){alert('Write activity name.');return}
   if(a.activityType !== 'readingParagraph' && a.taskType === 'same' && !a.sameTask){alert('Write the task.');return}
   if(a.activityType === 'readingParagraph' && (!a.paragraphReading || !a.paragraphReading.length)){alert('Divide the reading text first.');return}
-  if(a.activityType === 'readingParagraph' && !validateManualReadingQuestions()){return}
+  if(a.activityType === 'readingWhole' && (!a.readingText || !(a.readingQuestions || []).length)){alert('Add the full reading text and questions first.');return}
+  if((a.activityType === 'readingParagraph' || a.activityType === 'readingWhole') && !validateManualReadingQuestions()){return}
   currentActivityId = a.id;
   await hubRef.child('activityLibrary/'+a.id).set({...a, updatedAt:Date.now(), createdBy:'Ms. Saidah Khwar'});
   alert('✅ Activity saved to library.');
@@ -7105,8 +7282,9 @@ async function loadActivity(){
   document.getElementById('builderActivityName').value = a.title || '';
   document.getElementById('builderInstructions').value = a.instructions || '';
   if(document.getElementById('builderGroupCount')) document.getElementById('builderGroupCount').value = activityGroupCount(a);
-  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = ((a.activityType === 'readingParagraph' || a.activityType === 'reading') ? 'reading' : (a.activityType || 'writing'));
-  if(document.getElementById('readingWorkMode')) document.getElementById('readingWorkMode').value = 'paragraph';
+  if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = ((a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole') ? 'reading' : (a.activityType || 'writing'));
+  if(document.getElementById('readingActivityMode')) document.getElementById('readingActivityMode').value = (a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'whole' : 'paragraph';
+  if(typeof toggleReadingBuilderMode === 'function') toggleReadingBuilderMode();
   document.getElementById('builderTaskType').value = a.taskType || 'same';
   document.getElementById('builderSameTask').value = a.sameTask || '';
   if(document.getElementById('builderSameLink')) document.getElementById('builderSameLink').value = a.sameHybridLink || '';
@@ -7195,7 +7373,7 @@ async function previewDashboardActivity(){
   const a = snap.val() || {};
   box.innerHTML = `
     <b>${escapeHtml(a.title || 'Activity')}</b><br>
-    Type: ${escapeHtml(((a.activityType === 'readingParagraph' || a.activityType === 'reading' ? 'paragraph reading' : (a.activityType || 'writing')).toUpperCase()))} · Task: ${escapeHtml(a.taskType || 'same')}<br>
+    Type: ${escapeHtml(((a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole' ? 'paragraph reading' : (a.activityType || 'writing')).toUpperCase()))} · Task: ${escapeHtml(a.taskType || 'same')}<br>
     ${escapeHtml(a.instructions || 'No instructions.')}
   `;
 }
@@ -7203,10 +7381,10 @@ async function previewDashboardActivity(){
 
 function buildActiveActivityForGroup(a, i, activationId){
   const groupKey = 'group' + i;
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
 
   const groupTask = isReading
-    ? 'Each student receives one paragraph from the same full text.'
+    ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph from the same full text.')
     : (a.taskType === 'same'
       ? (a.sameTask || 'Activity assigned. Follow the instructions.')
       : ((a.groupTasks || {})[groupKey] || ''));
@@ -7217,8 +7395,8 @@ function buildActiveActivityForGroup(a, i, activationId){
     title: a.title || 'Activity',
     instructions: a.instructions || '',
     groupCount: activityGroupCount(a),
-    activityType: isReading ? 'readingParagraph' : 'writing',
-    readingWorkMode: isReading ? 'paragraph' : '',
+    activityType: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'readingWhole' : 'readingParagraph') : 'writing',
+    readingWorkMode: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'whole' : 'paragraph') : '',
     taskType: a.taskType || 'same',
     mainImage: a.mainImage || '',
     groupTask: groupTask,
@@ -7252,10 +7430,10 @@ async function getActiveClassActivityForStudent(){
 function makeStudentActiveActivity(a, groupNo, activationId){
   a = a || {};
   const groupKey = 'group' + groupNo;
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
 
   const groupTask = isReading
-    ? 'Each student receives one paragraph from the same full text.'
+    ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph from the same full text.')
     : (a.taskType === 'same'
       ? (a.sameTask || a.groupTask || 'Activity assigned. Follow the instructions.')
       : ((a.groupTasks || {})[groupKey] || a.groupTask || ''));
@@ -7266,8 +7444,8 @@ function makeStudentActiveActivity(a, groupNo, activationId){
     title: a.title || 'Activity',
     instructions: a.instructions || '',
     groupCount: activityGroupCount(a),
-    activityType: isReading ? 'readingParagraph' : 'writing',
-    readingWorkMode: isReading ? 'paragraph' : '',
+    activityType: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'readingWhole' : 'readingParagraph') : 'writing',
+    readingWorkMode: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'whole' : 'paragraph') : '',
     taskType: a.taskType || 'same',
     mainImage: a.mainImage || '',
     groupTask: groupTask,
@@ -7304,7 +7482,7 @@ function buildAssignedActivityForGroup(a, i, activationId){
   const isReading = (a.activityType === 'reading' || a.activityType === 'readingParagraph');
 
   const groupTask = isReading
-    ? 'Each student receives one paragraph from the same full text.'
+    ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph from the same full text.')
     : (a.taskType === 'same'
       ? (a.sameTask || 'Activity assigned. Follow the instructions.')
       : ((a.groupTasks || {})[groupKey] || ''));
@@ -7365,10 +7543,10 @@ function normalizeClassKey(cls){
 function strictBuildActiveActivity(a, groupNo, activationId){
   a = a || {};
   const groupKey = 'group' + groupNo;
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
 
   const groupTask = isReading
-    ? 'Each student receives one paragraph from the same full text.'
+    ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'All students read the same full text and answer the same questions.' : 'Each student receives one paragraph from the same full text.')
     : (a.taskType === 'same'
       ? (a.sameTask || a.groupTask || 'Activity assigned. Follow the instructions.')
       : ((a.groupTasks || {})[groupKey] || a.groupTask || ''));
@@ -7393,8 +7571,8 @@ function strictBuildActiveActivity(a, groupNo, activationId){
     title: a.title || 'Activity',
     instructions: a.instructions || '',
     groupCount: activityGroupCount(a),
-    activityType: isReading ? 'readingParagraph' : 'writing',
-    readingWorkMode: isReading ? 'paragraph' : '',
+    activityType: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'readingWhole' : 'readingParagraph') : 'writing',
+    readingWorkMode: isReading ? ((a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') ? 'whole' : 'paragraph') : '',
     taskType: a.taskType || 'same',
     mainImage: a.mainImage || '',
     groupTask: groupTask,
@@ -7433,9 +7611,13 @@ async function activateSavedActivityForSelectedClasses(){
   }
 
   a.id = activityId;
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
-  if(isReading && (!a.paragraphReading || !a.paragraphReading.length)){
-    alert('This reading activity has no paragraphs/questions. Open it in Activity Builder, divide the text, add questions, then save again.');
+  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
+  if(isReading && !(a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') && (!a.paragraphReading || !a.paragraphReading.length)){
+    alert('This paragraph reading activity has no paragraphs/questions. Open it in Activity Builder, divide the text, add questions, then save again.');
+    return;
+  }
+  if(isReading && (a.activityType === 'readingWhole' || a.readingWorkMode === 'whole') && (!a.readingText || !(a.readingQuestions || []).length)){
+    alert('This whole-text reading activity has no text/questions. Open it in Activity Builder, add text and questions, then save again.');
     return;
   }
 
@@ -8512,6 +8694,187 @@ window.addEventListener('load', function(){
   }
   setTimeout(updateStudentGroupChoicesForClass, 800);
 });
+</script>
+
+
+
+<script>
+/* ===== PATCH: Reading Builder 2 Types (Paragraph Expert + Whole Class Same Text) ===== */
+function isReadingActivityObj(a){
+  return !!a && (a.activityType === 'readingParagraph' || a.activityType === 'reading' || a.activityType === 'readingWhole');
+}
+function isWholeTextReadingActivity(a){
+  return !!a && (a.activityType === 'readingWhole' || a.readingWorkMode === 'whole');
+}
+function toggleReadingBuilderMode(){
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  const paragraphBox = document.getElementById('paragraphModeBox');
+  const wholeBox = document.getElementById('wholeModeBox');
+  const explain = document.getElementById('readingTypeExplanation');
+  const hint = document.getElementById('bulkQuestionHint');
+  if(paragraphBox) paragraphBox.classList.toggle('hidden', mode !== 'paragraph');
+  if(wholeBox) wholeBox.classList.toggle('hidden', mode !== 'whole');
+  if(explain){
+    explain.innerHTML = mode === 'whole'
+      ? '<b>Type 2:</b> Teacher gives one full text to the whole class. Every student reads the full text, answers the same manual questions, then teacher releases Reading Performance results.'
+      : '<b>Type 1:</b> Teacher gives one full text divided into paragraphs. Each student in the group receives a different paragraph, answers manual questions, writes a short summary, and the leader submits the final group summary.';
+  }
+  if(hint){
+    hint.innerHTML = mode === 'whole'
+      ? 'For Type 2, paste questions directly:<br>Q1. ...<br>A) ...<br>B) ...<br>C) ...<br>D) ...<br>Answer: B<br><br>Q2. True or False: ...<br>Answer: True'
+      : 'For Type 1, separate questions by paragraph:<br>Paragraph 1<br>Q1. ...<br>A) ...<br>B) ...<br>C) ...<br>D) ...<br>Answer: B<br><br>Paragraph 2<br>Q1. True or False: ...<br>Answer: False';
+  }
+  const paraPreview = document.getElementById('paragraphReadingPreview');
+  const wholePreview = document.getElementById('wholeReadingPreview');
+  if(paraPreview) paraPreview.classList.toggle('hidden', mode !== 'paragraph' || !(builderParagraphReading || []).length);
+  if(wholePreview) wholePreview.classList.toggle('hidden', mode !== 'whole' || !(builderReadingSameQuestions || []).length);
+}
+function buildWholeTextReadingActivity(){
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  if(!text){ alert('Paste or upload the full reading text first.'); return; }
+  builderReadingTexts.same = text;
+  builderParagraphReading = [];
+  renderWholeTextReadingPreview();
+  toggleReadingBuilderMode();
+}
+function renderWholeTextReadingPreview(){
+  const box = document.getElementById('wholeReadingPreview');
+  if(!box) return;
+  const text = document.getElementById('readingSameText')?.value.trim() || builderReadingTexts.same || '';
+  if(!text){ box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.classList.remove('hidden');
+  let html = `<h2>✅ Whole Class Reading Ready</h2>
+    <p>All students will read the full text and answer the same questions.</p>
+    <div class="paragraphCard"><h3>Full Text Preview</h3><div class="paragraphTextPreview">${escapeHtml(text)}</div><p><b>${(builderReadingSameQuestions || []).length}</b> manual questions added</p></div>`;
+  if((builderReadingSameQuestions || []).length){
+    html += '<div class="manualQBuilder"><h3>📝 Whole Text Questions Preview</h3>';
+    (builderReadingSameQuestions || []).forEach(function(q,i){
+      const answerText = q.format === 'mcq' ? ((q.options || [])[q.answer] || '-') : (q.answer ? 'True' : 'False');
+      html += `<div class="manualQItem"><h4>Question ${i+1}</h4><b>${escapeHtml(q.question || '')}</b><p class="smallNote">${escapeHtml(q.type || 'Reading Comprehension')} · Answer: ${escapeHtml(answerText)}</p></div>`;
+    });
+    html += '</div>';
+  }
+  html += '<div class="readingStatusGood">When the full text and questions are ready, click Save Activity to Library.</div>';
+  box.innerHTML = html;
+}
+const oldOrganizeBulkReadingQuestions = window.organizeBulkReadingQuestions;
+window.organizeBulkReadingQuestions = function(){
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  if(mode !== 'whole'){
+    if(typeof oldOrganizeBulkReadingQuestions === 'function') return oldOrganizeBulkReadingQuestions();
+    return;
+  }
+  const raw = document.getElementById('bulkReadingQuestionsBox')?.value || '';
+  const text = document.getElementById('readingSameText')?.value.trim() || '';
+  if(!text){ alert('Paste or upload the full reading text first.'); return; }
+  if(!raw.trim()){ alert('Paste your questions first.'); return; }
+  builderReadingTexts.same = text;
+  builderParagraphReading = [];
+  builderReadingSameQuestions = parseBulkQuestionBlock(raw, 1).map(function(q,idx){
+    q.id = 'whole_q' + (idx+1) + '_' + Date.now();
+    q.paragraphNumber = 'Full Text';
+    if(q.format === 'tf' && (q.answer === 0 || q.answer === 1)) q.answer = Number(q.answer) === 0;
+    return q;
+  });
+  renderWholeTextReadingPreview();
+  alert('✅ Organized ' + builderReadingSameQuestions.length + ' whole-text questions.');
+};
+const oldValidateManualReadingQuestions = window.validateManualReadingQuestions;
+window.validateManualReadingQuestions = function(){
+  const activityType = document.getElementById('builderActivityType')?.value || 'writing';
+  const mode = document.getElementById('readingActivityMode')?.value || 'paragraph';
+  if(activityType === 'reading' && mode === 'whole'){
+    const text = document.getElementById('readingSameText')?.value.trim() || builderReadingTexts.same || '';
+    if(!text){ alert('Add the full reading text.'); return false; }
+    if(!builderReadingSameQuestions || !builderReadingSameQuestions.length){ alert('Add at least one question for the whole text.'); return false; }
+    return true;
+  }
+  return typeof oldValidateManualReadingQuestions === 'function' ? oldValidateManualReadingQuestions() : true;
+};
+const oldGetStudentReadingAssignment = window.getStudentReadingAssignment;
+window.getStudentReadingAssignment = function(a){
+  if(isWholeTextReadingActivity(a)){
+    return {
+      paragraphNumber:'Full Text',
+      text:a.readingText || (a.groupReadingTexts || {}).same || '',
+      questions:a.readingQuestions || []
+    };
+  }
+  return typeof oldGetStudentReadingAssignment === 'function' ? oldGetStudentReadingAssignment(a) : null;
+};
+const oldRenderParagraphReadingStudent = window.renderParagraphReadingStudent;
+window.renderParagraphReadingStudent = function(a){
+  if(isWholeTextReadingActivity(a)){
+    const box = document.getElementById('readingMainWorkBox');
+    if(!box) return;
+    setReadingModeUI(true);
+    const assigned = getStudentReadingAssignment(a);
+    const myData = (latestStudents || {})[currentStudentId] || {};
+    const submitted = !!myData.readingParagraphSubmitted;
+    let html = `<h2>📖 ${escapeHtml(a.title || 'Whole Class Reading Activity')}</h2>
+      <p class="smallNote">${escapeHtml(a.instructions || 'Read the full text and answer the questions.')}</p>
+      <div class="readingStudentActions">
+        <button class="blue" onclick="openMembersWorkFromReading()">👀 Members’ Work</button>
+        <button class="green" onclick="submitParagraphReadingQuestions()">✅ Submit Answers</button>
+        <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
+        <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
+      </div>
+      <div class="readingMainLayout"><div>
+        <div class="readingPanel"><h3>📌 Full Reading Text</h3><div class="readingTextBox">${escapeHtml(assigned.text)}</div></div>
+        <div class="readingPanel">${submitted ? buildStudentParagraphQuestionsHtml(assigned, myData) : renderOneQuestionAtATime(assigned)}</div>
+      </div><div><div class="readingPanel">${getReadingChecklistHtml()}</div><div class="readingPanel"><h3>🏆 Reading Performance</h3><p class="smallNote">Teacher will release the final marks when ready.</p></div></div></div>`;
+    box.classList.remove('hidden');
+    box.innerHTML = html;
+    return;
+  }
+  if(typeof oldRenderParagraphReadingStudent === 'function') return oldRenderParagraphReadingStudent(a);
+};
+const oldSubmitParagraphReadingQuestions = window.submitParagraphReadingQuestions;
+window.submitParagraphReadingQuestions = async function(){
+  const a = latestAssignedActivity || {};
+  const assigned = getStudentReadingAssignment(a);
+  if(!assigned){alert('No reading activity assigned.');return;}
+  if(!saveCurrentStepAnswer()) return;
+  let score = 0, total = 0;
+  const answers = {};
+  for(const q of (assigned.questions || [])){
+    const val = paragraphQuizDraftAnswers[q.id];
+    if(val === undefined || val === ''){ alert('Please answer all questions.'); return; }
+    answers[q.id] = val;
+    total++;
+    if(q.format === 'mcq' && Number(val) === Number(q.answer)) score++;
+    if(q.format === 'tf' && String(val) === String(!!q.answer)) score++;
+  }
+  const self = document.querySelector('input[name="paragraphSelfEval"]:checked');
+  if(!self){ alert('Choose your self evaluation.'); return; }
+  const label = isWholeTextReadingActivity(a) ? 'Full Text' : ('Paragraph ' + assigned.paragraphNumber);
+  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+    id: currentStudentId,
+    name: currentStudent,
+    role: currentRole,
+    assignedParagraphNumber: assigned.paragraphNumber,
+    readingParagraphAnswers: answers,
+    readingScore: score,
+    readingTotal: total,
+    selfEvaluation: self.value,
+    readingParagraphSubmitted: true,
+    answer: `${label} Questions Score: ${score}/${total} | Self-evaluation: ${self.value}`,
+    status:'reading questions submitted',
+    updatedAt:Date.now()
+  });
+  paragraphQuizStep = 0;
+  paragraphQuizDraftAnswers = {};
+  const result = document.getElementById('paragraphReadingResult');
+  if(result) result.innerHTML = `<div class="quizResultBox">✅ Marked instantly: ${score}/${total}</div>`;
+  alert('✅ Your answers were submitted and marked instantly.');
+  renderParagraphReadingStudent(latestAssignedActivity);
+};
+const oldToggleActivityType = window.toggleActivityType;
+window.toggleActivityType = function(){
+  if(typeof oldToggleActivityType === 'function') oldToggleActivityType();
+  toggleReadingBuilderMode();
+};
+setTimeout(toggleReadingBuilderMode, 800);
 </script>
 
 </body>
