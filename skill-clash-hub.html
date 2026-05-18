@@ -236,7 +236,7 @@ button:hover{filter:brightness(.96)}
 }
 .teacherTopActions{
   display:grid;
-  grid-template-columns:repeat(5,1fr);
+  grid-template-columns:repeat(4,1fr);
   gap:10px;
   margin-top:12px;
 }
@@ -1329,6 +1329,44 @@ button:hover{filter:brightness(.96)}
   #studentActivityPicture{height:auto;max-height:260px;}
 }
 
+
+/* ===== Dashboard Activity Activation Panel ===== */
+.activationPanel{
+  background:linear-gradient(135deg,#f8fbff,#ffffff);
+  border:1px solid #cfe0f7;
+  border-radius:18px;
+  padding:16px;
+  margin:14px 0;
+  box-shadow:0 5px 18px rgba(36,59,107,.07);
+}
+.activationGrid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr;
+  gap:12px;
+  align-items:end;
+}
+.activationClassChecks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:8px;
+}
+.activationPreview{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  padding:12px;
+  margin-top:12px;
+  color:#92400e;
+  font-weight:800;
+  white-space:pre-wrap;
+}
+.teacherTopActions{grid-template-columns:repeat(5,1fr)}
+@media(max-width:900px){
+  .activationGrid{grid-template-columns:1fr}
+  .teacherTopActions{grid-template-columns:1fr 1fr}
+}
+
 </style>
 </head>
 
@@ -1558,8 +1596,8 @@ button:hover{filter:brightness(.96)}
 
       <div class="teacherTopActions">
         <button class="green" onclick="startTimer()">⏱ Start Timer</button>
+        <button class="purple" onclick="toggleActivationPanel()">🚀 Activate Activity</button>
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
-        <button class="purple" onclick="showActivateActivity()">🚀 Activate Activity to Classes</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
       </div>
@@ -1567,6 +1605,37 @@ button:hover{filter:brightness(.96)}
       <div class="note teacherTimerLine">
         <span>⏱ Teacher Timer: <b id="teacherTimer">Not started</b></span>
         <button class="timerMiniBtn" onclick="openTimerPopup()">⛶ Maximize Timer + Activity</button>
+      </div>
+    </div>
+
+    <div id="dashboardActivationPanel" class="activationPanel hidden">
+      <h2>🚀 Activate / Assign Saved Activity</h2>
+      <p class="smallNote">Choose one saved activity from your library and assign it to selected classes. This becomes the active activity for students immediately.</p>
+
+      <div class="activationGrid">
+        <div>
+          <label>📚 Saved Activity Library</label>
+          <select id="dashboardSavedActivities" onchange="previewDashboardActivity()">
+            <option value="">Choose saved activity</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Assign To Class(es)</label>
+          <div class="activationClassChecks">
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-1">9/1</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-2">9/2</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-3">9/3</label>
+            <label class="checkCard"><input type="checkbox" class="dashboardAssignClass" value="9-4">9/4</label>
+          </div>
+        </div>
+      </div>
+
+      <div id="dashboardActivityPreview" class="activationPreview">Choose an activity to preview.</div>
+
+      <div class="btnRow">
+        <button class="green" onclick="activateSavedActivityForSelectedClasses()">✅ Activate for Selected Classes</button>
+        <button class="gray" onclick="toggleActivationPanel()">Close</button>
       </div>
     </div>
 
@@ -3143,6 +3212,7 @@ function loginTeacher(){
   showOnly('teacherDashboard');
   renderTeacherDashboard();
   loadActivityLibrary();
+  loadDashboardActivityLibrary();
 }
 
 function leaveTeacher(){
@@ -3285,19 +3355,7 @@ function showBuilder(){
   buildGroupTaskInputs();
   buildAssignGroupChecks();
   loadActivityLibrary();
-}
-
-function showActivateActivity(){
-  showOnly('builderPage');
-  buildGroupTaskInputs();
-  buildAssignGroupChecks();
-  loadActivityLibrary();
-  setTimeout(function(){
-    const assignBox = document.getElementById('assignMode');
-    if(assignBox){
-      assignBox.scrollIntoView({behavior:'smooth', block:'center'});
-    }
-  }, 120);
+  loadDashboardActivityLibrary();
 }
 function toggleTaskType(){
   const type = document.getElementById('builderTaskType').value;
@@ -3365,6 +3423,143 @@ function loadActivityLibrary(){
     document.getElementById('savedActivities').innerHTML = html;
   });
 }
+function loadDashboardActivityLibrary(){
+  hubRef.child('activityLibrary').once('value', snap=>{
+    const data = snap.val() || {};
+    let html = '<option value="">Choose saved activity</option>';
+    Object.keys(data)
+      .sort((a,b)=>Number((data[b]||{}).updatedAt||0)-Number((data[a]||{}).updatedAt||0))
+      .forEach(id=>{
+        const a = data[id] || {};
+        html += `<option value="${id}">${escapeHtml(a.title || 'Activity')}</option>`;
+      });
+
+    const dash = document.getElementById('dashboardSavedActivities');
+    if(dash) dash.innerHTML = html;
+  });
+}
+
+function toggleActivationPanel(){
+  const panel = document.getElementById('dashboardActivationPanel');
+  if(!panel) return;
+  panel.classList.toggle('hidden');
+  if(!panel.classList.contains('hidden')){
+    loadDashboardActivityLibrary();
+    previewDashboardActivity();
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+}
+
+async function previewDashboardActivity(){
+  const id = document.getElementById('dashboardSavedActivities')?.value || '';
+  const box = document.getElementById('dashboardActivityPreview');
+  if(!box) return;
+
+  if(!id){
+    box.innerHTML = 'Choose an activity to preview.';
+    return;
+  }
+
+  const snap = await hubRef.child('activityLibrary/' + id).once('value');
+  const a = snap.val() || {};
+  const criteria = (a.criteria || []).filter(Boolean).slice(0,5).map(x=>'✅ '+escapeHtml(x)).join('<br>');
+  const hasPic = (a.imageUrl || a.pictureUrl || a.mainPicture || a.activityPicture) ? 'Yes' : 'No';
+
+  box.innerHTML = `
+    <b>📌 ${escapeHtml(a.title || 'Activity')}</b><br>
+    <b>Instructions:</b> ${escapeHtml(a.instructions || 'No instructions')}<br>
+    <b>Task Type:</b> ${escapeHtml(a.taskType || 'same')}<br>
+    <b>Activity Picture:</b> ${hasPic}<br>
+    <b>Success Criteria:</b><br>${criteria || 'No criteria'}
+  `;
+}
+
+function buildActiveActivityForGroup(a, groupNum, activationId, classes){
+  const key = 'group' + groupNum;
+  const groupTask = (a.taskType === 'same') ? (a.sameTask || '') : ((a.groupTasks || {})[key] || '');
+  const pic = a.imageUrl || a.pictureUrl || a.mainPicture || a.activityPicture || '';
+
+  return {
+    id: a.id || '',
+    activationId,
+    title: a.title || 'Activity',
+    instructions: a.instructions || '',
+    taskType: a.taskType || 'same',
+    groupTask,
+    criteria: a.criteria || [],
+    votingCriteria: a.votingCriteria || [],
+    imageUrl: pic,
+    pictureUrl: pic,
+    mainPicture: pic,
+    activityPicture: pic,
+    assignedClasses: classes || [],
+    assignedToText: (classes || []).map(classDisplay).join(', '),
+    assignedAt: Date.now(),
+    assignedBy: 'Ms. Saidah Khwar'
+  };
+}
+
+async function activateSavedActivityForSelectedClasses(){
+  const activityId = document.getElementById('dashboardSavedActivities')?.value || '';
+  if(!activityId){
+    alert('Choose an activity from the library.');
+    return;
+  }
+
+  const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(x=>x.value);
+  if(!classes.length){
+    alert('Choose at least one class.');
+    return;
+  }
+
+  const snap = await hubRef.child('activityLibrary/' + activityId).once('value');
+  const a = snap.val();
+  if(!a){
+    alert('Activity not found.');
+    return;
+  }
+
+  a.id = activityId;
+  const activationId = 'act_' + Date.now();
+  const changedAt = Date.now();
+  const updates = {};
+
+  classes.forEach(cls=>{
+    const classActive = buildActiveActivityForGroup(a, 1, activationId, classes);
+    classActive.activeActivityChangedAt = changedAt;
+
+    updates[`classes/${cls}/activeActivity`] = classActive;
+    updates[`classes/${cls}/currentActivity`] = classActive;
+
+    for(let i=1;i<=10;i++){
+      const groupActive = buildActiveActivityForGroup(a, i, activationId, classes);
+      groupActive.activeActivityChangedAt = changedAt;
+      updates[`classes/${cls}/activeActivityGroups/group${i}`] = groupActive;
+      updates[`classes/${cls}/assignedActivities/group${i}`] = groupActive;
+    }
+
+    updates[`classes/${cls}/settings/stage`] = 'work';
+    updates[`classes/${cls}/settings/voteSystem`] = 'battle';
+    updates[`classes/${cls}/settings/resultsReleased`] = false;
+    updates[`classes/${cls}/settings/activeActivityId`] = activityId;
+    updates[`classes/${cls}/settings/activationId`] = activationId;
+    updates[`classes/${cls}/settings/activeActivityChangedAt`] = changedAt;
+  });
+
+  updates[`activityLibrary/${activityId}/lastActivatedAt`] = changedAt;
+  updates[`activityLibrary/${activityId}/lastActivatedClasses`] = classes;
+
+  await hubRef.update(updates);
+
+  latestTeacherActivityForPopup = buildActiveActivityForGroup(a, 1, activationId, classes);
+  latestTeacherAssignedTo = classes.map(classDisplay).join(', ');
+  if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
+
+  alert('✅ Activity activated for: ' + classes.map(classDisplay).join(', '));
+  document.getElementById('dashboardActivationPanel')?.classList.add('hidden');
+  renderTeacherDashboard();
+}
+
 async function loadActivity(){
   const id = document.getElementById('savedActivities').value;
   if(!id){alert('Choose saved activity.');return}
