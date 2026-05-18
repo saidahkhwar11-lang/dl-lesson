@@ -4009,7 +4009,7 @@ function renderAssignedActivityOnStudent(a){
   if(nameBox) nameBox.innerText = a.title || 'No activity assigned';
   if(instructionBox) instructionBox.innerText = a.instructions || 'No instructions';
 
-  if(isReading){
+  if(isReadingPerformance){
     if(typeof renderReadingStudentQuiz === 'function') renderReadingStudentQuiz(null);
     renderParagraphReadingStudent(a);
   }else{
@@ -5440,7 +5440,8 @@ function clearChatNotification(){
     document.body.innerText.toLowerCase().includes('reading performance') ||
     document.body.innerText.toLowerCase().includes('reading activity');
 
-  leaveBtn.style.display = isReading ? 'none' : 'inline-flex';
+  leaveBtn.style.display =
+isReadingPerformance ? 'none' : 'inline-flex';
 }
 
 setInterval(updateLeaveButtonVisibility, 1000);
@@ -7244,8 +7245,9 @@ async function getActiveClassActivityForStudent(){
 function makeStudentActiveActivity(a, groupNo, activationId){
   a = a || {};
   const groupKey = 'group' + groupNo;
-  const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
-
+const isReadingPerformance =
+(a.activityType === 'readingPerformance');
+  
   const groupTask = isReading
     ? 'Each student receives one paragraph from the same full text.'
     : (a.taskType === 'same'
