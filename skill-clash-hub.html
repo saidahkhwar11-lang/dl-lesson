@@ -2015,6 +2015,30 @@ button:hover{filter:brightness(.96)}
   font-weight:900!important;
   cursor:pointer!important;
 }
+  .studentActionBar{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:12px 0;
+}
+
+.studentActionBar button{
+  border:0;
+  border-radius:14px;
+  padding:10px 14px;
+  font-weight:800;
+  cursor:pointer;
+  background:#eaf6ff;
+  color:#17415f;
+}
+
+.activityBox{
+  background:#ffffff;
+  border:1px solid #d9ecf7;
+  border-radius:18px;
+  padding:14px;
+  margin:12px 0;
+}
 .refreshTeacherBtn{min-width:180px}
 .chatBtnWrap{position:relative;display:inline-block}
 .chatNotifyBadge{
@@ -2581,6 +2605,25 @@ button:hover{filter:brightness(.96)}
 </head>
 
 <body>
+  <div class="studentActionBar">
+  <button onclick="leaveGroup()">🚪 Leave Group</button>
+  <button onclick="showReadingActivity()">📖 Reading Activity</button>
+  <button onclick="showReleasedResults()">🏆 View Results</button>
+</div>
+
+<div id="studentReadingBox" class="hidden activityBox">
+  <h3>📖 Reading Activity</h3>
+  <p id="studentReadingText">
+    Read the activity instructions from your teacher.
+  </p>
+</div>
+
+<div id="studentReleasedResultsBox" class="hidden activityBox">
+  <h3>🏆 Released Results</h3>
+  <div id="studentReleasedResultsText">
+    Results are not released yet.
+  </div>
+</div>
 <div class="topbar">⚔️ Skill Clash Hub</div>
 
 <div class="container">
@@ -8159,6 +8202,55 @@ window.renderTeacherDashboard = async function(){
 window.addEventListener('load', function(){
   setTimeout(loadAllActivatedActivitiesSafe, 800);
 });
+
+  function showReadingActivity(){
+
+  const box =
+  document.getElementById('studentReadingBox');
+
+  if(box) box.classList.remove('hidden');
+}
+
+function showReleasedResults(){
+
+  const box =
+  document.getElementById('studentReleasedResultsBox');
+
+  if(box) box.classList.remove('hidden');
+
+  const txt =
+  document.getElementById('studentReleasedResultsText');
+
+  if(!latestClassData || !latestClassData.resultsReleased){
+
+    if(txt){
+      txt.innerHTML =
+      '⏳ Results are not released yet.';
+    }
+
+    return;
+  }
+
+  if(txt){
+
+    txt.innerHTML =
+    latestClassData.resultsHTML ||
+    '🏆 Results released.';
+  }
+}
+
+function leaveGroup(){
+
+  if(!confirm('Leave this group?')) return;
+
+  localStorage.removeItem('skillClash_student');
+  localStorage.removeItem('skillClash_group');
+  localStorage.removeItem('skillClash_class');
+
+  sessionStorage.clear();
+
+  location.reload();
+}
 
 </script>
 </body>
