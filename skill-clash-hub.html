@@ -3056,8 +3056,71 @@ button:hover{filter:brightness(.96)}
             <h3>⚔️ Debate Group VS Group Topics</h3>
             <div class="cleanBuilderHint">Each pair competes on the same topic: Group 1 VS Group 2, Group 3 VS Group 4, etc.</div>
             <div class="debatePairGrid" id="groupTaskGrid"></div>
+            <div class="builderCard">
+  <h3>✅ Success Criteria Checklist</h3>
+
+  <div class="criteriaGrid">
+
+    <label><input type="checkbox" checked> Opinion is clear</label>
+
+    <label><input type="checkbox" checked> Reasons are included</label>
+
+    <label><input type="checkbox" checked> Evidence/examples are included</label>
+
+    <label><input type="checkbox" checked> Opinion is restated clearly</label>
+
+    <label><input type="checkbox" checked> Presentation is clear and concise</label>
+
+  </div>
+</div>
+
+            <div class="builderCard">
+  <h3>⚔️ Voting Criteria System</h3>
+
+  <div class="voteCriteriaBox">
+
+    <div class="votePointRow">
+      <span>Opinion is clear</span>
+      <b>+1 Point</b>
+    </div>
+
+    <div class="votePointRow">
+      <span>Strong reasons included</span>
+      <b>+1 Point</b>
+    </div>
+
+    <div class="votePointRow">
+      <span>Evidence/examples included</span>
+      <b>+1 Point</b>
+    </div>
+
+    <div class="votePointRow">
+      <span>Opinion restated clearly</span>
+      <b>+1 Point</b>
+    </div>
+
+    <div class="votePointRow">
+      <span>Grammar and presentation</span>
+      <b>+1 Point</b>
+    </div>
+
+    <div class="voteBonusRow">
+      🏆 Stronger Group Bonus = +5 Points
+    </div>
+
+    <div class="voteTeacherRow">
+      ✍️ Teacher Mark = Open Mark Added to Final Total
+    </div>
+
+    <div class="voteFinalRow">
+      Final Total = Voting Points (10) + Teacher Mark
+    </div>
+
+  </div>
+</div>
           </div>
         </div>
+        
 
 <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
       </div>
@@ -5087,6 +5150,75 @@ function downloadCertificate(info){
       color:#08285f;
       margin-bottom:7px;
     }
+    .builderCard{
+  background:white;
+  border:1px solid #d8e5f6;
+  border-radius:18px;
+  padding:16px;
+  margin-top:14px;
+}
+
+.criteriaGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:10px;
+}
+
+.criteriaGrid label{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:10px;
+  font-weight:700;
+  color:#18376b;
+}
+
+.voteCriteriaBox{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:12px;
+}
+
+.votePointRow,
+.voteBonusRow,
+.voteTeacherRow,
+.voteFinalRow{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:12px;
+  padding:12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-weight:700;
+}
+
+.voteBonusRow{
+  background:#fff7ed;
+  border-color:#fdba74;
+  color:#9a3412;
+}
+
+.voteTeacherRow{
+  background:#eff6ff;
+  border-color:#93c5fd;
+}
+
+.voteFinalRow{
+  background:#ecfdf5;
+  border-color:#86efac;
+  color:#166534;
+}
+
+@media(max-width:760px){
+
+  .criteriaGrid{
+    grid-template-columns:1fr;
+  }
+
+}
     .sig .line{border-top:2px solid #c9962d;margin:0 auto 8px;width:86%}
     .sig .name{font-size:19px;font-weight:700;margin-bottom:5px}
     .sig .role{font-size:17px;color:#8a5b0d}
