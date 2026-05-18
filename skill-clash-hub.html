@@ -5347,7 +5347,6 @@ async function submitFinalWork(){
 function leaveGroup(){
   markStudentLeftGroup();
   clearSkillStudentSession();
-  clearSkillStudentSession();
   sessionStorage.removeItem('skillClass');
   sessionStorage.removeItem('skillGroup');
   sessionStorage.removeItem('skillStudent');
@@ -6454,6 +6453,7 @@ function renderParagraphReadingStudent(a){
       <button class="blue" onclick="openMembersWorkFromReading()">👀 Members’ Work</button>
       <button class="green" onclick="saveParagraphSummary()">💾 Save My Work</button>
       <span class="chatBtnWrap"><button class="purple" onclick="toggleChat(); clearChatNotification()">💬 Chatroom</button><span id="chatNotifyBadge" class="chatNotifyBadge">!</span></span>
+      <button class="red" onclick="leaveGroup()">🚪 Leave Group</button>
     </div>
 
     <div class="readingMainLayout">
@@ -8160,6 +8160,264 @@ window.addEventListener('load', function(){
   setTimeout(loadAllActivatedActivitiesSafe, 800);
 });
 
+
+
+/* ===== FIX 2026-05-18: Reading Performance release + student final marks ===== */
+function getReadingActivityForClassData(cls){
+  cls = cls || {};
+  const assignedActivities = cls.assignedActivities || {};
+  const firstAssigned = assignedActivities.group1 || assignedActivities['group1'] || {};
+  return firstAssigned || {};
+}
+
+function getReadingTotalFromActivityForStudent(activity, student){
+  const savedTotal = Number((student || {}).readingTotal || 0);
+  if(savedTotal > 0) return savedTotal;
+  try{
+    const pNum = Number((student || {}).assignedParagraphNumber || 0);
+    const paragraphs = (activity && activity.paragraphReading) || [];
+    let para = paragraphs.find(function(p){ return Number(p.paragraphNumber) === pNum; });
+    if(!para && paragraphs.length) para = paragraphs[0];
+    return ((para && para.questions) || []).length || 0;
+  }catch(e){
+    return 0;
+  }
+}
+
+function calculateReadingPerformance(classData){
+  classData = classData || {};
+  const groups = classData.groups || {};
+  const activity = getReadingActivityForClassData(classData);
+  const groupResults = [];
+  const allStudents = [];
+
+  for(let i = 1; i <= 10; i++){
+    const gKey = 'group' + i;
+    const g = groups[gKey] || {};
+    const students = g.students || {};
+    let groupScore = 0;
+    let groupTotal = 0;
+    let studentCount = 0;
+    let submittedCount = 0;
+
+    Object.keys(students).forEach(function(id){
+      const s = students[id] || {};
+      const score = Number(s.readingScore || 0);
+      const total = getReadingTotalFromActivityForStudent(activity, s);
+      const submitted = !!s.readingParagraphSubmitted;
+      groupScore += score;
+      groupTotal += total;
+      studentCount++;
+      if(submitted) submittedCount++;
+      allStudents.push({
+        id:id,
+        name:s.name || id,
+        role:s.role || '',
+        groupKey:gKey,
+        groupNum:i,
+        paragraph:s.assignedParagraphNumber || '-',
+        score:score,
+        total:total,
+        submitted:submitted,
+        selfEvaluation:s.selfEvaluation || '-',
+        summary:s.paragraphSummary || 'No summary saved yet.'
+      });
+    });
+
+    groupResults.push({
+      groupKey:gKey,
+      groupNum:i,
+      groupName:'Group ' + i,
+      score:groupScore,
+      total:groupTotal,
+      studentCount:studentCount,
+      submittedCount:submittedCount,
+      finalAnswer:g.finalAnswer || '',
+      finalSubmitted:!!g.finalSubmitted
+    });
+  }
+
+  groupResults.sort(function(a,b){
+    return b.score - a.score || a.groupNum - b.groupNum;
+  });
+  allStudents.sort(function(a,b){
+    return b.score - a.score || a.groupNum - b.groupNum || String(a.name).localeCompare(String(b.name));
+  });
+
+  const topScore = groupResults.length ? groupResults[0].score : 0;
+  const winners = topScore > 0 ? groupResults.filter(function(g){ return g.score === topScore; }) : [];
+
+  return {activity:activity, groupResults:groupResults, allStudents:allStudents, winners:winners, topScore:topScore};
+}
+
+function buildReadingPerformanceHtml(classData, options){
+  options = options || {};
+  const data = calculateReadingPerformance(classData || {});
+  const activityTitle = (data.activity && data.activity.title) || 'Reading Activity';
+  const clsTitle = options.classTitle || (selectedTeacherClass ? classDisplay(selectedTeacherClass) : classDisplay(currentClass));
+  const winnerText = data.winners.length
+    ? data.winners.map(function(g){ return g.groupName; }).join(', ')
+    : 'No winner yet';
+
+  let html = `
+    <h2>📖 Reading Performance Results - Class ${escapeHtml(clsTitle)}</h2>
+    <p><b>Activity:</b> ${escapeHtml(activityTitle)}</p>
+    <div class="resultFormulaBox">
+      Reading results are released now. Student work is stopped. The winning group is the group with the highest total reading points.
+    </div>
+    <div class="winnerBox">🏆 Winning Group: <b>${escapeHtml(winnerText)}</b>${data.topScore > 0 ? ` — Total Points: <b>${data.topScore}</b>` : ''}</div>
+
+    <h3>🌟 All Groups Ranking</h3>
+    <table class="resultTable">
+      <tr><th>Rank</th><th>Group</th><th>Students</th><th>Submitted</th><th>Total Points</th><th>Max Points</th></tr>
+  `;
+
+  data.groupResults.forEach(function(g,idx){
+    html += `<tr>
+      <td>${idx + 1}</td>
+      <td><b>${escapeHtml(g.groupName)}</b></td>
+      <td>${g.studentCount}</td>
+      <td>${g.submittedCount} / ${g.studentCount}</td>
+      <td><b>${g.score}</b></td>
+      <td>${g.total}</td>
+    </tr>`;
+  });
+  html += '</table>';
+
+  html += `
+    <h3>👩‍🎓 Individual Student Marks</h3>
+    <table class="performanceTable">
+      <tr>
+        <th>Student</th><th>ID</th><th>Group</th><th>Paragraph</th><th>Mark</th><th>Status</th><th>Self-Eval</th><th>Summary</th>
+      </tr>
+  `;
+
+  if(data.allStudents.length){
+    data.allStudents.forEach(function(s){
+      html += `<tr>
+        <td>${escapeHtml(s.name)} ${s.role === 'leader' ? '👑' : ''}</td>
+        <td>${escapeHtml(s.id)}</td>
+        <td>${escapeHtml('Group ' + s.groupNum)}</td>
+        <td>${escapeHtml(s.paragraph)}</td>
+        <td><b>${s.score}</b> / ${s.total}</td>
+        <td>${s.submitted ? '✅ Submitted' : '⏳ Not finished'}</td>
+        <td>${escapeHtml(s.selfEvaluation)}</td>
+        <td class="summaryCell">${escapeHtml(s.summary)}</td>
+      </tr>`;
+    });
+  }else{
+    html += '<tr><td colspan="8">No students joined yet.</td></tr>';
+  }
+
+  html += '</table>';
+  return html;
+}
+
+async function showClassReadingPerformance(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+
+  const clsKey = activeTeacherClassKey ? activeTeacherClassKey() : selectedTeacherClass;
+  const panel = document.getElementById('votingResultsPanel');
+  if(panel){
+    panel.classList.remove('hidden');
+    panel.innerHTML = '<h2>📖 Reading Performance</h2><div class="note">Loading and releasing reading results...</div>';
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  await hubRef.update({
+    [`classes/${clsKey}/settings/stage`]:'readingResults',
+    [`classes/${clsKey}/settings/readingResultsReleased`]:true,
+    [`classes/${clsKey}/settings/readingResultsReleasedAt`]:Date.now(),
+    [`classes/${clsKey}/settings/resultsType`]:'reading'
+  });
+
+  const snap = await hubRef.child(`classes/${clsKey}`).once('value');
+  const classData = snap.val() || {};
+  if(panel){
+    panel.innerHTML = buildReadingPerformanceHtml(classData, {classTitle:classDisplay(selectedTeacherClass)});
+  }
+}
+
+function renderStudentReadingResults(){
+  const content = document.getElementById('studentResultsContent');
+  if(!content) return;
+  const classData = {
+    groups: latestClassGroups || {},
+    assignedActivities: {group1: latestAssignedActivity || {}}
+  };
+  content.innerHTML = buildReadingPerformanceHtml(classData, {classTitle:classDisplay(currentClass)});
+}
+
+/* Override routing so teacher Reading Performance stops student work and opens final marks page. */
+function routeStudentStage(){
+  if(!currentClass || !currentGroup || !currentStudent) return;
+
+  const votingLayout = document.querySelector('.votingLayout');
+  const resultsPanel = document.getElementById('studentResultsPanel');
+
+  if(currentStage === 'readingResults'){
+    showOnly('votingPage');
+    const voteClass = document.getElementById('voteInfoClass');
+    const voteGroup = document.getElementById('voteInfoGroup');
+    const voteYou = document.getElementById('voteInfoYou');
+    if(voteClass) voteClass.innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    if(voteGroup) voteGroup.innerText = `👥 My Group: ${currentGroup}`;
+    if(voteYou) voteYou.innerText = `⭐ Student: ${currentStudent}`;
+
+    const title = document.querySelector('#votingPage .titleLine h1');
+    const badge = document.querySelector('#votingPage .statusBadge');
+    if(title) title.innerText = '📖 Reading Final Results';
+    if(badge) badge.innerText = '🏆 Results Released';
+
+    if(votingLayout) votingLayout.classList.add('hidden');
+    if(resultsPanel) resultsPanel.classList.remove('hidden');
+    renderStudentReadingResults();
+    return;
+  }
+
+  if(currentStage === 'voting'){
+    showOnly('votingPage');
+    document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+
+    const title = document.querySelector('#votingPage .titleLine h1');
+    if(title) title.innerText = '🗳 Voting Stage';
+    if(resultsPanel) resultsPanel.classList.add('hidden');
+    if(votingLayout) votingLayout.classList.remove('hidden');
+
+    switchVotingModeUI();
+    renderVoteCriteria();
+    renderMyGroupFinalPreview();
+    renderBattleVoting();
+    return;
+  }
+
+  if(currentStage === 'results'){
+    showOnly('votingPage');
+    document.getElementById('voteInfoClass').innerText = `📚 Class: ${classDisplay(currentClass)}`;
+    document.getElementById('voteInfoGroup').innerText = `👥 My Group: ${currentGroup}`;
+    document.getElementById('voteInfoYou').innerText = `⭐ Student: ${currentStudent}`;
+
+    const title = document.querySelector('#votingPage .titleLine h1');
+    if(title) title.innerText = '📊 Voting Results';
+    if(votingLayout) votingLayout.classList.add('hidden');
+    if(resultsPanel) resultsPanel.classList.remove('hidden');
+    renderStudentResults();
+    return;
+  }
+
+  showOnly('workPage');
+  const title = document.querySelector('#votingPage .titleLine h1');
+  if(title) title.innerText = '🗳 Voting Stage';
+  const badge = document.getElementById('statusBadge');
+  if(badge) badge.innerText = '✍️ In Progress';
+  if(votingLayout) votingLayout.classList.remove('hidden');
+  if(resultsPanel) resultsPanel.classList.add('hidden');
+}
 </script>
 </body>
 </html>
