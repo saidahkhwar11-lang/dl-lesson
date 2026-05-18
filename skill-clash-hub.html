@@ -236,7 +236,7 @@ button:hover{filter:brightness(.96)}
 }
 .teacherTopActions{
   display:grid;
-  grid-template-columns:repeat(4,1fr);
+  grid-template-columns:repeat(5,1fr);
   gap:10px;
   margin-top:12px;
 }
@@ -1559,6 +1559,7 @@ button:hover{filter:brightness(.96)}
       <div class="teacherTopActions">
         <button class="green" onclick="startTimer()">⏱ Start Timer</button>
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
+        <button class="purple" onclick="showActivateActivity()">🚀 Activate Activity to Classes</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
       </div>
@@ -3284,6 +3285,19 @@ function showBuilder(){
   buildGroupTaskInputs();
   buildAssignGroupChecks();
   loadActivityLibrary();
+}
+
+function showActivateActivity(){
+  showOnly('builderPage');
+  buildGroupTaskInputs();
+  buildAssignGroupChecks();
+  loadActivityLibrary();
+  setTimeout(function(){
+    const assignBox = document.getElementById('assignMode');
+    if(assignBox){
+      assignBox.scrollIntoView({behavior:'smooth', block:'center'});
+    }
+  }, 120);
 }
 function toggleTaskType(){
   const type = document.getElementById('builderTaskType').value;
