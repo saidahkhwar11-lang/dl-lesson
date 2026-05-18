@@ -1252,6 +1252,83 @@ button:hover{filter:brightness(.96)}
   width:100%;
   max-height:520px;
 }
+
+
+/* Activity picture beside student writing box */
+.answerPictureLayout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 135px;
+  gap:10px;
+  align-items:start;
+}
+.answerPictureLayout textarea{
+  min-height:190px;
+}
+.studentPictureBox{
+  margin-top:0;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:8px;
+}
+.studentPictureHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  margin-bottom:6px;
+  font-size:12px;
+  color:#18376b;
+}
+.studentPictureHead button{
+  margin:0;
+  padding:5px 7px;
+  font-size:11px;
+  background:#243b6b;
+  white-space:nowrap;
+}
+#studentActivityPicture{
+  width:100%;
+  height:115px;
+  object-fit:contain;
+  border-radius:10px;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+.studentPictureBox.big{
+  grid-column:1/-1;
+}
+.studentPictureBox.big #studentActivityPicture{
+  width:100%;
+  height:auto;
+  max-height:520px;
+}
+.builderPictureBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:6px;
+}
+.builderPicturePreview{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:8px;
+}
+.builderPicturePreview img{
+  width:90px;
+  height:90px;
+  object-fit:contain;
+  border:1px solid #d8e5f6;
+  border-radius:10px;
+  background:white;
+}
+@media(max-width:760px){
+  .answerPictureLayout{grid-template-columns:1fr;}
+  #studentActivityPicture{height:auto;max-height:260px;}
+}
+
 </style>
 </head>
 
@@ -1351,14 +1428,16 @@ button:hover{filter:brightness(.96)}
           <h2>✍️ My Answer</h2>
           <p>Write your part. Click <b>Save My Work</b> so your group can see it.</p>
           <label id="myWorkLabel">My Work</label>
-          <textarea id="myAnswerBox" placeholder="Write your answer here..."></textarea>
-          <div id="studentActivityPictureBox" class="studentPictureBox hidden">
-  <div class="studentPictureHead">
-    <b>🖼 Activity Picture</b>
-    <button onclick="toggleStudentPictureSize()" type="button">⛶ Maximize / Minimize</button>
-  </div>
-  <img id="studentActivityPicture" src="" alt="Activity Picture">
-</div>
+          <div class="answerPictureLayout">
+            <textarea id="myAnswerBox" placeholder="Write your answer here..."></textarea>
+            <div id="studentActivityPictureBox" class="studentPictureBox hidden">
+              <div class="studentPictureHead">
+                <b>🖼 Activity Picture</b>
+                <button onclick="toggleStudentPictureSize()" type="button">⛶ Maximize / Minimize</button>
+              </div>
+              <img id="studentActivityPicture" src="" alt="Activity Picture">
+            </div>
+          </div>
 
           <div class="actions">
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
@@ -1554,6 +1633,15 @@ button:hover{filter:brightness(.96)}
         <label>Activity Instructions</label>
         <textarea id="builderInstructions" placeholder="Instructions students will read."></textarea>
 
+        <label>🖼 Main Activity Details Picture</label>
+        <div class="builderPictureBox">
+          <input id="builderActivityPicture" type="file" accept="image/*" onchange="loadBuilderActivityPicture(event)">
+          <div id="builderActivityPicturePreviewBox" class="builderPicturePreview hidden">
+            <img id="builderActivityPicturePreview" src="" alt="Activity picture preview">
+            <button class="gray" type="button" onclick="removeBuilderActivityPicture()">Remove Main Picture</button>
+          </div>
+        </div>
+
         <div id="sameTaskArea">
           <label>Task / Question</label>
           <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
@@ -1599,7 +1687,7 @@ Grammar and spelling are checked"></textarea>
           <div class="assignChecks" id="assignGroupChecks"></div>
         </div>
 
-        <button class="green" style="width:100%" onclick="assignCurrentActivity()">✅ Assign Current Activity</button>
+        <button class="green" style="width:100%" onclick="assignCurrentActivity()">✅ Activate / Assign Current Activity</button>
       </div>
     </div>
   </div>
@@ -1712,6 +1800,7 @@ let teacherTimerPaused = false;
 let teacherTimerLastSetSeconds = 0;
 let studentTimerInterval = null;
 let latestClassTimer = {};
+let builderActivityPictureData = "";
 
 function classDisplay(c){return c.replace('-','/')}
 function escapeHtml(text){
@@ -2803,7 +2892,84 @@ function downloadCertificate(info){
     @media print{
       body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
     }
-  </style></head><body>
+  
+
+/* Activity picture beside student writing box */
+.answerPictureLayout{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 135px;
+  gap:10px;
+  align-items:start;
+}
+.answerPictureLayout textarea{
+  min-height:190px;
+}
+.studentPictureBox{
+  margin-top:0;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:8px;
+}
+.studentPictureHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  margin-bottom:6px;
+  font-size:12px;
+  color:#18376b;
+}
+.studentPictureHead button{
+  margin:0;
+  padding:5px 7px;
+  font-size:11px;
+  background:#243b6b;
+  white-space:nowrap;
+}
+#studentActivityPicture{
+  width:100%;
+  height:115px;
+  object-fit:contain;
+  border-radius:10px;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+.studentPictureBox.big{
+  grid-column:1/-1;
+}
+.studentPictureBox.big #studentActivityPicture{
+  width:100%;
+  height:auto;
+  max-height:520px;
+}
+.builderPictureBox{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+  margin-top:6px;
+}
+.builderPicturePreview{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-top:8px;
+}
+.builderPicturePreview img{
+  width:90px;
+  height:90px;
+  object-fit:contain;
+  border:1px solid #d8e5f6;
+  border-radius:10px;
+  background:white;
+}
+@media(max-width:760px){
+  .answerPictureLayout{grid-template-columns:1fr;}
+  #studentActivityPicture{height:auto;max-height:260px;}
+}
+
+</style></head><body>
   <button class="printBtn" onclick="window.print()">Print / Save PDF</button>
   <div class="cert">
     <div class="goldSweep"></div>
@@ -3153,7 +3319,17 @@ function collectActivity(){
     const el = document.getElementById('groupTask_'+i);
     groupTasks['group'+i] = el ? el.value.trim() : '';
   }
-  return {id:currentActivityId || 'activity_'+Date.now(), title, instructions, taskType, sameTask, groupTasks, criteria, votingCriteria};
+  return {
+    id:currentActivityId || 'activity_'+Date.now(),
+    title,
+    instructions,
+    taskType,
+    sameTask,
+    groupTasks,
+    criteria,
+    votingCriteria,
+    imageUrl: builderActivityPictureData || ''
+  };
 }
 async function saveActivityToLibrary(){
   const a = collectActivity();
@@ -3188,6 +3364,8 @@ async function loadActivity(){
   document.getElementById('builderSameTask').value = a.sameTask || '';
   document.getElementById('builderCriteria').value = (a.criteria || []).join('\n');
   document.getElementById('builderVotingCriteria').value = (a.votingCriteria || []).join('\n');
+  builderActivityPictureData = a.imageUrl || a.pictureUrl || a.mainPicture || a.activityPicture || '';
+  updateBuilderActivityPicturePreview();
   buildGroupTaskInputs();
   for(let i=1;i<=10;i++){
     const el = document.getElementById('groupTask_'+i);
@@ -3230,6 +3408,7 @@ async function assignCurrentActivity(){
         groupTask,
         criteria:a.criteria,
         votingCriteria:a.votingCriteria,
+        imageUrl:a.imageUrl || '',
         taskType:a.taskType,
         assignedAt:Date.now(),
         assignedBy:'Ms. Saidah Khwar'
@@ -3241,6 +3420,7 @@ async function assignCurrentActivity(){
       taskType:a.taskType,
       criteria:a.criteria,
       votingCriteria:a.votingCriteria,
+      imageUrl:a.imageUrl || '',
       assignedAt:Date.now()
     };
     updates[`classes/${cls}/settings/stage`] = 'work';
@@ -3623,6 +3803,38 @@ function listenStudentTimer(){
   });
 }
 
+
+function loadBuilderActivityPicture(event){
+  const file = event && event.target && event.target.files ? event.target.files[0] : null;
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    builderActivityPictureData = e.target.result || '';
+    updateBuilderActivityPicturePreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function updateBuilderActivityPicturePreview(){
+  const box = document.getElementById('builderActivityPicturePreviewBox');
+  const img = document.getElementById('builderActivityPicturePreview');
+  if(!box || !img) return;
+  if(builderActivityPictureData){
+    img.src = builderActivityPictureData;
+    box.classList.remove('hidden');
+  }else{
+    img.removeAttribute('src');
+    box.classList.add('hidden');
+  }
+}
+
+function removeBuilderActivityPicture(){
+  builderActivityPictureData = '';
+  const input = document.getElementById('builderActivityPicture');
+  if(input) input.value = '';
+  updateBuilderActivityPicturePreview();
+}
+
 window.addEventListener('load',()=>{
   buildGroupTaskInputs();
   buildAssignGroupChecks();
@@ -3642,14 +3854,23 @@ window.addEventListener('load',()=>{
   const img = document.getElementById('studentActivityPicture');
   if(!box || !img) return;
 
-  const url = latestAssignedActivity?.imageUrl || latestAssignedActivity?.pictureUrl || '';
+  const pic =
+    latestAssignedActivity.imageUrl ||
+    latestAssignedActivity.pictureUrl ||
+    latestAssignedActivity.mainPicture ||
+    latestAssignedActivity.image ||
+    latestAssignedActivity.picture ||
+    latestAssignedActivity.activityPicture ||
+    '';
 
-  if(url){
-    img.src = url;
+  if(pic){
+    img.onload = function(){ box.classList.remove('hidden'); };
+    img.onerror = function(){ box.classList.add('hidden'); img.removeAttribute('src'); };
+    img.src = pic;
     box.classList.remove('hidden');
   }else{
-    img.src = '';
     box.classList.add('hidden');
+    img.removeAttribute('src');
   }
 }
 
