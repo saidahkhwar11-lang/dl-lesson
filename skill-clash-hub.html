@@ -2576,6 +2576,23 @@ button:hover{filter:brightness(.96)}
   flex-direction:column;
   gap:6px!important;
 }
+
+
+/* ===== CLEAN WRITING BUILDER FIX ===== */
+.cleanWritingBuilder{background:#f8fbff;border:1px solid #d8e5f6;border-radius:18px;padding:14px;margin-top:14px;}
+.cleanWritingIntro{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px;}
+.cleanTypeCard{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:12px;color:#18376b;line-height:1.45;}
+.cleanTypeCard b{display:block;font-size:16px;margin-bottom:5px}
+.cleanBuilderBox{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:14px;margin-top:12px;}
+.cleanBuilderBox h3{font-size:18px;margin:0 0 8px;color:#18376b}
+.cleanBuilderHint{background:#fff7ed;border:1px solid #fed7aa;color:#92400e;border-radius:12px;padding:10px;font-weight:800;margin:8px 0 12px;}
+.debatePairGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+.debatePairCard{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:12px;box-shadow:0 4px 12px rgba(36,59,107,.05);}
+.debatePairCard h3{background:#eef6ff;border:1px solid #bfdbfe;border-radius:12px;padding:9px;margin:0 0 8px;color:#18376b;}
+.debatePairCard textarea{min-height:95px!important;font-size:14px!important}
+.pairBadge{display:inline-block;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;margin-bottom:6px;}
+@media(max-width:900px){.cleanWritingIntro,.debatePairGrid{grid-template-columns:1fr}}
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -2597,7 +2614,7 @@ button:hover{filter:brightness(.96)}
     <div class="loginGrid">
       <div>
         <label>📚 Class</label>
-        <select id="className">
+        <select id="className" onchange="updateStudentGroupChoicesForClass()">
           <option value="">Choose class</option>
           <option value="9-1">9/1</option>
           <option value="9-2">9/2</option>
@@ -2610,16 +2627,6 @@ button:hover{filter:brightness(.96)}
         <label>👥 Group Number</label>
         <select id="studentGroup">
           <option value="">Choose group</option>
-          <option value="1">Group 1</option>
-          <option value="2">Group 2</option>
-          <option value="3">Group 3</option>
-          <option value="4">Group 4</option>
-          <option value="5">Group 5</option>
-          <option value="6">Group 6</option>
-          <option value="7">Group 7</option>
-          <option value="8">Group 8</option>
-          <option value="9">Group 9</option>
-          <option value="10">Group 10</option>
         </select>
       </div>
 
@@ -2947,9 +2954,15 @@ button:hover{filter:brightness(.96)}
           <div>
             <label>Task Type</label>
             <select id="builderTaskType" onchange="toggleTaskType()">
-              <option value="same">One task for all groups</option>
-              <option value="different">Different task for each group</option>
+              <option value="same">Type 2: Same topic for whole class</option>
+              <option value="different">Type 1: Debate - Group VS Group competition</option>
             </select>
+          </div>
+
+          <div>
+            <label>👥 Number of Groups for This Activity</label>
+            <input id="builderGroupCount" type="number" min="1" max="20" value="10" onchange="buildGroupTaskInputs(); buildAssignGroupChecks();">
+            <p class="smallHint">Example: 4-paragraph reading = 6 groups. 2-paragraph reading = 10–12 groups.</p>
           </div>
         </div>
 
@@ -3017,79 +3030,40 @@ button:hover{filter:brightness(.96)}
 
           <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
         </div>
-<div id="writingBuilderFields">
-<label>📷 Main Activity Details Picture</label>
-        <div class="imageUploadBox">
-          <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
-          <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
-          <button type="button" class="smallImageBtn" onclick="clearMainActivityImage()">Remove Main Picture</button>
-        </div>
-
-        <div id="sameTaskArea">
-          <label>Task / Question</label>
-          <textarea id="builderSameTask" placeholder="Write the task or question students will answer."></textarea>
-
-          <label>🔗 Hybrid Link for the Main Question</label>
-          <input id="builderSameLink" type="url" placeholder="Paste lesson link / Teams / website / activity link">
-
-          <label>📎 Attach Word / PDF / PPT / Picture for the Main Question</label>
-          <input id="builderSameFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleSameTaskFileUpload(this)">
-          <div id="builderSameFilePreview" class="fileMini hidden"></div>
-          <button type="button" class="smallImageBtn" onclick="clearSameTaskFile()">Remove File</button>
-        </div>
-
-        <div id="differentTaskArea" class="hidden">
-          <label>Different Tasks for Groups</label>
-          <div class="groupTaskGrid" id="groupTaskGrid"></div>
-        </div>
-
-
-        <div id="readingBuilderArea" class="readingBuilderBox hidden">
-          <h2>📖 Reading Type: Paragraph Group System</h2>
-          <p class="smallNote">
-            Upload or paste the full reading text. Choose how many paragraphs you want.
-            Each student in a group will receive one paragraph randomly with its own auto-marked questions.
-          </p>
-
-          <label>Manual Questions</label>
-          <div class="skillCheckGrid">
-            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="mainIdea" checked> Main Idea</label>
-            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="supportingDetails" checked> Supporting Details</label>
-            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="vocabulary" checked> Vocabulary</label>
-            <label class="skillCheck"><input type="checkbox" class="readingSkill" value="grammar" checked> Basic Grammar</label>
+<div id="writingBuilderFields" class="cleanWritingBuilder">
+          <h2>✍️ Writing Activity Builder</h2>
+          <div class="cleanWritingIntro">
+            <div class="cleanTypeCard"><b>⚔️ Type 1: Debate Competition</b>Each two groups receive the same topic. They write as a group, then compete in the voting stage. Teacher marks and releases results.</div>
+            <div class="cleanTypeCard"><b>📝 Type 2: Same Topic for Whole Class</b>Teacher gives one topic to everyone. Students may work in groups, but each student writes her own essay. Teacher marks and releases results.</div>
           </div>
 
-          <input id="readingWorkMode" type="hidden" value="paragraph">
-          <div class="note">📌 Reading Type uses one clear system: each student receives a different paragraph from the same full text, answers auto-marked questions, then writes a short summary.</div>
-
-          <label>📄 Upload Full Reading PDF</label>
-          <input id="readingSamePdf" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingSameText')">
-
-          <label>Full Reading Text</label>
-          <textarea id="readingSameText" placeholder="PDF text will appear here. You can also paste the full reading text manually."></textarea>
-
-          <label>Number of Paragraphs / Group Members</label>
-          <input id="readingParagraphCount" type="number" min="1" max="10" value="4" placeholder="Example: 4">
-
-          <div class="btnRow">
-            <button id="buildParagraphBtn" type="button" class="purple" onclick="buildParagraphReadingActivity()">✨ Divide Text + Generate Paragraph Questions</button>
-            <button type="button" class="gray" onclick="clearParagraphReadingBuild()">Clear Reading Build</button>
+          <label>📷 Main Activity Details Picture</label>
+          <div class="imageUploadBox">
+            <input id="builderMainImage" type="file" accept="image/*" onchange="handleMainActivityImageUpload(this)">
+            <div id="builderMainImagePreview" class="imagePreviewBox hidden"></div>
+            <button type="button" class="smallImageBtn" onclick="clearMainActivityImage()">Remove Main Picture</button>
           </div>
 
-          <div id="paragraphReadingPreview" class="paragraphReadingBox hidden"></div>
+          <div id="sameTaskArea" class="cleanBuilderBox">
+            <h3>📝 Whole Class Writing Topic</h3>
+            <div class="cleanBuilderHint">Use this for: one topic for all students. Students can discuss in groups, but each student writes her own answer.</div>
+            <label>Topic / Writing Question</label>
+            <textarea id="builderSameTask" placeholder="Example: Should students use technology more in learning? Write your opinion using OREO strategy."></textarea>
+            <label>🔗 Optional Link</label>
+            <input id="builderSameLink" type="url" placeholder="Paste lesson link / Teams / website / activity link">
+            <label>📎 Optional File / Picture</label>
+            <input id="builderSameFile" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleSameTaskFileUpload(this)">
+            <div id="builderSameFilePreview" class="fileMini hidden"></div>
+            <button type="button" class="smallImageBtn" onclick="clearSameTaskFile()">Remove File</button>
+          </div>
+
+          <div id="differentTaskArea" class="cleanBuilderBox hidden">
+            <h3>⚔️ Debate Group VS Group Topics</h3>
+            <div class="cleanBuilderHint">Each pair competes on the same topic: Group 1 VS Group 2, Group 3 VS Group 4, etc.</div>
+            <div class="debatePairGrid" id="groupTaskGrid"></div>
+          </div>
         </div>
 
-        <label>Success Criteria Checklist</label>
-        <textarea id="builderCriteria" placeholder="Write one criterion per line."></textarea>
-
-        <label>Voting Criteria Checklist</label>
-        <textarea id="builderVotingCriteria" placeholder="Each line = 1 voting point. Example:
-Clear opinion is included
-Reasons are included
-Evidence/examples are included
-Grammar and spelling are checked"></textarea>
-
-        </div>
 <button class="green" onclick="saveActivityToLibrary()">💾 Save Activity to Library</button>
       </div>
     </div>
@@ -4127,7 +4101,8 @@ function buildVoteTargets(){
   const previous = sel.value;
   let html = '<option value="">Choose group</option>';
 
-  for(let i=1;i<=10;i++){
+  const voteGroupCount = Number((latestClassSettings || {}).groupCount || ((latestAssignedActivity || {}).groupCount) || 10);
+  for(let i=1;i<=voteGroupCount;i++){
     if(String(i) === String(currentGroup)) continue;
     const g = latestClassGroups['group'+i] || {};
     if(g.finalSubmitted && g.finalAnswer){
@@ -5132,7 +5107,24 @@ function downloadCertificate(info){
     @media print{
       body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
     }
-  </style></head><body>
+  
+
+/* ===== CLEAN WRITING BUILDER FIX ===== */
+.cleanWritingBuilder{background:#f8fbff;border:1px solid #d8e5f6;border-radius:18px;padding:14px;margin-top:14px;}
+.cleanWritingIntro{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:10px 0 14px;}
+.cleanTypeCard{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:12px;color:#18376b;line-height:1.45;}
+.cleanTypeCard b{display:block;font-size:16px;margin-bottom:5px}
+.cleanBuilderBox{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:14px;margin-top:12px;}
+.cleanBuilderBox h3{font-size:18px;margin:0 0 8px;color:#18376b}
+.cleanBuilderHint{background:#fff7ed;border:1px solid #fed7aa;color:#92400e;border-radius:12px;padding:10px;font-weight:800;margin:8px 0 12px;}
+.debatePairGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:10px;}
+.debatePairCard{background:white;border:1px solid #d8e5f6;border-radius:16px;padding:12px;box-shadow:0 4px 12px rgba(36,59,107,.05);}
+.debatePairCard h3{background:#eef6ff;border:1px solid #bfdbfe;border-radius:12px;padding:9px;margin:0 0 8px;color:#18376b;}
+.debatePairCard textarea{min-height:95px!important;font-size:14px!important}
+.pairBadge{display:inline-block;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;margin-bottom:6px;}
+@media(max-width:900px){.cleanWritingIntro,.debatePairGrid{grid-template-columns:1fr}}
+
+</style></head><body>
   <button class="printBtn" onclick="window.print()">Print / Save PDF</button>
   <div class="cert">
     <div class="goldSweep"></div>
@@ -5167,7 +5159,20 @@ function downloadCertificate(info){
       </div>
       <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
-  </div></body></html>`;
+  </div>
+<script>
+/* ===== FIX: activity-specific number of groups ===== */
+window.addEventListener('load', function(){
+  const classEl = document.getElementById('className');
+  if(classEl && !classEl.dataset.groupCountHooked){
+    classEl.dataset.groupCountHooked = 'yes';
+    classEl.addEventListener('change', updateStudentGroupChoicesForClass);
+  }
+  setTimeout(updateStudentGroupChoicesForClass, 800);
+});
+</script>
+
+</body></html>`;
 
   const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
   const a = document.createElement('a');
@@ -5594,8 +5599,9 @@ function renderSelectedClass(classData){
   if(!selectedTeacherClass) return;
   captureTeacherOpenDetails();
   const groups = classData.groups || {};
+  const groupCount = classGroupCount(classData || {});
   let html = '';
-  for(let i=1;i<=10;i++){
+  for(let i=1;i<=groupCount;i++){
     const g = groups['group'+i] || {};
     const students = g.students || {};
     const ids = Object.keys(students);
@@ -5809,7 +5815,8 @@ function renderGroupImagePreview(i){
   }
 }
 function renderAllGroupImagePreviews(){
-  for(let i=1;i<=10;i++) renderGroupImagePreview(i);
+  const count = builderSelectedGroupCount ? builderSelectedGroupCount() : 10;
+  for(let i=1;i<=count;i++) renderGroupImagePreview(i);
 }
 async function handleMainActivityImageUpload(input){
   try{
@@ -5879,48 +5886,50 @@ function toggleTaskType(){
 
   if(sameArea) sameArea.classList.toggle('hidden', type !== 'same');
   if(diffArea) diffArea.classList.toggle('hidden', type !== 'different');
+  buildGroupTaskInputs();
 }
+
 function toggleAssignMode(){
   document.getElementById('assignGroupsArea').classList.toggle('hidden', document.getElementById('assignMode').value !== 'groups');
 }
 function buildGroupTaskInputs(){
+  const grid = document.getElementById('groupTaskGrid');
+  if(!grid) return;
+
   let html = '';
-  for(let i=1;i<=10;i++){
-    html += `<div class="groupTaskMiniCard">
-      <label>Group ${i} Activity</label>
-      <textarea id="groupTask_${i}"></textarea>
+  const count = builderSelectedGroupCount ? builderSelectedGroupCount() : 10;
+  const activityType = document.getElementById('builderActivityType')?.value || 'writing';
+  const taskType = document.getElementById('builderTaskType')?.value || 'same';
 
-      <label>🔗 Group ${i} Hybrid Link</label>
-      <input id="groupLink_${i}" type="url" placeholder="Paste link for Group ${i}">
+  if(activityType === 'reading' || taskType !== 'different'){
+    grid.innerHTML = '';
+    return;
+  }
 
-      <label>📎 Group ${i} Word / PDF / PPT / Picture</label>
-      <input id="groupFile_${i}" type="file" accept=".doc,.docx,.pdf,.ppt,.pptx,image/*" onchange="handleGroupTaskFileUpload(${i}, this)">
-      <div id="groupFilePreview_${i}" class="fileMini hidden"></div>
-      <button type="button" class="smallImageBtn" onclick="clearGroupTaskFile(${i})">Remove File</button>
-
-      <label>📷 Group ${i} Picture</label>
-      <input id="groupImage_${i}" type="file" accept="image/*" onchange="handleGroupTaskImageUpload(${i}, this)">
-      <div id="groupImagePreview_${i}" class="imagePreviewBox hidden"></div>
-      <button type="button" class="smallImageBtn" onclick="clearGroupTaskImage(${i})">Remove Picture</button>
-
-      <div class="readingBuilderBox">
-        <b>📖 Reading Task for Group ${i}</b>
-        <label>Upload Group ${i} Reading PDF</label>
-        <input id="readingPdf_group${i}" type="file" accept="application/pdf" onchange="extractReadingPdfToTextarea(this,'readingText_group${i}')">
-        <label>Group ${i} Reading Text</label>
-        <textarea id="readingText_group${i}" placeholder="Paste or extract reading text for Group ${i}."></textarea>
-        <button type="button" class="purple" onclick="generateGroupReadingQuestions(${i})">✨ Generate Group ${i} Questions</button>
-        <div id="readingPreview_group${i}" class="resourceBox hidden"></div>
-      </div>
+  for(let i=1;i<=count;i+=2){
+    const g1 = i;
+    const g2 = i + 1;
+    const pairTitle = g2 <= count ? `Group ${g1} VS Group ${g2}` : `Group ${g1}`;
+    html += `<div class="debatePairCard">
+      <h3>⚔️ ${pairTitle}</h3>
+      <span class="pairBadge">Same topic for this battle</span>
+      <label>Debate Topic</label>
+      <textarea id="groupTask_${g1}" oninput="syncDebatePairTopic(${g1},${g2})" placeholder="Write the topic for ${pairTitle}..."></textarea>
+      ${g2 <= count ? `<textarea id="groupTask_${g2}" class="hidden"></textarea>` : ''}
     </div>`;
   }
-  document.getElementById('groupTaskGrid').innerHTML = html;
-  renderAllGroupImagePreviews();
-  for(let i=1;i<=10;i++) renderFilePreviewBox('groupFilePreview_'+i, builderGroupFileData['group'+i]);
+
+  grid.innerHTML = html;
+}
+function syncDebatePairTopic(g1,g2){
+  const first = document.getElementById('groupTask_'+g1);
+  const second = document.getElementById('groupTask_'+g2);
+  if(first && second) second.value = first.value;
 }
 function buildAssignGroupChecks(){
   let html = '';
-  for(let i=1;i<=10;i++){
+  const count = builderSelectedGroupCount ? builderSelectedGroupCount() : 10;
+  for(let i=1;i<=count;i++){
     html += `<label class="checkCard"><input type="checkbox" class="assignGroup" value="${i}">Group ${i}</label>`;
   }
   document.getElementById('assignGroupChecks').innerHTML = html;
@@ -6956,6 +6965,55 @@ async function submitReadingQuiz(){
   alert('✅ Reading answers submitted and marked instantly.');
 }
 
+
+function builderSelectedGroupCount(){
+  const el = document.getElementById('builderGroupCount');
+  let n = Number(el ? el.value : 10);
+  if(!Number.isFinite(n) || n < 1) n = 10;
+  n = Math.max(1, Math.min(20, Math.round(n)));
+  if(el) el.value = n;
+  return n;
+}
+function activityGroupCount(a){
+  a = a || {};
+  let n = Number(a.groupCount || a.numberOfGroups || 10);
+  if(!Number.isFinite(n) || n < 1) n = 10;
+  return Math.max(1, Math.min(20, Math.round(n)));
+}
+function classGroupCount(classData){
+  classData = classData || {};
+  const settings = classData.settings || {};
+  const active = classData.activeActivity || classData.currentActivity || ((classData.assignedActivities || {}).group1) || {};
+  let n = Number(settings.groupCount || active.groupCount || 10);
+  if(!Number.isFinite(n) || n < 1) n = 10;
+  return Math.max(1, Math.min(20, Math.round(n)));
+}
+function groupNumbersFromCount(count){
+  const n = Math.max(1, Math.min(20, Math.round(Number(count || 10))));
+  return Array.from({length:n}, (_,idx)=>idx+1);
+}
+async function updateStudentGroupChoicesForClass(){
+  const classEl = document.getElementById('className');
+  const groupEl = document.getElementById('studentGroup');
+  if(!groupEl) return;
+  const previous = groupEl.value;
+  let count = 10;
+  const cls = classEl ? safeClassKey(classEl.value) : '';
+  if(cls && window.hubRef){
+    try{
+      const snap = await hubRef.child(`classes/${cls}`).once('value');
+      count = classGroupCount(snap.val() || {});
+    }catch(e){ count = 10; }
+  }
+  let html = '<option value="">Choose group</option>';
+  groupNumbersFromCount(count).forEach(function(i){
+    html += `<option value="${i}">Group ${i}</option>`;
+  });
+  groupEl.innerHTML = html;
+  if(previous && Number(previous) <= count) groupEl.value = previous;
+}
+setTimeout(updateStudentGroupChoicesForClass, 600);
+
 async function collectActivity(){
   const title = document.getElementById('builderActivityName').value.trim();
   const instructions = document.getElementById('builderInstructions').value.trim();
@@ -6966,6 +7024,7 @@ async function collectActivity(){
   const sameHybridLink = document.getElementById('builderSameLink') ? document.getElementById('builderSameLink').value.trim() : '';
   const criteria = document.getElementById('builderCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
   const votingCriteria = document.getElementById('builderVotingCriteria').value.split('\n').map(x=>x.trim()).filter(Boolean);
+  const groupCount = builderSelectedGroupCount ? builderSelectedGroupCount() : 10;
 
   const mainInput = document.getElementById('builderMainImage');
   if(mainInput && mainInput.files && mainInput.files[0]){
@@ -6976,7 +7035,7 @@ async function collectActivity(){
   const groupTaskImages = {};
   const groupTaskLinks = {};
   const groupTaskFiles = {};
-  for(let i=1;i<=10;i++){
+  for(let i=1;i<=groupCount;i++){
     const el = document.getElementById('groupTask_'+i);
     const imgInput = document.getElementById('groupImage_'+i);
     if(imgInput && imgInput.files && imgInput.files[0]){
@@ -6993,6 +7052,7 @@ async function collectActivity(){
     id:currentActivityId || 'activity_'+Date.now(),
     title,
     instructions,
+    groupCount,
     activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
     readingWorkMode,
     taskType,
@@ -7044,6 +7104,7 @@ async function loadActivity(){
   currentActivityId = id;
   document.getElementById('builderActivityName').value = a.title || '';
   document.getElementById('builderInstructions').value = a.instructions || '';
+  if(document.getElementById('builderGroupCount')) document.getElementById('builderGroupCount').value = activityGroupCount(a);
   if(document.getElementById('builderActivityType')) document.getElementById('builderActivityType').value = ((a.activityType === 'readingParagraph' || a.activityType === 'reading') ? 'reading' : (a.activityType || 'writing'));
   if(document.getElementById('readingWorkMode')) document.getElementById('readingWorkMode').value = 'paragraph';
   document.getElementById('builderTaskType').value = a.taskType || 'same';
@@ -7067,9 +7128,13 @@ async function loadActivity(){
   if(mainInput) mainInput.value = '';
   renderMainImagePreview();
   buildGroupTaskInputs();
-  for(let i=1;i<=10;i++){
+  for(let i=1;i<=groupCount;i++){
     const el = document.getElementById('groupTask_'+i);
     if(el) el.value = (a.groupTasks || {})['group'+i] || '';
+    if(i % 2 === 1){
+      const next = document.getElementById('groupTask_'+(i+1));
+      if(next && el) next.value = el.value;
+    }
     const linkEl = document.getElementById('groupLink_'+i);
     if(linkEl) linkEl.value = (a.groupTaskLinks || {})['group'+i] || '';
     const readingTextEl = document.getElementById('readingText_group'+i);
@@ -7151,6 +7216,7 @@ function buildActiveActivityForGroup(a, i, activationId){
     activationId: activationId,
     title: a.title || 'Activity',
     instructions: a.instructions || '',
+    groupCount: activityGroupCount(a),
     activityType: isReading ? 'readingParagraph' : 'writing',
     readingWorkMode: isReading ? 'paragraph' : '',
     taskType: a.taskType || 'same',
@@ -7199,6 +7265,7 @@ function makeStudentActiveActivity(a, groupNo, activationId){
     activationId: activationId || ('act_' + Date.now()),
     title: a.title || 'Activity',
     instructions: a.instructions || '',
+    groupCount: activityGroupCount(a),
     activityType: isReading ? 'readingParagraph' : 'writing',
     readingWorkMode: isReading ? 'paragraph' : '',
     taskType: a.taskType || 'same',
@@ -7259,6 +7326,7 @@ function buildAssignedActivityForGroup(a, i, activationId){
     activationId: activationId,
     title: a.title || 'Activity',
     instructions: a.instructions || '',
+    groupCount: activityGroupCount(a),
     activityType: isReading ? 'readingParagraph' : (a.activityType || 'writing'),
     readingWorkMode: 'paragraph',
     taskType: a.taskType || 'same',
@@ -7324,6 +7392,7 @@ function strictBuildActiveActivity(a, groupNo, activationId){
     activationId: activationId || ('act_' + Date.now()),
     title: a.title || 'Activity',
     instructions: a.instructions || '',
+    groupCount: activityGroupCount(a),
     activityType: isReading ? 'readingParagraph' : 'writing',
     readingWorkMode: isReading ? 'paragraph' : '',
     taskType: a.taskType || 'same',
@@ -7372,6 +7441,7 @@ async function activateSavedActivityForSelectedClasses(){
 
   const activationId = 'act_' + Date.now();
   const changedAt = Date.now();
+  const groupCount = activityGroupCount(a);
   const updates = {};
 
   classes.forEach(cls=>{
@@ -7383,7 +7453,7 @@ async function activateSavedActivityForSelectedClasses(){
     updates[`classes/${cls}/activeActivity`] = classActive;
     updates[`classes/${cls}/currentActivity`] = classActive;
 
-    for(let i=1;i<=10;i++){
+    for(let i=1;i<=groupCount;i++){
       const groupActive = strictBuildActiveActivity(a, i, activationId);
       groupActive.activeActivityChangedAt = changedAt;
       updates[`classes/${cls}/activeActivityGroups/group${i}`] = groupActive;
@@ -7393,13 +7463,16 @@ async function activateSavedActivityForSelectedClasses(){
     updates[`classes/${cls}/settings/stage`] = 'work';
     updates[`classes/${cls}/settings/voteSystem`] = 'battle';
     updates[`classes/${cls}/settings/resultsReleased`] = false;
+    updates[`classes/${cls}/settings/groupCount`] = activityGroupCount(a);
     updates[`classes/${cls}/settings/activeActivityId`] = activityId;
+    updates[`classes/${cls}/settings/groupCount`] = groupCount;
     updates[`classes/${cls}/settings/activationId`] = activationId;
     updates[`classes/${cls}/settings/activeActivityChangedAt`] = changedAt;
   });
 
   updates[`activityLibrary/${activityId}/lastActivatedAt`] = changedAt;
   updates[`activityLibrary/${activityId}/lastActivatedClasses`] = classes;
+  updates[`activityLibrary/${activityId}/lastActivatedGroupCount`] = groupCount;
 
   await hubRef.update(updates);
 
@@ -7430,7 +7503,7 @@ async function assignCurrentActivity(){
     groups = Array.from(document.querySelectorAll('.assignGroup:checked')).map(x=>Number(x.value));
     if(!groups.length){alert('Choose at least one group.');return}
   }else{
-    groups = [1,2,3,4,5,6,7,8,9,10];
+    groups = groupNumbersFromCount(activityGroupCount(a));
   }
 
   const updates = {};
@@ -7470,6 +7543,7 @@ async function assignCurrentActivity(){
     };
     updates[`classes/${cls}/settings/stage`] = 'work';
     updates[`classes/${cls}/settings/resultsReleased`] = false;
+    updates[`classes/${cls}/settings/groupCount`] = activityGroupCount(a);
   });
 
   await hubRef.update(updates);
@@ -7480,8 +7554,14 @@ async function assignCurrentActivity(){
 }
 
 
-function getAllBattlePairs(){
-  return [[1,2],[3,4],[5,6],[7,8],[9,10]];
+function getAllBattlePairs(count){
+  count = count || Number((latestTeacherClasses && latestTeacherClasses[selectedTeacherClass] && latestTeacherClasses[selectedTeacherClass].settings && latestTeacherClasses[selectedTeacherClass].settings.groupCount) || 10);
+  count = Math.max(1, Math.min(20, Math.round(Number(count || 10))));
+  const pairs = [];
+  for(let i=1;i<=count;i+=2){
+    if(i+1 <= count) pairs.push([i,i+1]);
+  }
+  return pairs;
 }
 function battleKeyFromPair(pair){
   return `${pair[0]}vs${pair[1]}`;
@@ -7498,7 +7578,8 @@ async function renderTeacherVotingControl(){
   const groups = data.groups || {};
   const settings = data.settings || {};
   const votes = data.battleVotes || {};
-  const pairs = getAllBattlePairs();
+  const groupCount = classGroupCount(data || {});
+  const pairs = getAllBattlePairs(groupCount);
   const currentKey = settings.currentBattleKey || '1vs2';
 
   let options = '';
@@ -7509,7 +7590,7 @@ async function renderTeacherVotingControl(){
 
   const [a,b] = currentKey.split('vs').map(Number);
   const voters = [];
-  for(let i=1;i<=10;i++){
+  for(let i=1;i<=groupCount;i++){
     if(i===a || i===b) continue;
     const g = groups['group'+i] || {};
     const students = g.students || {};
@@ -8188,10 +8269,11 @@ function calculateReadingPerformance(classData){
   classData = classData || {};
   const groups = classData.groups || {};
   const activity = getReadingActivityForClassData(classData);
+  const groupCount = classGroupCount(classData || {});
   const groupResults = [];
   const allStudents = [];
 
-  for(let i = 1; i <= 10; i++){
+  for(let i = 1; i <= groupCount; i++){
     const gKey = 'group' + i;
     const g = groups[gKey] || {};
     const students = g.students || {};
@@ -8419,5 +8501,18 @@ function routeStudentStage(){
   if(resultsPanel) resultsPanel.classList.add('hidden');
 }
 </script>
+
+<script>
+/* ===== FIX: activity-specific number of groups ===== */
+window.addEventListener('load', function(){
+  const classEl = document.getElementById('className');
+  if(classEl && !classEl.dataset.groupCountHooked){
+    classEl.dataset.groupCountHooked = 'yes';
+    classEl.addEventListener('change', updateStudentGroupChoicesForClass);
+  }
+  setTimeout(updateStudentGroupChoicesForClass, 800);
+});
+</script>
+
 </body>
 </html>
