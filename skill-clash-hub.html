@@ -1216,7 +1216,42 @@ button:hover{filter:brightness(.96)}
 @media(max-width:900px){
   .compactChooser{grid-template-columns:1fr}.compactTitle{display:block}.largeAnswerText{min-height:180px}.compactSaveBar{grid-template-columns:1fr 1fr}.compactSaveBar .note{grid-column:1/-1}
 }
+.studentPictureBox{
+  margin-top:10px;
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:14px;
+  padding:10px;
+}
 
+.studentPictureHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.studentPictureHead button{
+  margin:0;
+  padding:6px 10px;
+  font-size:12px;
+  background:#243b6b;
+}
+
+#studentActivityPicture{
+  width:95px;
+  max-height:130px;
+  object-fit:contain;
+  border-radius:10px;
+  border:1px solid #d8e5f6;
+  background:white;
+}
+
+.studentPictureBox.big #studentActivityPicture{
+  width:100%;
+  max-height:520px;
+}
 </style>
 </head>
 
@@ -1317,6 +1352,13 @@ button:hover{filter:brightness(.96)}
           <p>Write your part. Click <b>Save My Work</b> so your group can see it.</p>
           <label id="myWorkLabel">My Work</label>
           <textarea id="myAnswerBox" placeholder="Write your answer here..."></textarea>
+          <div id="studentActivityPictureBox" class="studentPictureBox hidden">
+  <div class="studentPictureHead">
+    <b>🖼 Activity Picture</b>
+    <button onclick="toggleStudentPictureSize()" type="button">⛶ Maximize / Minimize</button>
+  </div>
+  <img id="studentActivityPicture" src="" alt="Activity Picture">
+</div>
 
           <div class="actions">
             <button class="blue" onclick="toggleMembersWork()">👀 Members’ Work</button>
@@ -1792,6 +1834,7 @@ function listenAssignedActivity(){
 
     renderVoteCriteria();
     renderMyGroupFinalPreview();
+    renderStudentActivityPicture();
   });
 }
 
@@ -3594,6 +3637,26 @@ window.addEventListener('load',()=>{
     showOnly('studentLoginPage');
   }
 });
+  function renderStudentActivityPicture(){
+  const box = document.getElementById('studentActivityPictureBox');
+  const img = document.getElementById('studentActivityPicture');
+  if(!box || !img) return;
+
+  const url = latestAssignedActivity?.imageUrl || latestAssignedActivity?.pictureUrl || '';
+
+  if(url){
+    img.src = url;
+    box.classList.remove('hidden');
+  }else{
+    img.src = '';
+    box.classList.add('hidden');
+  }
+}
+
+function toggleStudentPictureSize(){
+  const box = document.getElementById('studentActivityPictureBox');
+  if(box) box.classList.toggle('big');
+}
 </script>
 </body>
 </html>
