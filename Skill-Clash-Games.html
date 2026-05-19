@@ -276,7 +276,15 @@ button:disabled{opacity:.55;cursor:not-allowed}
      appId: "..."
    };
 ============================================================ */
-const DEFAULT_FIREBASE_CONFIG = null; // <-- REPLACE null WITH YOUR FIREBASE CONFIG OBJECT
+const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "xxxxx",
+  authDomain: "xxxxx.firebaseapp.com",
+  databaseURL: "https://xxxxx-default-rtdb.firebaseio.com",
+  projectId: "xxxxx",
+  storageBucket: "xxxxx.appspot.com",
+  messagingSenderId: "xxxxx",
+  appId: "xxxxx"
+};
 
 const LESSON_KEY = 'skill_clash_games_per_group_v1';
 const TEACHER_PASSWORD = '1234';
