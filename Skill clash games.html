@@ -95,7 +95,12 @@
         <input id="studentName" placeholder="Write your name" />
         <label>Class</label>
         <select id="studentClass">
-          <option>9A</option><option>9B</option><option>9C</option><option>9D</option>
+          <option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option>
+        </select>
+        <label>Group</label>
+        <select id="studentGroup">
+          <option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option>
+          <option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option>
         </select>
         <button onclick="studentJoin()">Join Game</button>
       </div>
@@ -138,8 +143,16 @@
         <input id="topicInput" value="Technology" />
         <label>Secret Word</label>
         <input id="wordInput" value="Smartphone" />
+        <label>Game Mode</label>
+        <select id="gameMode">
+          <option value="individual">Individual</option>
+          <option value="perGroup">Per Group</option>
+          <option value="betweenGroups">Between Groups</option>
+        </select>
         <label>Number of Imposters</label>
         <select id="imposterCount"><option>1</option><option>2</option><option>3</option></select>
+        <label>Round Timer / Hint Time</label>
+        <select id="roundTimer"><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>
         <label>Instructions</label>
         <textarea id="instructionInput">Give one clue about the secret word without saying the word directly. Then vote for the imposter.</textarea>
         <button onclick="saveRoundSettings()">💾 Save Round Settings</button>
@@ -182,9 +195,10 @@
           <div class="small">Waiting for teacher...</div>
           <div class="word">Please wait</div>
         </div>
-        <label>Your clue</label>
-        <textarea id="studentClue" placeholder="Write your clue here..."></textarea>
-        <button onclick="saveClue()">Save Clue</button>
+        <label>Your hint</label>
+        <textarea id="studentClue" placeholder="Write your hint here..."></textarea>
+        <button onclick="saveClue()">Save Hint</button>
+        <div id="allHintsBox" class="resultList" style="margin-top:14px"></div>
       </div>
 
       <div class="card">
@@ -216,6 +230,9 @@ const examples = [
 function defaultState(){
   return {
     stage:'waiting',
+    gameMode:'individual',
+    roundTimer:120,
+    roundStart:0,
     topic:'Technology',
     word:'Smartphone',
     instructions:'Give one clue about the secret word without saying the word directly. Then vote for the imposter.',
@@ -261,13 +278,14 @@ function backHome(){
 function studentJoin(){
   const name = byId('studentName').value.trim();
   const cls = byId('studentClass').value;
+  const group = byId('studentGroup').value;
   if(!name){alert('Please write your name.');return}
-  const id = 's_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + cls;
+  const id = 's_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + cls.replace('/','_') + '_g' + group;
   const state = getState();
-  state.students[id] = {id,name,cls,joinedAt:Date.now()};
+  state.students[id] = {id,name,cls,group,joinedAt:Date.now()};
   if(!state.scores[id]) state.scores[id]=0;
   setState(state);
-  currentUser = {role:'student',id,name,cls};
+  currentUser = {role:'student',id,name,cls,group};
   hide('loginPage');show('studentPage');
   studentRefresh();
 }
@@ -285,6 +303,8 @@ function saveRoundSettings(){
   state.topic = byId('topicInput').value.trim() || 'Topic';
   state.word = byId('wordInput').value.trim() || 'Secret Word';
   state.instructions = byId('instructionInput').value.trim();
+  state.gameMode = byId('gameMode').value;
+  state.roundTimer = Number(byId('roundTimer').value || 120);
   state.imposterCount = Number(byId('imposterCount').value || 1);
   setState(state);
   teacherRefresh();
@@ -313,6 +333,7 @@ function startRound(){
   const shuffled = ids.sort(()=>Math.random()-.5);
   state.imposters = shuffled.slice(0, Math.min(state.imposterCount, ids.length-1));
   state.stage = 'discussion';
+  state.roundStart = Date.now();
   state.votes = {};
   state.clues = {};
   setState(state);
@@ -331,11 +352,15 @@ function teacherRefresh(){
   byId('wordInput').value = state.word;
   byId('instructionInput').value = state.instructions;
   byId('imposterCount').value = String(state.imposterCount);
+  byId('gameMode').value = state.gameMode || 'individual';
+  byId('roundTimer').value = String(state.roundTimer || 120);
   renderStages('teacherStages', state.stage);
   byId('roundInfo').innerHTML = `
     <p class="pill">Topic: ${escapeHtml(state.topic)}</p>
     <p class="pill">Secret Word: ${escapeHtml(state.word)}</p>
     <p class="pill">Stage: ${escapeHtml(state.stage)}</p>
+    <p class="pill">Mode: ${escapeHtml(modeLabel(state.gameMode))}</p>
+    <p class="pill">Timer: ${getTimeLeft(state)}</p>
     <p class="pill">Students: ${Object.keys(state.students).length}</p>
   `;
   const impNames = state.imposters.map(id=>state.students[id]?.name || id);
@@ -354,7 +379,7 @@ function renderTeacherStudents(state){
     const clue = state.clues[id] || '';
     const voted = state.votes[id] ? 'Voted ✅' : 'Not voted';
     return `<div class="studentRow">
-      <div><div class="name">${isImp?'🟥':'🟦'} ${escapeHtml(s.name)}</div><div class="mini">${escapeHtml(s.cls)} • ${voted}<br>Clue: ${escapeHtml(clue || 'No clue yet')}</div></div>
+      <div><div class="name">${isImp?'🟥':'🟦'} ${escapeHtml(s.name)}</div><div class="mini">${escapeHtml(s.cls)} • Group ${escapeHtml(s.group || '-')} • ${voted}<br>Hint: ${escapeHtml(clue || 'No hint yet')}</div></div>
       <div class="score">${state.scores[id]||0} pts</div>
     </div>`;
   }).join('');
@@ -393,11 +418,15 @@ function studentRefresh(){
   const state = getState();
   byId('studentWelcome').innerText = `Welcome, ${currentUser.name}`;
   renderStages('studentStages', state.stage);
-  byId('studentInstruction').innerText = state.instructions || 'Wait for teacher instructions.';
+  byId('studentInstruction').innerText = (state.instructions || 'Wait for teacher instructions.') + '  ⏱️ Time left: ' + getTimeLeft(state);
   renderSecretCard(state);
   renderVoteArea(state);
+  renderAllHints(state);
   renderStudentResults(state);
-  byId('studentClue').value = state.clues[currentUser.id] || '';
+  const clueBox = byId('studentClue');
+  if(document.activeElement !== clueBox){
+    clueBox.value = state.clues[currentUser.id] || '';
+  }
 }
 
 function renderSecretCard(state){
@@ -424,6 +453,25 @@ function saveClue(){
   setState(state);
   studentRefresh();
   alert('Your clue is saved.');
+}
+
+function renderAllHints(state){
+  const box = byId('allHintsBox');
+  if(!box) return;
+  if(state.stage==='waiting'){
+    box.innerHTML='';
+    return;
+  }
+  if(state.stage==='discussion'){
+    box.innerHTML='<div class="status">Hints will appear together when the teacher opens voting.</div>';
+    return;
+  }
+  const rows = Object.keys(state.students).map(id=>{
+    const s = state.students[id];
+    const clue = state.clues[id] || 'No hint submitted';
+    return `<div class="resultRow"><div><div class="name">${escapeHtml(s.name)}</div><div class="mini">Group ${escapeHtml(s.group || '-')} • ${escapeHtml(clue)}</div></div></div>`;
+  }).join('');
+  box.innerHTML = '<h2>💬 All Hints</h2>' + rows;
 }
 
 function renderVoteArea(state){
@@ -467,6 +515,22 @@ function renderStudentResults(state){
     <div class="resultRow"><div><div class="name">Secret Word</div><div class="mini">${escapeHtml(state.word)}</div></div></div>
     <div class="resultRow"><div><div class="name">Your Vote</div><div class="mini">${correct?'Correct ✅':'Not correct ❌'}</div></div><div class="score">${myScore} pts</div></div>
   `;
+}
+
+function getTimeLeft(state){
+  if(!state.roundStart || state.stage!=='discussion') return 'Not running';
+  const total = Number(state.roundTimer || 120);
+  const passed = Math.floor((Date.now() - state.roundStart) / 1000);
+  const left = Math.max(0, total - passed);
+  const m = Math.floor(left / 60);
+  const s = String(left % 60).padStart(2,'0');
+  return m + ':' + s;
+}
+
+function modeLabel(mode){
+  if(mode==='perGroup') return 'Per Group';
+  if(mode==='betweenGroups') return 'Between Groups';
+  return 'Individual';
 }
 
 function renderStages(id, active){
