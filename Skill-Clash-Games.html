@@ -1,686 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Skill Clash Games Hub</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
-    body{min-height:100vh;background:linear-gradient(135deg,#eef6ff,#f4efff,#fff7fb);color:#1f2a44;padding:18px}
-    .hidden{display:none!important}
-    .app{max-width:1180px;margin:auto}
-    .hero{background:linear-gradient(135deg,#314b8f,#7d5cc6);color:white;border-radius:26px;padding:24px;box-shadow:0 16px 35px rgba(69,74,130,.25);margin-bottom:18px}
-    .hero h1{font-size:34px;margin-bottom:8px}
-    .hero p{opacity:.92;font-size:16px}
-    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-    .card{background:rgba(255,255,255,.88);border:1px solid rgba(120,130,180,.2);border-radius:22px;padding:18px;box-shadow:0 10px 24px rgba(61,72,110,.12);backdrop-filter:blur(10px)}
-    .card h2,.card h3{margin-bottom:12px;color:#263b72}
-    label{display:block;margin:10px 0 6px;font-weight:700;font-size:14px;color:#33466f}
-    input,select,textarea{width:100%;border:1px solid #cdd6ee;border-radius:14px;padding:12px;font-size:15px;background:white;outline:none}
-    textarea{min-height:90px;resize:vertical}
-    button{border:0;border-radius:14px;padding:11px 16px;font-weight:800;cursor:pointer;background:#4267c7;color:white;box-shadow:0 8px 16px rgba(66,103,199,.22);transition:.2s;margin:5px 4px 5px 0}
-    button:hover{transform:translateY(-1px);filter:brightness(1.05)}
-    button.secondary{background:#ecf1ff;color:#2d4380;box-shadow:none;border:1px solid #cbd7ff}
-    button.danger{background:#e85b6a}
-    button.success{background:#31a66a}
-    button.purple{background:#7d5cc6}
-    .timerPopup{position:fixed;right:22px;bottom:22px;width:330px;max-width:calc(100vw - 36px);background:white;border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(35,45,90,.25);border:1px solid #dce5ff;z-index:50}
-    .timerCircle{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:linear-gradient(135deg,#edf4ff,#f7efff);border:4px solid #7d9af5;font-size:28px;font-weight:900;color:#263b72}
-    .timerPopup h3{text-align:center;margin-bottom:8px;color:#263b72}
-    .timerPopup ul{padding-left:20px;margin:8px 0;color:#4d5d83;font-size:14px;line-height:1.5}
-    .announceBox{background:linear-gradient(135deg,#fff0f3,#fff8e8);border:1px solid #ffd2d9;border-radius:18px;padding:14px;margin-top:10px}
-    .announceBox.hiddenImp{filter:blur(4px);user-select:none}
-    .timerPopup{position:fixed;right:22px;bottom:22px;width:330px;max-width:calc(100vw - 36px);background:white;border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(35,45,90,.25);border:1px solid #dce5ff;z-index:50}
-    .timerCircle{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:linear-gradient(135deg,#edf4ff,#f7efff);border:4px solid #7d9af5;font-size:28px;font-weight:900;color:#263b72}
-    .timerPopup h3{text-align:center;margin-bottom:8px;color:#263b72}
-    .timerPopup ul{padding-left:20px;margin:8px 0;color:#4d5d83;font-size:14px;line-height:1.5}
-    .announceBox{background:linear-gradient(135deg,#fff0f3,#fff8e8);border:1px solid #ffd2d9;border-radius:18px;padding:14px;margin-top:10px}
-    .announceBox.hiddenImp{filter:blur(4px);user-select:none}
-    .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
-    .tabs button{flex:1;min-width:160px}
-    .pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#edf3ff;color:#2e477d;font-weight:800;font-size:13px;margin:4px}
-    .status{padding:10px 12px;border-radius:14px;background:#fff8dc;border:1px solid #f0d982;color:#77611a;margin:8px 0;font-weight:700}
-    .secretCard{min-height:210px;border-radius:24px;padding:26px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#e7f0ff,#f7f3ff);border:2px dashed #8da6ee;margin:12px 0}
-    .secretCard.imposter{background:linear-gradient(135deg,#fff0f3,#ffe8ec);border-color:#e85b6a}
-    .secretCard .small{font-weight:800;color:#5b6a92;margin-bottom:8px}
-    .secretCard .word{font-size:38px;font-weight:900;color:#243a79}
-    .secretCard.imposter .word{color:#d7384e}
-    .studentList,.voteList,.resultList{display:grid;gap:10px;margin-top:12px}
-    .studentRow,.voteRow,.resultRow{background:#f7f9ff;border:1px solid #dde6ff;border-radius:16px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-    .name{font-weight:900;color:#243a79}
-    .mini{font-size:13px;color:#6a7594}
-    .score{font-weight:900;background:white;border-radius:12px;padding:6px 10px;color:#314b8f}
-    .stageBox{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-    .stage{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#53618b;font-weight:900;font-size:13px}
-    .stage.active{background:#4267c7;color:white}
-    .two{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
-    .bigCenter{text-align:center;padding:24px}
-    .emoji{font-size:44px;margin-bottom:8px}
-    .footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
-    .teacherOnly{border-left:6px solid #7d5cc6}
-    .studentOnly{border-left:6px solid #4267c7}
-    @media(max-width:850px){.grid,.two{grid-template-columns:1fr}.hero h1{font-size:28px}.secretCard .word{font-size:30px}}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Skill Clash Games Hub</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
+body{min-height:100vh;background:linear-gradient(135deg,#eef6ff,#f7f1ff,#fff8fb);color:#1f2a44;padding:18px}
+.hidden{display:none!important}
+.app{max-width:1180px;margin:auto}
+.hero{background:linear-gradient(135deg,#314b8f,#7d5cc6);color:white;border-radius:26px;padding:24px;box-shadow:0 16px 35px rgba(69,74,130,.25);margin-bottom:18px}
+.hero h1{font-size:34px;margin-bottom:8px}.hero p{opacity:.92;font-size:16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.two{display:grid;grid-template-columns:1.1fr .9fr;gap:16px}
+.card{background:rgba(255,255,255,.92);border:1px solid rgba(120,130,180,.2);border-radius:22px;padding:18px;box-shadow:0 10px 24px rgba(61,72,110,.12);backdrop-filter:blur(10px)}
+.card h2,.card h3{margin-bottom:12px;color:#263b72}label{display:block;margin:10px 0 6px;font-weight:800;font-size:14px;color:#33466f}
+input,select,textarea{width:100%;border:1px solid #cdd6ee;border-radius:14px;padding:12px;font-size:15px;background:white;outline:none}textarea{min-height:90px;resize:vertical}
+button{border:0;border-radius:14px;padding:11px 16px;font-weight:900;cursor:pointer;background:#4267c7;color:white;box-shadow:0 8px 16px rgba(66,103,199,.22);transition:.2s;margin:5px 4px 5px 0}button:hover{transform:translateY(-1px);filter:brightness(1.05)}
+button.secondary{background:#ecf1ff;color:#2d4380;box-shadow:none;border:1px solid #cbd7ff}button.danger{background:#e85b6a}button.success{background:#31a66a}button.purple{background:#7d5cc6}
+.tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}.tabs button{flex:1;min-width:150px}.pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#edf3ff;color:#2e477d;font-weight:900;font-size:13px;margin:4px}
+.status{padding:10px 12px;border-radius:14px;background:#fff8dc;border:1px solid #f0d982;color:#77611a;margin:8px 0;font-weight:800}.mini{font-size:13px;color:#667497;line-height:1.5}.name{font-weight:900;color:#243a79}.score{font-weight:900;background:white;border-radius:12px;padding:6px 10px;color:#314b8f}
+.teacherOnly{border-left:6px solid #7d5cc6}.studentOnly{border-left:6px solid #4267c7}
+.secretCard{min-height:210px;border-radius:24px;padding:26px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#e7f0ff,#f7f3ff);border:2px dashed #8da6ee;margin:12px 0}.secretCard.imposter{background:linear-gradient(135deg,#fff0f3,#ffe8ec);border-color:#e85b6a}.secretCard .small{font-weight:900;color:#5b6a92;margin-bottom:8px}.secretCard .word{font-size:34px;font-weight:900;color:#243a79}.secretCard.imposter .word{color:#d7384e}
+.studentList,.voteList,.resultList{display:grid;gap:10px;margin-top:12px}.studentRow,.voteRow,.resultRow{background:#f7f9ff;border:1px solid #dde6ff;border-radius:16px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}.stageBox{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.stage{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#53618b;font-weight:900;font-size:13px}.stage.active{background:#4267c7;color:white}
+.timerPopup{position:fixed;right:22px;bottom:22px;width:330px;max-width:calc(100vw - 36px);background:white;border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(35,45,90,.25);border:1px solid #dce5ff;z-index:50}.timerCircle{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:linear-gradient(135deg,#edf4ff,#f7efff);border:4px solid #7d9af5;font-size:28px;font-weight:900;color:#263b72}.timerPopup h3{text-align:center;margin-bottom:8px;color:#263b72}.timerPopup ul{padding-left:22px;margin:8px 0;color:#4d5d83;font-size:14px;line-height:1.55}
+.announceBox{background:linear-gradient(135deg,#fff0f3,#fff8e8);border:1px solid #ffd2d9;border-radius:18px;padding:14px;margin-top:10px;font-weight:900;color:#7b3040}.footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
+@media(max-width:850px){.grid,.two{grid-template-columns:1fr}.hero h1{font-size:28px}.secretCard .word{font-size:28px}.timerPopup{position:static;width:100%;margin-top:16px}}
+</style>
 </head>
 <body>
 <div class="app">
-  <div class="hero">
-    <h1>🎮 Skill Clash Games Hub</h1>
-    <p>A separate classroom games page. Your current Skill Clash student work stays safe.</p>
-  </div>
+  <div class="hero"><h1>🎮 Skill Clash Games Hub</h1><p>A separate classroom games page. Your current Skill Clash student work stays safe.</p></div>
 
   <div id="hubPage">
     <div class="grid">
-      <div class="card" style="border-left:6px solid #7d5cc6">
-        <h2>🎭 Find The Imposter</h2>
-        <p class="mini">Speaking + vocabulary game. Students receive secret words, discuss clues, and vote for the imposter.</p>
-        <button onclick="openImposterGame()">Open Game</button>
-      </div>
-      <div class="card">
-        <h2>🧠 Quiz Battle</h2>
-        <p class="mini">Coming soon: fast MCQ challenge with scores and timer.</p>
-        <button class="secondary" disabled>Coming Soon</button>
-      </div>
-      <div class="card">
-        <h2>📖 Reading Hunt</h2>
-        <p class="mini">Coming soon: reading comprehension missions and group points.</p>
-        <button class="secondary" disabled>Coming Soon</button>
-      </div>
-      <div class="card">
-        <h2>🧩 Mystery Word</h2>
-        <p class="mini">Coming soon: vocabulary clue challenge.</p>
-        <button class="secondary" disabled>Coming Soon</button>
-      </div>
+      <div class="card teacherOnly"><h2>🎭 Find The Imposter</h2><p class="mini">Speaking + vocabulary game. Students receive secret words, discuss hints, and vote for the imposter.</p><button onclick="openImposterGame()">Open Game</button></div>
+      <div class="card"><h2>🧠 Quiz Battle</h2><p class="mini">Coming soon: fast MCQ challenge with scores and timer.</p><button class="secondary" disabled>Coming Soon</button></div>
+      <div class="card"><h2>📖 Reading Hunt</h2><p class="mini">Coming soon: reading comprehension missions and group points.</p><button class="secondary" disabled>Coming Soon</button></div>
+      <div class="card"><h2>🧩 Mystery Word</h2><p class="mini">Coming soon: vocabulary clue challenge.</p><button class="secondary" disabled>Coming Soon</button></div>
     </div>
   </div>
 
   <div id="loginPage" class="hidden">
-    <div class="tabs">
-      <button onclick="showLogin('student')">👨‍🎓 Student Login</button>
-      <button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button>
-    </div>
-
+    <div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backToHub()">🏠 Games Hub</button></div>
     <div class="grid">
-      <div id="studentLogin" class="card studentOnly">
-        <h2>Student Login</h2>
-        <label>Your Name</label>
-        <input id="studentName" placeholder="Write your name" />
-        <label>Class</label>
-        <select id="studentClass">
-          <option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option>
-        </select>
-        <label>Group</label>
-        <select id="studentGroup">
-          <option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option>
-          <option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option>
-        </select>
-        <button onclick="studentJoin()">Join Game</button>
-      </div>
-
-      <div id="teacherLogin" class="card teacherOnly hidden">
-        <h2>Teacher Login</h2>
-        <label>Password</label>
-        <input id="teacherPass" type="password" placeholder="Teacher password" />
-        <button class="purple" onclick="teacherJoin()">Open Te<button class="success" onclick="showResultsAndScore()">Show Results + Score</button>
-      <button class="purple" onclick="announceImposters()">Announce Imposters</button>234</b></div>
-      </div>
-
-      <div class="card">
-        <h2>How to Play</h2>
-        <p class="pill">1. Teacher creates a round</p>
-        <p class="pill">2. Students get secret cards</p>
-        <p class="pill">3. Students give clues</p>
-        <p class="pill">4. Students vote</p>
-        <p class="pill">5. Teacher shows results</p>
-      </div>
+      <div id="studentLogin" class="card studentOnly"><h2>Student Login</h2><label>Your Name</label><input id="studentName" placeholder="Write your name" /><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Game</button></div>
+      <div id="teacherLogin" class="card teacherOnly hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password" /><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button><div class="status">Default password: <b>1234</b></div></div>
+      <div class="card"><h2>How to Play</h2><p class="pill">1. Teacher creates round</p><p class="pill">2. Students get secret cards</p><p class="pill">3. Students write hints</p><p class="pill">4. Hints appear together</p><p class="pill">5. Students vote</p></div>
     </div>
   </div>
 
   <div id="teacherPage" class="hidden">
-    <div class="tabs">
-      <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
-      <button onclick="setStage('waiting')">Waiting</button>
-      <button onclick="startRound()">Start Round</button>
-      <button onclick="setStage('discussion')">Discussion</button>
-      <button onclick="setStage('voting')">Open Voting</button>
-      <button class="success" onclick="showResultsAndScore()">Show Results + Score</button>
-      <butt<select id="roundTimer"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>    <div class="card teacherOnly">
-        <h2>👩‍🏫 Teacher Dashboard</h2>
-        <div class="stageBox" id="teacherStages"></div>
-        <label>Round Topic</label>
-        <input id="topicInput" value="Technology" />
-        <label>Secret Word</label>
-        <input id="wordInput" value="Smartphone" />
-        <label>Game Mode</label>
-        <select id="gameMode">
-          <option value="individual">Individual</option>
-          <option value="perGroup">Per Group</option>
-          <option value="betweenGroups">Bet<div id="imposterInfo" class="status">Start the round to choose imposters.</div>
-        <div id="announcedImposters" class="announceBox hiddenImp">Imposter names are hidden until teacher announces.</div>>
-        <select id="imposterCount"><option>1</option><option>2</option><option>3</option></select>
-        <label>Round Timer / Hint Time</label>
-        <select id="roundTimer"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>
-        <label>Instructions</label>
-        <textarea id="instructionInput">Give one clue about the secret word without saying the word directly. Then vote for the imposter.</textarea>
-        <button onclick="saveRoundSettings()">💾 Save Round Settings</button>
-        <button class="purple" onclick="randomExample()">🎲 Random Example</button>
-      </div>
-
-      <div class="card">
-        <h2>📌 Current Round</h2>
-        <div id="roundInfo"></div>
-        <h3 style="margin-top:16px">🕵️ Imposter Secret</h3>
-        <div id="imposterInfo" class="status">Start the round to choose imposters.</div>
-        <div id="announcedImposters" class="announceBox hiddenImp">Imposter names are hidden until teacher announces.</div>
-      </div>
-    </div>
-
-    <div class="grid" style="margin-top:16px">
-      <div class="card">
-        <h2>👥 Live Students</h2>
-        <div id="teacherStudents" class="studentList"></div>
-      </div>
-      <div class="card">
-        <h2>🗳️ Votes & Results</h2>
-        <div id="teacherVotes" class="resultList"></div>
-      </div>
-    </div>
-  </div>
-
-  <div <div id="studentResults" class="resultList"></div>
-        <div id="studentAnnouncedImposters" class="announceBox hidden">Imposter names are hidden until teacher announces.</div>abs">
-      <button class="secondary"<div id="timerPopup" class="timerPopup hidden">
-    <div class="timerCircle" id="timerPopupTime">0:00</div>
-    <h3>🎭 Imposter Round</h3>
-    <div id="timerPopupTopic" class="pill">Topic</div>
-    <ul>
-      <li>Write one clear hint.</li>
-      <li>Do not say the secret word.</li>
-      <li>Read all hints when voting opens.</li>
-      <li>Vote carefully for the imposter.</li>
-    </ul>
-  </div>
-
-  <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>ton>
-      <button onclick="studentRefresh()">🔄 Refresh</button>
-    </div>
-
+    <div class="tabs"><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button onclick="setStage('waiting')">Waiting</button><button onclick="startRound()">Start Round</button><button onclick="setStage('discussion')">Discussion</button><button onclick="setStage('voting')">Open Voting</button><button class="purple" onclick="announceImposters()">Announce Imposters</button><button class="success" onclick="showResultsAndScore()">Show Results + Score</button><button class="danger" onclick="resetGame()">Reset Game</button></div>
     <div class="two">
-      <div class="card studentOnly">
-        <h2 id="studentWelcome">Student</h2>
-        <div class="stageBox" id="studentStages"></div>
-        <div id="studentInstruction" class="status"></div>
-        <div id="studentSecretCard" class="secretCard">
-          <div class="small">Waiting for teacher...</div>
-          <div class="word">Please wait</div>
-        </div>
-        <label>Your hiroundStart:0,
-    impostersAnnounced:false,
-    scored:false,
-    topic:'Technology',entClue" placeholder="Write your hint here..."></textarea>
-        <button onclick="saveClue()">Save Hint</button>
-        <div id="allHintsBox" class="resultList" style="margin-top:14px"></div>
-      </div>
+      <div class="card teacherOnly"><h2>👩‍🏫 Teacher Dashboard</h2><div class="stageBox" id="teacherStages"></div><label>Round Topic</label><input id="topicInput" value="Technology" /><label>Secret Word</label><input id="wordInput" value="Smartphone" /><label>Game Mode</label><select id="gameMode"><option value="individual">Individual</option><option value="perGroup">Per Group</option><option value="betweenGroups">Between Groups</option></select><label>Number of Imposters</label><select id="imposterCount"><option>1</option><option>2</option><option>3</option></select><label>Round Timer / Hint Time</label><select id="roundTimer"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select><label>Instructions</label><textarea id="instructionInput">Write one clear hint. Do not say the secret word. Then vote for the imposter.</textarea><button onclick="saveRoundSettings()">💾 Save Next Round Settings</button><button class="purple" onclick="randomExample()">🎲 Random Example</button></div>
+      <div class="card"><h2>📌 Current Round</h2><div id="roundInfo"></div><h3 style="margin-top:16px">🕵️ Imposter Secret</h3><div id="imposterInfo" class="status">Start the round to choose imposters.</div><div id="announcedImposters" class="announceBox hidden">Imposter names are hidden until teacher announces.</div></div>
+    </div>
+    <div class="grid" style="margin-top:16px"><div class="card"><h2>👥 Live Students</h2><div id="teacherStudents" class="studentList"></div></div><div class="card"><h2>🗳️ Votes & Results</h2><div id="teacherVotes" class="resultList"></div></div></div>
+  </div>
 
-      <div class="card">
-        <h2>🗳️ Vote</h2>
-        <div id="voteArea" class="voteList"></div>
-        <h2 style="margin-top:18px">🏆 Results</h2>
-        <div id="studentResults" class="resultList"></div>
-        <div id="studentAnnouncedImposters" class="announceBox hidden">Imposter names are hidden until teacher announces.</div>
-      </div>
+  <div id="studentPage" class="hidden">
+    <div class="tabs"><button class="secondary" onclick="leaveGame()">🚪 Leave Game</button><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button onclick="studentRefresh()">🔄 Refresh</button></div>
+    <div class="two">
+      <div class="card studentOnly"><h2 id="studentWelcome">Student</h2><div class="stageBox" id="studentStages"></div><div id="studentInstruction" class="status"></div><div id="studentSecretCard" class="secretCard"><div class="small">Waiting for teacher...</div><div class="word">Please wait</div></div><label>Your hint</label><textarea id="studentClue" placeholder="Write your hint here..."></textarea><button onclick="saveHint()">Save Hint</button><div id="allHintsBox" class="resultList" style="margin-top:14px"></div></div>
+      <div class="card"><h2>🗳️ Vote</h2><div id="voteArea" class="voteList"></div><h2 style="margin-top:18px">🏆 Results</h2><div id="studentResults" class="resultList"></div><div id="studentAnnouncedImposters" class="announceBox hidden"></div></div>
     </div>
   </div>
 
-  <div id="timerPopup" class="timerPopup hidden">
-    <div class="timerCircle" id="timerPopupTime">0:00</div>
-    <h3>🎭 Imposter Round</h3>
-    <div id="timerPopupTopic" class="pill">Topic</div>
-    <ul>
-      <li>Write one clear hint.</li>
-      <li>Do not say the secret word.</li>
-      <li>Read all hints when voting opens.</li>
-      <li>Vote carefully for the imposter.</li>
-    </ul>
-  </div>
-
+  <div id="timerPopup" class="timerPopup hidden"><div class="timerCircle" id="timerPopupTime">0:00</div><h3>🎭 Imposter Round</h3><div id="timerPopupTopic" class="pill">Topic</div><ul><li>Write one clear hint.</li><li>Do not say the secret word.</li><li>Read all hints when voting opens.</li><li>Vote carefully for the imposter.</li></ul></div>
   <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
 </div>
 
 <script>
-const STORAGE_KEY = 'skillClashImposterGame_v1';
-const TEACHER_PASSWORD = '1234';
-let currentUser = null;
-
-const examples = [
-  {topic:'Technology', word:'Smartphone'},
-  {topic:'Environment', word:'Pollution'},
-  {topic:'School', word:'Homework'},
-  {topic:'Reading', word:'Main Idea'},
-  {topic:'Grammar', word:'Past Tense'},
-  {topic:'Writing', word:'Opinion'}
-];
-
-function defaultState(){
-  return {
-    stage:'waiting',
-    gameMode:'individual',
-    roundTimer:120,
-    roundStart:0,
-    impostersAnnounced:false,
-    scored:false,
-    topic:'Technology',
-    word:'Smartphone',
-    instructions:'Give one clue about the secret word without saying the word directly. Then vote for the imposter.',
-    imposterCount:1,
-    imposters:[],
-    students:{},
-    votes:{},
-    clues:{},
-    scores:{}
-  };
-}
-function getState(){
-  return JSON.parse(localStorage.getItem(STORAGE_KEY) || JSON.stringify(defaultState()));
-}
-function setState(state){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
+const STORAGE_KEY='skillClashGamesHub_v2';
+const TEACHER_PASSWORD='1234';
+let currentUser=null;
+const examples=[{topic:'Technology',word:'Smartphone'},{topic:'Environment',word:'Pollution'},{topic:'School',word:'Homework'},{topic:'Reading',word:'Main Idea'},{topic:'Grammar',word:'Past Tense'},{topic:'Writing',word:'Opinion'}];
 function byId(id){return document.getElementById(id)}
-function show(el){byId(el).classList.remove('hidden')}
-function hide(el){byId(el).classList.add('hidden')}
-
-function showLogin(type){
-  if(type==='student'){show('studentLogin');hide('teacherLogin')}
-  else{show('teacherLogin');hide('studentLogin')}
-}
-function openImposterGame(){
-  hide('hubPage');
-  show('loginPage');
-}
-
-function backToHub(){
-  hide('teacherPage');
-  hide('studfunction setStage(stage){
-  const state = getState();
-  state.stage = stage;
-  setState(state);
-  teacherRefresh();
-}
-
-function announceImposters(){
-  const state = getState();
-  state.impostersAnnounced = true;
-  setState(state);
-  teacherRefresh();
-}
-
-function showResultsAndScore(){
-  const state = getState();
-  state.stage = 'results';
-  scoreRound(state);
-  setState(state);
-  teacherRefresh();
-}
-
-function scoreRound(state){
-  if(state.scored) return;
-  const ids = Object.keys(state.students);
-  const impSet = new Set(state.imposters);
-  ids.forEach(id=>{
-    const voteTarget = state.votes[id];
-    if(voteTarget && impSet.has(voteTarget)){
-      state.scores[id] = Number(state.scores[id] || 0) + 3;
-    }
-  });
-  state.imposters.forEach(impId=>{
-    const impStudent = state.students[impId];
-    if(!impStudent) return;
-    const sameTeam = ids.filter(id=>id !== impId && state.students[id] && state.students[id].group === impStudent.group);
-    const anyTeamWrong = sameTeam.some(id=>{
-      const voted = state.votes[id];
-      return voted && !impSet.has(voted);
-    });
-    const noOneFoundImposter = !ids.some(id=>state.votes[id] === impId);
-    if(anyTeamWrong || noOneFoundImposter){
-      state.scores[impId] = Number(state.scores[impId] || 0) + 5;
-    }
-  });
-  state.scored = true;
-}hide('studentPage');show('loginPage');currentUser=null;
-}
-
-function studentJoin(){
-  const name = byId('studentName').value.trim();
-  const cls = byId('studentClass').value;
-  const group = byId('studentGroup').value;
-  if(!name){alert('Please write your name.');return}
-  const id = 's_' + name.toLowerCase().replace(/[^a-z0-9]/g,'state.stage = 'discussion';
-  state.roundStart = Date.now();
-  state.impostersAnnounced = false;
-  state.scored = false;
-  state.votes = {};
-  state.clues = {};{id,name,cls,group,joinedAt:Date.now()};
-  if(!state.scores[id]) state.scores[id]=0;
-  setState(state);
-  currentUser = {role:'student',id,name,cls,group};
-  hide('loginPage');show('studentPage');
-  studentRefresh();
-}
-
-function teacherJoin(){
-  const pass = byId('teacherPass').value;
-  if(pass !== TEACHER_PASSWORD){alert('Incorrect password.');return}
-  currentUser = {role:'teacher'};
-  hide('loginPage');show('teacherPage');
-  teacherRefresh();
-}
-
-function saveRoundSettings(){
-  const state = getState();
-  state.topic = byId('topicInput').value.trim() || 'Topic';
-  state.word = byId('wordInput').value.trim() || 'Secret Word';
-  state.instructions = byId('instructionInput').value.trim();
-  state.gameMode = byId('gameMode').value;
-  state.roundTimer = Number(byId('roundTimer').value || 120);
-  state.imposterCount = Number(byId('imposterCount').value || 1);
-  setState(state);
-  teacherRefresh();
-  alert('Round settings saved.');
-}
-
-function randomExample(){
-  const e = examples[Math.floor(Math.random()*examplesconst impNames = state.imposters.map(id=>state.students[id]?.name || id);
-  byId('imposterInfo').innerHTML = impNames.length ? 'Imposters selected. Hidden from students.' : 'No imposter selected yet.';
-  const announceBox = byId('announcedImposters');
-  if(announceBox){
-    announceBox.className = state.impostersAnnounced ? 'announceBox' : 'announceBox hiddenImp';
-    announceBox.innerHTML = state.impostersAnnounced && impNames.length ? '🕵️ Imposters: ' + impNames.map(escapeHtml).join(', ') : 'Imposter names are hidden until teacher announces.';
-  }  teacherRefresh();
-}
-
-function announceImposters(){
-  const state = getState();
-  state.impostersAnnounced = true;
-  setState(state);
-  teacherRefresh();
-}
-
-function showResultsAndScore(){
-  const state = getState();
-  state.stage = 'results';
-  scoreRound(state);
-  setState(state);
-  teacherRefresh();
-}
-
-function scoreRound(state){
-  if(state.scored) return;
-  const ids = Object.keys(state.students);
-  const impSet = new Set(state.imposters);
-  ids.forEach(id=>{
-    const voteTarget = state.votes[id];
-    if(voteTarget && impSet.has(voteTarget)){
-      state.scores[id] = Number(state.scores[id] || 0) + 3;
-    }
-  });
-  state.imposters.forEach(impId=>{
-    const impStudent = state.students[impId];
-    if(!impStudent) return;
-    const sameTeam = ids.filter(id=>id !== impId && state.students[id] && state.students[id].group === impStudent.group);
-    const anyTeamWrong = sameTeam.some(id=>{
-      const voted = state.votes[id];
-      return voted && !impSet.has(voted);
-    });
-    const noOneFoundImposter = !ids.some(id=>state.votes[id] === impId);
-    if(anyTeamWrong || noOneFoundImposter){
-      state.scores[impId] = Number(state.scores[impId] || 0) + 5;
-    }
-  });
-  state.scored = true;
-}
-
-function startRound(){
-  saveRoundSettings();
-  const state = getState();
-  const ids = Object.keys(state.students);
-  if(ids.length < 3){alert('You need at least 3 students to play.');return}
-  const shuffled = ids.sort(()=>Math.random()-.5);
-  state.imposters = shuffled.slice(0, Math.min(state.imposterCount, ids.length-1));
-  state.stage = 'discussion';
-  state.roundStart = Date.now();
-  state.impostersAnnounced = false;
-  state.scored = false;
-  state.votes = {};
-  state.clues = {};
-  setState(state);
-  teacherRefresh();
-}
-
-function resetGame(){
-  if(!confirm('Reset all students, votes, clues, and scores?')) return;
-  setState(defaultState());
-  teacherRefresh();
-}
-
-function teacherRefresh(){
-  const state = getState();
-  byId('topicInput').value = state.topic;
-  byId('wordInput').value = state.word;
-  byId('instructionInput').value = state.instructions;
-  byId('imposterCount').value = String(state.imposterCount);
-  byId('gameMode').value = state.gameMode || 'individual';
-  byId('roundTimer').value = String(state.roundTimer || 120);
-  renderStages('teacherStages', state.stage);
-  byId('roundInfo').innerHTML = `
-    <p class="pill">Topic: ${escapeHtml(state.topic)}</p>
-    <p class="pill">Secret Word: ${escapeHtml(state.word)}</p>
-    <p class="pill">Stage: ${escapeHtml(state.stage)}</p>
-    <p class="pill">Mode: ${escapeHtml(modeLabel(state.gameMode))}</p>
-    <p class="pill">Timer: ${getTimeLeft(state)}</p>
-    <p class="pill">Students: ${Object.keys(state.students).length}</p>
-  `;
-  const impNames = state.imposters.map(id=>state.students[id]?.name || id);
-  byId('imposterInfo').innerHTML = impNames.length ? 'Imposters selected. Hidden from students.' : 'No imposter selected yet.';
-  const announceBox = byId('announcedImposters');
-  if(announceBox){
-    announceBox.className = state.impostersAnnounced ? 'announceBox' : 'announceBox hiddenImp';
-    announceBox.innerHTML = state.impostersAnnounced && impNames.length ? '🕵️ Imposters: ' + impNames.map(escapeHtml).join(', ') : 'Imposter names are hidden until teacher announces.';
-  }
-  renderTeacherStudents(state);
-  renderTeacherVotes(state);
-}
-
-function renderTeacherStudents(state){
-  const box = byId('teacherStudents');
-  const ids = Object.keys(state.students);
-  if(!ids.length){box.innerHTML='<div class="status">No students joined yet.</div>';return}
-  box.innerHTML = ids.map(id=>{
-    const s = state.students[id];
-    const isImp = state.imposters.includes(id);
-    const clue = state.clues[id] || '';
-    const voted = state.votes[id] ? 'Voted ✅' : 'Not voted';
-    return `<div class="studentRow">
-      <div><div class="name">${isImp?'🟥':'🟦'} ${escapeHtml(s.name)}</div><div class="mini">${escapeHtml(s.cls)} • Group ${escapeHtml(s.group || '-')} • ${voted}<br>Hint: ${escapeHtml(clue || 'No hint yet')}</div></div>
-      <div class="score">${state.scores[id]||0} pts</div>
-    </div>`;
-  }).join('');
-}
-
-function renderTeacherVotes(state){
-  const box = byId('teacherVotes');
-  const counts = {};
-  Object.values(state.votes).forEach(target=>counts[target]=(counts[target]||0)+1);
-  const rows = Object.keys(state.students).map(id=>{
-    const s = state.students[id];
-    const isImp = state.imposters.includes(id);
-    return `<div class="resultRow">
-      <div><div class="name">${escapeHtml(s.name)} ${isImp?'🕵️':''}</div><div class="mini">Votes received: ${counts[id]||0}</div></div>
-      <button class="secondary" onclick="awardPoint('${id}',5)">+5 Bonus</button>
-    </div>`;
-  }).join('');
-  const voteDetails = Object.keys(state.votes).map(voterId=>{
-    const voter = state.students[voterId]?.name || voterId;
-    const target = state.students[state.votes[voterId]]?.name || state.votes[voterId];
-    return `<div class="mini">${escapeHtml(voter)} voted for ${escapeHtml(target)}</div>`;
-  }).join('');
-  box.innerHTML = rows || '<div class="status">No votes yet.</div>';
-  if(voteDetails) box.innerHTML += '<hr style="margin:14px 0;border:0;border-top:1px solid #dde6ff">' + voteDetails;
-}
-
-function awardPoint(id, pts){
-  const state = getState();
-  state.scores[id] = Number(state.scores[id]||0) + pts;
-  setState(state);
-  teacherRefresh();
-}
-
-function studentRefresh(){
-  if(!currentUser || cudentWelcome').innerText = `Welcome, ${currentUser.name}`;
-  renderStages('studentStages', state.stage);
-  byId('studentInstruction').innerText = (state.instructions || 'Wait for teacher instructions.') + '  ⏱️ Time left: ' + getTimeLeft(state);
-  renderSecretCard(state);
-  renderVoteArea(state);
-  renderAllHints(state);
-  renderStudentResults(state);
-  const clueBox = byId('studentClue');
-  if(document.activeElement !== clueBox){
-    clueBox.value = state.clues[currentUser.id] || '';
-  }
-}
-
-function renderSecretCard(state){
-  const card = byId('studentSecretCard');
-  card.className = 'secretCard';
-  if(state.stage==='waiting'){
-    card.innerHTML = '<div class="small">Waiting for teaceturn;
-  }
-  const isImp = state.imposters.includes(currentUser.id);
-  if(isImp){
-    card.classList.add('imposter');
-    card.innerHTML = '<div class="small">🟥 Secret Role</div><div class="word">You are the Imposter</div><div class="mini">Try to guess the word from your classmates’ clues.</div>';
-  }else{
-    card.innerHTML = `<div class="small">🟦 Your Secret Word</div><div class="word">${escapeHtml(state.word)}</div><div class="mini">Topic: ${escapeHtml(state.topic)}</div>`;
-  }
-}
-
-function saveClue(){
-  const state = getState();
-  if(state.stage!=='discussion'){
-    alert('Clues are saved during the discussatus">Hints will appear together when the teacher opens voting.</div>';
-    return;
-  }
-  const rows = Object.keys(state.students).map(id=>{
-    const s = state.students[id];
-    const clue = state.clues[id] || 'No hint submitted';
-    return `<div class="resultRow"><div><div class="name">${escapeHtml(s.name)}</div><div class="mini">Group ${escapeHtml(s.group || '-')} • ${escapeHtml(clue)}</div></div></div>`;
-  }).join('');
-  box.innerHTML = '<h2>💬 All Hints</h2>' + rows;
-}
-
-function renderVoteArea(state){
-  const box = byId('voteArea');
-  if(state.stage!=='voting'){
-    box.innerHTML = '<div class="status">Voting is closed. Wait for the teacher.</div>';return;
-  }
-  if(state.votes[currentUser.id]){
-    const votedName = state.students[state.votes[currentUser.id]]?.name || 'student';
-    box.innerHTML = `<div class="status">You already voted for <b>${escapeHtml(votedName)}</b>. Wait for results.</div>`;return;
-  }
-  box.innerHTML = Object.keys(state.students).filter(id=>id!==currentUser.id).map(id=>{
-    const s = state.students[id];
-    return `<div class="voteRow"><div class="name">${escapeHtml(s.name)}</div><button onclick="voteFor('${id}')">Vote</button></div>`;
-  }).join('');
-}
-
-function voteFor(targetId){
-  const state = getState();
-  if(state.stage!=='voting') return;
-  if(state.votes[currentUser.id]){alert('You already voted.');return}
-  state.votes[currentUser.id] = targetId;
-  setState(state);
-  studentRefresh();
-}
-
-function renderStudentResults(state){
-  const box = byId('studentResults');
-  const announce = byId('studentAnnouncedImposters');
-  if(announme || id).join(', ');
-      announce.classList.remove('hidden');
-      announce.innerHTML = '🕵️ Announced Imposters: ' + escapeHtml(names || 'Not selected');
-    }else{
-      announce.classList.add('hidden');
-    }
-  }
-  if(state.stage!=='results'){
-    box.innerHTML = '<div class="status">Results are hidden until teacher releases them.</div>';return;
-  }
-  const impNames = state.imposters.map(id=>state.students[id]?.name || id).join(', ');
-  const myScore = state.scores[currentUser.id] || 0;
-  const myVote = state.votes[currentUser.id];
-  const correct = myVote && state.imposters.includes(myVote);
-  box.innerHTML = `
-    <div class="resultRow"><div><div class="name">Imposter</div><div class="mini">${escapeHtml(impNames)}</div></div></div>
-    <div class="resultRow"><div><div class="name">Secret Word</div><div class="mini">${escapeHtml(state.word)}</div></div></div>
-    <div class="resultRow"><div><div class="name">Your Vote</div><div class="mini">${correct?'Correct ✅':'Not correct ❌'}</div></div><div class="score">${myScore} pts</div></div>
-  `;
-}
-
-function getTimeLeft(state){
-  if(!state.roundStart || state.stage!=='discussion') return 'Not running';
-  const total = Number(state.roundTimer || 120);
-  const passed = Math.floor((Date.now() - state.roundStart) / 1000);
-  const left = Math.max(0, total - passed);
-  const m = Math.floor(left / 60);
-  const s = String(left % 60).padStart(2,'0');
-  return m + ':' + s;
-}
-
-function updateTimerPopup(state){
-  const pop = byId('timerPopup');
-  if(!pop) return;
-  if(state.stage !== 'discussion'){
-    pop.classList.add('hidden');
-    return;
-  }
-  pop.classList.remove('hidden');
-  byId('timerPopupTime').innerText = getTimeLeft(state);
-  byId('timerPopupTopic').innerText = 'Topic: ' + (state.topic || 'Topic');
-}
-
-function modeLabel(mode){
-  if(mode==='perGroup') return 'Per Group';
-  if(mode==='betweenGroups') return 'Between Groups';
-  return 'Individual';
-}
-
-function renderStages(id, active){
-  const stages = ['waiting','discussion','voting','results'];
-  byId(id).innerHTML = stages.map(s=>`<span class="stage ${s===active?'active':''}">${s}</span>`).join('');
-}
-
-function leaveGame(){
-  if(!currentUser) return backHome();
-  const state = getState();
-  delete state.students[currentUser.id];
-  delete state.votes[currentUser.id];
-  delete state.clues[currentUser.id];
-  delete state.scores[currentUser.id];
-  state.imposters = state.imposters.filter(id=>id!==currentUser.id);
-  setState(state);
-  backHome();
-}
-
-function escapeHtml(text){
-  return String(text || '').replace(/[&<>'"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-}
-
-setInterval(()=>{
-  const st = getState();
-  updateTimerPopup(st);
-  if(currentUser?.role==='teacher') teacherRefresh();
-  if(currentUser?.role==='student') studentRefresh();
-}, 2000);
+function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}
+function escapeHtml(text){return String(text||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+function defaultState(){return{stage:'waiting',gameMode:'individual',roundTimer:30,roundStart:0,impostersAnnounced:false,scored:false,topic:'Technology',word:'Smartphone',instructions:'Write one clear hint. Do not say the secret word. Then vote for the imposter.',imposterCount:1,imposters:[],students:{},votes:{},hints:{},scores:{}}}
+function getState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||JSON.stringify(defaultState()))}catch(e){return defaultState()}}
+function setState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
+function showLogin(type){type==='student'?(show('studentLogin'),hide('teacherLogin')):(show('teacherLogin'),hide('studentLogin'))}
+function openImposterGame(){hide('hubPage');show('loginPage')}function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}
+function studentJoin(){const name=byId('studentName').value.trim();const cls=byId('studentClass').value;const group=byId('studentGroup').value;if(!name){alert('Please write your name.');return}const id='s_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cls.replace('/','_')+'_g'+group;const state=getState();state.students[id]={id,name,cls,group,joinedAt:Date.now()};if(!state.scores[id])state.scores[id]=0;setState(state);currentUser={role:'student',id,name,cls,group};hide('loginPage');show('studentPage');studentRefresh()}
+function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
+function saveRoundSettings(){const state=getState();state.topic=byId('topicInput').value.trim()||'Topic';state.word=byId('wordInput').value.trim()||'Secret Word';state.instructions=byId('instructionInput').value.trim();state.gameMode=byId('gameMode').value;state.roundTimer=Number(byId('roundTimer').value||30);state.imposterCount=Number(byId('imposterCount').value||1);setState(state);teacherRefresh();alert('Next round settings saved.')}
+function randomExample(){const e=examples[Math.floor(Math.random()*examples.length)];byId('topicInput').value=e.topic;byId('wordInput').value=e.word;saveRoundSettings()}
+function setStage(stage){const state=getState();state.stage=stage;setState(state);teacherRefresh()}
+function startRound(){saveRoundSettings();const state=getState();const ids=Object.keys(state.students);if(ids.length<3){alert('You need at least 3 students to play.');return}const shuffled=ids.sort(()=>Math.random()-.5);state.imposters=shuffled.slice(0,Math.min(state.imposterCount,ids.length-1));state.stage='discussion';state.roundStart=Date.now();state.impostersAnnounced=false;state.scored=false;state.votes={};state.hints={};setState(state);teacherRefresh()}
+function announceImposters(){const state=getState();state.impostersAnnounced=true;setState(state);teacherRefresh()}
+function showResultsAndScore(){const state=getState();state.stage='results';scoreRound(state);setState(state);teacherRefresh()}
+function scoreRound(state){if(state.scored)return;const ids=Object.keys(state.students);const impSet=new Set(state.imposters);ids.forEach(id=>{const target=state.votes[id];if(target&&impSet.has(target)){state.scores[id]=Number(state.scores[id]||0)+3}});state.imposters.forEach(impId=>{const imp=state.students[impId];if(!imp)return;const sameTeam=ids.filter(id=>id!==impId&&state.students[id]&&state.students[id].group===imp.group);const anyTeamWrong=sameTeam.some(id=>{const v=state.votes[id];return v&&!impSet.has(v)});const noOneFound=!ids.some(id=>state.votes[id]===impId);if(anyTeamWrong||noOneFound){state.scores[impId]=Number(state.scores[impId]||0)+5}});state.scored=true}
+function resetGame(){if(!confirm('Reset all students, votes, hints, and scores?'))return;setState(defaultState());teacherRefresh()}
+function getTimeLeft(state){if(!state.roundStart||state.stage!=='discussion')return'Not running';const total=Number(state.roundTimer||30);const passed=Math.floor((Date.now()-state.roundStart)/1000);const left=Math.max(0,total-passed);return Math.floor(left/60)+':'+String(left%60).padStart(2,'0')}
+function modeLabel(mode){if(mode==='perGroup')return'Per Group';if(mode==='betweenGroups')return'Between Groups';return'Individual'}
+function renderStages(id,active){byId(id).innerHTML=['waiting','discussion','voting','results'].map(s=>`<span class="stage ${s===active?'active':''}">${s}</span>`).join('')}
+function teacherRefresh(){const state=getState();byId('topicInput').value=state.topic;byId('wordInput').value=state.word;byId('instructionInput').value=state.instructions;byId('gameMode').value=state.gameMode||'individual';byId('roundTimer').value=String(state.roundTimer||30);byId('imposterCount').value=String(state.imposterCount||1);renderStages('teacherStages',state.stage);byId('roundInfo').innerHTML=`<p class="pill">Topic: ${escapeHtml(state.topic)}</p><p class="pill">Secret Word: ${escapeHtml(state.word)}</p><p class="pill">Stage: ${escapeHtml(state.stage)}</p><p class="pill">Mode: ${escapeHtml(modeLabel(state.gameMode))}</p><p class="pill">Timer: ${getTimeLeft(state)}</p><p class="pill">Students: ${Object.keys(state.students).length}</p>`;const impNames=state.imposters.map(id=>state.students[id]?.name||id);byId('imposterInfo').innerHTML=impNames.length?'Imposters selected. Hidden from students.':'No imposter selected yet.';const ab=byId('announcedImposters');ab.classList.toggle('hidden',!state.impostersAnnounced);ab.innerHTML=state.impostersAnnounced?'🕵️ Imposters: '+impNames.map(escapeHtml).join(', '):'Imposter names are hidden until teacher announces.';renderTeacherStudents(state);renderTeacherVotes(state)}
+function renderTeacherStudents(state){const box=byId('teacherStudents');const ids=Object.keys(state.students);if(!ids.length){box.innerHTML='<div class="status">No students joined yet.</div>';return}box.innerHTML=ids.map(id=>{const s=state.students[id];const isImp=state.imposters.includes(id);const hint=state.hints[id]||'';const voted=state.votes[id]?'Voted ✅':'Not voted';return`<div class="studentRow"><div><div class="name">${isImp?'🟥':'🟦'} ${escapeHtml(s.name)}</div><div class="mini">${escapeHtml(s.cls)} • Group ${escapeHtml(s.group)} • ${voted}<br>Hint: ${escapeHtml(hint||'No hint yet')}</div></div><div class="score">${state.scores[id]||0} pts</div></div>`}).join('')}
+function renderTeacherVotes(state){const box=byId('teacherVotes');const counts={};Object.values(state.votes).forEach(t=>counts[t]=(counts[t]||0)+1);const rows=Object.keys(state.students).map(id=>{const s=state.students[id];const isImp=state.imposters.includes(id);return`<div class="resultRow"><div><div class="name">${escapeHtml(s.name)} ${isImp?'🕵️':''}</div><div class="mini">Votes received: ${counts[id]||0}</div></div><button class="secondary" onclick="awardPoint('${id}',5)">+5 Bonus</button></div>`}).join('');box.innerHTML=rows||'<div class="status">No votes yet.</div>'}
+function awardPoint(id,pts){const state=getState();state.scores[id]=Number(state.scores[id]||0)+pts;setState(state);teacherRefresh()}
+function studentRefresh(){if(!currentUser||currentUser.role!=='student')return;const state=getState();byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | ${currentUser.cls} | Group ${currentUser.group}`;renderStages('studentStages',state.stage);byId('studentInstruction').innerText=(state.instructions||'Wait for teacher instructions.')+'  ⏱️ Time left: '+getTimeLeft(state);renderSecretCard(state);renderVoteArea(state);renderAllHints(state);renderStudentResults(state);const box=byId('studentClue');if(document.activeElement!==box){box.value=state.hints[currentUser.id]||''}}
+function renderSecretCard(state){const card=byId('studentSecretCard');card.className='secretCard';if(state.stage==='waiting'){card.innerHTML='<div class="small">Waiting for teacher...</div><div class="word">Please wait</div>';return}if(state.imposters.includes(currentUser.id)){card.classList.add('imposter');card.innerHTML='<div class="small">🟥 Secret Role</div><div class="word">You are the Imposter</div><div class="mini">Try to guess the word from classmates’ hints.</div>'}else{card.innerHTML=`<div class="small">🟦 Your Secret Word</div><div class="word">${escapeHtml(state.word)}</div><div class="mini">Topic: ${escapeHtml(state.topic)}</div>`}}
+function saveHint(){const state=getState();if(state.stage!=='discussion'){alert('Hints can be saved during discussion stage only.');return}state.hints[currentUser.id]=byId('studentClue').value.trim();setState(state);studentRefresh();alert('Your hint is saved.')}
+function renderAllHints(state){const box=byId('allHintsBox');if(state.stage==='waiting'){box.innerHTML='';return}if(state.stage==='discussion'){box.innerHTML='<div class="status">Hints will appear together when teacher opens voting.</div>';return}box.innerHTML='<h2>💬 All Hints</h2>'+Object.keys(state.students).map(id=>{const s=state.students[id];const h=state.hints[id]||'No hint submitted';return`<div class="resultRow"><div><div class="name">${escapeHtml(s.name)}</div><div class="mini">Group ${escapeHtml(s.group)} • ${escapeHtml(h)}</div></div></div>`}).join('')}
+function renderVoteArea(state){const box=byId('voteArea');if(state.stage!=='voting'){box.innerHTML='<div class="status">Voting is closed. Wait for teacher.</div>';return}if(state.votes[currentUser.id]){const n=state.students[state.votes[currentUser.id]]?.name||'student';box.innerHTML=`<div class="status">You already voted for <b>${escapeHtml(n)}</b>. Wait for results.</div>`;return}box.innerHTML=Object.keys(state.students).filter(id=>id!==currentUser.id).map(id=>`<div class="voteRow"><div class="name">${escapeHtml(state.students[id].name)}</div><button onclick="voteFor('${id}')">Vote</button></div>`).join('')}
+function voteFor(targetId){const state=getState();if(state.stage!=='voting')return;if(state.votes[currentUser.id]){alert('You already voted.');return}state.votes[currentUser.id]=targetId;setState(state);studentRefresh()}
+function renderStudentResults(state){const box=byId('studentResults');const ann=byId('studentAnnouncedImposters');if(state.impostersAnnounced){const names=state.imposters.map(id=>state.students[id]?.name||id).join(', ');ann.classList.remove('hidden');ann.innerHTML='🕵️ Announced Imposters: '+escapeHtml(names||'Not selected')}else{ann.classList.add('hidden')}if(state.stage!=='results'){box.innerHTML='<div class="status">Results are hidden until teacher releases them.</div>';return}const impNames=state.imposters.map(id=>state.students[id]?.name||id).join(', ');const myVote=state.votes[currentUser.id];const correct=myVote&&state.imposters.includes(myVote);box.innerHTML=`<div class="resultRow"><div><div class="name">Imposter</div><div class="mini">${escapeHtml(impNames)}</div></div></div><div class="resultRow"><div><div class="name">Secret Word</div><div class="mini">${escapeHtml(state.word)}</div></div></div><div class="resultRow"><div><div class="name">Your Vote</div><div class="mini">${correct?'Correct ✅ +3':'Not correct ❌'}</div></div><div class="score">${state.scores[currentUser.id]||0} pts</div></div>`}
+function updateTimerPopup(){const state=getState();const pop=byId('timerPopup');if(state.stage!=='discussion'){pop.classList.add('hidden');return}pop.classList.remove('hidden');byId('timerPopupTime').innerText=getTimeLeft(state);byId('timerPopupTopic').innerText='Topic: '+(state.topic||'Topic')}
+function leaveGame(){if(!currentUser)return backToHub();const state=getState();delete state.students[currentUser.id];delete state.votes[currentUser.id];delete state.hints[currentUser.id];delete state.scores[currentUser.id];state.imposters=state.imposters.filter(id=>id!==currentUser.id);setState(state);backToHub()}
+setInterval(()=>{updateTimerPopup();if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);
 </script>
 </body>
 </html>
