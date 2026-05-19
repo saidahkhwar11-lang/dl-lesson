@@ -24,6 +24,18 @@
     button.danger{background:#e85b6a}
     button.success{background:#31a66a}
     button.purple{background:#7d5cc6}
+    .timerPopup{position:fixed;right:22px;bottom:22px;width:330px;max-width:calc(100vw - 36px);background:white;border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(35,45,90,.25);border:1px solid #dce5ff;z-index:50}
+    .timerCircle{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:linear-gradient(135deg,#edf4ff,#f7efff);border:4px solid #7d9af5;font-size:28px;font-weight:900;color:#263b72}
+    .timerPopup h3{text-align:center;margin-bottom:8px;color:#263b72}
+    .timerPopup ul{padding-left:20px;margin:8px 0;color:#4d5d83;font-size:14px;line-height:1.5}
+    .announceBox{background:linear-gradient(135deg,#fff0f3,#fff8e8);border:1px solid #ffd2d9;border-radius:18px;padding:14px;margin-top:10px}
+    .announceBox.hiddenImp{filter:blur(4px);user-select:none}
+    .timerPopup{position:fixed;right:22px;bottom:22px;width:330px;max-width:calc(100vw - 36px);background:white;border-radius:24px;padding:18px;box-shadow:0 18px 45px rgba(35,45,90,.25);border:1px solid #dce5ff;z-index:50}
+    .timerCircle{width:92px;height:92px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:linear-gradient(135deg,#edf4ff,#f7efff);border:4px solid #7d9af5;font-size:28px;font-weight:900;color:#263b72}
+    .timerPopup h3{text-align:center;margin-bottom:8px;color:#263b72}
+    .timerPopup ul{padding-left:20px;margin:8px 0;color:#4d5d83;font-size:14px;line-height:1.5}
+    .announceBox{background:linear-gradient(135deg,#fff0f3,#fff8e8);border:1px solid #ffd2d9;border-radius:18px;padding:14px;margin-top:10px}
+    .announceBox.hiddenImp{filter:blur(4px);user-select:none}
     .tabs{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
     .tabs button{flex:1;min-width:160px}
     .pill{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border-radius:999px;background:#edf3ff;color:#2e477d;font-weight:800;font-size:13px;margin:4px}
@@ -109,8 +121,8 @@
         <h2>Teacher Login</h2>
         <label>Password</label>
         <input id="teacherPass" type="password" placeholder="Teacher password" />
-        <button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button>
-        <div class="status">Default password: <b>1234</b></div>
+        <button class="purple" onclick="teacherJoin()">Open Te<button class="success" onclick="showResultsAndScore()">Show Results + Score</button>
+      <button class="purple" onclick="announceImposters()">Announce Imposters</button>234</b></div>
       </div>
 
       <div class="card">
@@ -131,12 +143,8 @@
       <button onclick="startRound()">Start Round</button>
       <button onclick="setStage('discussion')">Discussion</button>
       <button onclick="setStage('voting')">Open Voting</button>
-      <button class="success" onclick="setStage('results')">Show Results</button>
-      <button class="danger" onclick="resetGame()">Reset Game</button>
-    </div>
-
-    <div class="two">
-      <div class="card teacherOnly">
+      <button class="success" onclick="showResultsAndScore()">Show Results + Score</button>
+      <butt<select id="roundTimer"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>    <div class="card teacherOnly">
         <h2>👩‍🏫 Teacher Dashboard</h2>
         <div class="stageBox" id="teacherStages"></div>
         <label>Round Topic</label>
@@ -147,12 +155,11 @@
         <select id="gameMode">
           <option value="individual">Individual</option>
           <option value="perGroup">Per Group</option>
-          <option value="betweenGroups">Between Groups</option>
-        </select>
-        <label>Number of Imposters</label>
+          <option value="betweenGroups">Bet<div id="imposterInfo" class="status">Start the round to choose imposters.</div>
+        <div id="announcedImposters" class="announceBox hiddenImp">Imposter names are hidden until teacher announces.</div>>
         <select id="imposterCount"><option>1</option><option>2</option><option>3</option></select>
         <label>Round Timer / Hint Time</label>
-        <select id="roundTimer"><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>
+        <select id="roundTimer"><option value="30">30 seconds</option><option value="60">1 minute</option><option value="120">2 minutes</option><option value="180">3 minutes</option><option value="300">5 minutes</option></select>
         <label>Instructions</label>
         <textarea id="instructionInput">Give one clue about the secret word without saying the word directly. Then vote for the imposter.</textarea>
         <button onclick="saveRoundSettings()">💾 Save Round Settings</button>
@@ -164,6 +171,7 @@
         <div id="roundInfo"></div>
         <h3 style="margin-top:16px">🕵️ Imposter Secret</h3>
         <div id="imposterInfo" class="status">Start the round to choose imposters.</div>
+        <div id="announcedImposters" class="announceBox hiddenImp">Imposter names are hidden until teacher announces.</div>
       </div>
     </div>
 
@@ -179,10 +187,21 @@
     </div>
   </div>
 
-  <div id="studentPage" class="hidden">
-    <div class="tabs">
-      <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
-      <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
+  <div <div id="studentResults" class="resultList"></div>
+        <div id="studentAnnouncedImposters" class="announceBox hidden">Imposter names are hidden until teacher announces.</div>abs">
+      <button class="secondary"<div id="timerPopup" class="timerPopup hidden">
+    <div class="timerCircle" id="timerPopupTime">0:00</div>
+    <h3>🎭 Imposter Round</h3>
+    <div id="timerPopupTopic" class="pill">Topic</div>
+    <ul>
+      <li>Write one clear hint.</li>
+      <li>Do not say the secret word.</li>
+      <li>Read all hints when voting opens.</li>
+      <li>Vote carefully for the imposter.</li>
+    </ul>
+  </div>
+
+  <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>ton>
       <button onclick="studentRefresh()">🔄 Refresh</button>
     </div>
 
@@ -195,8 +214,10 @@
           <div class="small">Waiting for teacher...</div>
           <div class="word">Please wait</div>
         </div>
-        <label>Your hint</label>
-        <textarea id="studentClue" placeholder="Write your hint here..."></textarea>
+        <label>Your hiroundStart:0,
+    impostersAnnounced:false,
+    scored:false,
+    topic:'Technology',entClue" placeholder="Write your hint here..."></textarea>
         <button onclick="saveClue()">Save Hint</button>
         <div id="allHintsBox" class="resultList" style="margin-top:14px"></div>
       </div>
@@ -206,8 +227,21 @@
         <div id="voteArea" class="voteList"></div>
         <h2 style="margin-top:18px">🏆 Results</h2>
         <div id="studentResults" class="resultList"></div>
+        <div id="studentAnnouncedImposters" class="announceBox hidden">Imposter names are hidden until teacher announces.</div>
       </div>
     </div>
+  </div>
+
+  <div id="timerPopup" class="timerPopup hidden">
+    <div class="timerCircle" id="timerPopupTime">0:00</div>
+    <h3>🎭 Imposter Round</h3>
+    <div id="timerPopupTopic" class="pill">Topic</div>
+    <ul>
+      <li>Write one clear hint.</li>
+      <li>Do not say the secret word.</li>
+      <li>Read all hints when voting opens.</li>
+      <li>Vote carefully for the imposter.</li>
+    </ul>
   </div>
 
   <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
@@ -233,6 +267,8 @@ function defaultState(){
     gameMode:'individual',
     roundTimer:120,
     roundStart:0,
+    impostersAnnounced:false,
+    scored:false,
     topic:'Technology',
     word:'Smartphone',
     instructions:'Give one clue about the secret word without saying the word directly. Then vote for the imposter.',
@@ -265,14 +301,53 @@ function openImposterGame(){
 
 function backToHub(){
   hide('teacherPage');
-  hide('studentPage');
-  hide('loginPage');
-  show('hubPage');
-  currentUser=null;
+  hide('studfunction setStage(stage){
+  const state = getState();
+  state.stage = stage;
+  setState(state);
+  teacherRefresh();
 }
 
-function backHome(){
-  hide('teacherPage');hide('studentPage');show('loginPage');currentUser=null;
+function announceImposters(){
+  const state = getState();
+  state.impostersAnnounced = true;
+  setState(state);
+  teacherRefresh();
+}
+
+function showResultsAndScore(){
+  const state = getState();
+  state.stage = 'results';
+  scoreRound(state);
+  setState(state);
+  teacherRefresh();
+}
+
+function scoreRound(state){
+  if(state.scored) return;
+  const ids = Object.keys(state.students);
+  const impSet = new Set(state.imposters);
+  ids.forEach(id=>{
+    const voteTarget = state.votes[id];
+    if(voteTarget && impSet.has(voteTarget)){
+      state.scores[id] = Number(state.scores[id] || 0) + 3;
+    }
+  });
+  state.imposters.forEach(impId=>{
+    const impStudent = state.students[impId];
+    if(!impStudent) return;
+    const sameTeam = ids.filter(id=>id !== impId && state.students[id] && state.students[id].group === impStudent.group);
+    const anyTeamWrong = sameTeam.some(id=>{
+      const voted = state.votes[id];
+      return voted && !impSet.has(voted);
+    });
+    const noOneFoundImposter = !ids.some(id=>state.votes[id] === impId);
+    if(anyTeamWrong || noOneFoundImposter){
+      state.scores[impId] = Number(state.scores[impId] || 0) + 5;
+    }
+  });
+  state.scored = true;
+}hide('studentPage');show('loginPage');currentUser=null;
 }
 
 function studentJoin(){
@@ -280,9 +355,12 @@ function studentJoin(){
   const cls = byId('studentClass').value;
   const group = byId('studentGroup').value;
   if(!name){alert('Please write your name.');return}
-  const id = 's_' + name.toLowerCase().replace(/[^a-z0-9]/g,'_') + '_' + cls.replace('/','_') + '_g' + group;
-  const state = getState();
-  state.students[id] = {id,name,cls,group,joinedAt:Date.now()};
+  const id = 's_' + name.toLowerCase().replace(/[^a-z0-9]/g,'state.stage = 'discussion';
+  state.roundStart = Date.now();
+  state.impostersAnnounced = false;
+  state.scored = false;
+  state.votes = {};
+  state.clues = {};{id,name,cls,group,joinedAt:Date.now()};
   if(!state.scores[id]) state.scores[id]=0;
   setState(state);
   currentUser = {role:'student',id,name,cls,group};
@@ -312,17 +390,54 @@ function saveRoundSettings(){
 }
 
 function randomExample(){
-  const e = examples[Math.floor(Math.random()*examples.length)];
-  byId('topicInput').value = e.topic;
-  byId('wordInput').value = e.word;
-  saveRoundSettings();
+  const e = examples[Math.floor(Math.random()*examplesconst impNames = state.imposters.map(id=>state.students[id]?.name || id);
+  byId('imposterInfo').innerHTML = impNames.length ? 'Imposters selected. Hidden from students.' : 'No imposter selected yet.';
+  const announceBox = byId('announcedImposters');
+  if(announceBox){
+    announceBox.className = state.impostersAnnounced ? 'announceBox' : 'announceBox hiddenImp';
+    announceBox.innerHTML = state.impostersAnnounced && impNames.length ? '🕵️ Imposters: ' + impNames.map(escapeHtml).join(', ') : 'Imposter names are hidden until teacher announces.';
+  }  teacherRefresh();
 }
 
-function setStage(stage){
+function announceImposters(){
   const state = getState();
-  state.stage = stage;
+  state.impostersAnnounced = true;
   setState(state);
   teacherRefresh();
+}
+
+function showResultsAndScore(){
+  const state = getState();
+  state.stage = 'results';
+  scoreRound(state);
+  setState(state);
+  teacherRefresh();
+}
+
+function scoreRound(state){
+  if(state.scored) return;
+  const ids = Object.keys(state.students);
+  const impSet = new Set(state.imposters);
+  ids.forEach(id=>{
+    const voteTarget = state.votes[id];
+    if(voteTarget && impSet.has(voteTarget)){
+      state.scores[id] = Number(state.scores[id] || 0) + 3;
+    }
+  });
+  state.imposters.forEach(impId=>{
+    const impStudent = state.students[impId];
+    if(!impStudent) return;
+    const sameTeam = ids.filter(id=>id !== impId && state.students[id] && state.students[id].group === impStudent.group);
+    const anyTeamWrong = sameTeam.some(id=>{
+      const voted = state.votes[id];
+      return voted && !impSet.has(voted);
+    });
+    const noOneFoundImposter = !ids.some(id=>state.votes[id] === impId);
+    if(anyTeamWrong || noOneFoundImposter){
+      state.scores[impId] = Number(state.scores[impId] || 0) + 5;
+    }
+  });
+  state.scored = true;
 }
 
 function startRound(){
@@ -334,6 +449,8 @@ function startRound(){
   state.imposters = shuffled.slice(0, Math.min(state.imposterCount, ids.length-1));
   state.stage = 'discussion';
   state.roundStart = Date.now();
+  state.impostersAnnounced = false;
+  state.scored = false;
   state.votes = {};
   state.clues = {};
   setState(state);
@@ -364,7 +481,12 @@ function teacherRefresh(){
     <p class="pill">Students: ${Object.keys(state.students).length}</p>
   `;
   const impNames = state.imposters.map(id=>state.students[id]?.name || id);
-  byId('imposterInfo').innerHTML = impNames.length ? impNames.map(n=>'🟥 '+escapeHtml(n)).join('<br>') : 'No imposter selected yet.';
+  byId('imposterInfo').innerHTML = impNames.length ? 'Imposters selected. Hidden from students.' : 'No imposter selected yet.';
+  const announceBox = byId('announcedImposters');
+  if(announceBox){
+    announceBox.className = state.impostersAnnounced ? 'announceBox' : 'announceBox hiddenImp';
+    announceBox.innerHTML = state.impostersAnnounced && impNames.length ? '🕵️ Imposters: ' + impNames.map(escapeHtml).join(', ') : 'Imposter names are hidden until teacher announces.';
+  }
   renderTeacherStudents(state);
   renderTeacherVotes(state);
 }
@@ -414,9 +536,7 @@ function awardPoint(id, pts){
 }
 
 function studentRefresh(){
-  if(!currentUser || currentUser.role!=='student') return;
-  const state = getState();
-  byId('studentWelcome').innerText = `Welcome, ${currentUser.name}`;
+  if(!currentUser || cudentWelcome').innerText = `Welcome, ${currentUser.name}`;
   renderStages('studentStages', state.stage);
   byId('studentInstruction').innerText = (state.instructions || 'Wait for teacher instructions.') + '  ⏱️ Time left: ' + getTimeLeft(state);
   renderSecretCard(state);
@@ -433,7 +553,7 @@ function renderSecretCard(state){
   const card = byId('studentSecretCard');
   card.className = 'secretCard';
   if(state.stage==='waiting'){
-    card.innerHTML = '<div class="small">Waiting for teacher...</div><div class="word">Please wait</div>';return;
+    card.innerHTML = '<div class="small">Waiting for teaceturn;
   }
   const isImp = state.imposters.includes(currentUser.id);
   if(isImp){
@@ -447,23 +567,7 @@ function renderSecretCard(state){
 function saveClue(){
   const state = getState();
   if(state.stage!=='discussion'){
-    alert('Clues are saved during the discussion stage only.');return;
-  }
-  state.clues[currentUser.id] = byId('studentClue').value.trim();
-  setState(state);
-  studentRefresh();
-  alert('Your clue is saved.');
-}
-
-function renderAllHints(state){
-  const box = byId('allHintsBox');
-  if(!box) return;
-  if(state.stage==='waiting'){
-    box.innerHTML='';
-    return;
-  }
-  if(state.stage==='discussion'){
-    box.innerHTML='<div class="status">Hints will appear together when the teacher opens voting.</div>';
+    alert('Clues are saved during the discussatus">Hints will appear together when the teacher opens voting.</div>';
     return;
   }
   const rows = Object.keys(state.students).map(id=>{
@@ -494,15 +598,20 @@ function voteFor(targetId){
   if(state.stage!=='voting') return;
   if(state.votes[currentUser.id]){alert('You already voted.');return}
   state.votes[currentUser.id] = targetId;
-  if(state.imposters.includes(targetId)){
-    state.scores[currentUser.id] = Number(state.scores[currentUser.id]||0) + 5;
-  }
   setState(state);
   studentRefresh();
 }
 
 function renderStudentResults(state){
   const box = byId('studentResults');
+  const announce = byId('studentAnnouncedImposters');
+  if(announme || id).join(', ');
+      announce.classList.remove('hidden');
+      announce.innerHTML = '🕵️ Announced Imposters: ' + escapeHtml(names || 'Not selected');
+    }else{
+      announce.classList.add('hidden');
+    }
+  }
   if(state.stage!=='results'){
     box.innerHTML = '<div class="status">Results are hidden until teacher releases them.</div>';return;
   }
@@ -525,6 +634,18 @@ function getTimeLeft(state){
   const m = Math.floor(left / 60);
   const s = String(left % 60).padStart(2,'0');
   return m + ':' + s;
+}
+
+function updateTimerPopup(state){
+  const pop = byId('timerPopup');
+  if(!pop) return;
+  if(state.stage !== 'discussion'){
+    pop.classList.add('hidden');
+    return;
+  }
+  pop.classList.remove('hidden');
+  byId('timerPopupTime').innerText = getTimeLeft(state);
+  byId('timerPopupTopic').innerText = 'Topic: ' + (state.topic || 'Topic');
 }
 
 function modeLabel(mode){
@@ -555,6 +676,8 @@ function escapeHtml(text){
 }
 
 setInterval(()=>{
+  const st = getState();
+  updateTimerPopup(st);
   if(currentUser?.role==='teacher') teacherRefresh();
   if(currentUser?.role==='student') studentRefresh();
 }, 2000);
