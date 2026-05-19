@@ -4,61 +4,939 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Skill Clash Games Hub</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
 <style>
 *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Arial,sans-serif}
-body{min-height:100vh;background:linear-gradient(135deg,#eef6ff,#f7f1ff,#fff8fb);color:#1f2a44;padding:14px}.hidden{display:none!important}.app{max-width:1100px;margin:auto}
-.hero{background:linear-gradient(135deg,#314b8f,#7d5cc6);color:white;border-radius:22px;padding:18px 22px;box-shadow:0 12px 28px rgba(69,74,130,.22);margin-bottom:16px}.hero h1{font-size:28px}.hero p{opacity:.92;font-size:14px;margin-top:6px}.funBanner{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.funBadge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:7px 10px;font-weight:900;font-size:12px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.two{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px}.card{background:rgba(255,255,255,.94);border:1px solid rgba(120,130,180,.18);border-radius:20px;padding:16px;box-shadow:0 8px 20px rgba(61,72,110,.10)}.card h2,.card h3{margin-bottom:10px;color:#263b72;font-size:22px}
-label{display:block;margin:8px 0 5px;font-weight:800;font-size:13px;color:#33466f}input,select,textarea{width:100%;border:1px solid #cdd6ee;border-radius:13px;padding:10px 12px;font-size:14px;background:white;outline:none}textarea{min-height:80px;resize:vertical}
-button{border:0;border-radius:13px;padding:9px 14px;font-size:13px;font-weight:900;cursor:pointer;background:#4267c7;color:white;box-shadow:0 7px 14px rgba(66,103,199,.20);margin:4px 4px 4px 0}button.secondary{background:#ecf1ff;color:#2d4380;box-shadow:none;border:1px solid #cbd7ff}button.danger{background:#e85b6a}button.success{background:#31a66a}button.purple{background:#7d5cc6}button.musicBtn{background:#ff8ab3}
-.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}.tabs button{flex:0 0 auto;min-width:135px}.pill{display:inline-flex;padding:7px 10px;border-radius:999px;background:#edf3ff;color:#2e477d;font-weight:900;font-size:12px;margin:3px}.status{padding:10px 12px;border-radius:14px;background:#fff8dc;border:1px solid #f0d982;color:#77611a;margin:8px 0;font-weight:800}.mini{font-size:13px;color:#667497;line-height:1.5}.name{font-weight:900;color:#243a79}.score{font-weight:900;background:white;border-radius:12px;padding:6px 10px;color:#314b8f}.teacherOnly{border-left:6px solid #7d5cc6}.studentOnly{border-left:6px solid #4267c7}
-.stageBox{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.stage{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#53618b;font-weight:900;font-size:12px}.stage.active{background:#4267c7;color:white}.timerBig{font-size:46px;font-weight:900;color:#263b72;text-align:center;margin:4px 0}
-.secretCard{min-height:220px;border-radius:24px;padding:22px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#e7f0ff,#f7f3ff);border:2px dashed #8da6ee;margin:12px 0}.secretCard.imposter{background:linear-gradient(135deg,#fff0f3,#ffe8ec);border-color:#e85b6a}.secretCard .small{font-weight:900;color:#5b6a92;margin-bottom:8px}.secretCard .word{font-size:32px;font-weight:900;color:#243a79}.secretCard.imposter .word{color:#d7384e}.bigEmoji{font-size:48px;margin-bottom:8px}
-.resultList,.voteList,.studentList{display:grid;gap:10px;margin-top:12px}.resultRow,.voteRow,.studentRow{background:#f7f9ff;border:1px solid #dde6ff;border-radius:16px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}.stepItem{padding:10px;border-radius:14px;background:white;border:1px solid #dbe5ff;font-weight:800;color:#50608a;margin-bottom:7px}.stepItem.active{background:#4267c7;color:white}.footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
+body{min-height:100vh;background:linear-gradient(135deg,#eef6ff,#f7f1ff,#fff8fb);color:#1f2a44;padding:14px}
+.hidden{display:none!important}
+.app{max-width:1120px;margin:auto}
+.hero{background:linear-gradient(135deg,#314b8f,#7d5cc6);color:white;border-radius:22px;padding:18px 22px;box-shadow:0 12px 28px rgba(69,74,130,.22);margin-bottom:16px}
+.hero h1{font-size:28px}.hero p{opacity:.92;font-size:14px;margin-top:6px}
+.funBanner{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.funBadge{background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:7px 10px;font-weight:900;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.two{display:grid;grid-template-columns:.9fr 1.1fr;gap:14px}
+.card{background:rgba(255,255,255,.94);border:1px solid rgba(120,130,180,.18);border-radius:20px;padding:16px;box-shadow:0 8px 20px rgba(61,72,110,.10)}
+.card h2,.card h3{margin-bottom:10px;color:#263b72;font-size:22px}
+label{display:block;margin:8px 0 5px;font-weight:800;font-size:13px;color:#33466f}
+input,select,textarea{width:100%;border:1px solid #cdd6ee;border-radius:13px;padding:10px 12px;font-size:14px;background:white;outline:none}
+textarea{min-height:80px;resize:vertical}
+button{border:0;border-radius:13px;padding:9px 14px;font-size:13px;font-weight:900;cursor:pointer;background:#4267c7;color:white;box-shadow:0 7px 14px rgba(66,103,199,.20);margin:4px 4px 4px 0}
+button.secondary{background:#ecf1ff;color:#2d4380;box-shadow:none;border:1px solid #cbd7ff}
+button.danger{background:#e85b6a}
+button.success{background:#31a66a}
+button.purple{background:#7d5cc6}
+button.musicBtn{background:#ff8ab3}
+button:disabled{opacity:.55;cursor:not-allowed}
+.tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{flex:0 0 auto;min-width:135px}
+.pill{display:inline-flex;padding:7px 10px;border-radius:999px;background:#edf3ff;color:#2e477d;font-weight:900;font-size:12px;margin:3px}
+.status{padding:10px 12px;border-radius:14px;background:#fff8dc;border:1px solid #f0d982;color:#77611a;margin:8px 0;font-weight:800}
+.good{background:#e9fff4;border-color:#9fe5c3;color:#206b47}
+.bad{background:#fff0f3;border-color:#ffc5cf;color:#8c2638}
+.mini{font-size:13px;color:#667497;line-height:1.5}
+.name{font-weight:900;color:#243a79}
+.score{font-weight:900;background:white;border-radius:12px;padding:6px 10px;color:#314b8f}
+.teacherOnly{border-left:6px solid #7d5cc6}
+.studentOnly{border-left:6px solid #4267c7}
+.stageBox{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.stage{padding:8px 12px;border-radius:999px;background:#eef2ff;color:#53618b;font-weight:900;font-size:12px}
+.stage.active{background:#4267c7;color:white}
+.timerBig{font-size:46px;font-weight:900;color:#263b72;text-align:center;margin:4px 0}
+.secretCard{min-height:220px;border-radius:24px;padding:22px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#e7f0ff,#f7f3ff);border:2px dashed #8da6ee;margin:12px 0}
+.secretCard.imposter{background:linear-gradient(135deg,#fff0f3,#ffe8ec);border-color:#e85b6a}
+.secretCard .small{font-weight:900;color:#5b6a92;margin-bottom:8px}
+.secretCard .word{font-size:32px;font-weight:900;color:#243a79}
+.secretCard.imposter .word{color:#d7384e}
+.bigEmoji{font-size:48px;margin-bottom:8px}
+.resultList,.voteList,.studentList{display:grid;gap:10px;margin-top:12px}
+.resultRow,.voteRow,.studentRow{background:#f7f9ff;border:1px solid #dde6ff;border-radius:16px;padding:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.stepItem{padding:10px;border-radius:14px;background:white;border:1px solid #dbe5ff;font-weight:800;color:#50608a;margin-bottom:7px}
+.stepItem.active{background:#4267c7;color:white}
+.footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
 @media(max-width:850px){.grid,.two{grid-template-columns:1fr}.hero h1{font-size:25px}.secretCard .word{font-size:27px}}
 </style>
 </head>
+
 <body>
 <div class="app">
-<div class="hero"><h1>🎮 Skill Clash Games Hub</h1><p>Per-group Imposter game. Each group has its own imposter and private round.</p><div class="funBanner"><span class="funBadge">🎭 Per Group</span><span class="funBadge">🕵️ One Imposter Each</span><span class="funBadge">💬 Hints</span><span class="funBadge">🏆 Group Results</span></div></div>
+  <div class="hero">
+    <h1>🎮 Skill Clash Games Hub</h1>
+    <p>Per-group Imposter game. Each group has its own imposter and private round.</p>
+    <div class="funBanner">
+      <span class="funBadge">🎭 Per Group</span>
+      <span class="funBadge">🕵️ One Imposter Each</span>
+      <span class="funBadge">💬 Hints</span>
+      <span class="funBadge">🏆 Group Results</span>
+      <span class="funBadge">🔥 Live Firebase</span>
+    </div>
+  </div>
 
-<div id="hubPage"><div class="grid"><div class="card teacherOnly"><h2>🎭 Find The Imposter</h2><div class="secretCard"><div class="bigEmoji">🕵️‍♀️</div><div class="word">Group Mystery</div><div class="mini">Each group finds its own hidden imposter.</div></div><button onclick="openGame()">Open Game</button></div><div class="card"><h2>🧠 Quiz Battle</h2><p class="mini">Coming soon.</p><button class="secondary" disabled>Coming Soon</button></div></div></div>
+  <div id="connectionBox" class="card bad">
+    <h2>🔥 Firebase Setup Needed</h2>
+    <p class="mini">Paste your Firebase config in the code section named <b>DEFAULT_FIREBASE_CONFIG</b>, then upload again. Teacher and students will connect live.</p>
+  </div>
 
-<div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backToHub()">🏠 Games Hub</button></div><div class="grid"><div id="studentLogin" class="card studentOnly"><h2>Student Login</h2><label>Your Name</label><input id="studentName" placeholder="Write your name"><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Game</button></div><div id="teacherLogin" class="card teacherOnly hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button><div class="status">Default password: <b>1234</b></div></div><div class="card"><h2>Round Flow</h2><p class="pill">1 min card + hint</p><p class="pill">1 min group hints + discuss</p><p class="pill">vote until teacher releases</p><p class="pill">teacher shows group results</p></div></div></div>
+  <div id="hubPage">
+    <div class="grid">
+      <div class="card teacherOnly">
+        <h2>🎭 Find The Imposter</h2>
+        <div class="secretCard">
+          <div class="bigEmoji">🕵️‍♀️</div>
+          <div class="word">Group Mystery</div>
+          <div class="mini">Each group finds its own hidden imposter.</div>
+        </div>
+        <button onclick="openGame()">Open Game</button>
+      </div>
+      <div class="card">
+        <h2>🧠 Quiz Battle</h2>
+        <p class="mini">Coming soon.</p>
+        <button class="secondary" disabled>Coming Soon</button>
+      </div>
+    </div>
+  </div>
 
-<div id="teacherPage" class="hidden"><div class="tabs"><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button><button onclick="startNewRound()">▶️ Start New Round</button><button class="success" onclick="releaseResults()">🏆 Release Results</button><button class="danger" onclick="resetGame()">🧹 Reset Everything</button></div><div class="two"><div class="card teacherOnly"><h2>👩‍🏫 Teacher Control</h2><div class="stageBox" id="teacherStages"></div><label>Next Round Topic</label><input id="topicInput" value="Technology"><label>Next Round Word</label><input id="wordInput" value="Smartphone"><label>Helper Hint for Imposters</label><input id="helperInput" value="It is something people use every day to communicate."><label>Instructions</label><textarea id="instructionInput">Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.</textarea><button onclick="saveSettings()">💾 Save Next Round Settings</button><button class="purple" onclick="randomExample()">🎲 Random Example</button><div class="status">Each active group gets one private imposter automatically.</div></div><div class="card"><h2>⏱️ Round Timer</h2><div id="teacherTimer" class="timerBig">0:00</div><div id="teacherStepTitle" class="status">Waiting to start.</div><div class="stepItem" id="step_hint">💭 1. Card + write hint</div><div class="stepItem" id="step_discuss">💬 2. Group hints + discussion</div><div class="stepItem" id="step_vote">🗳️ 3. Vote</div><div class="stepItem" id="step_results">🏆 4. Teacher results</div></div></div><div class="grid" style="margin-top:14px"><div class="card"><h2>👥 Groups & Students</h2><div id="teacherStudents" class="studentList"></div></div><div class="card"><h2>🏆 Group Results</h2><div id="teacherResults" class="resultList"></div></div></div></div>
+  <div id="loginPage" class="hidden">
+    <div class="tabs">
+      <button onclick="showLogin('student')">👨‍🎓 Student Login</button>
+      <button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button>
+      <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
+    </div>
 
-<div id="studentPage" class="hidden"><div class="tabs"><button class="secondary" onclick="leaveGame()">🚪 Leave Game</button><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button><button onclick="studentRefresh()">🔄 Refresh</button></div><div class="two"><div class="card studentOnly"><h2 id="studentWelcome">Student</h2><div class="stageBox" id="studentStages"></div><div id="studentTimer" class="timerBig">0:00</div><div id="studentInstruction" class="status"></div><div id="hintEditor"><label>Your hint</label><textarea id="studentHint" placeholder="Write your hint here..."></textarea><button id="saveHintBtn" onclick="saveHint()">Save Hint</button></div></div><div class="card"><h2>🎯 Your Group Round</h2><div id="rightStageTitle" class="status">Waiting...</div><div id="rightSecretSection"><div id="studentSecretCard" class="secretCard"><div class="small">Waiting for teacher...</div><div class="word">Please wait</div></div></div><div id="rightHintsSection" class="hidden"><h2>💬 Your Group Hints</h2><div id="allHintsBox" class="resultList"></div></div><div id="rightVoteSection" class="hidden"><h2>🗳️ Vote for Your Group Imposter</h2><div id="voteArea" class="voteList"></div></div><div id="rightResultsSection" class="hidden"><h2>🏆 Your Group Result</h2><div id="studentResults" class="resultList"></div></div></div></div></div>
-<div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
+    <div class="grid">
+      <div id="studentLogin" class="card studentOnly">
+        <h2>Student Login</h2>
+        <label>Your Name</label>
+        <input id="studentName" placeholder="Write your name">
+        <label>Class</label>
+        <select id="studentClass">
+          <option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option>
+        </select>
+        <label>Group</label>
+        <select id="studentGroup">
+          <option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option>
+          <option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option>
+        </select>
+        <button onclick="studentJoin()">Join Game</button>
+      </div>
+
+      <div id="teacherLogin" class="card teacherOnly hidden">
+        <h2>Teacher Login</h2>
+        <label>Password</label>
+        <input id="teacherPass" type="password" placeholder="Teacher password">
+        <button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button>
+        <div class="status">Default password: <b>1234</b></div>
+      </div>
+
+      <div class="card">
+        <h2>Round Flow</h2>
+        <p class="pill">1 min card + hint</p>
+        <p class="pill">1 min group hints + discuss</p>
+        <p class="pill">vote until teacher releases</p>
+        <p class="pill">teacher shows group results</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="teacherPage" class="hidden">
+    <div class="tabs">
+      <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
+      <button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button>
+      <button onclick="startNewRound()">▶️ Start New Round</button>
+      <button class="success" onclick="releaseResults()">🏆 Release Results</button>
+      <button class="danger" onclick="resetGame()">🧹 Reset Everything</button>
+    </div>
+
+    <div class="two">
+      <div class="card teacherOnly">
+        <h2>👩‍🏫 Teacher Control</h2>
+        <div class="stageBox" id="teacherStages"></div>
+
+        <label>Choose Topic</label>
+        <select id="topicInput">
+          <option value="Technology">Technology</option>
+          <option value="Food">Food</option>
+          <option value="Sports">Sports</option>
+          <option value="School">School</option>
+          <option value="Jobs">Jobs</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Drinks">Drinks</option>
+          <option value="Household">Household</option>
+          <option value="Clothes">Clothes</option>
+          <option value="Weather">Weather</option>
+          <option value="Nature">Nature</option>
+        </select>
+
+        <label>Generated Word for This Round</label>
+        <input id="wordInput" value="Smartphone" readonly>
+
+        <label>Generated Helper Hint for Imposters</label>
+        <input id="helperInput" value="It is something people use every day to communicate." readonly>
+
+        <label>Instructions</label>
+        <textarea id="instructionInput">Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.</textarea>
+
+        <button onclick="saveSettings()">💾 Save Topic</button>
+        <button class="purple" onclick="previewGeneratedWord()">🎲 Preview New Word</button>
+        <div class="status">Each active group gets one private imposter automatically.</div>
+      </div>
+
+      <div class="card">
+        <h2>⏱️ Round Timer</h2>
+        <div id="teacherTimer" class="timerBig">0:00</div>
+        <div id="teacherStepTitle" class="status">Waiting to start.</div>
+        <div class="stepItem" id="step_hint">💭 1. Card + write hint</div>
+        <div class="stepItem" id="step_discuss">💬 2. Group hints + discussion</div>
+        <div class="stepItem" id="step_vote">🗳️ 3. Vote</div>
+        <div class="stepItem" id="step_results">🏆 4. Teacher results</div>
+      </div>
+    </div>
+
+    <div class="grid" style="margin-top:14px">
+      <div class="card">
+        <h2>👥 Groups & Students</h2>
+        <div id="teacherStudents" class="studentList"></div>
+      </div>
+      <div class="card">
+        <h2>🏆 Group Results</h2>
+        <div id="teacherResults" class="resultList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="studentPage" class="hidden">
+    <div class="tabs">
+      <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
+      <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
+      <button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button>
+      <button onclick="studentRefresh()">🔄 Refresh</button>
+    </div>
+
+    <div class="two">
+      <div class="card studentOnly">
+        <h2 id="studentWelcome">Student</h2>
+        <div class="stageBox" id="studentStages"></div>
+        <div id="studentTimer" class="timerBig">0:00</div>
+        <div id="studentInstruction" class="status"></div>
+
+        <div id="hintEditor">
+          <label>Your hint</label>
+          <textarea id="studentHint" placeholder="Write your hint here..."></textarea>
+          <button id="saveHintBtn" onclick="saveHint()">Save Hint</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎯 Your Group Round</h2>
+        <div id="rightStageTitle" class="status">Waiting...</div>
+
+        <div id="rightSecretSection">
+          <div id="studentSecretCard" class="secretCard">
+            <div class="small">Waiting for teacher...</div>
+            <div class="word">Please wait</div>
+          </div>
+        </div>
+
+        <div id="rightHintsSection" class="hidden">
+          <h2>💬 Your Group Hints</h2>
+          <div id="allHintsBox" class="resultList"></div>
+        </div>
+
+        <div id="rightVoteSection" class="hidden">
+          <h2>🗳️ Vote for Your Group Imposter</h2>
+          <div id="voteArea" class="voteList"></div>
+        </div>
+
+        <div id="rightResultsSection" class="hidden">
+          <h2>🏆 Your Group Result</h2>
+          <div id="studentResults" class="resultList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
 </div>
+
 <script>
-const STORAGE_KEY='skillClash_perGroup_1';const TEACHER_PASSWORD='1234';let currentUser=null;let musicOn=false;let audioCtx=null;
-const examples=[{topic:'Technology',word:'Smartphone',helper:'People use it daily.'},{topic:'Environment',word:'Pollution',helper:'It is a problem around us.'},{topic:'School',word:'Homework',helper:'Students do it after class.'},{topic:'Reading',word:'Main Idea',helper:'It tells the text focus.'}];
-function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function beep(f=660,d=.12){try{if(!musicOn)return;if(!audioCtx)audioCtx=new (window.AudioContext||window.webkitAudioContext)();const o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=f;g.gain.value=.035;o.connect(g);g.connect(audioCtx.destination);o.start();setTimeout(()=>o.stop(),d*1000)}catch(e){}}
-function toggleMusic(){musicOn=!musicOn;beep(700,.1);alert(musicOn?'Music is ON 🎵':'Music is OFF 🔇')}
-function defaultState(){return{stage:'waiting',roundStart:0,resultsReleased:false,scored:false,topic:'Technology',word:'Smartphone',helper:'It is something people use every day to communicate.',instructions:'Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.',students:{},groupImposters:{},hints:{},votes:{},scores:{},groupScores:{},groupResults:{}}}
-function getState(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||JSON.stringify(defaultState()))}catch(e){return defaultState()}}function setState(s){localStorage.setItem(STORAGE_KEY,JSON.stringify(s))}
-function openGame(){hide('hubPage');show('loginPage')}function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}function showLogin(t){t==='student'?(show('studentLogin'),hide('teacherLogin')):(show('teacherLogin'),hide('studentLogin'))}
-function activeGroups(s){return [...new Set(Object.values(s.students).map(x=>x.group))].sort((a,b)=>Number(a)-Number(b))}function stageByTime(s){if(s.stage==='waiting')return'waiting';if(s.resultsReleased)return'results';const e=Math.floor((Date.now()-s.roundStart)/1000);if(e<60)return'hint';if(e<120)return'discuss';return'vote'}function timeLeft(s){const st=stageByTime(s);const e=Math.floor((Date.now()-s.roundStart)/1000);if(st==='hint')return 60-e;if(st==='discuss')return 120-e;return 0}function fmt(x){x=Math.max(0,x);return Math.floor(x/60)+':'+String(x%60).padStart(2,'0')}
-function renderStages(id,st){byId(id).innerHTML=['waiting','hint','discuss','vote','results'].map(x=>`<span class="stage ${x===st?'active':''}">${x}</span>`).join('')}function stepTitle(st){if(st==='hint')return'💭 Look at your card. Write and save one hint.';if(st==='discuss')return'💬 Read only your group hints. Discuss who the imposter is.';if(st==='vote')return'🗳️ Vote for the imposter in your group. Wait for teacher results.';if(st==='results')return'🏆 Results are released.';return'🎭 Waiting for teacher to start.'}
-function studentJoin(){const name=byId('studentName').value.trim(),cls=byId('studentClass').value,group=byId('studentGroup').value;if(!name){alert('Please write your name.');return}const id='s_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cls.replace('/','_')+'_g'+group;const s=getState();s.students[id]={id,name,cls,group};if(!s.scores[id])s.scores[id]=0;if(!s.groupScores[group])s.groupScores[group]=0;setState(s);currentUser={role:'student',id,name,cls,group};hide('loginPage');show('studentPage');studentRefresh()}
-function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
-function saveSettings(){const s=getState();s.topic=byId('topicInput').value.trim()||'Topic';s.word=byId('wordInput').value.trim()||'Secret Word';s.helper=byId('helperInput').value.trim()||'Think about the hints.';s.instructions=byId('instructionInput').value.trim();setState(s);teacherRefresh();alert('Next round settings saved.')}function randomExample(){const e=examples[Math.floor(Math.random()*examples.length)];byId('topicInput').value=e.topic;byId('wordInput').value=e.word;byId('helperInput').value=e.helper;saveSettings()}
-function startNewRound(){saveSettings();const s=getState();const gs=activeGroups(s);if(!gs.length){alert('Students must join first.');return}for(const g of gs){const ids=Object.keys(s.students).filter(id=>s.students[id].group===g);if(ids.length<2){alert('Each active group needs at least 2 students. Group '+g+' has less than 2.');return}}s.groupImposters={};gs.forEach(g=>{const ids=Object.keys(s.students).filter(id=>s.students[id].group===g);s.groupImposters[g]=ids[Math.floor(Math.random()*ids.length)]});s.stage='hint';s.roundStart=Date.now();s.resultsReleased=false;s.scored=false;s.hints={};s.votes={};s.groupResults={};setState(s);beep(760,.12);teacherRefresh()}
-function releaseResults(){const s=getState();scoreRound(s);s.resultsReleased=true;s.stage='results';setState(s);teacherRefresh()}function resetGame(){if(!confirm('Reset EVERYTHING? Delete all students, groups, hints, votes and scores?'))return;localStorage.removeItem(STORAGE_KEY);setState(defaultState());currentUser={role:'teacher'};hide('studentPage');hide('loginPage');hide('hubPage');show('teacherPage');teacherRefresh();alert('All game data deleted. Students must join again.')}
-function scoreRound(s){if(s.scored)return;for(const g of activeGroups(s)){const imp=s.groupImposters[g];const groupIds=Object.keys(s.students).filter(id=>s.students[id].group===g);const votes=groupIds.map(id=>s.votes[id]).filter(Boolean);const allVoted=groupIds.every(id=>s.votes[id]);const allAgree=allVoted&&votes.every(v=>v===votes[0]);const found=allAgree&&votes[0]===imp;if(found){s.groupScores[g]=Number(s.groupScores[g]||0)+4;s.groupResults[g]='✅ Group '+g+' found the imposter. Group wins +4 points.'}else{s.scores[imp]=Number(s.scores[imp]||0)+3;s.groupResults[g]='❌ Group '+g+' failed to agree/find the imposter. The imposter wins +3 points.'}}s.scored=true}
-function teacherRefresh(){const s=getState(),st=stageByTime(s);byId('topicInput').value=s.topic;byId('wordInput').value=s.word;byId('helperInput').value=s.helper;byId('instructionInput').value=s.instructions;renderStages('teacherStages',st);byId('teacherTimer').innerText=fmt(timeLeft(s));byId('teacherStepTitle').innerText=stepTitle(st);['hint','discuss','vote','results'].forEach(x=>byId('step_'+x).classList.toggle('active',st===x));renderTeacherStudents(s);renderTeacherResults(s)}
-function renderTeacherStudents(s){const box=byId('teacherStudents');const gs=activeGroups(s);if(!gs.length){box.innerHTML='<div class="status">No students joined yet.</div>';return}box.innerHTML=gs.map(g=>{const imp=s.students[s.groupImposters[g]]?.name||'Not selected';const members=Object.values(s.students).filter(st=>st.group===g).map(st=>`${st.name}${s.groupImposters[g]===st.id?' 🕵️':''}`).join(', ');return`<div class="studentRow"><div><div class="name">Group ${esc(g)}</div><div class="mini">Members: ${esc(members)}<br>Imposter: ${esc(imp)}<br>Votes: ${Object.keys(s.votes).filter(id=>s.students[id]?.group===g).length}/${Object.values(s.students).filter(st=>st.group===g).length}</div></div><div class="score">${s.groupScores[g]||0} pts</div></div>`}).join('')}
-function renderTeacherResults(s){const box=byId('teacherResults');const gs=activeGroups(s);if(!gs.length){box.innerHTML='<div class="status">No groups yet.</div>';return}box.innerHTML=gs.map(g=>{const result=s.resultsReleased?s.groupResults[g]||'No result yet.':'Results hidden until teacher releases.';return`<div class="resultRow"><div><div class="name">Group ${esc(g)}</div><div class="mini">${esc(result)}</div></div><div class="score">${s.groupScores[g]||0} pts</div></div>`}).join('')}
-function studentRefresh(){if(!currentUser)return;const s=getState(),st=stageByTime(s);byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | ${currentUser.cls} | Group ${currentUser.group}`;renderStages('studentStages',st);byId('studentTimer').innerText=fmt(timeLeft(s));byId('studentInstruction').innerText=stepTitle(st);byId('rightStageTitle').innerText=stepTitle(st);showStudentPanel(st);renderSecret(s,st);renderHints(s,st);renderVote(s,st);renderStudentResults(s,st);const box=byId('studentHint');if(document.activeElement!==box)box.value=s.hints[currentUser.id]||'';byId('saveHintBtn').disabled=st!=='hint'}
-function showStudentPanel(st){byId('rightSecretSection').classList.toggle('hidden',!(st==='waiting'||st==='hint'));byId('rightHintsSection').classList.toggle('hidden',st!=='discuss');byId('rightVoteSection').classList.toggle('hidden',st!=='vote');byId('rightResultsSection').classList.toggle('hidden',st!=='results');byId('hintEditor').classList.toggle('hidden',st!=='hint')}
-function renderSecret(s,st){const card=byId('studentSecretCard');card.className='secretCard';if(st==='waiting'){card.innerHTML='<div class="bigEmoji">🎭</div><div class="small">Waiting for teacher...</div><div class="word">Please wait</div>';return}const isImp=s.groupImposters[currentUser.group]===currentUser.id;if(isImp){card.classList.add('imposter');card.innerHTML=`<div class="bigEmoji">🕵️</div><div class="small">You are your group imposter</div><div class="word">Secret Role</div><div class="mini">Helper hint: ${esc(s.helper)}</div>`}else{card.innerHTML=`<div class="bigEmoji">🤫</div><div class="small">Your Group Word</div><div class="word">${esc(s.word)}</div><div class="mini">Topic: ${esc(s.topic)}</div>`}}
-function saveHint(){const s=getState();if(stageByTime(s)!=='hint'){alert('Hint time is finished.');return}s.hints[currentUser.id]=byId('studentHint').value.trim();setState(s);studentRefresh();alert('Hint saved.')}function renderHints(s,st){const box=byId('allHintsBox');if(st!=='discuss')return;const ids=Object.keys(s.students).filter(id=>s.students[id].group===currentUser.group);box.innerHTML=ids.map(id=>`<div class="resultRow"><div><div class="name">${esc(s.students[id].name)}</div><div class="mini">${esc(s.hints[id]||'No hint submitted')}</div></div></div>`).join('')}
-function renderVote(s,st){const box=byId('voteArea');if(st!=='vote')return;const ids=Object.keys(s.students).filter(id=>s.students[id].group===currentUser.group&&id!==currentUser.id);if(s.votes[currentUser.id]){const n=s.students[s.votes[currentUser.id]]?.name||'student';box.innerHTML=`<div class="status">You voted for <b>${esc(n)}</b>. Wait for teacher results.</div>`;return}box.innerHTML=ids.map(id=>`<div class="voteRow"><div class="name">${esc(s.students[id].name)}</div><button onclick="vote('${id}')">Vote</button></div>`).join('')||'<div class="status">No group members to vote for.</div>'}function vote(id){const s=getState();if(stageByTime(s)!=='vote')return;if(s.votes[currentUser.id])return;s.votes[currentUser.id]=id;setState(s);beep(720,.1);studentRefresh()}
-function renderStudentResults(s,st){const box=byId('studentResults');if(st!=='results')return;const imp=s.students[s.groupImposters[currentUser.group]]?.name||'Not selected';box.innerHTML=`<div class="resultRow"><div><div class="name">🕵️ Your Group Imposter</div><div class="mini">${esc(imp)}</div></div></div><div class="resultRow"><div><div class="name">Result</div><div class="mini">${esc(s.groupResults[currentUser.group]||'No result')}</div></div><div class="score">Group ${esc(currentUser.group)}: ${s.groupScores[currentUser.group]||0} pts</div></div>`}
-function leaveGame(){if(!currentUser)return backToHub();const s=getState();delete s.students[currentUser.id];delete s.hints[currentUser.id];delete s.votes[currentUser.id];delete s.scores[currentUser.id];for(const g in s.groupImposters){if(s.groupImposters[g]===currentUser.id)delete s.groupImposters[g]}setState(s);backToHub()}
-setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);
+/* ============================================================
+   🔥 IMPORTANT: PASTE YOUR FIREBASE CONFIG HERE
+   Use the SAME config from your DL / Skill Clash Firebase project.
+   Example:
+   const DEFAULT_FIREBASE_CONFIG = {
+     apiKey: "...",
+     authDomain: "...",
+     databaseURL: "https://....firebaseio.com",
+     projectId: "...",
+     storageBucket: "...",
+     messagingSenderId: "...",
+     appId: "..."
+   };
+============================================================ */
+const DEFAULT_FIREBASE_CONFIG = null; // <-- REPLACE null WITH YOUR FIREBASE CONFIG OBJECT
+
+const LESSON_KEY = 'skill_clash_games_per_group_v1';
+const TEACHER_PASSWORD = '1234';
+
+let currentUser = null;
+let stateCache = null;
+let db = null;
+let stateRef = null;
+let firebaseReady = false;
+let musicOn = false;
+let audioCtx = null;
+
+const TOPIC_BANK = {
+  Technology: [
+    {word:'Smartphone', helper:'People use it every day to communicate.'},
+    {word:'Laptop', helper:'It helps people work, study, and type.'},
+    {word:'Internet', helper:'It connects people and information around the world.'},
+    {word:'Robot', helper:'It can do tasks automatically.'},
+    {word:'Headphones', helper:'People use it to listen privately.'},
+    {word:'Camera', helper:'It helps people save moments.'}
+  ],
+  Food: [
+    {word:'Pizza', helper:'It is round and many people share it.'},
+    {word:'Burger', helper:'It usually has bread on the top and bottom.'},
+    {word:'Rice', helper:'Many people eat it with lunch or dinner.'},
+    {word:'Salad', helper:'It is usually fresh and colorful.'},
+    {word:'Chocolate', helper:'It is sweet and many students like it.'},
+    {word:'Sandwich', helper:'It is easy to carry and eat quickly.'}
+  ],
+  Sports: [
+    {word:'Football', helper:'Players try to score goals.'},
+    {word:'Basketball', helper:'Players try to throw something into a high circle.'},
+    {word:'Tennis', helper:'Players hit something over a net.'},
+    {word:'Swimming', helper:'People do it in water.'},
+    {word:'Running', helper:'It needs speed and energy.'},
+    {word:'Volleyball', helper:'Teams hit a ball over a net.'}
+  ],
+  School: [
+    {word:'Homework', helper:'Students usually do it after class.'},
+    {word:'Notebook', helper:'Students write important things in it.'},
+    {word:'Teacher', helper:'This person helps students learn.'},
+    {word:'Library', helper:'It is a quiet place with many books.'},
+    {word:'Exam', helper:'Students prepare for it carefully.'},
+    {word:'Classroom', helper:'Students spend lesson time there.'}
+  ],
+  Jobs: [
+    {word:'Doctor', helper:'This person helps sick people.'},
+    {word:'Engineer', helper:'This person designs or builds things.'},
+    {word:'Pilot', helper:'This person works high in the sky.'},
+    {word:'Chef', helper:'This person prepares meals.'},
+    {word:'Police Officer', helper:'This person helps keep people safe.'},
+    {word:'Teacher', helper:'This person explains lessons.'}
+  ],
+  Transportation: [
+    {word:'Bus', helper:'Many people can ride it together.'},
+    {word:'Car', helper:'Families often use it to travel.'},
+    {word:'Airplane', helper:'It travels very far and very fast.'},
+    {word:'Train', helper:'It moves on tracks.'},
+    {word:'Bicycle', helper:'It has two wheels and needs energy.'},
+    {word:'Boat', helper:'It moves on water.'}
+  ],
+  Drinks: [
+    {word:'Water', helper:'People need it every day.'},
+    {word:'Juice', helper:'It can be made from fruit.'},
+    {word:'Milk', helper:'Many people drink it for strong bones.'},
+    {word:'Tea', helper:'People often drink it hot.'},
+    {word:'Coffee', helper:'Many adults drink it in the morning.'},
+    {word:'Smoothie', helper:'It is thick and often made with fruit.'}
+  ],
+  Household: [
+    {word:'Sofa', helper:'People sit on it in the living room.'},
+    {word:'Fridge', helper:'It keeps things cold.'},
+    {word:'Mirror', helper:'People look at themselves in it.'},
+    {word:'Bed', helper:'People use it at night.'},
+    {word:'Lamp', helper:'It gives light.'},
+    {word:'Washing Machine', helper:'It cleans clothes.'}
+  ],
+  Clothes: [
+    {word:'Jacket', helper:'People wear it when it is cold.'},
+    {word:'Shoes', helper:'People wear them on their feet.'},
+    {word:'Dress', helper:'It is a piece of clothing often worn for occasions.'},
+    {word:'T-shirt', helper:'It is casual and comfortable.'},
+    {word:'Scarf', helper:'People wear it around the neck.'},
+    {word:'Hat', helper:'People wear it on the head.'}
+  ],
+  Weather: [
+    {word:'Rain', helper:'It falls from clouds.'},
+    {word:'Sunshine', helper:'It makes the day bright.'},
+    {word:'Wind', helper:'You can feel it but not see it clearly.'},
+    {word:'Clouds', helper:'They are seen in the sky.'},
+    {word:'Storm', helper:'It can be loud and strong.'},
+    {word:'Fog', helper:'It makes it hard to see far.'}
+  ],
+  Nature: [
+    {word:'Mountain', helper:'It is very high and made of land.'},
+    {word:'River', helper:'It moves and carries water.'},
+    {word:'Forest', helper:'It has many trees.'},
+    {word:'Desert', helper:'It is dry and sandy.'},
+    {word:'Ocean', helper:'It is very large and full of water.'},
+    {word:'Flower', helper:'It is colorful and grows from the ground.'}
+  ]
+};
+
+function getRandomItem(list){
+  return list[Math.floor(Math.random()*list.length)];
+}
+
+function generateRoundWord(topic){
+  const list = TOPIC_BANK[topic] || TOPIC_BANK.Technology;
+  const lastWord = stateCache?.word || '';
+  let item = getRandomItem(list);
+  let guard = 0;
+  while(item.word === lastWord && list.length > 1 && guard < 10){
+    item = getRandomItem(list);
+    guard++;
+  }
+  return item;
+}
+
+function byId(id){return document.getElementById(id)}
+function show(id){byId(id).classList.remove('hidden')}
+function hide(id){byId(id).classList.add('hidden')}
+function esc(t){return String(t||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
+
+function beep(f=660,d=.12){
+  try{
+    if(!musicOn)return;
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.frequency.value=f; g.gain.value=.035; o.connect(g); g.connect(audioCtx.destination);
+    o.start(); setTimeout(()=>o.stop(),d*1000);
+  }catch(e){}
+}
+function toggleMusic(){
+  musicOn=!musicOn;
+  beep(700,.1);
+  alert(musicOn?'Music is ON 🎵':'Music is OFF 🔇');
+}
+
+function defaultState(){
+  return {
+    stage:'waiting',
+    roundStart:0,
+    resultsReleased:false,
+    scored:false,
+    topic:'Technology',
+    word:'Smartphone',
+    helper:'It is something people use every day to communicate.',
+    instructions:'Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.',
+    students:{},
+    groupImposters:{},
+    hints:{},
+    votes:{},
+    scores:{},
+    groupScores:{},
+    groupResults:{}
+  };
+}
+
+function gamePath(path=''){
+  return path ? `games/${LESSON_KEY}/${path}` : `games/${LESSON_KEY}`;
+}
+
+async function initFirebase(){
+  const box = byId('connectionBox');
+
+  if(!DEFAULT_FIREBASE_CONFIG){
+    box.className = 'card bad';
+    box.innerHTML = '<h2>🔥 Firebase Config Missing</h2><p class="mini">Paste your Firebase config inside the code at <b>DEFAULT_FIREBASE_CONFIG</b>. Without it, teacher and students cannot connect live.</p>';
+    return;
+  }
+
+  try{
+    if(!firebase.apps.length){
+      firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);
+    }
+    db = firebase.database();
+    stateRef = db.ref(gamePath('state'));
+    firebaseReady = true;
+
+    box.className = 'card good';
+    box.innerHTML = '<h2>✅ Live Firebase Connected</h2><p class="mini">Teacher and students are connected live. Lesson key: <b>'+esc(LESSON_KEY)+'</b></p>';
+
+    stateRef.on('value', snap=>{
+      stateCache = snap.exists() ? snap.val() : defaultState();
+
+      if(currentUser?.role==='teacher') teacherRefresh();
+      if(currentUser?.role==='student') studentRefresh();
+    });
+
+    const snap = await stateRef.get();
+    if(!snap.exists()){
+      await stateRef.set(defaultState());
+    }
+
+  }catch(err){
+    console.error(err);
+    box.className = 'card bad';
+    box.innerHTML = '<h2>Firebase Error</h2><p class="mini">'+esc(err.message)+'</p>';
+  }
+}
+
+async function getState(){
+  if(stateCache) return JSON.parse(JSON.stringify(stateCache));
+  if(!firebaseReady || !stateRef) return defaultState();
+  const snap = await stateRef.get();
+  return snap.exists() ? snap.val() : defaultState();
+}
+
+async function setState(s){
+  stateCache = JSON.parse(JSON.stringify(s));
+  if(firebaseReady && stateRef){
+    await stateRef.set(s);
+  }else{
+    alert('Firebase is not connected. Paste your config in the code first.');
+  }
+}
+
+function openGame(){hide('hubPage');show('loginPage')}
+function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}
+function showLogin(t){t==='student'?(show('studentLogin'),hide('teacherLogin')):(show('teacherLogin'),hide('studentLogin'))}
+
+function activeGroups(s){
+  return [...new Set(Object.values(s.students||{}).map(x=>x.group))].sort((a,b)=>Number(a)-Number(b));
+}
+
+function stageByTime(s){
+  if(s.stage==='waiting') return 'waiting';
+  if(s.resultsReleased) return 'results';
+  const e = Math.floor((Date.now() - Number(s.roundStart||0))/1000);
+  if(e < 60) return 'hint';
+  if(e < 120) return 'discuss';
+  return 'vote';
+}
+
+function timeLeft(s){
+  const st = stageByTime(s);
+  const e = Math.floor((Date.now() - Number(s.roundStart||0))/1000);
+  if(st==='hint') return 60-e;
+  if(st==='discuss') return 120-e;
+  return 0;
+}
+
+function fmt(x){
+  x=Math.max(0,Number(x||0));
+  return Math.floor(x/60)+':'+String(x%60).padStart(2,'0');
+}
+
+function renderStages(id,st){
+  const el = byId(id);
+  if(!el) return;
+  el.innerHTML=['waiting','hint','discuss','vote','results']
+    .map(x=>`<span class="stage ${x===st?'active':''}">${x}</span>`).join('');
+}
+
+function stepTitle(st){
+  if(st==='hint') return '💭 Look at your card. Write and save one hint.';
+  if(st==='discuss') return '💬 Read only your group hints. Discuss who the imposter is.';
+  if(st==='vote') return '🗳️ Vote for the imposter in your group. Wait for teacher results.';
+  if(st==='results') return '🏆 Results are released.';
+  return '🎭 Waiting for teacher to start.';
+}
+
+async function studentJoin(){
+  const name = byId('studentName').value.trim();
+  const cls = byId('studentClass').value;
+  const group = byId('studentGroup').value;
+
+  if(!firebaseReady){alert('Firebase is not connected yet.');return}
+  if(!name){alert('Please write your name.');return}
+
+  const id='s_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cls.replace('/','_')+'_g'+group;
+  const s = await getState();
+
+  s.students = s.students || {};
+  s.scores = s.scores || {};
+  s.groupScores = s.groupScores || {};
+
+  s.students[id] = {id,name,cls,group,lastSeen:Date.now()};
+  if(!s.scores[id]) s.scores[id]=0;
+  if(!s.groupScores[group]) s.groupScores[group]=0;
+
+  await setState(s);
+
+  currentUser={role:'student',id,name,cls,group};
+  hide('loginPage');show('studentPage');
+  studentRefresh();
+}
+
+async function teacherJoin(){
+  if(byId('teacherPass').value !== TEACHER_PASSWORD){
+    alert('Incorrect password.');
+    return;
+  }
+  if(!firebaseReady){alert('Firebase is not connected yet.');return}
+
+  currentUser={role:'teacher'};
+  hide('loginPage');show('teacherPage');
+  teacherRefresh();
+}
+
+async function saveSettings(){
+  const s = await getState();
+  s.topic = byId('topicInput').value || 'Technology';
+  s.instructions = byId('instructionInput').value.trim();
+  await setState(s);
+  teacherRefresh();
+  alert('Topic saved. Click Start New Round to generate a new word.');
+}
+
+async function previewGeneratedWord(){
+  const topic = byId('topicInput').value || 'Technology';
+  const item = generateRoundWord(topic);
+  byId('wordInput').value = item.word;
+  byId('helperInput').value = item.helper;
+}
+
+async function startNewRound(){
+  const s = await getState();
+  s.topic = byId('topicInput').value || 'Technology';
+  s.instructions = byId('instructionInput').value.trim();
+  const generated = generateRoundWord(s.topic);
+  s.word = generated.word;
+  s.helper = generated.helper;
+
+  byId('wordInput').value = s.word;
+  byId('helperInput').value = s.helper;
+
+  const gs = activeGroups(s);
+
+  if(!gs.length){alert('Students must join first.');return}
+
+  for(const g of gs){
+    const ids = Object.keys(s.students||{}).filter(id=>s.students[id].group===g);
+    if(ids.length < 2){
+      alert('Each active group needs at least 2 students. Group '+g+' has less than 2.');
+      return;
+    }
+  }
+
+  s.groupImposters = {};
+  gs.forEach(g=>{
+    const ids = Object.keys(s.students).filter(id=>s.students[id].group===g);
+    s.groupImposters[g] = ids[Math.floor(Math.random()*ids.length)];
+  });
+
+  s.stage='hint';
+  s.roundStart=Date.now();
+  s.resultsReleased=false;
+  s.scored=false;
+  s.hints={};
+  s.votes={};
+  s.groupResults={};
+
+  await setState(s);
+  beep(760,.12);
+  teacherRefresh();
+}
+
+async function releaseResults(){
+  const s = await getState();
+  scoreRound(s);
+  s.resultsReleased=true;
+  s.stage='results';
+  await setState(s);
+  teacherRefresh();
+}
+
+async function resetGame(){
+  if(!confirm('Reset EVERYTHING? Delete all students, groups, hints, votes and scores?')) return;
+
+  if(firebaseReady && db){
+    await db.ref(gamePath()).remove();
+    await stateRef.set(defaultState());
+  }
+
+  stateCache=defaultState();
+  currentUser={role:'teacher'};
+  hide('studentPage');hide('loginPage');hide('hubPage');show('teacherPage');
+  teacherRefresh();
+  alert('All game data deleted. Students must join again.');
+}
+
+function scoreRound(s){
+  if(s.scored) return;
+
+  s.students = s.students || {};
+  s.votes = s.votes || {};
+  s.scores = s.scores || {};
+  s.groupScores = s.groupScores || {};
+  s.groupResults = s.groupResults || {};
+
+  for(const g of activeGroups(s)){
+    const imp = s.groupImposters?.[g];
+    const groupIds = Object.keys(s.students).filter(id=>s.students[id].group===g);
+    const nonImposters = groupIds.filter(id=>id !== imp);
+    const votes = nonImposters.map(id=>s.votes[id]).filter(Boolean);
+
+    const allNonImpostersVoted = nonImposters.length > 0 && nonImposters.every(id=>s.votes[id]);
+    const allAgree = allNonImpostersVoted && votes.every(v=>v===votes[0]);
+    const found = allAgree && votes[0] === imp;
+
+    if(found){
+      s.groupScores[g] = Number(s.groupScores[g]||0) + 4;
+      s.groupResults[g] = '✅ Group '+g+' found the imposter. Group wins +4 points.';
+    }else{
+      if(imp) s.scores[imp] = Number(s.scores[imp]||0) + 3;
+      s.groupResults[g] = '❌ Group '+g+' failed to agree/find the imposter. The imposter wins +3 points.';
+    }
+  }
+
+  s.scored=true;
+}
+
+function teacherRefresh(){
+  const s = stateCache || defaultState();
+  const st = stageByTime(s);
+
+  if(byId('topicInput')){
+    byId('topicInput').value=s.topic||'Technology';
+    byId('wordInput').value=s.word||'';
+    byId('helperInput').value=s.helper||'';
+    byId('instructionInput').value=s.instructions||'';
+  }
+
+  renderStages('teacherStages',st);
+  if(byId('teacherTimer')) byId('teacherTimer').innerText=fmt(timeLeft(s));
+  if(byId('teacherStepTitle')) byId('teacherStepTitle').innerText=stepTitle(st);
+
+  ['hint','discuss','vote','results'].forEach(x=>{
+    const el=byId('step_'+x);
+    if(el) el.classList.toggle('active',st===x);
+  });
+
+  renderTeacherStudents(s);
+  renderTeacherResults(s);
+}
+
+function renderTeacherStudents(s){
+  const box=byId('teacherStudents');
+  if(!box) return;
+
+  const gs=activeGroups(s);
+  if(!gs.length){
+    box.innerHTML='<div class="status">No students joined yet.</div>';
+    return;
+  }
+
+  box.innerHTML=gs.map(g=>{
+    const imp=s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
+    const members=Object.values(s.students||{})
+      .filter(st=>st.group===g)
+      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''}`)
+      .join(', ');
+
+    const voteCount=Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
+    const total=Object.values(s.students||{}).filter(st=>st.group===g).length;
+
+    return `<div class="studentRow">
+      <div>
+        <div class="name">Group ${esc(g)}</div>
+        <div class="mini">Members: ${esc(members)}<br>Imposter: ${esc(imp)}<br>Votes: ${voteCount}/${total}</div>
+      </div>
+      <div class="score">${s.groupScores?.[g]||0} pts</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTeacherResults(s){
+  const box=byId('teacherResults');
+  if(!box) return;
+
+  const gs=activeGroups(s);
+  if(!gs.length){
+    box.innerHTML='<div class="status">No groups yet.</div>';
+    return;
+  }
+
+  box.innerHTML=gs.map(g=>{
+    const result=s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
+    return `<div class="resultRow">
+      <div>
+        <div class="name">Group ${esc(g)}</div>
+        <div class="mini">${esc(result)}</div>
+      </div>
+      <div class="score">${s.groupScores?.[g]||0} pts</div>
+    </div>`;
+  }).join('');
+}
+
+function studentRefresh(){
+  if(!currentUser) return;
+
+  const s = stateCache || defaultState();
+  const st = stageByTime(s);
+
+  if(!s.students?.[currentUser.id]){
+    byId('studentInstruction').innerText='You were removed/reset by the teacher. Please leave and join again.';
+    return;
+  }
+
+  byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | ${currentUser.cls} | Group ${currentUser.group}`;
+  renderStages('studentStages',st);
+  byId('studentTimer').innerText=fmt(timeLeft(s));
+  byId('studentInstruction').innerText=stepTitle(st);
+  byId('rightStageTitle').innerText=stepTitle(st);
+
+  showStudentPanel(st);
+  renderSecret(s,st);
+  renderHints(s,st);
+  renderVote(s,st);
+  renderStudentResults(s,st);
+
+  const box=byId('studentHint');
+  if(document.activeElement!==box){
+    box.value=s.hints?.[currentUser.id] || '';
+  }
+  byId('saveHintBtn').disabled = st!=='hint';
+}
+
+function showStudentPanel(st){
+  byId('rightSecretSection').classList.toggle('hidden',!(st==='waiting'||st==='hint'));
+  byId('rightHintsSection').classList.toggle('hidden',st!=='discuss');
+  byId('rightVoteSection').classList.toggle('hidden',st!=='vote');
+  byId('rightResultsSection').classList.toggle('hidden',st!=='results');
+  byId('hintEditor').classList.toggle('hidden',st!=='hint');
+}
+
+function renderSecret(s,st){
+  const card=byId('studentSecretCard');
+  card.className='secretCard';
+
+  if(st==='waiting'){
+    card.innerHTML='<div class="bigEmoji">🎭</div><div class="small">Waiting for teacher...</div><div class="word">Please wait</div>';
+    return;
+  }
+
+  const isImp = s.groupImposters?.[currentUser.group] === currentUser.id;
+
+  if(isImp){
+    card.classList.add('imposter');
+    card.innerHTML=`<div class="bigEmoji">🕵️</div>
+      <div class="small">You are your group imposter</div>
+      <div class="word">Secret Role</div>
+      <div class="mini">Helper hint: ${esc(s.helper)}</div>`;
+  }else{
+    card.innerHTML=`<div class="bigEmoji">🤫</div>
+      <div class="small">Your Group Word</div>
+      <div class="word">${esc(s.word)}</div>
+      <div class="mini">Topic: ${esc(s.topic)}</div>`;
+  }
+}
+
+async function saveHint(){
+  const s = await getState();
+
+  if(stageByTime(s)!=='hint'){
+    alert('Hint time is finished.');
+    return;
+  }
+
+  s.hints = s.hints || {};
+  s.hints[currentUser.id] = byId('studentHint').value.trim();
+
+  await setState(s);
+  studentRefresh();
+  alert('Hint saved.');
+}
+
+function renderHints(s,st){
+  const box=byId('allHintsBox');
+  if(!box || st!=='discuss') return;
+
+  const ids=Object.keys(s.students||{}).filter(id=>s.students[id].group===currentUser.group);
+
+  box.innerHTML=ids.map(id=>`<div class="resultRow">
+    <div>
+      <div class="name">${esc(s.students[id].name)}</div>
+      <div class="mini">${esc(s.hints?.[id]||'No hint submitted')}</div>
+    </div>
+  </div>`).join('');
+}
+
+function renderVote(s,st){
+  const box=byId('voteArea');
+  if(!box || st!=='vote') return;
+
+  const ids=Object.keys(s.students||{}).filter(id=>s.students[id].group===currentUser.group && id!==currentUser.id);
+
+  if(s.votes?.[currentUser.id]){
+    const n=s.students?.[s.votes[currentUser.id]]?.name || 'student';
+    box.innerHTML=`<div class="status">You voted for <b>${esc(n)}</b>. Wait for teacher results.</div>`;
+    return;
+  }
+
+  box.innerHTML=ids.map(id=>`<div class="voteRow">
+    <div class="name">${esc(s.students[id].name)}</div>
+    <button onclick="vote('${id}')">Vote</button>
+  </div>`).join('') || '<div class="status">No group members to vote for.</div>';
+}
+
+async function vote(id){
+  const s = await getState();
+
+  if(stageByTime(s)!=='vote') return;
+  if(s.votes?.[currentUser.id]) return;
+
+  s.votes = s.votes || {};
+  s.votes[currentUser.id] = id;
+
+  await setState(s);
+  beep(720,.1);
+  studentRefresh();
+}
+
+function renderStudentResults(s,st){
+  const box=byId('studentResults');
+  if(!box || st!=='results') return;
+
+  const imp=s.students?.[s.groupImposters?.[currentUser.group]]?.name || 'Not selected';
+
+  box.innerHTML=`<div class="resultRow">
+    <div>
+      <div class="name">🕵️ Your Group Imposter</div>
+      <div class="mini">${esc(imp)}</div>
+    </div>
+  </div>
+  <div class="resultRow">
+    <div>
+      <div class="name">Result</div>
+      <div class="mini">${esc(s.groupResults?.[currentUser.group]||'No result')}</div>
+    </div>
+    <div class="score">Group ${esc(currentUser.group)}: ${s.groupScores?.[currentUser.group]||0} pts</div>
+  </div>`;
+}
+
+async function leaveGame(){
+  if(!currentUser) return backToHub();
+
+  const s = await getState();
+
+  if(s.students) delete s.students[currentUser.id];
+  if(s.hints) delete s.hints[currentUser.id];
+  if(s.votes) delete s.votes[currentUser.id];
+  if(s.scores) delete s.scores[currentUser.id];
+
+  for(const g in (s.groupImposters||{})){
+    if(s.groupImposters[g]===currentUser.id) delete s.groupImposters[g];
+  }
+
+  await setState(s);
+  backToHub();
+}
+
+setInterval(()=>{
+  if(currentUser?.role==='teacher') teacherRefresh();
+  if(currentUser?.role==='student') studentRefresh();
+},1000);
+
+initFirebase();
 </script>
 </body>
 </html>
