@@ -31,7 +31,52 @@ button{border:0;border-radius:13px;padding:9px 14px;font-size:13px;font-weight:9
 
 <div id="teacherPage" class="hidden"><div class="tabs"><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button><button onclick="startAutoRound()">▶️ Start Auto Round</button><button class="success" onclick="forceResults()">Show Results Now</button><button class="danger" onclick="resetGame()">Reset Game</button></div><div class="two"><div class="card teacherOnly"><h2>👩‍🏫 Teacher Dashboard</h2><div class="stageBox" id="teacherStages"></div><label>Next Round Topic</label><input id="topicInput" value="Technology"><label>Next Round Secret Word</label><input id="wordInput" value="Smartphone"><label>Helper Hint for Imposter</label><input id="helperInput" value="It is something people use daily to communicate."><label>Imposters</label><select id="imposterCount"><option>1</option><option>2</option></select><label>Instructions</label><textarea id="instructionInput">Look at your card, think carefully, write one hint, then discuss with your group and vote.</textarea><button onclick="saveRoundSettings()">💾 Save Next Round Settings</button><button class="purple" onclick="randomExample()">🎲 Random Example</button><div class="timerPanel"><h3>⏱️ Teacher Round Timer</h3><div class="characterBox"><span class="bigEmoji sparkle">🎯</span><b>Round Mission</b></div><div id="teacherTimer" class="timerBig">0:00</div><div id="teacherStepTitle" class="status">Waiting to start.</div><div class="stepList"><div id="step_hint" class="stepItem">💭 1. Think + write hint + save</div><div id="step_discuss" class="stepItem">💬 2. See hints + discuss</div><div id="step_vote" class="stepItem">🗳️ 3. Vote</div><div id="step_results" class="stepItem">🏆 4. Results + points</div></div></div></div><div class="card"><h2>📌 Current Round</h2><div id="roundInfo"></div><h3 style="margin-top:16px">🕵️ Imposter Secret</h3><div id="imposterInfo" class="status">Start the round to choose imposters.</div><div id="groupResults" class="resultList"></div></div></div><div class="grid" style="margin-top:14px"><div class="card"><h2>👥 Live Students</h2><div id="teacherStudents" class="studentList"></div></div><div class="card"><h2>🗳️ Group Votes</h2><div id="teacherVotes" class="resultList"></div></div></div></div>
 
-<div id="studentPage" class="hidden"><div class="tabs"><button class="secondary" onclick="leaveGame()">🚪 Leave Game</button><button class="secondary" onclick="backToHub()">🏠 Games Hub</button><button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button><button onclick="studentRefresh()">🔄 Refresh</button></div><div class="two"><div class="card studentOnly"><h2 id="studentWelcome">Student</h2><div class="stageBox" id="studentStages"></div><div id="studentTimer" class="timerBig">0:00</div><div id="studentInstruction" class="status"></div><div id="studentSecretCard" class="secretCard"><div class="small">Waiting for teacher...</div><div class="word">Please wait</div></div><label>Your hint</label><textarea id="studentHint" placeholder="Write your hint here..."></textarea><button id="saveHintBtn" onclick="saveHint()">Save Hint</button><div id="allHintsBox" class="resultList"></div></div><div class="card"><h2>🗳️ Group Vote</h2><div id="voteArea" class="voteList"></div><h2 style="margin-top:18px">🏆 Results</h2><div id="studentResults" class="resultList"></div></div></div></div>
+<div id="studentPage" class="hidden">
+  <div class="tabs">
+    <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
+    <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
+    <button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button>
+    <button onclick="studentRefresh()">🔄 Refresh</button>
+  </div>
+
+  <div class="two">
+    <div class="card studentOnly">
+      <h2 id="studentWelcome">Student</h2>
+      <div class="stageBox" id="studentStages"></div>
+      <div id="studentTimer" class="timerBig">0:00</div>
+      <div id="studentInstruction" class="status"></div>
+
+      <div id="studentSecretCard" class="secretCard">
+        <div class="small">Waiting for teacher...</div>
+        <div class="word">Please wait</div>
+      </div>
+
+      <label>Your hint</label>
+      <textarea id="studentHint" placeholder="Write your hint here..."></textarea>
+      <button id="saveHintBtn" onclick="saveHint()">Save Hint</button>
+    </div>
+
+    <div class="card">
+      <h2>🎯 Current Stage</h2>
+      <div id="rightStageTitle" class="status">Waiting...</div>
+
+      <div id="rightHintSection">
+        <h2>💬 All Hints</h2>
+        <div id="allHintsBox" class="resultList"></div>
+      </div>
+
+      <div id="rightVoteSection">
+        <h2>🗳️ Group Vote</h2>
+        <div id="voteArea" class="voteList"></div>
+      </div>
+
+      <div id="rightResultSection">
+        <h2>🏆 Results</h2>
+        <div id="studentResults" class="resultList"></div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
 </div>
@@ -61,11 +106,20 @@ function teacherRefresh(){syncAutoStage();const s=getState();const st=getStageBy
 function renderTeacherStudents(s){const box=byId('teacherStudents');const ids=Object.keys(s.students);if(!ids.length){box.innerHTML='<div class="status">No students joined yet.</div>';return}box.innerHTML=ids.map(id=>{const stu=s.students[id];const imp=s.imposters.includes(id);return`<div class="studentRow"><div><div class="name">${imp?'🟥':'🟦'} ${esc(stu.name)}</div><div class="mini">${esc(stu.cls)} • Group ${esc(stu.group)}<br>Hint: ${esc(s.hints[id]||'No hint yet')}</div></div><div class="score">${s.scores[id]||0} pts</div></div>`}).join('')}
 function renderTeacherVotes(s){const box=byId('teacherVotes');const gs=groups(s);if(!gs.length){box.innerHTML='<div class="status">No groups yet.</div>';return}box.innerHTML=gs.map(g=>{const v=s.groupVotes[g];const target=s.students[v]?.name||'No vote yet';return`<div class="resultRow"><div><div class="name">Group ${esc(g)}</div><div class="mini">Vote: ${esc(target)}</div></div><div class="score">${s.groupScores[g]||0} pts</div></div>`}).join('')}
 function renderGroupResults(s){const box=byId('groupResults');if(s.stage!=='results'){box.innerHTML='';return}box.innerHTML=groups(s).map(g=>`<div class="resultRow"><div><div class="name">Group ${esc(g)}</div><div class="mini">${esc(s.results[g]||'No result')}</div></div><div class="score">${s.groupScores[g]||0} pts</div></div>`).join('')}
-function studentRefresh(){syncAutoStage();if(!currentUser)return;const s=getState();const st=getStageByTime(s);byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | ${currentUser.cls} | Group ${currentUser.group}`;renderStages('studentStages',st);byId('studentTimer').innerText=fmt(timeLeft(s));byId('studentInstruction').innerText=stepTitle(st);renderSecretCard(s,st);renderHints(s,st);renderVoteArea(s,st);renderStudentResults(s,st);const box=byId('studentHint');if(document.activeElement!==box)box.value=s.hints[currentUser.id]||'';byId('saveHintBtn').disabled=st!=='hint'}
+function studentRefresh(){syncAutoStage();if(!currentUser)return;const s=getState();const st=getStageByTime(s);byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | ${currentUser.cls} | Group ${currentUser.group}`;renderStages('studentStages',st);byId('studentTimer').innerText=fmt(timeLeft(s));byId('studentInstruction').innerText=stepTitle(st);byId('rightStageTitle').innerText=stepTitle(st);renderStudentStagePanels(st);renderSecretCard(s,st);renderHints(s,st);renderVoteArea(s,st);renderStudentResults(s,st);const box=byId('studentHint');if(document.activeElement!==box)box.value=s.hints[currentUser.id]||'';byId('saveHintBtn').disabled=st!=='hint'}
+function renderStudentStagePanels(st){
+  const hintSec=byId('rightHintSection');
+  const voteSec=byId('rightVoteSection');
+  const resultSec=byId('rightResultSection');
+  if(!hintSec||!voteSec||!resultSec)return;
+  hintSec.classList.toggle('hidden',!(st==='discuss'||st==='vote'||st==='results'));
+  voteSec.classList.toggle('hidden',st!=='vote');
+  resultSec.classList.toggle('hidden',st!=='results');
+}
 function renderSecretCard(s,st){const card=byId('studentSecretCard');card.className='secretCard';if(st==='waiting'){card.innerHTML='<div class="small">🎭 Waiting for teacher...</div><div class="word">Please wait</div><div class="bigEmoji sparkle">✨</div>';return}if(s.imposters.includes(currentUser.id)){card.classList.add('imposter');card.innerHTML=`<div class="small">🟥 You are the Imposter</div><div class="word">Secret Role 🕵️</div><div class="characterBox"><span class="bigEmoji sparkle">😎</span><b>Act smart and guess the word!</b></div><div class="mini">Helper hint: ${esc(s.helper)}</div>`}else{card.innerHTML=`<div class="small">🟦 Your Secret Word</div><div class="word">${esc(s.word)} ✨</div><div class="characterBox"><span class="bigEmoji sparkle">🤫</span><b>Give a clever hint!</b></div><div class="mini">Topic: ${esc(s.topic)}</div>`}}
 function saveHint(){const s=getState();const st=getStageByTime(s);if(st!=='hint'){alert('Hint time is finished.');return}s.hints[currentUser.id]=byId('studentHint').value.trim();setState(s);studentRefresh();alert('Hint saved.')}
-function renderHints(s,st){const box=byId('allHintsBox');if(st==='hint'||st==='waiting'){box.innerHTML='<div class="status">Hints will appear after hint time finishes.</div>';return}box.innerHTML='<h3>💬 All Hints</h3>'+Object.keys(s.students).map(id=>{const stu=s.students[id];return`<div class="resultRow"><div><div class="name">${esc(stu.name)}</div><div class="mini">Group ${esc(stu.group)} • ${esc(s.hints[id]||'No hint submitted')}</div></div></div>`}).join('')}
-function renderVoteArea(s,st){const box=byId('voteArea');if(st!=='vote'){box.innerHTML='<div class="status">Voting opens after discussion time.</div>';return}if(s.groupVotes[currentUser.group]){const n=s.students[s.groupVotes[currentUser.group]]?.name||'student';box.innerHTML=`<div class="status">Your group already voted for <b>${esc(n)}</b>.</div>`;return}box.innerHTML=Object.keys(s.students).filter(id=>s.students[id].group===currentUser.group&&id!==currentUser.id).map(id=>`<div class="voteRow"><div class="name">${esc(s.students[id].name)} <span class="mini">Group ${esc(s.students[id].group)}</span></div><button onclick="groupVote('${id}')">Vote as Group</button></div>`).join('')||'<div class="status">No classmates in your group to vote for.</div>'}
+function renderHints(s,st){const box=byId('allHintsBox');if(!box)return;if(st==='hint'||st==='waiting'){box.innerHTML='<div class="status">Hints will appear here after hint time finishes.</div>';return}box.innerHTML=Object.keys(s.students).map(id=>{const stu=s.students[id];return`<div class="resultRow"><div><div class="name">${esc(stu.name)}</div><div class="mini">Group ${esc(stu.group)} • ${esc(s.hints[id]||'No hint submitted')}</div></div></div>`}).join('')}
+function renderVoteArea(s,st){const box=byId('voteArea');if(st==='results'){box.innerHTML='';return}if(st!=='vote'){box.innerHTML='<div class="status">Voting opens automatically after discussion time.</div>';return}if(s.groupVotes[currentUser.group]){const n=s.students[s.groupVotes[currentUser.group]]?.name||'student';box.innerHTML=`<div class="status">Your group already voted for <b>${esc(n)}</b>.</div>`;return}box.innerHTML=Object.keys(s.students).filter(id=>s.students[id].group===currentUser.group&&id!==currentUser.id).map(id=>`<div class="voteRow"><div class="name">${esc(s.students[id].name)} <span class="mini">Group ${esc(s.students[id].group)}</span></div><button onclick="groupVote('${id}')">Vote as Group</button></div>`).join('')||'<div class="status">No classmates in your group to vote for.</div>'}
 function groupVote(targetId){const s=getState();if(getStageByTime(s)!=='vote')return;if(s.groupVotes[currentUser.group]){alert('Your group already voted.');return}s.groupVotes[currentUser.group]=targetId;beep(720,.12);setState(s);studentRefresh()}
 function scoreRound(s){if(s.scored)return;const impSet=new Set(s.imposters);groups(s).forEach(g=>{const groupStudents=Object.keys(s.students).filter(id=>s.students[id].group===g);const groupHasImposter=groupStudents.some(id=>impSet.has(id));const vote=s.groupVotes[g];if(!vote){s.results[g]='No group vote. Group loses the point.';return}const correct=impSet.has(vote);if(correct){s.groupScores[g]=Number(s.groupScores[g]||0)+3;s.results[g]='Correct! Group agreed and found the imposter. +3 points.'}else{s.results[g]='Wrong vote. Points go to the imposter.';s.imposters.forEach(impId=>{s.scores[impId]=Number(s.scores[impId]||0)+3});if(groupHasImposter){s.groupScores[g]=Number(s.groupScores[g]||0)+3}}});s.scored=true}
 function renderStudentResults(s,st){const box=byId('studentResults');if(st!=='results'){box.innerHTML='<div class="status">Results will appear after voting.</div>';return}const impNames=s.imposters.map(id=>s.students[id]?.name||id).join(', ');box.innerHTML=`<div class="resultRow"><div><div class="name">🕵️ Imposter</div><div class="mini">${esc(impNames)}</div></div></div><div class="resultRow"><div><div class="name">Secret Word</div><div class="mini">${esc(s.word)}</div></div></div><div class="resultRow"><div><div class="name">Your Group Result</div><div class="mini">${esc(s.results[currentUser.group]||'No result')}</div></div><div class="score">Group ${esc(currentUser.group)}: ${s.groupScores[currentUser.group]||0} pts</div></div>`}
