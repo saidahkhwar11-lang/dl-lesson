@@ -3,7 +3,7 @@
 <head>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Skill Clash Games Hub</title>
@@ -120,6 +120,171 @@ div{
   backdrop-filter:blur(8px);
 }
 
+
+/* FINAL CLEAN CUTE LAYOUT FIX */
+body{
+  font-family:'Inter',sans-serif!important;
+  font-size:14px!important;
+  line-height:1.35!important;
+  font-weight:400!important;
+}
+
+h1,h2,h3,.name,.stage,button{
+  font-family:'Quicksand',sans-serif!important;
+  letter-spacing:0!important;
+}
+
+h1{
+  font-size:24px!important;
+  font-weight:700!important;
+}
+
+h2{
+  font-size:18px!important;
+  font-weight:700!important;
+  margin-bottom:8px!important;
+}
+
+h3{
+  font-size:15px!important;
+  font-weight:600!important;
+}
+
+button{
+  font-size:13px!important;
+  font-weight:600!important;
+  padding:9px 13px!important;
+  border-radius:12px!important;
+}
+
+.card,
+.objectiveBox{
+  padding:14px!important;
+  border-radius:18px!important;
+}
+
+.two,
+.grid{
+  gap:12px!important;
+}
+
+/* Make the HOW TO PLAY box cute and compact */
+.objectiveBox{
+  background:linear-gradient(135deg,#ffffff,#f8fbff)!important;
+}
+
+.objectiveBox .status.good{
+  font-size:14px!important;
+  font-weight:500!important;
+  line-height:1.4!important;
+  padding:10px 12px!important;
+  margin:8px 0 10px!important;
+  border-radius:14px!important;
+  background:#f0fff7!important;
+  color:#176a45!important;
+}
+
+.howSteps{
+  gap:7px!important;
+  margin-top:8px!important;
+}
+
+.howStep{
+  font-family:'Inter',sans-serif!important;
+  font-size:14px!important;
+  font-weight:500!important;
+  line-height:1.35!important;
+  padding:9px 11px!important;
+  border-radius:13px!important;
+  background:#ffffff!important;
+  color:#30415f!important;
+}
+
+.pointsRule{
+  font-family:'Inter',sans-serif!important;
+  font-size:13px!important;
+  font-weight:500!important;
+  line-height:1.35!important;
+  padding:10px 12px!important;
+  margin-top:9px!important;
+  border-radius:13px!important;
+}
+
+/* Timer side cleaner */
+.timerBig{
+  font-family:'Quicksand',sans-serif!important;
+  font-size:46px!important;
+  font-weight:700!important;
+  margin:5px 0 8px!important;
+}
+
+.stepItem{
+  font-family:'Inter',sans-serif!important;
+  font-size:14px!important;
+  font-weight:500!important;
+  padding:9px 11px!important;
+  margin-bottom:7px!important;
+  border-radius:13px!important;
+}
+
+.stepItem.active{
+  font-weight:600!important;
+}
+
+/* General text not too bold */
+.status{
+  font-family:'Inter',sans-serif!important;
+  font-size:14px!important;
+  font-weight:500!important;
+  line-height:1.35!important;
+}
+
+.mini{
+  font-size:13px!important;
+  font-weight:400!important;
+}
+
+label{
+  font-size:13px!important;
+  font-weight:600!important;
+}
+
+input,select,textarea{
+  font-family:'Inter',sans-serif!important;
+  font-size:14px!important;
+  font-weight:400!important;
+  padding:9px 11px!important;
+  border-radius:12px!important;
+}
+
+.resultRow,
+.studentRow,
+.voteRow{
+  padding:10px 11px!important;
+  border-radius:14px!important;
+}
+
+.score{
+  font-family:'Quicksand',sans-serif!important;
+  font-weight:600!important;
+}
+
+/* reduce large empty feel */
+.hero{
+  padding:16px 20px!important;
+  margin-bottom:12px!important;
+}
+
+.tabs{
+  margin-bottom:10px!important;
+}
+
+.stage{
+  font-size:12px!important;
+  font-weight:600!important;
+  padding:7px 11px!important;
+}
+
 </style>
 </head>
 
@@ -216,14 +381,14 @@ div{
     <div class="two">
       <div class="objectiveBox">
         <h2>🎯 How to Play</h2>
-        <div class="status good"><b>Objective:</b> Work with your group to find the hidden imposter by reading hints carefully and agreeing on the best vote.</div>
+        <div class="status good"><b>Objective:</b> Find the hidden imposter by reading hints, discussing, and agreeing on one vote.</div>
         <div class="howSteps">
-          <div class="howStep">💭 1. Students see their card and write one smart hint.</div>
-          <div class="howStep">💬 2. Each group reads only their own group hints and discusses.</div>
-          <div class="howStep">🗳️ 3. Every student votes for the suspected imposter in the same group.</div>
-          <div class="howStep">🏆 4. Teacher releases results and points appear group by group.</div>
+          <div class="howStep">💭 1. See your card and write one hint.</div>
+          <div class="howStep">💬 2. Read your group hints and discuss.</div>
+          <div class="howStep">🗳️ 3. Vote for the imposter in your group.</div>
+          <div class="howStep">🏆 4. Teacher releases group results.</div>
         </div>
-        <div class="pointsRule">Scoring by round: If all group members agree on the correct imposter, the group wins +3 and the imposter gets 0. If they disagree or choose wrong, the group gets 0 and the imposter wins +3.</div>
+        <div class="pointsRule">Scoring: correct group agreement = +3. Wrong or different votes = imposter +3.</div>
         <div id="shareSafeMsg" class="status screenShareSafe hidden">Screen-share safe mode is ON. Topic, word, helper hint, and imposter names are hidden.</div>
       </div>
 
