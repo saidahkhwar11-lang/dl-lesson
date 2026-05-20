@@ -930,6 +930,182 @@ input,select,textarea{
   }
 }
 
+
+/* ===== FINAL TEACHER DASHBOARD FOR 5-6 GROUPS ===== */
+#teacherPage .tabs{
+  position:fixed!important;
+  left:50%!important;
+  bottom:16px!important;
+  top:auto!important;
+  transform:translateX(-50%)!important;
+  z-index:100!important;
+  display:flex!important;
+  justify-content:center!important;
+  align-items:center!important;
+  gap:10px!important;
+  width:min(980px,calc(100vw - 28px))!important;
+  background:rgba(245,248,255,.94)!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:22px!important;
+  box-shadow:0 12px 30px rgba(45,62,120,.18)!important;
+  padding:10px!important;
+  backdrop-filter:blur(12px)!important;
+}
+
+#teacherPage{
+  padding-bottom:92px!important;
+}
+
+#teacherPage .tabs button{
+  min-width:auto!important;
+  padding:10px 14px!important;
+  border-radius:14px!important;
+  font-size:13px!important;
+  white-space:nowrap!important;
+}
+
+#teacherPage .grid{
+  grid-template-columns:1fr 1fr!important;
+  gap:14px!important;
+}
+
+#teacherPage .card{
+  overflow:hidden!important;
+}
+
+#teacherPage .studentList{
+  display:grid!important;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important;
+  gap:10px!important;
+  max-height:430px!important;
+  overflow:auto!important;
+  padding-right:4px!important;
+}
+
+#teacherPage .studentRow{
+  display:block!important;
+  min-height:150px!important;
+  background:linear-gradient(135deg,#ffffff,#f7faff)!important;
+  border:1px solid #dce7ff!important;
+  border-radius:18px!important;
+  padding:13px!important;
+  position:relative!important;
+}
+
+#teacherPage .studentRow .score{
+  position:absolute!important;
+  top:12px!important;
+  right:12px!important;
+  background:#eef4ff!important;
+  color:#294a99!important;
+  min-width:54px!important;
+  text-align:center!important;
+  border-radius:14px!important;
+}
+
+#teacherPage .studentRow .name{
+  font-size:16px!important;
+  padding-right:60px!important;
+  margin-bottom:8px!important;
+}
+
+#teacherPage .studentRow .mini{
+  font-size:12.5px!important;
+  line-height:1.45!important;
+  color:#617197!important;
+}
+
+#teacherPage #teacherResults{
+  max-height:430px!important;
+  overflow:auto!important;
+  padding-right:4px!important;
+}
+
+#teacherPage #teacherResults .resultRow{
+  display:block!important;
+  background:linear-gradient(135deg,#ffffff,#fbf8ff)!important;
+  border:1px solid #dce7ff!important;
+  border-radius:18px!important;
+  padding:13px!important;
+  margin-bottom:10px!important;
+  position:relative!important;
+}
+
+#teacherPage #teacherResults .resultRow .score{
+  position:absolute!important;
+  top:12px!important;
+  right:12px!important;
+  background:#fff7df!important;
+  color:#7c5a00!important;
+  border-radius:14px!important;
+}
+
+#teacherPage #teacherResults .resultRow .name{
+  font-size:15px!important;
+  padding-right:66px!important;
+  margin-bottom:8px!important;
+}
+
+#teacherPage #teacherResults h3{
+  margin:14px 0 10px!important;
+  font-size:16px!important;
+  background:#f5f1ff!important;
+  color:#5635a2!important;
+  padding:10px 12px!important;
+  border-radius:14px!important;
+}
+
+#teacherPage .objectiveBox,
+#teacherPage .card{
+  border-radius:22px!important;
+}
+
+#teacherPage .howSteps{
+  grid-template-columns:1fr 1fr!important;
+}
+
+#teacherPage .teacherControlsBottom{
+  border-radius:22px!important;
+}
+
+#teacherPage #teacherSecretSettings{
+  grid-template-columns:1fr 1fr 1.2fr!important;
+}
+
+#teacherPage .teacherControlsBottom textarea{
+  min-height:60px!important;
+}
+
+/* Make the main top dashboard less tall */
+#teacherPage .objectiveBox,
+#teacherPage .two>.card{
+  min-height:0!important;
+}
+
+#teacherPage .timerBig{
+  font-size:48px!important;
+}
+
+@media(max-width:1000px){
+  #teacherPage .tabs{
+    overflow-x:auto!important;
+    justify-content:flex-start!important;
+  }
+  #teacherPage .grid,
+  #teacherPage .two,
+  #teacherPage #teacherSecretSettings,
+  #teacherPage .howSteps{
+    grid-template-columns:1fr!important;
+  }
+  #teacherPage .studentList{
+    grid-template-columns:1fr!important;
+    max-height:none!important;
+  }
+  #teacherPage #teacherResults{
+    max-height:none!important;
+  }
+}
+
 </style>
 </head>
 
@@ -1767,23 +1943,30 @@ function renderTeacherStudents(s){
   }
 
   box.innerHTML=gs.map(g=>{
+    const groupStudents = Object.values(s.students||{}).filter(st=>st.group===g);
     const imp=s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
-    const members=Object.values(s.students||{})
-      .filter(st=>st.group===g)
-      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''} (${s.scores?.[st.id]||0})`)
+
+    const members=groupStudents
+      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''}`)
       .join(', ');
 
     const voteCount=Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
-    const total=Object.values(s.students||{}).filter(st=>st.group===g).length;
+    const total=groupStudents.length;
 
     return `<div class="studentRow">
-      <div>
-        <div class="name">Group ${esc(g)}</div>
-        <div class="mini">Members: ${esc(members)}<br><span data-secret="true">Imposter: ${esc(imp)}</span><br>Votes: ${voteCount}/${total}</div>
+      <div class="name">👥 Group ${esc(g)}</div>
+      <div class="mini">
+        <b>Members (${total}):</b><br>${esc(members || 'No members')}<br><br>
+        <span data-secret="true"><b>Imposter:</b> ${esc(imp)}</span><br>
+        <b>Votes:</b> ${voteCount}/${total}
       </div>
-      <div class="score">${s.groupScores?.[g]||0} pts</div>
+      <div class="score">${s.groupScores?.[g]||0}<br>pts</div>
     </div>`;
   }).join('');
+
+  if(typeof applyTeacherSecretVisibility === 'function'){
+    applyTeacherSecretVisibility();
+  }
 }
 
 function renderTeacherResults(s){
@@ -1791,31 +1974,31 @@ function renderTeacherResults(s){
   if(!box) return;
 
   const gs=activeGroups(s);
+
   const current = gs.length ? gs.map(g=>{
     const result=s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
+    const shortStatus = result.includes('✅') ? '✅ Group Wins' : (result.includes('❌') ? '😈 Imposter Wins' : '⏳ Hidden');
     return `<div class="resultRow">
-      <div>
-        <div class="name">Current Round · Group ${esc(g)}</div>
-        <div class="mini">${esc(result)}</div>
-      </div>
-      <div class="score">${s.groupScores?.[g]||0} pts</div>
+      <div class="name">🏁 Group ${esc(g)} · ${shortStatus}</div>
+      <div class="mini">${esc(result)}</div>
+      <div class="score">${s.groupScores?.[g]||0}<br>pts</div>
     </div>`;
   }).join('') : '<div class="status">No groups yet.</div>';
 
-  const history = (s.roundHistory || []).slice().reverse().map((r,idx)=>{
+  const historyItems = (s.roundHistory || []).slice().reverse().slice(0,6).map((r,idx)=>{
+    const roundNum = (s.roundHistory||[]).length - idx;
     const groupsText = Object.keys(r.groups || {}).map(g=>{
       const gr = r.groups[g];
-      return `Group ${g}: ${gr.result} (${gr.points}) - Imposter: ${gr.imposter}`;
-    }).join('<br>');
+      return `G${g}: ${gr.result} · ${gr.points}`;
+    }).join(' | ');
+
     return `<div class="resultRow">
-      <div>
-        <div class="name">Round ${(s.roundHistory||[]).length - idx}: ${esc(r.topic)} / ${esc(r.word)}</div>
-        <div class="mini">${groupsText}</div>
-      </div>
+      <div class="name">📜 Round ${roundNum}: ${esc(r.topic)} / ${esc(r.word)}</div>
+      <div class="mini">${esc(groupsText)}</div>
     </div>`;
   }).join('');
 
-  box.innerHTML = current + (history ? '<h3 style="margin-top:14px">📜 Round History</h3>' + history : '');
+  box.innerHTML = current + (historyItems ? '<h3>Round History</h3>' + historyItems : '');
 }
 
 function studentRefresh(){
