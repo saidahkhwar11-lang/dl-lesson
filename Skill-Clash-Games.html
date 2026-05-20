@@ -91,7 +91,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
         <div class="secretCard">
           <div class="bigEmoji">🕵️‍♀️</div>
           <div class="word">Group Mystery</div>
-          <div class="mini">Each group finds its own hidden imposter.</div>
+          <div class="mini">Each group of 3 or more finds its own hidden imposter.</div>
         </div>
         <button onclick="openGame()">Open Game</button>
       </div>
@@ -137,7 +137,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
       <div class="card">
         <h2>Round Flow</h2>
-        <p class="pill">1 min card + hint</p>
+        <p class="pill">3+ students = 1 imposter</p><p class="pill">1 min card + hint</p>
         <p class="pill">1 min group hints + discuss</p>
         <p class="pill">vote until teacher releases</p>
         <p class="pill">teacher shows group results</p>
@@ -187,7 +187,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
         <button onclick="saveSettings()">💾 Save Topic</button>
         <button class="purple" onclick="previewGeneratedWord()">🎲 Preview New Word</button>
-        <div class="status">Each active group gets one private imposter automatically.</div>
+        <div class="status">Each active group needs at least 3 students and gets one private imposter automatically.</div>
         <div id="shareSafeMsg" class="status screenShareSafe hidden">Screen-share safe mode is ON. Topic, word, helper hint, and imposter names are hidden.</div>
       </div>
 
@@ -650,8 +650,8 @@ async function startNewRound(){
 
   for(const g of gs){
     const ids = Object.keys(s.students||{}).filter(id=>s.students[id].group===g);
-    if(ids.length < 2){
-      alert('Each active group needs at least 2 students. Group '+g+' has less than 2.');
+    if(ids.length < 3){
+      alert('Each active group needs at least 3 students to have an imposter. Group '+g+' has less than 3.');
       return;
     }
   }
