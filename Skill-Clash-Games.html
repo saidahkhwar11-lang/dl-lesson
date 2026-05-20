@@ -285,6 +285,207 @@ input,select,textarea{
   padding:7px 11px!important;
 }
 
+
+/* ===== TEACHER PAGE ORGANIZED LAYOUT FIX ===== */
+#teacherPage{
+  display:none;
+}
+
+#teacherPage:not(.hidden){
+  display:block;
+}
+
+#teacherPage .two{
+  grid-template-columns:1fr 1fr!important;
+  gap:16px!important;
+  align-items:stretch!important;
+}
+
+#teacherPage .grid{
+  grid-template-columns:1fr 1fr!important;
+  gap:16px!important;
+}
+
+#teacherPage .card,
+#teacherPage .objectiveBox{
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:22px!important;
+  box-shadow:0 10px 26px rgba(64,78,130,.10)!important;
+  padding:18px!important;
+}
+
+#teacherPage .card h2,
+#teacherPage .objectiveBox h2{
+  font-size:20px!important;
+  margin-bottom:12px!important;
+  color:#233b78!important;
+}
+
+#teacherPage .objectiveBox .status.good{
+  background:linear-gradient(135deg,#ecfff6,#f6fffb)!important;
+  border:1px solid #aee8c8!important;
+  color:#177348!important;
+  font-size:14px!important;
+  padding:12px 14px!important;
+}
+
+#teacherPage .howSteps{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:10px!important;
+}
+
+#teacherPage .howStep{
+  background:linear-gradient(135deg,#ffffff,#f7f9ff)!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:16px!important;
+  padding:11px 12px!important;
+  font-size:13.5px!important;
+  line-height:1.3!important;
+}
+
+#teacherPage .pointsRule{
+  background:#fff8e6!important;
+  border:1px solid #f2d98a!important;
+  color:#7a5b08!important;
+  font-size:13.5px!important;
+  padding:11px 12px!important;
+  border-radius:16px!important;
+}
+
+#teacherPage .timerBig{
+  font-size:56px!important;
+  line-height:1!important;
+  margin:12px 0!important;
+}
+
+#teacherPage .stepItem{
+  display:flex!important;
+  align-items:center!important;
+  gap:8px!important;
+  min-height:42px!important;
+  background:#f9fbff!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:16px!important;
+  padding:10px 12px!important;
+  font-size:13.5px!important;
+}
+
+#teacherPage .stepItem.active{
+  background:linear-gradient(135deg,#456bd0,#6e7ee8)!important;
+  color:white!important;
+  border-color:transparent!important;
+  box-shadow:0 8px 18px rgba(69,107,208,.22)!important;
+}
+
+#teacherPage .teacherControlsBottom{
+  margin-top:16px!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+
+#teacherPage .teacherControlsBottom h2{
+  background:linear-gradient(135deg,#f5f8ff,#fff8fd)!important;
+  padding:14px 18px!important;
+  margin:0!important;
+  border-bottom:1px solid #e7edff!important;
+}
+
+#teacherPage #teacherSecretSettings{
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1fr!important;
+  gap:12px!important;
+  padding:16px 18px 6px!important;
+}
+
+#teacherPage #teacherSecretSettings label{
+  margin-top:0!important;
+}
+
+#teacherPage #teacherSecretSettings label,
+#teacherPage #teacherSecretSettings select,
+#teacherPage #teacherSecretSettings input{
+  width:100%!important;
+}
+
+#teacherPage #teacherSecretSettings label:nth-of-type(1),
+#teacherPage #teacherSecretSettings select{
+  grid-column:auto!important;
+}
+
+#teacherPage .teacherControlsBottom > label,
+#teacherPage .teacherControlsBottom > textarea,
+#teacherPage .teacherControlsBottom > button,
+#teacherPage .teacherControlsBottom > .status{
+  margin-left:18px!important;
+  margin-right:18px!important;
+}
+
+#teacherPage .teacherControlsBottom textarea{
+  min-height:72px!important;
+  margin-top:6px!important;
+  margin-bottom:8px!important;
+}
+
+#teacherPage .teacherControlsBottom > .status{
+  margin-bottom:16px!important;
+}
+
+#teacherPage .studentRow,
+#teacherPage .resultRow{
+  background:linear-gradient(135deg,#f8fbff,#ffffff)!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:18px!important;
+  padding:14px!important;
+  align-items:flex-start!important;
+}
+
+#teacherPage .studentRow .name,
+#teacherPage .resultRow .name{
+  font-size:15px!important;
+  color:#223b7a!important;
+  margin-bottom:4px!important;
+}
+
+#teacherPage .score{
+  background:#eef4ff!important;
+  color:#2d4e9f!important;
+  border-radius:14px!important;
+  padding:8px 10px!important;
+  min-width:54px!important;
+  text-align:center!important;
+}
+
+#teacherPage .tabs{
+  position:sticky!important;
+  top:0!important;
+  z-index:20!important;
+  background:rgba(244,247,255,.88)!important;
+  backdrop-filter:blur(10px)!important;
+  padding:8px!important;
+  border-radius:18px!important;
+}
+
+#teacherPage .tabs button{
+  min-width:auto!important;
+}
+
+@media(max-width:900px){
+  #teacherPage .two,
+  #teacherPage .grid,
+  #teacherPage #teacherSecretSettings,
+  #teacherPage .howSteps{
+    grid-template-columns:1fr!important;
+  }
+}
+
+
+#teacherPage .settingField{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+}
 </style>
 </head>
 
@@ -419,6 +620,7 @@ input,select,textarea{
       <div class="stageBox" id="teacherStages"></div>
 
       <div id="teacherSecretSettings">
+        <div class="settingField">
         <label>Choose Topic</label>
         <select id="topicInput" onchange="previewGeneratedWord()">
           <option value="Technology">Technology</option>
@@ -433,12 +635,17 @@ input,select,textarea{
           <option value="Weather">Weather</option>
           <option value="Nature">Nature</option>
         </select>
+        </div>
 
-        <label>Generated Word for This Round</label>
+        <div class="settingField">
+        <label>Generated Word</label>
         <input id="wordInput" value="Smartphone" readonly>
+        </div>
 
-        <label>Generated Helper Hint for Imposters</label>
+        <div class="settingField">
+        <label>Imposter Helper Hint</label>
         <input id="helperInput" value="It is something people use every day to communicate." readonly>
+        </div>
       </div>
 
       <label>Instructions</label>
@@ -1144,7 +1351,7 @@ function renderTeacherResults(s){
     const result=s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
     return `<div class="resultRow">
       <div>
-        <div class="name">Current Round - Group ${esc(g)}</div>
+        <div class="name">Current Round · Group ${esc(g)}</div>
         <div class="mini">${esc(result)}</div>
       </div>
       <div class="score">${s.groupScores?.[g]||0} pts</div>
@@ -1164,7 +1371,7 @@ function renderTeacherResults(s){
     </div>`;
   }).join('');
 
-  box.innerHTML = current + (history ? '<h3 style="margin-top:14px">📜 Previous Rounds</h3>' + history : '');
+  box.innerHTML = current + (history ? '<h3 style="margin-top:14px">📜 Round History</h3>' + history : '');
 }
 
 function studentRefresh(){
