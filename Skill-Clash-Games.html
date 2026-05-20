@@ -1547,6 +1547,44 @@ input,select,textarea{
   display:none!important;
 }
 
+
+/* ===== STUDENT RESULT ONE BOX FIX ===== */
+#studentPage #rightResultsSection{
+  background:transparent!important;
+  border:none!important;
+  padding:0!important;
+}
+
+#studentPage #rightResultsSection > h2{
+  display:none!important;
+}
+
+.studentResultHero{
+  max-width:680px!important;
+  margin:0 auto!important;
+  border-radius:30px!important;
+  padding:24px!important;
+}
+
+.resultOneBoxHeader{
+  text-align:left!important;
+  font-size:22px!important;
+  font-weight:800!important;
+  color:#20366f!important;
+  margin-bottom:16px!important;
+  padding-bottom:12px!important;
+  border-bottom:1px solid rgba(80,100,160,.14)!important;
+}
+
+.imposterRevealCard,
+.resultSimpleBox{
+  box-shadow:none!important;
+}
+
+.resultSimpleBox{
+  margin-bottom:0!important;
+}
+
 </style>
 </head>
 
@@ -2643,6 +2681,10 @@ function renderStudentResults(s,st){
 
   box.innerHTML = `
     <div class="studentResultHero ${win ? 'win' : 'lose'}">
+
+      <div class="resultOneBoxHeader">
+        🏆 Your Group Result
+      </div>
 
       <div class="resultEmoji">${win ? '🎉' : '😈'}</div>
 
