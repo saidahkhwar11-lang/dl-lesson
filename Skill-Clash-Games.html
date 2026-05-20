@@ -57,6 +57,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .stepItem{padding:10px;border-radius:14px;background:white;border:1px solid #dbe5ff;font-weight:800;color:#50608a;margin-bottom:7px}
 .stepItem.active{background:#4267c7;color:white}
 .footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
+.secretHidden{filter:blur(7px);user-select:none;pointer-events:none}
+.screenShareSafe{background:#eefaf3!important;border-color:#aee5c4!important;color:#216b45!important}
 @media(max-width:850px){.grid,.two{grid-template-columns:1fr}.hero h1{font-size:25px}.secretCard .word{font-size:27px}}
 </style>
 </head>
@@ -76,8 +78,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
   </div>
 
   <div id="connectionBox" class="card bad">
-    <h2>🔥 Firebase Setup Needed</h2>
-    <p class="mini">Paste your Firebase config in the code section named <b>DEFAULT_FIREBASE_CONFIG</b>, then upload again. Teacher and students will connect live.</p>
+    <h2>🔥 Firebase Ready</h2>
+    <p class="mini">Firebase is connected to your Skill Clash project. Teacher and students should sync live.</p>
   </div>
 
   <div id="hubPage">
@@ -145,6 +147,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
     <div class="tabs">
       <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
       <button class="musicBtn" onclick="toggleMusic()">🎵 Music On/Off</button>
+      <button class="secondary" id="hideSecretBtn" onclick="toggleTeacherSecrets()">🙈 Hide Secret Info</button>
       <button onclick="startNewRound()">▶️ Start New Round</button>
       <button class="success" onclick="releaseResults()">🏆 Release Results</button>
       <button class="danger" onclick="resetGame()">🧹 Reset Everything</button>
@@ -176,12 +179,14 @@ button:disabled{opacity:.55;cursor:not-allowed}
         <label>Generated Helper Hint for Imposters</label>
         <input id="helperInput" value="It is something people use every day to communicate." readonly>
 
+        </div>
         <label>Instructions</label>
         <textarea id="instructionInput">Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.</textarea>
 
         <button onclick="saveSettings()">💾 Save Topic</button>
         <button class="purple" onclick="previewGeneratedWord()">🎲 Preview New Word</button>
         <div class="status">Each active group gets one private imposter automatically.</div>
+        <div id="shareSafeMsg" class="status screenShareSafe hidden">Screen-share safe mode is ON. Topic, word, helper hint, and imposter names are hidden.</div>
       </div>
 
       <div class="card">
@@ -267,28 +272,28 @@ button:disabled{opacity:.55;cursor:not-allowed}
    Use the SAME config from your DL / Skill Clash Firebase project.
    Example:
    const DEFAULT_FIREBASE_CONFIG = {
-     apiKey: "...",
-     authDomain: "...",
-     databaseURL: "https://....firebaseio.com",
-     projectId: "...",
-     storageBucket: "...",
-     messagingSenderId: "...",
-     appId: "..."
-   };
+  apiKey: "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain: "online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL: "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId: "online-english-lesson-grade-9",
+  storageBucket: "online-english-lesson-grade-9.firebasestorage.app",
+  appId: "1:542666648554:web:5190c68ea73b3536dae093"
+};
 ============================================================ */
 const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "AIzaSyXXXXXXXX",
-  authDomain: "your-project.firebaseapp.com",
-  databaseURL: "https://your-project-default-rtdb.firebaseio.com",
-  projectId: "your-project",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef"
-};
+  apiKey: "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain: "online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL: "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId: "online-english-lesson-grade-9",
+  storageBucket: "online-english-lesson-grade-9.firebasestorage.app",
+  appId: "1:542666648554:web:5190c68ea73b3536dae093"
+}; // <-- REPLACE null WITH YOUR FIREBASE CONFIG OBJECT
+
 const LESSON_KEY = 'skill_clash_games_per_group_v1';
 const TEACHER_PASSWORD = '1234';
 
 let currentUser = null;
+let teacherSecretsHidden = false;
 let stateCache = null;
 let db = null;
 let stateRef = null;
@@ -452,7 +457,7 @@ async function initFirebase(){
 
   if(!DEFAULT_FIREBASE_CONFIG){
     box.className = 'card bad';
-    box.innerHTML = '<h2>🔥 Firebase Config Missing</h2><p class="mini">Paste your Firebase config inside the code at <b>DEFAULT_FIREBASE_CONFIG</b>. Without it, teacher and students cannot connect live.</p>';
+    box.innerHTML = '<h2>🔥 Firebase Config Missing</h2><p class="mini">Firebase config is added. Teacher and students should connect live.</p>';
     return;
   }
 
@@ -712,6 +717,34 @@ function scoreRound(s){
   s.scored=true;
 }
 
+
+function toggleTeacherSecrets(){
+  teacherSecretsHidden = !teacherSecretsHidden;
+  applyTeacherSecretVisibility();
+}
+
+function applyTeacherSecretVisibility(){
+  const secretBox = byId('teacherSecretSettings');
+  const btn = byId('hideSecretBtn');
+  const msg = byId('shareSafeMsg');
+
+  if(secretBox){
+    secretBox.classList.toggle('secretHidden', teacherSecretsHidden);
+  }
+
+  if(btn){
+    btn.innerText = teacherSecretsHidden ? '👁️ Show Secret Info' : '🙈 Hide Secret Info';
+  }
+
+  if(msg){
+    msg.classList.toggle('hidden', !teacherSecretsHidden);
+  }
+
+  document.querySelectorAll('[data-secret="true"]').forEach(el=>{
+    el.classList.toggle('secretHidden', teacherSecretsHidden);
+  });
+}
+
 function teacherRefresh(){
   const s = stateCache || defaultState();
   const st = stageByTime(s);
@@ -739,6 +772,7 @@ function teacherRefresh(){
 
   renderTeacherStudents(s);
   renderTeacherResults(s);
+  applyTeacherSecretVisibility();
 }
 
 function renderTeacherStudents(s){
@@ -764,7 +798,7 @@ function renderTeacherStudents(s){
     return `<div class="studentRow">
       <div>
         <div class="name">Group ${esc(g)}</div>
-        <div class="mini">Members: ${esc(members)}<br>Imposter: ${esc(imp)}<br>Votes: ${voteCount}/${total}</div>
+        <div class="mini">Members: ${esc(members)}<br><span data-secret="true">Imposter: ${esc(imp)}</span><br>Votes: ${voteCount}/${total}</div>
       </div>
       <div class="score">${s.groupScores?.[g]||0} pts</div>
     </div>`;
