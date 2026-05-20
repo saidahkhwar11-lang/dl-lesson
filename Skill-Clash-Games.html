@@ -1456,6 +1456,42 @@ input,select,textarea{
   }
 }
 
+
+/* ===== COMPACT GROUP CARDS FIX ===== */
+.teacherGroupGrid{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+  max-height:430px!important;
+  overflow:auto!important;
+}
+
+.teacherGroupGrid .studentRow{
+  min-height:auto!important;
+  padding:10px 12px!important;
+  border-radius:16px!important;
+}
+
+.teacherGroupGrid .studentRow .name{
+  font-size:14px!important;
+  margin-bottom:6px!important;
+}
+
+.teacherGroupGrid .studentRow .mini{
+  font-size:12px!important;
+  line-height:1.35!important;
+}
+
+.teacherGroupGrid .studentRow .score{
+  min-width:42px!important;
+  padding:5px 7px!important;
+  font-size:11px!important;
+}
+
+.teacherGroupGrid .studentRow .mini div{
+  margin-bottom:4px!important;
+}
+
 </style>
 </head>
 
