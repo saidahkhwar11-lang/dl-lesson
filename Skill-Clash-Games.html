@@ -766,7 +766,9 @@ async function setState(s){
 
 function saveSession(){
   try{
-    if(currentUser){
+    // Only students stay online after refresh.
+    // Teacher must login again after refreshing the page.
+    if(currentUser && currentUser.role === 'student'){
       localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
     }
   }catch(e){}
@@ -781,26 +783,22 @@ function clearSession(){
 function restoreSession(){
   try{
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if(!saved || !saved.role) return false;
+
+    // Only students are restored after refresh.
+    if(!saved || saved.role !== 'student'){
+      clearSession();
+      return false;
+    }
 
     currentUser = saved;
 
     hide('hubPage');
     hide('loginPage');
+    hide('teacherPage');
+    show('studentPage');
+    studentRefresh();
+    return true;
 
-    if(saved.role === 'teacher'){
-      show('teacherPage');
-      teacherRefresh();
-      return true;
-    }
-
-    if(saved.role === 'student'){
-      show('studentPage');
-      studentRefresh();
-      return true;
-    }
-
-    return false;
   }catch(e){
     clearSession();
     return false;
@@ -888,7 +886,7 @@ async function teacherJoin(){
   if(!firebaseReady){alert('Firebase is not connected yet.');return}
 
   currentUser={role:'teacher'};
-  saveSession();
+  clearSession();
   hide('loginPage');show('teacherPage');
   teacherRefresh();
 }
@@ -984,7 +982,7 @@ async function resetGame(){
 
   stateCache=defaultState();
   currentUser={role:'teacher'};
-  saveSession();
+  clearSession();
   hide('studentPage');hide('loginPage');hide('hubPage');show('teacherPage');
   teacherRefresh();
   alert('All game data deleted. Students must join again.');
