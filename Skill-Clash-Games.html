@@ -1492,6 +1492,61 @@ input,select,textarea{
   margin-bottom:4px!important;
 }
 
+
+/* ===== REALLY COMPACT GROUPS FIX ===== */
+.teacherGroupGrid{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+
+.compactGroupRow{
+  min-height:auto!important;
+  padding:12px 14px!important;
+}
+
+.compactTop{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  margin-bottom:8px!important;
+}
+
+.compactGroupTitle{
+  font-size:15px!important;
+  font-weight:700!important;
+  color:#203a78!important;
+}
+
+.compactPoints{
+  background:#eef4ff!important;
+  color:#294a99!important;
+  border-radius:12px!important;
+  padding:5px 10px!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+
+.compactLine{
+  font-size:13px!important;
+  line-height:1.4!important;
+  color:#4f5f84!important;
+  margin-bottom:4px!important;
+}
+
+.compactLine b{
+  color:#203a78!important;
+}
+
+.teacherGroupGrid .studentRow .score{
+  display:none!important;
+}
+
+.teacherGroupGrid .studentRow .mini,
+.teacherGroupGrid .studentRow .name{
+  display:none!important;
+}
+
 </style>
 </head>
 
@@ -2365,7 +2420,7 @@ function renderTeacherStudents(s){
     const impId = s.groupImposters?.[g];
     const impName = s.students?.[impId]?.name || 'Not selected';
 
-    const normalMembers = groupStudents
+    const members = groupStudents
       .filter(st=>st.id!==impId)
       .map(st=>st.name)
       .join(', ');
@@ -2376,29 +2431,21 @@ function renderTeacherStudents(s){
     const totalWithoutImposter = Math.max(0,groupStudents.length-1);
 
     return `
-      <div class="studentRow">
+      <div class="studentRow compactGroupRow">
 
-        <div class="name">
-          👥 Group ${esc(g)}
+        <div class="compactTop">
+          <div class="compactGroupTitle">👥 Group ${esc(g)}</div>
+          <div class="compactPoints">${s.groupScores?.[g]||0} pts</div>
         </div>
 
-        <div class="score">
-          ${s.groupScores?.[g]||0}<br>pts
+        <div class="compactLine">
+          <b>Members:</b> ${esc(members || 'No members')}
         </div>
 
-        <div class="mini">
-
-          <div style="margin-bottom:10px;">
-            <b>Members:</b><br>
-            ${esc(normalMembers || 'No members')}
-          </div>
-
-          <div>
-            <b>Imposter:</b> ${esc(impName)}
-            <br>
-            <b>Total Votes:</b> ${voteCount}/${totalWithoutImposter}
-          </div>
-
+        <div class="compactLine">
+          <b>Imposter:</b> ${esc(impName)}
+          &nbsp; • &nbsp;
+          <b>Votes:</b> ${voteCount}/${totalWithoutImposter}
         </div>
 
       </div>
