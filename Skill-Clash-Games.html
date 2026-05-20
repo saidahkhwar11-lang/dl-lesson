@@ -156,7 +156,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
         <div class="stageBox" id="teacherStages"></div>
 
         <label>Choose Topic</label>
-        <select id="topicInput">
+        <select id="topicInput" onchange="previewGeneratedWord()">
           <option value="Technology">Technology</option>
           <option value="Food">Food</option>
           <option value="Sports">Sports</option>
@@ -258,7 +258,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
     </div>
   </div>
 
-  <div class="footerNote">Save this file as Skill-Clash-Games.html — separate from your current Skill Clash page.</div>
+  <div class="footerNote">Save this file as Skill-Clash-Games.html — live Firebase per-group Imposter game.</div>
 </div>
 
 <script>
@@ -276,15 +276,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
      appId: "..."
    };
 ============================================================ */
-const DEFAULT_FIREBASE_CONFIG = {
-  apiKey: "xxxxx",
-  authDomain: "xxxxx.firebaseapp.com",
-  databaseURL: "https://xxxxx-default-rtdb.firebaseio.com",
-  projectId: "xxxxx",
-  storageBucket: "xxxxx.appspot.com",
-  messagingSenderId: "xxxxx",
-  appId: "xxxxx"
-};
+const DEFAULT_FIREBASE_CONFIG = null; // <-- REPLACE null WITH YOUR FIREBASE CONFIG OBJECT
 
 const LESSON_KEY = 'skill_clash_games_per_group_v1';
 const TEACHER_PASSWORD = '1234';
@@ -556,7 +548,8 @@ async function studentJoin(){
   if(!firebaseReady){alert('Firebase is not connected yet.');return}
   if(!name){alert('Please write your name.');return}
 
-  const id='s_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cls.replace('/','_')+'_g'+group;
+  const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g,'_');
+  const id = 's_' + cleanName + '_' + cls.replace('/','_') + '_g' + group;
   const s = await getState();
 
   s.students = s.students || {};
@@ -588,14 +581,22 @@ async function teacherJoin(){
 
 async function saveSettings(){
   const s = await getState();
-  s.topic = byId('topicInput').value || 'Technology';
+  const selectedTopic = byId('topicInput').value || 'Technology';
+  s.topic = selectedTopic;
   s.instructions = byId('instructionInput').value.trim();
+
+  if(byId('wordInput').value.trim()){
+    s.word = byId('wordInput').value.trim();
+  }
+  if(byId('helperInput').value.trim()){
+    s.helper = byId('helperInput').value.trim();
+  }
+
   await setState(s);
-  teacherRefresh();
   alert('Topic saved. Click Start New Round to generate a new word.');
 }
 
-async function previewGeneratedWord(){
+function previewGeneratedWord(){
   const topic = byId('topicInput').value || 'Technology';
   const item = generateRoundWord(topic);
   byId('wordInput').value = item.word;
@@ -604,9 +605,14 @@ async function previewGeneratedWord(){
 
 async function startNewRound(){
   const s = await getState();
-  s.topic = byId('topicInput').value || 'Technology';
+
+  // Use the topic selected on the teacher screen right now.
+  const selectedTopic = byId('topicInput').value || 'Technology';
+  s.topic = selectedTopic;
   s.instructions = byId('instructionInput').value.trim();
-  const generated = generateRoundWord(s.topic);
+
+  // AI-style generation from the selected topic: new word + helper hint.
+  const generated = generateRoundWord(selectedTopic);
   s.word = generated.word;
   s.helper = generated.helper;
 
@@ -704,10 +710,15 @@ function teacherRefresh(){
   const st = stageByTime(s);
 
   if(byId('topicInput')){
-    byId('topicInput').value=s.topic||'Technology';
-    byId('wordInput').value=s.word||'';
-    byId('helperInput').value=s.helper||'';
-    byId('instructionInput').value=s.instructions||'';
+    // Do not reset the teacher's selected topic while she is choosing a new topic.
+    if(document.activeElement !== byId('topicInput')){
+      byId('topicInput').value = s.topic || 'Technology';
+      byId('wordInput').value = s.word || '';
+      byId('helperInput').value = s.helper || '';
+    }
+    if(document.activeElement !== byId('instructionInput')){
+      byId('instructionInput').value = s.instructions || '';
+    }
   }
 
   renderStages('teacherStages',st);
@@ -920,6 +931,8 @@ function renderStudentResults(s,st){
     <div class="score">Group ${esc(currentUser.group)}: ${s.groupScores?.[currentUser.group]||0} pts</div>
   </div>`;
 }
+
+
 
 async function leaveGame(){
   if(!currentUser) return backToHub();
