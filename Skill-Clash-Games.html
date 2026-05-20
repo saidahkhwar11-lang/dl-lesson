@@ -778,6 +778,158 @@ input,select,textarea{
   }
 }
 
+
+/* ===== STUDENT RESULTS REDESIGN - CUTE CLEAR ===== */
+#studentPage .two{
+  grid-template-columns:380px 1fr!important;
+  gap:16px!important;
+  align-items:start!important;
+}
+
+#studentPage .card{
+  border-radius:24px!important;
+  background:rgba(255,255,255,.97)!important;
+  box-shadow:0 12px 28px rgba(54,76,135,.10)!important;
+}
+
+#studentPage #rightResultsSection{
+  background:linear-gradient(135deg,#fff7fb,#f2f7ff)!important;
+  border:1px solid #dfe8ff!important;
+  border-radius:24px!important;
+  padding:18px!important;
+}
+
+#studentPage #rightResultsSection h2{
+  font-size:20px!important;
+  margin-bottom:12px!important;
+}
+
+.studentResultHero{
+  border-radius:26px!important;
+  padding:22px!important;
+  text-align:center!important;
+  border:2px solid transparent!important;
+  box-shadow:0 14px 30px rgba(54,76,135,.12)!important;
+}
+
+.studentResultHero.win{
+  background:linear-gradient(135deg,#eafff3,#f8fffb)!important;
+  border-color:#9be2bb!important;
+}
+
+.studentResultHero.lose{
+  background:linear-gradient(135deg,#fff1f3,#fff9fa)!important;
+  border-color:#f5b7c1!important;
+}
+
+.resultEmoji{
+  font-size:58px!important;
+  line-height:1!important;
+  margin-bottom:8px!important;
+}
+
+.resultTitleBig{
+  font-size:34px!important;
+  font-weight:800!important;
+  color:#20366f!important;
+  margin-bottom:6px!important;
+  line-height:1.1!important;
+}
+
+.resultSubtitle{
+  font-size:15px!important;
+  color:#607096!important;
+  margin-bottom:16px!important;
+}
+
+.imposterRevealCard{
+  background:white!important;
+  border:1px solid #dbe6ff!important;
+  border-radius:22px!important;
+  padding:16px!important;
+  margin:12px auto!important;
+  max-width:520px!important;
+}
+
+.imposterRevealLabel{
+  font-size:14px!important;
+  color:#607096!important;
+  font-weight:600!important;
+  margin-bottom:5px!important;
+}
+
+.imposterRevealBigName{
+  font-size:42px!important;
+  font-weight:800!important;
+  color:#253f83!important;
+  line-height:1.1!important;
+  word-break:break-word!important;
+}
+
+.pointsPillBig{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:130px!important;
+  margin:12px auto!important;
+  padding:12px 18px!important;
+  background:#eef4ff!important;
+  color:#294a99!important;
+  border-radius:999px!important;
+  font-size:24px!important;
+  font-weight:800!important;
+}
+
+.resultSimpleBox{
+  background:rgba(255,255,255,.75)!important;
+  border:1px solid #dfe8ff!important;
+  border-radius:18px!important;
+  padding:14px!important;
+  margin-top:12px!important;
+  text-align:left!important;
+}
+
+.resultSimpleBox b{
+  color:#20366f!important;
+}
+
+.resultSimpleText{
+  font-size:15px!important;
+  line-height:1.45!important;
+  color:#4f5f84!important;
+  margin-top:5px!important;
+}
+
+#studentPage .stageBox{
+  display:flex!important;
+  gap:5px!important;
+  flex-wrap:wrap!important;
+  margin:8px 0!important;
+}
+
+#studentPage .stage{
+  font-size:11px!important;
+  padding:6px 9px!important;
+}
+
+#studentPage .timerBig{
+  font-size:44px!important;
+}
+
+#studentPage #studentInstruction{
+  font-size:13px!important;
+  padding:10px!important;
+}
+
+@media(max-width:850px){
+  #studentPage .two{
+    grid-template-columns:1fr!important;
+  }
+  .imposterRevealBigName{
+    font-size:34px!important;
+  }
+}
+
 </style>
 </head>
 
@@ -1797,24 +1949,56 @@ async function vote(id){
 }
 
 function renderStudentResults(s,st){
-  const box=byId('studentResults');
-  if(!box || st!=='results') return;
+  const box = byId('studentResults');
+  if(!box || !currentUser) return;
 
-  const imp=s.students?.[s.groupImposters?.[currentUser.group]]?.name || 'Not selected';
+  const g = currentUser.group;
+  const impId = s.groupImposters?.[g];
+  const impName = s.students?.[impId]?.name || 'Unknown';
 
-  box.innerHTML=`<div class="resultRow">
-    <div>
-      <div class="name">🕵️ Your Group Imposter</div>
-      <div class="mini">${esc(imp)}</div>
+  if(!s.resultsReleased && st !== 'results'){
+    box.innerHTML = `
+      <div class="status">
+        🏆 Results will appear after teacher releases them.
+      </div>
+    `;
+    return;
+  }
+
+  const resultText = s.groupResults?.[g] || '';
+  const win = resultText.includes('agreed') || resultText.includes('found the imposter') || resultText.includes('Group wins');
+
+  box.innerHTML = `
+    <div class="studentResultHero ${win ? 'win' : 'lose'}">
+
+      <div class="resultEmoji">${win ? '🎉' : '😈'}</div>
+
+      <div class="resultTitleBig">
+        ${win ? 'Your Group Won!' : 'The Imposter Won!'}
+      </div>
+
+      <div class="resultSubtitle">
+        ${win
+          ? 'Your group agreed on the correct imposter.'
+          : 'Your group did not agree on the correct imposter.'}
+      </div>
+
+      <div class="imposterRevealCard">
+        <div class="imposterRevealLabel">🕵️ The imposter was</div>
+        <div class="imposterRevealBigName">${esc(impName)}</div>
+      </div>
+
+      <div class="pointsPillBig">
+        Group ${esc(g)}: ${s.groupScores?.[g] || 0} pts
+      </div>
+
+      <div class="resultSimpleBox">
+        <b>Round Result</b>
+        <div class="resultSimpleText">${esc(resultText)}</div>
+      </div>
+
     </div>
-  </div>
-  <div class="resultRow">
-    <div>
-      <div class="name">Result</div>
-      <div class="mini">${esc(s.groupResults?.[currentUser.group]||'No result')}</div>
-    </div>
-    <div class="score">Group ${esc(currentUser.group)}: ${s.groupScores?.[currentUser.group]||0} pts</div>
-  </div>`;
+  `;
 }
 
 
