@@ -312,6 +312,7 @@ const DEFAULT_FIREBASE_CONFIG = {
 
 const LESSON_KEY = 'skill_clash_games_per_group_v1';
 const TEACHER_PASSWORD = '1234';
+const SESSION_KEY = 'skill_clash_games_session_v1';
 
 let currentUser = null;
 let teacherSecretsHidden = false;
@@ -507,6 +508,10 @@ async function initFirebase(){
     stateRef.on('value', snap=>{
       stateCache = snap.exists() ? snap.val() : defaultState();
 
+      if(!currentUser){
+        restoreSession();
+      }
+
       if(currentUser?.role==='teacher') teacherRefresh();
       if(currentUser?.role==='student') studentRefresh();
     });
@@ -515,6 +520,8 @@ async function initFirebase(){
     if(!snap.exists()){
       await stateRef.set(defaultState());
     }
+
+    restoreSession();
 
   }catch(err){
     console.error(err);
@@ -539,8 +546,52 @@ async function setState(s){
   }
 }
 
+
+function saveSession(){
+  try{
+    if(currentUser){
+      localStorage.setItem(SESSION_KEY, JSON.stringify(currentUser));
+    }
+  }catch(e){}
+}
+
+function clearSession(){
+  try{
+    localStorage.removeItem(SESSION_KEY);
+  }catch(e){}
+}
+
+function restoreSession(){
+  try{
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(!saved || !saved.role) return false;
+
+    currentUser = saved;
+
+    hide('hubPage');
+    hide('loginPage');
+
+    if(saved.role === 'teacher'){
+      show('teacherPage');
+      teacherRefresh();
+      return true;
+    }
+
+    if(saved.role === 'student'){
+      show('studentPage');
+      studentRefresh();
+      return true;
+    }
+
+    return false;
+  }catch(e){
+    clearSession();
+    return false;
+  }
+}
+
 function openGame(){hide('hubPage');show('loginPage')}
-function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}
+function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage')}
 function showLogin(t){t==='student'?(show('studentLogin'),hide('teacherLogin')):(show('teacherLogin'),hide('studentLogin'))}
 
 function activeGroups(s){
@@ -607,6 +658,7 @@ async function studentJoin(){
   await setState(s);
 
   currentUser={role:'student',id,name,cls,group};
+  saveSession();
   hide('loginPage');show('studentPage');
   studentRefresh();
 }
@@ -619,6 +671,7 @@ async function teacherJoin(){
   if(!firebaseReady){alert('Firebase is not connected yet.');return}
 
   currentUser={role:'teacher'};
+  saveSession();
   hide('loginPage');show('teacherPage');
   teacherRefresh();
 }
@@ -714,6 +767,7 @@ async function resetGame(){
 
   stateCache=defaultState();
   currentUser={role:'teacher'};
+  saveSession();
   hide('studentPage');hide('loginPage');hide('hubPage');show('teacherPage');
   teacherRefresh();
   alert('All game data deleted. Students must join again.');
@@ -905,7 +959,12 @@ function studentRefresh(){
   const st = stageByTime(s);
 
   if(!s.students?.[currentUser.id]){
-    byId('studentInstruction').innerText='You were removed/reset by the teacher. Please leave and join again.';
+    clearSession();
+    currentUser = null;
+    hide('studentPage');
+    show('loginPage');
+    showLogin('student');
+    alert('The game was reset by the teacher. Please join again.');
     return;
   }
 
@@ -1061,6 +1120,8 @@ async function leaveGame(){
   }
 
   await setState(s);
+  clearSession();
+  currentUser=null;
   backToHub();
 }
 
