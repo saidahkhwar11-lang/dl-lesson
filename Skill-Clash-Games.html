@@ -59,6 +59,8 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
 .secretHidden{filter:blur(7px);user-select:none;pointer-events:none}
 .screenShareSafe{background:#eefaf3!important;border-color:#aee5c4!important;color:#216b45!important}
+.collapsedBox{display:none!important}
+.smallToggle{float:right;background:#ecf1ff!important;color:#2d4380!important;box-shadow:none!important;border:1px solid #cbd7ff!important}
 @media(max-width:850px){.grid,.two{grid-template-columns:1fr}.hero h1{font-size:25px}.secretCard .word{font-size:27px}}
 </style>
 </head>
@@ -155,7 +157,7 @@ button:disabled{opacity:.55;cursor:not-allowed}
 
     <div class="two">
       <div class="card teacherOnly">
-        <h2>👩‍🏫 Teacher Control</h2>
+        <h2>👩‍🏫 Teacher Control <button class="smallToggle" onclick="toggleSettingsBox()" id="settingsToggleBtn">Close Settings</button></h2>
         <div class="stageBox" id="teacherStages"></div>
 
         <label>Choose Topic</label>
@@ -396,15 +398,24 @@ function getRandomItem(list){
   return list[Math.floor(Math.random()*list.length)];
 }
 
-function generateRoundWord(topic){
+function generateRoundWord(topic, state){
   const list = TOPIC_BANK[topic] || TOPIC_BANK.Technology;
-  const lastWord = stateCache?.word || '';
-  let item = getRandomItem(list);
-  let guard = 0;
-  while(item.word === lastWord && list.length > 1 && guard < 10){
-    item = getRandomItem(list);
-    guard++;
+  state.lastWordsByTopic = state.lastWordsByTopic || {};
+  const used = state.lastWordsByTopic[topic] || [];
+
+  let available = list.filter(item => !used.includes(item.word));
+
+  // If all words from this topic were used, start again fresh.
+  if(!available.length){
+    available = list.slice();
+    state.lastWordsByTopic[topic] = [];
   }
+
+  const item = available[Math.floor(Math.random() * available.length)];
+
+  state.lastWordsByTopic[topic] = state.lastWordsByTopic[topic] || [];
+  state.lastWordsByTopic[topic].push(item.word);
+
   return item;
 }
 
@@ -444,7 +455,8 @@ function defaultState(){
     votes:{},
     scores:{},
     groupScores:{},
-    groupResults:{}
+    groupResults:{},
+    lastWordsByTopic:{}
   };
 }
 
@@ -610,7 +622,8 @@ async function saveSettings(){
 
 function previewGeneratedWord(){
   const topic = byId('topicInput').value || 'Technology';
-  const item = generateRoundWord(topic);
+  const list = TOPIC_BANK[topic] || TOPIC_BANK.Technology;
+  const item = list[Math.floor(Math.random() * list.length)];
   byId('wordInput').value = item.word;
   byId('helperInput').value = item.helper;
 }
@@ -624,7 +637,7 @@ async function startNewRound(){
   s.instructions = byId('instructionInput').value.trim();
 
   // AI-style generation from the selected topic: new word + helper hint.
-  const generated = generateRoundWord(selectedTopic);
+  const generated = generateRoundWord(selectedTopic, s);
   s.word = generated.word;
   s.helper = generated.helper;
 
@@ -717,6 +730,16 @@ function scoreRound(s){
   s.scored=true;
 }
 
+
+
+function toggleSettingsBox(){
+  const box = byId('teacherSecretSettings');
+  const btn = byId('settingsToggleBtn');
+  if(!box || !btn) return;
+
+  const isClosed = box.classList.toggle('collapsedBox');
+  btn.innerText = isClosed ? 'Open Settings' : 'Close Settings';
+}
 
 function toggleTeacherSecrets(){
   teacherSecretsHidden = !teacherSecretsHidden;
