@@ -57,6 +57,12 @@ button:disabled{opacity:.55;cursor:not-allowed}
 .stepItem{padding:10px;border-radius:14px;background:white;border:1px solid #dbe5ff;font-weight:800;color:#50608a;margin-bottom:7px}
 .stepItem.active{background:#4267c7;color:white}
 .footerNote{text-align:center;color:#6d789b;font-size:13px;margin-top:20px}
+.objectiveBox{background:linear-gradient(135deg,#fff7fb,#eef6ff);border:1px solid #dce5ff;border-radius:22px;padding:18px;box-shadow:0 8px 20px rgba(61,72,110,.08)}
+.objectiveBox h2{display:flex;align-items:center;gap:8px}
+.howSteps{display:grid;gap:9px;margin-top:12px}
+.howStep{background:white;border:1px solid #dce5ff;border-radius:15px;padding:10px 12px;font-weight:800;color:#344979}
+.teacherControlsBottom{margin-top:14px}
+.pointsRule{background:#fff8dc;border:1px solid #f0d982;color:#77611a;border-radius:14px;padding:10px 12px;font-weight:800;margin-top:10px}
 .secretHidden{filter:blur(7px);user-select:none;pointer-events:none}
 .screenShareSafe{background:#eefaf3!important;border-color:#aee5c4!important;color:#216b45!important}
 .collapsedBox{display:none!important}
@@ -156,38 +162,16 @@ button:disabled{opacity:.55;cursor:not-allowed}
     </div>
 
     <div class="two">
-      <div class="card teacherOnly">
-        <h2>👩‍🏫 Teacher Control <button class="smallToggle" onclick="toggleSettingsBox()" id="settingsToggleBtn">Close Settings</button></h2>
-        <div class="stageBox" id="teacherStages"></div>
-
-        <label>Choose Topic</label>
-        <select id="topicInput" onchange="previewGeneratedWord()">
-          <option value="Technology">Technology</option>
-          <option value="Food">Food</option>
-          <option value="Sports">Sports</option>
-          <option value="School">School</option>
-          <option value="Jobs">Jobs</option>
-          <option value="Transportation">Transportation</option>
-          <option value="Drinks">Drinks</option>
-          <option value="Household">Household</option>
-          <option value="Clothes">Clothes</option>
-          <option value="Weather">Weather</option>
-          <option value="Nature">Nature</option>
-        </select>
-
-        <label>Generated Word for This Round</label>
-        <input id="wordInput" value="Smartphone" readonly>
-
-        <label>Generated Helper Hint for Imposters</label>
-        <input id="helperInput" value="It is something people use every day to communicate." readonly>
-
+      <div class="objectiveBox">
+        <h2>🎯 How to Play</h2>
+        <div class="status good"><b>Objective:</b> Work with your group to find the hidden imposter by reading hints carefully and agreeing on the best vote.</div>
+        <div class="howSteps">
+          <div class="howStep">💭 1. Students see their card and write one smart hint.</div>
+          <div class="howStep">💬 2. Each group reads only their own group hints and discusses.</div>
+          <div class="howStep">🗳️ 3. Every student votes for the suspected imposter in the same group.</div>
+          <div class="howStep">🏆 4. Teacher releases results and points appear group by group.</div>
         </div>
-        <label>Instructions</label>
-        <textarea id="instructionInput">Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.</textarea>
-
-        <button onclick="saveSettings()">💾 Save Topic</button>
-        <button class="purple" onclick="previewGeneratedWord()">🎲 Preview New Word</button>
-        <div class="status">Each active group needs at least 3 students and gets one private imposter automatically.</div>
+        <div class="pointsRule">Scoring by round: If all group members agree on the correct imposter, the group wins +3 and the imposter gets 0. If they disagree or choose wrong, the group gets 0 and the imposter wins +3.</div>
         <div id="shareSafeMsg" class="status screenShareSafe hidden">Screen-share safe mode is ON. Topic, word, helper hint, and imposter names are hidden.</div>
       </div>
 
@@ -208,13 +192,48 @@ button:disabled{opacity:.55;cursor:not-allowed}
         <div id="teacherStudents" class="studentList"></div>
       </div>
       <div class="card">
-        <h2>🏆 Group Results</h2>
+        <h2>🏆 Results by Round</h2>
         <div id="teacherResults" class="resultList"></div>
       </div>
     </div>
+
+    <div class="card teacherOnly teacherControlsBottom">
+      <h2>👩‍🏫 Teacher Control <button class="smallToggle" onclick="toggleSettingsBox()" id="settingsToggleBtn">Close Settings</button></h2>
+      <div class="stageBox" id="teacherStages"></div>
+
+      <div id="teacherSecretSettings">
+        <label>Choose Topic</label>
+        <select id="topicInput" onchange="previewGeneratedWord()">
+          <option value="Technology">Technology</option>
+          <option value="Food">Food</option>
+          <option value="Sports">Sports</option>
+          <option value="School">School</option>
+          <option value="Jobs">Jobs</option>
+          <option value="Transportation">Transportation</option>
+          <option value="Drinks">Drinks</option>
+          <option value="Household">Household</option>
+          <option value="Clothes">Clothes</option>
+          <option value="Weather">Weather</option>
+          <option value="Nature">Nature</option>
+        </select>
+
+        <label>Generated Word for This Round</label>
+        <input id="wordInput" value="Smartphone" readonly>
+
+        <label>Generated Helper Hint for Imposters</label>
+        <input id="helperInput" value="It is something people use every day to communicate." readonly>
+      </div>
+
+      <label>Instructions</label>
+      <textarea id="instructionInput">Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.</textarea>
+
+      <button onclick="saveSettings()">💾 Save Topic</button>
+      <button class="purple" onclick="previewGeneratedWord()">🎲 Preview New Word</button>
+      <div class="status">Each active group needs at least 3 students and gets one private imposter automatically.</div>
+    </div>
   </div>
 
-  <div id="studentPage" class="hidden">
+<div id="studentPage" class="hidden">
     <div class="tabs">
       <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
       <button class="secondary" onclick="backToHub()">🏠 Games Hub</button>
@@ -456,6 +475,7 @@ function defaultState(){
     scores:{},
     groupScores:{},
     groupResults:{},
+    roundHistory:[],
     lastWordsByTopic:{}
   };
 }
@@ -707,27 +727,45 @@ function scoreRound(s){
   s.scores = s.scores || {};
   s.groupScores = s.groupScores || {};
   s.groupResults = s.groupResults || {};
+  s.roundHistory = s.roundHistory || [];
+
+  const roundRecord = {
+    time: new Date().toLocaleString(),
+    topic: s.topic || '',
+    word: s.word || '',
+    groups: {}
+  };
 
   for(const g of activeGroups(s)){
     const imp = s.groupImposters?.[g];
+    const impName = s.students?.[imp]?.name || 'Unknown';
     const groupIds = Object.keys(s.students).filter(id=>s.students[id].group===g);
     const nonImposters = groupIds.filter(id=>id !== imp);
-    const votes = nonImposters.map(id=>s.votes[id]).filter(Boolean);
 
     const allNonImpostersVoted = nonImposters.length > 0 && nonImposters.every(id=>s.votes[id]);
-    const allAgree = allNonImpostersVoted && votes.every(v=>v===votes[0]);
-    const found = allAgree && votes[0] === imp;
+    const allAgreeCorrect = allNonImpostersVoted && nonImposters.every(id=>s.votes[id] === imp);
 
-    if(found){
-      s.groupScores[g] = Number(s.groupScores[g]||0) + 4;
-      s.groupResults[g] = '✅ Group '+g+' found the imposter. Group wins +4 points.';
+    if(allAgreeCorrect){
+      s.groupScores[g] = Number(s.groupScores[g] || 0) + 3;
+      s.groupResults[g] = '✅ Group ' + g + ' agreed on the correct imposter. Group wins +3. Imposter gets 0.';
+      roundRecord.groups[g] = {
+        result: 'Group wins',
+        points: '+3 group',
+        imposter: impName
+      };
     }else{
-      if(imp) s.scores[imp] = Number(s.scores[imp]||0) + 3;
-      s.groupResults[g] = '❌ Group '+g+' failed to agree/find the imposter. The imposter wins +3 points.';
+      if(imp) s.scores[imp] = Number(s.scores[imp] || 0) + 3;
+      s.groupResults[g] = '❌ Group ' + g + ' did not agree or chose wrong. Group gets 0. Imposter wins +3.';
+      roundRecord.groups[g] = {
+        result: 'Imposter wins',
+        points: '+3 imposter',
+        imposter: impName
+      };
     }
   }
 
-  s.scored=true;
+  s.roundHistory.push(roundRecord);
+  s.scored = true;
 }
 
 
@@ -812,7 +850,7 @@ function renderTeacherStudents(s){
     const imp=s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
     const members=Object.values(s.students||{})
       .filter(st=>st.group===g)
-      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''}`)
+      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''} (${s.scores?.[st.id]||0})`)
       .join(', ');
 
     const voteCount=Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
@@ -833,21 +871,31 @@ function renderTeacherResults(s){
   if(!box) return;
 
   const gs=activeGroups(s);
-  if(!gs.length){
-    box.innerHTML='<div class="status">No groups yet.</div>';
-    return;
-  }
-
-  box.innerHTML=gs.map(g=>{
+  const current = gs.length ? gs.map(g=>{
     const result=s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
     return `<div class="resultRow">
       <div>
-        <div class="name">Group ${esc(g)}</div>
+        <div class="name">Current Round - Group ${esc(g)}</div>
         <div class="mini">${esc(result)}</div>
       </div>
       <div class="score">${s.groupScores?.[g]||0} pts</div>
     </div>`;
+  }).join('') : '<div class="status">No groups yet.</div>';
+
+  const history = (s.roundHistory || []).slice().reverse().map((r,idx)=>{
+    const groupsText = Object.keys(r.groups || {}).map(g=>{
+      const gr = r.groups[g];
+      return `Group ${g}: ${gr.result} (${gr.points}) - Imposter: ${gr.imposter}`;
+    }).join('<br>');
+    return `<div class="resultRow">
+      <div>
+        <div class="name">Round ${(s.roundHistory||[]).length - idx}: ${esc(r.topic)} / ${esc(r.word)}</div>
+        <div class="mini">${groupsText}</div>
+      </div>
+    </div>`;
   }).join('');
+
+  box.innerHTML = current + (history ? '<h3 style="margin-top:14px">📜 Previous Rounds</h3>' + history : '');
 }
 
 function studentRefresh(){
