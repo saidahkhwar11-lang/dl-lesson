@@ -486,6 +486,97 @@ input,select,textarea{
   flex-direction:column!important;
   gap:5px!important;
 }
+
+/* ===== CLEAR STUDENT RESULTS ===== */
+#studentPage .resultMainBox{
+  background:linear-gradient(135deg,#ffffff,#f7fbff)!important;
+  border:2px solid #dce8ff!important;
+  border-radius:24px!important;
+  padding:18px!important;
+  margin-top:12px!important;
+  box-shadow:0 10px 24px rgba(58,79,138,.08)!important;
+}
+
+#studentPage .resultStatusWin{
+  background:linear-gradient(135deg,#eafff2,#f6fff9)!important;
+  border:2px solid #a9e6c2!important;
+  color:#157347!important;
+}
+
+#studentPage .resultStatusLose{
+  background:linear-gradient(135deg,#fff3f3,#fff8f8)!important;
+  border:2px solid #f0b5b5!important;
+  color:#b43b3b!important;
+}
+
+#studentPage .resultTop{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:center!important;
+  gap:12px!important;
+  flex-wrap:wrap!important;
+  margin-bottom:14px!important;
+}
+
+#studentPage .resultBadge{
+  background:#eef4ff!important;
+  color:#264b9b!important;
+  border-radius:18px!important;
+  padding:10px 14px!important;
+  font-size:18px!important;
+  font-weight:700!important;
+  min-width:90px!important;
+  text-align:center!important;
+}
+
+#studentPage .resultImposter{
+  display:flex!important;
+  align-items:center!important;
+  gap:12px!important;
+  background:#fff!important;
+  border:1px solid #dfe7ff!important;
+  border-radius:18px!important;
+  padding:14px!important;
+  margin-bottom:14px!important;
+}
+
+#studentPage .imposterAvatar{
+  width:56px!important;
+  height:56px!important;
+  border-radius:50%!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  font-size:28px!important;
+  background:linear-gradient(135deg,#6f78ff,#9c6fff)!important;
+  color:white!important;
+  flex-shrink:0!important;
+}
+
+#studentPage .resultMessage{
+  font-size:16px!important;
+  line-height:1.45!important;
+  font-weight:600!important;
+}
+
+#studentPage .resultBigText{
+  font-size:20px!important;
+  font-weight:700!important;
+  margin-bottom:4px!important;
+}
+
+#studentPage .resultSmall{
+  font-size:14px!important;
+  opacity:.9!important;
+}
+
+@media(max-width:760px){
+  #studentPage .resultTop{
+    flex-direction:column!important;
+    align-items:flex-start!important;
+  }
+}
+
 </style>
 </head>
 
