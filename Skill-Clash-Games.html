@@ -2315,32 +2315,59 @@ function renderTeacherStudents(s){
   if(!box) return;
 
   const gs=activeGroups(s);
+
   if(!gs.length){
     box.innerHTML='<div class="status">No students joined yet.</div>';
     return;
   }
 
   box.innerHTML=gs.map(g=>{
-    const groupStudents = Object.values(s.students||{}).filter(st=>st.group===g);
-    const imp = s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
 
-    const members = groupStudents
-      .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''}`)
+    const groupStudents = Object.values(s.students||{})
+      .filter(st=>st.group===g);
+
+    const impId = s.groupImposters?.[g];
+    const impName = s.students?.[impId]?.name || 'Not selected';
+
+    const normalMembers = groupStudents
+      .filter(st=>st.id!==impId)
+      .map(st=>st.name)
       .join(', ');
 
-    const voteCount = Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
-    const total = groupStudents.length;
+    const voteCount = Object.keys(s.votes||{})
+      .filter(id=>s.students?.[id]?.group===g).length;
 
-    return `<div class="studentRow">
-      <div class="name">👥 Group ${esc(g)}</div>
-      <div class="mini">
-        <b>Members (${total}):</b><br>
-        ${esc(members || 'No members')}<br><br>
-        <span data-secret="true"><b>Imposter:</b> ${esc(imp)}</span><br>
-        <b>Votes:</b> ${voteCount}/${total}
+    const totalWithoutImposter = Math.max(0,groupStudents.length-1);
+
+    return `
+      <div class="studentRow">
+
+        <div class="name">
+          👥 Group ${esc(g)}
+        </div>
+
+        <div class="score">
+          ${s.groupScores?.[g]||0}<br>pts
+        </div>
+
+        <div class="mini">
+
+          <div style="margin-bottom:10px;">
+            <b>Members:</b><br>
+            ${esc(normalMembers || 'No members')}
+          </div>
+
+          <div>
+            <b>Imposter:</b> ${esc(impName)}
+            <br>
+            <b>Total Votes:</b> ${voteCount}/${totalWithoutImposter}
+          </div>
+
+        </div>
+
       </div>
-      <div class="score">${s.groupScores?.[g]||0}<br>pts</div>
-    </div>`;
+    `;
+
   }).join('');
 
   if(typeof applyTeacherSecretVisibility === 'function'){
