@@ -286,674 +286,34 @@ input,select,textarea{
 }
 
 
-/* ===== TEACHER PAGE ORGANIZED LAYOUT FIX ===== */
+
+/* =========================================================
+   FINAL FIXED TEACHER DASHBOARD LAYOUT
+   Works with 5–6 groups, saves space, and keeps full logic.
+========================================================= */
+
 #teacherPage{
-  display:none;
+  padding-bottom:96px!important;
 }
 
-#teacherPage:not(.hidden){
-  display:block;
-}
-
-#teacherPage .two{
-  grid-template-columns:1fr 1fr!important;
-  gap:16px!important;
-  align-items:stretch!important;
-}
-
-#teacherPage .grid{
-  grid-template-columns:1fr 1fr!important;
-  gap:16px!important;
-}
-
-#teacherPage .card,
-#teacherPage .objectiveBox{
-  background:rgba(255,255,255,.96)!important;
-  border:1px solid #dfe7ff!important;
-  border-radius:22px!important;
-  box-shadow:0 10px 26px rgba(64,78,130,.10)!important;
-  padding:18px!important;
-}
-
-#teacherPage .card h2,
-#teacherPage .objectiveBox h2{
-  font-size:20px!important;
-  margin-bottom:12px!important;
-  color:#233b78!important;
-}
-
-#teacherPage .objectiveBox .status.good{
-  background:linear-gradient(135deg,#ecfff6,#f6fffb)!important;
-  border:1px solid #aee8c8!important;
-  color:#177348!important;
-  font-size:14px!important;
-  padding:12px 14px!important;
-}
-
-#teacherPage .howSteps{
-  display:grid!important;
-  grid-template-columns:1fr 1fr!important;
-  gap:10px!important;
-}
-
-#teacherPage .howStep{
-  background:linear-gradient(135deg,#ffffff,#f7f9ff)!important;
-  border:1px solid #dfe7ff!important;
-  border-radius:16px!important;
-  padding:11px 12px!important;
-  font-size:13.5px!important;
-  line-height:1.3!important;
-}
-
-#teacherPage .pointsRule{
-  background:#fff8e6!important;
-  border:1px solid #f2d98a!important;
-  color:#7a5b08!important;
-  font-size:13.5px!important;
-  padding:11px 12px!important;
-  border-radius:16px!important;
-}
-
-#teacherPage .timerBig{
-  font-size:56px!important;
-  line-height:1!important;
-  margin:12px 0!important;
-}
-
-#teacherPage .stepItem{
-  display:flex!important;
-  align-items:center!important;
-  gap:8px!important;
-  min-height:42px!important;
-  background:#f9fbff!important;
-  border:1px solid #dfe7ff!important;
-  border-radius:16px!important;
-  padding:10px 12px!important;
-  font-size:13.5px!important;
-}
-
-#teacherPage .stepItem.active{
-  background:linear-gradient(135deg,#456bd0,#6e7ee8)!important;
-  color:white!important;
-  border-color:transparent!important;
-  box-shadow:0 8px 18px rgba(69,107,208,.22)!important;
-}
-
-#teacherPage .teacherControlsBottom{
-  margin-top:16px!important;
-  padding:0!important;
-  overflow:hidden!important;
-}
-
-#teacherPage .teacherControlsBottom h2{
-  background:linear-gradient(135deg,#f5f8ff,#fff8fd)!important;
-  padding:14px 18px!important;
-  margin:0!important;
-  border-bottom:1px solid #e7edff!important;
-}
-
-#teacherPage #teacherSecretSettings{
-  display:grid!important;
-  grid-template-columns:1fr 1fr 1fr!important;
-  gap:12px!important;
-  padding:16px 18px 6px!important;
-}
-
-#teacherPage #teacherSecretSettings label{
-  margin-top:0!important;
-}
-
-#teacherPage #teacherSecretSettings label,
-#teacherPage #teacherSecretSettings select,
-#teacherPage #teacherSecretSettings input{
-  width:100%!important;
-}
-
-#teacherPage #teacherSecretSettings label:nth-of-type(1),
-#teacherPage #teacherSecretSettings select{
-  grid-column:auto!important;
-}
-
-#teacherPage .teacherControlsBottom > label,
-#teacherPage .teacherControlsBottom > textarea,
-#teacherPage .teacherControlsBottom > button,
-#teacherPage .teacherControlsBottom > .status{
-  margin-left:18px!important;
-  margin-right:18px!important;
-}
-
-#teacherPage .teacherControlsBottom textarea{
-  min-height:72px!important;
-  margin-top:6px!important;
-  margin-bottom:8px!important;
-}
-
-#teacherPage .teacherControlsBottom > .status{
-  margin-bottom:16px!important;
-}
-
-#teacherPage .studentRow,
-#teacherPage .resultRow{
-  background:linear-gradient(135deg,#f8fbff,#ffffff)!important;
-  border:1px solid #dfe7ff!important;
-  border-radius:18px!important;
-  padding:14px!important;
-  align-items:flex-start!important;
-}
-
-#teacherPage .studentRow .name,
-#teacherPage .resultRow .name{
-  font-size:15px!important;
-  color:#223b7a!important;
-  margin-bottom:4px!important;
-}
-
-#teacherPage .score{
-  background:#eef4ff!important;
-  color:#2d4e9f!important;
-  border-radius:14px!important;
-  padding:8px 10px!important;
-  min-width:54px!important;
-  text-align:center!important;
-}
-
-#teacherPage .tabs{
-  position:sticky!important;
-  top:0!important;
-  z-index:20!important;
-  background:rgba(244,247,255,.88)!important;
-  backdrop-filter:blur(10px)!important;
-  padding:8px!important;
-  border-radius:18px!important;
-}
-
-#teacherPage .tabs button{
-  min-width:auto!important;
-}
-
-@media(max-width:900px){
-  #teacherPage .two,
-  #teacherPage .grid,
-  #teacherPage #teacherSecretSettings,
-  #teacherPage .howSteps{
-    grid-template-columns:1fr!important;
-  }
-}
-
-
-#teacherPage .settingField{
-  display:flex!important;
-  flex-direction:column!important;
-  gap:5px!important;
-}
-
-/* ===== CLEAR STUDENT RESULTS ===== */
-#studentPage .resultMainBox{
-  background:linear-gradient(135deg,#ffffff,#f7fbff)!important;
-  border:2px solid #dce8ff!important;
-  border-radius:24px!important;
-  padding:18px!important;
-  margin-top:12px!important;
-  box-shadow:0 10px 24px rgba(58,79,138,.08)!important;
-}
-
-#studentPage .resultStatusWin{
-  background:linear-gradient(135deg,#eafff2,#f6fff9)!important;
-  border:2px solid #a9e6c2!important;
-  color:#157347!important;
-}
-
-#studentPage .resultStatusLose{
-  background:linear-gradient(135deg,#fff3f3,#fff8f8)!important;
-  border:2px solid #f0b5b5!important;
-  color:#b43b3b!important;
-}
-
-#studentPage .resultTop{
-  display:flex!important;
-  justify-content:space-between!important;
-  align-items:center!important;
-  gap:12px!important;
-  flex-wrap:wrap!important;
-  margin-bottom:14px!important;
-}
-
-#studentPage .resultBadge{
-  background:#eef4ff!important;
-  color:#264b9b!important;
-  border-radius:18px!important;
-  padding:10px 14px!important;
-  font-size:18px!important;
-  font-weight:700!important;
-  min-width:90px!important;
-  text-align:center!important;
-}
-
-#studentPage .resultImposter{
-  display:flex!important;
-  align-items:center!important;
-  gap:12px!important;
-  background:#fff!important;
-  border:1px solid #dfe7ff!important;
-  border-radius:18px!important;
-  padding:14px!important;
-  margin-bottom:14px!important;
-}
-
-#studentPage .imposterAvatar{
-  width:56px!important;
-  height:56px!important;
-  border-radius:50%!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  font-size:28px!important;
-  background:linear-gradient(135deg,#6f78ff,#9c6fff)!important;
-  color:white!important;
-  flex-shrink:0!important;
-}
-
-#studentPage .resultMessage{
-  font-size:16px!important;
-  line-height:1.45!important;
-  font-weight:600!important;
-}
-
-#studentPage .resultBigText{
-  font-size:20px!important;
-  font-weight:700!important;
-  margin-bottom:4px!important;
-}
-
-#studentPage .resultSmall{
-  font-size:14px!important;
-  opacity:.9!important;
-}
-
-@media(max-width:760px){
-  #studentPage .resultTop{
-    flex-direction:column!important;
-    align-items:flex-start!important;
-  }
-}
-
-
-/* ===== EXTRA CLEAR RESULTS ===== */
-#studentPage .resultMainBox{
-  padding:22px!important;
-}
-
-#studentPage .resultBigWinner{
-  font-size:30px!important;
-  font-weight:800!important;
-  line-height:1.1!important;
-  margin-bottom:8px!important;
-}
-
-#studentPage .resultImposter{
-  background:linear-gradient(135deg,#ffffff,#f7f9ff)!important;
-  border:2px solid #dbe4ff!important;
-}
-
-#studentPage .imposterRevealName{
-  font-size:38px!important;
-  font-weight:800!important;
-  line-height:1.1!important;
-  color:#223b7a!important;
-  margin-top:4px!important;
-}
-
-#studentPage .imposterLabel{
-  font-size:15px!important;
-  font-weight:600!important;
-  opacity:.8!important;
-}
-
-#studentPage .resultExplainBox{
-  margin-top:14px!important;
-  border-radius:18px!important;
-  padding:16px!important;
-  background:rgba(255,255,255,.72)!important;
-  border:1px solid #dce5ff!important;
-}
-
-#studentPage .resultExplainTitle{
-  font-size:18px!important;
-  font-weight:700!important;
-  margin-bottom:8px!important;
-}
-
-#studentPage .resultExplainText{
-  font-size:16px!important;
-  line-height:1.5!important;
-  font-weight:500!important;
-}
-
-#studentPage .resultBadge{
-  font-size:22px!important;
-  padding:12px 16px!important;
-}
-
-
-/* ===== STUDENT PAGE CUTE COMPACT FIX ===== */
-#studentPage .two{
-  grid-template-columns:360px 1fr!important;
-  gap:14px!important;
-  align-items:start!important;
-}
-
-#studentPage .card{
-  padding:14px!important;
-  border-radius:22px!important;
-  background:rgba(255,255,255,.96)!important;
-  box-shadow:0 10px 24px rgba(58,78,130,.10)!important;
-}
-
-#studentPage h2{
-  font-size:18px!important;
-  margin-bottom:8px!important;
-}
-
-#studentPage .studentOnly{
-  position:sticky!important;
-  top:86px!important;
-  min-height:auto!important;
-}
-
-#studentPage .stageBox{
-  display:grid!important;
-  grid-template-columns:repeat(5,1fr)!important;
-  gap:5px!important;
-  margin:8px 0!important;
-}
-
-#studentPage .stage{
-  padding:6px 4px!important;
-  font-size:11px!important;
-  text-align:center!important;
-  border-radius:999px!important;
-}
-
-#studentPage .timerBig{
-  font-size:42px!important;
-  margin:8px 0!important;
-  line-height:1!important;
-}
-
-#studentPage #studentInstruction,
-#studentPage #rightStageTitle{
-  font-size:13px!important;
-  padding:9px 11px!important;
-  line-height:1.3!important;
-  margin:8px 0!important;
-}
-
-#studentPage #rightStageTitle{
-  display:none!important;
-}
-
-#studentPage #hintEditor{
-  margin-top:10px!important;
-}
-
-#studentPage textarea{
-  min-height:78px!important;
-}
-
-#studentPage #rightHintsSection,
-#studentPage #rightVoteSection,
-#studentPage #rightResultsSection,
-#studentPage #rightSecretSection{
-  background:linear-gradient(135deg,#f8fbff,#fff8fd)!important;
-  border:1px solid #e1e8ff!important;
-  border-radius:22px!important;
-  padding:14px!important;
-}
-
-#studentPage #rightHintsSection h2,
-#studentPage #rightVoteSection h2,
-#studentPage #rightResultsSection h2{
-  font-size:19px!important;
-  margin-bottom:12px!important;
-}
-
-#studentPage #allHintsBox{
-  display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important;
-  gap:10px!important;
-}
-
-#studentPage #allHintsBox .resultRow{
-  display:block!important;
-  min-height:95px!important;
-  padding:12px!important;
-  background:white!important;
-  border:1px solid #dce6ff!important;
-  border-radius:18px!important;
-  box-shadow:0 4px 12px rgba(58,78,130,.06)!important;
-}
-
-#studentPage #allHintsBox .name{
-  font-size:14px!important;
-  margin-bottom:8px!important;
-  color:#223b7a!important;
-}
-
-#studentPage #allHintsBox .mini{
-  font-size:14px!important;
-  color:#5f6f93!important;
-  line-height:1.35!important;
-}
-
-#studentPage .voteRow{
-  padding:12px!important;
-  border-radius:16px!important;
-}
-
-#studentPage .secretCard{
-  min-height:170px!important;
-  padding:18px!important;
-}
-
-#studentPage .secretCard .word{
-  font-size:28px!important;
-}
-
-#studentPage .tabs{
-  position:sticky!important;
-  top:0!important;
-  z-index:30!important;
-  background:rgba(244,247,255,.88)!important;
-  backdrop-filter:blur(10px)!important;
-  padding:8px!important;
-  border-radius:18px!important;
-}
-
-@media(max-width:850px){
-  #studentPage .two{
-    grid-template-columns:1fr!important;
-  }
-  #studentPage .studentOnly{
-    position:static!important;
-  }
-}
-
-
-/* ===== STUDENT RESULTS REDESIGN - CUTE CLEAR ===== */
-#studentPage .two{
-  grid-template-columns:380px 1fr!important;
-  gap:16px!important;
-  align-items:start!important;
-}
-
-#studentPage .card{
-  border-radius:24px!important;
-  background:rgba(255,255,255,.97)!important;
-  box-shadow:0 12px 28px rgba(54,76,135,.10)!important;
-}
-
-#studentPage #rightResultsSection{
-  background:linear-gradient(135deg,#fff7fb,#f2f7ff)!important;
-  border:1px solid #dfe8ff!important;
-  border-radius:24px!important;
-  padding:18px!important;
-}
-
-#studentPage #rightResultsSection h2{
-  font-size:20px!important;
-  margin-bottom:12px!important;
-}
-
-.studentResultHero{
-  border-radius:26px!important;
-  padding:22px!important;
-  text-align:center!important;
-  border:2px solid transparent!important;
-  box-shadow:0 14px 30px rgba(54,76,135,.12)!important;
-}
-
-.studentResultHero.win{
-  background:linear-gradient(135deg,#eafff3,#f8fffb)!important;
-  border-color:#9be2bb!important;
-}
-
-.studentResultHero.lose{
-  background:linear-gradient(135deg,#fff1f3,#fff9fa)!important;
-  border-color:#f5b7c1!important;
-}
-
-.resultEmoji{
-  font-size:58px!important;
-  line-height:1!important;
-  margin-bottom:8px!important;
-}
-
-.resultTitleBig{
-  font-size:34px!important;
-  font-weight:800!important;
-  color:#20366f!important;
-  margin-bottom:6px!important;
-  line-height:1.1!important;
-}
-
-.resultSubtitle{
-  font-size:15px!important;
-  color:#607096!important;
-  margin-bottom:16px!important;
-}
-
-.imposterRevealCard{
-  background:white!important;
-  border:1px solid #dbe6ff!important;
-  border-radius:22px!important;
-  padding:16px!important;
-  margin:12px auto!important;
-  max-width:520px!important;
-}
-
-.imposterRevealLabel{
-  font-size:14px!important;
-  color:#607096!important;
-  font-weight:600!important;
-  margin-bottom:5px!important;
-}
-
-.imposterRevealBigName{
-  font-size:42px!important;
-  font-weight:800!important;
-  color:#253f83!important;
-  line-height:1.1!important;
-  word-break:break-word!important;
-}
-
-.pointsPillBig{
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  min-width:130px!important;
-  margin:12px auto!important;
-  padding:12px 18px!important;
-  background:#eef4ff!important;
-  color:#294a99!important;
-  border-radius:999px!important;
-  font-size:24px!important;
-  font-weight:800!important;
-}
-
-.resultSimpleBox{
-  background:rgba(255,255,255,.75)!important;
-  border:1px solid #dfe8ff!important;
-  border-radius:18px!important;
-  padding:14px!important;
-  margin-top:12px!important;
-  text-align:left!important;
-}
-
-.resultSimpleBox b{
-  color:#20366f!important;
-}
-
-.resultSimpleText{
-  font-size:15px!important;
-  line-height:1.45!important;
-  color:#4f5f84!important;
-  margin-top:5px!important;
-}
-
-#studentPage .stageBox{
-  display:flex!important;
-  gap:5px!important;
-  flex-wrap:wrap!important;
-  margin:8px 0!important;
-}
-
-#studentPage .stage{
-  font-size:11px!important;
-  padding:6px 9px!important;
-}
-
-#studentPage .timerBig{
-  font-size:44px!important;
-}
-
-#studentPage #studentInstruction{
-  font-size:13px!important;
-  padding:10px!important;
-}
-
-@media(max-width:850px){
-  #studentPage .two{
-    grid-template-columns:1fr!important;
-  }
-  .imposterRevealBigName{
-    font-size:34px!important;
-  }
-}
-
-
-/* ===== FINAL TEACHER DASHBOARD FOR 5-6 GROUPS ===== */
 #teacherPage .tabs{
   position:fixed!important;
   left:50%!important;
-  bottom:16px!important;
-  top:auto!important;
+  bottom:14px!important;
   transform:translateX(-50%)!important;
-  z-index:100!important;
+  z-index:999!important;
+  width:min(980px,calc(100vw - 28px))!important;
   display:flex!important;
   justify-content:center!important;
   align-items:center!important;
-  gap:10px!important;
-  width:min(980px,calc(100vw - 28px))!important;
-  background:rgba(245,248,255,.94)!important;
+  flex-wrap:wrap!important;
+  gap:8px!important;
+  background:rgba(247,249,255,.96)!important;
   border:1px solid #dfe7ff!important;
   border-radius:22px!important;
-  box-shadow:0 12px 30px rgba(45,62,120,.18)!important;
   padding:10px!important;
+  box-shadow:0 14px 34px rgba(37,57,115,.18)!important;
   backdrop-filter:blur(12px)!important;
-}
-
-#teacherPage{
-  padding-bottom:92px!important;
 }
 
 #teacherPage .tabs button{
@@ -964,145 +324,314 @@ input,select,textarea{
   white-space:nowrap!important;
 }
 
-#teacherPage .grid{
+#teacherPage > .two{
   grid-template-columns:1fr 1fr!important;
   gap:14px!important;
+  align-items:stretch!important;
+  margin-bottom:14px!important;
 }
 
-#teacherPage .card{
-  overflow:hidden!important;
+#teacherPage .objectiveBox,
+#teacherPage > .two > .card{
+  background:rgba(255,255,255,.97)!important;
+  border:1px solid #e0e8ff!important;
+  border-radius:24px!important;
+  box-shadow:0 12px 28px rgba(55,75,135,.10)!important;
+  padding:16px!important;
+}
+
+#teacherPage .objectiveBox h2,
+#teacherPage > .two > .card h2{
+  font-size:20px!important;
+  margin-bottom:10px!important;
+  color:#203a78!important;
+}
+
+#teacherPage .objectiveBox .status.good{
+  background:linear-gradient(135deg,#ecfff6,#f8fffc)!important;
+  border:1px solid #b6edcc!important;
+  color:#166d45!important;
+  font-size:13.5px!important;
+  line-height:1.35!important;
+  padding:10px 12px!important;
+  margin:8px 0 10px!important;
+  border-radius:16px!important;
+}
+
+#teacherPage .howSteps{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:8px!important;
+  margin-top:8px!important;
+}
+
+#teacherPage .howStep{
+  background:linear-gradient(135deg,#ffffff,#f8fbff)!important;
+  border:1px solid #dfe8ff!important;
+  color:#324467!important;
+  border-radius:16px!important;
+  padding:10px!important;
+  font-size:13px!important;
+  font-weight:500!important;
+  line-height:1.3!important;
+}
+
+#teacherPage .pointsRule{
+  background:#fff8e6!important;
+  border:1px solid #f1da8c!important;
+  color:#785a09!important;
+  border-radius:16px!important;
+  padding:10px 12px!important;
+  font-size:13px!important;
+  font-weight:600!important;
+  margin-top:10px!important;
+}
+
+#teacherPage .timerBig{
+  font-size:50px!important;
+  line-height:1!important;
+  margin:8px 0 12px!important;
+}
+
+#teacherPage .stepItem{
+  min-height:40px!important;
+  display:flex!important;
+  align-items:center!important;
+  border-radius:16px!important;
+  padding:9px 12px!important;
+  margin-bottom:7px!important;
+  font-size:13px!important;
+  background:#f8fbff!important;
+  border:1px solid #dfe8ff!important;
+  color:#4b5e89!important;
+  font-weight:600!important;
+}
+
+#teacherPage .stepItem.active{
+  background:linear-gradient(135deg,#456bd0,#7b70e8)!important;
+  color:white!important;
+  border-color:transparent!important;
+  box-shadow:0 8px 18px rgba(69,107,208,.22)!important;
+}
+
+#teacherPage > .grid{
+  display:grid!important;
+  grid-template-columns:1.12fr .88fr!important;
+  gap:14px!important;
+  align-items:start!important;
+  margin-top:14px!important;
+}
+
+#teacherPage > .grid > .card{
+  background:rgba(255,255,255,.97)!important;
+  border:1px solid #e0e8ff!important;
+  border-radius:24px!important;
+  box-shadow:0 12px 28px rgba(55,75,135,.10)!important;
+  padding:16px!important;
+  min-height:0!important;
+}
+
+#teacherPage > .grid > .card h2{
+  font-size:20px!important;
+  color:#203a78!important;
+  margin-bottom:12px!important;
 }
 
 #teacherPage .studentList{
   display:grid!important;
-  grid-template-columns:repeat(auto-fit,minmax(210px,1fr))!important;
+  grid-template-columns:repeat(auto-fit,minmax(205px,1fr))!important;
   gap:10px!important;
-  max-height:430px!important;
+  max-height:438px!important;
   overflow:auto!important;
-  padding-right:4px!important;
+  padding:2px 4px 2px 0!important;
 }
 
-#teacherPage .studentRow{
+#teacherPage .studentList .studentRow{
   display:block!important;
-  min-height:150px!important;
-  background:linear-gradient(135deg,#ffffff,#f7faff)!important;
-  border:1px solid #dce7ff!important;
-  border-radius:18px!important;
-  padding:13px!important;
   position:relative!important;
+  min-height:148px!important;
+  border-radius:20px!important;
+  border:1px solid #dfe8ff!important;
+  background:linear-gradient(135deg,#ffffff,#f8fbff)!important;
+  padding:14px!important;
+  overflow:hidden!important;
 }
 
-#teacherPage .studentRow .score{
+#teacherPage .studentList .studentRow::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  background:linear-gradient(180deg,#8b5cf6,#4f7cff);
+}
+
+#teacherPage .studentList .studentRow .name{
+  font-size:16px!important;
+  color:#203a78!important;
+  margin-bottom:8px!important;
+  padding-right:62px!important;
+}
+
+#teacherPage .studentList .studentRow .mini{
+  font-size:12.5px!important;
+  line-height:1.45!important;
+  color:#607197!important;
+}
+
+#teacherPage .studentList .studentRow .score{
   position:absolute!important;
   top:12px!important;
   right:12px!important;
-  background:#eef4ff!important;
-  color:#294a99!important;
   min-width:54px!important;
+  background:#eef4ff!important;
+  color:#284b9b!important;
+  border-radius:16px!important;
+  padding:7px 9px!important;
   text-align:center!important;
-  border-radius:14px!important;
-}
-
-#teacherPage .studentRow .name{
-  font-size:16px!important;
-  padding-right:60px!important;
-  margin-bottom:8px!important;
-}
-
-#teacherPage .studentRow .mini{
-  font-size:12.5px!important;
-  line-height:1.45!important;
-  color:#617197!important;
+  font-size:13px!important;
 }
 
 #teacherPage #teacherResults{
-  max-height:430px!important;
+  max-height:438px!important;
   overflow:auto!important;
   padding-right:4px!important;
 }
 
 #teacherPage #teacherResults .resultRow{
-  display:block!important;
-  background:linear-gradient(135deg,#ffffff,#fbf8ff)!important;
-  border:1px solid #dce7ff!important;
-  border-radius:18px!important;
-  padding:13px!important;
-  margin-bottom:10px!important;
   position:relative!important;
+  display:block!important;
+  border-radius:20px!important;
+  border:1px solid #dfe8ff!important;
+  background:linear-gradient(135deg,#ffffff,#fff8fc)!important;
+  padding:14px!important;
+  margin-bottom:10px!important;
+  overflow:hidden!important;
+}
+
+#teacherPage #teacherResults .resultRow::before{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  width:5px;
+  background:#8b5cf6;
+}
+
+#teacherPage #teacherResults .resultRow .name{
+  font-size:15px!important;
+  color:#203a78!important;
+  margin-bottom:7px!important;
+  padding-right:64px!important;
+}
+
+#teacherPage #teacherResults .resultRow .mini{
+  font-size:12.8px!important;
+  line-height:1.45!important;
+  color:#607197!important;
 }
 
 #teacherPage #teacherResults .resultRow .score{
   position:absolute!important;
   top:12px!important;
   right:12px!important;
-  background:#fff7df!important;
-  color:#7c5a00!important;
-  border-radius:14px!important;
-}
-
-#teacherPage #teacherResults .resultRow .name{
-  font-size:15px!important;
-  padding-right:66px!important;
-  margin-bottom:8px!important;
+  min-width:54px!important;
+  background:#fff4ce!important;
+  color:#805b00!important;
+  border-radius:16px!important;
+  padding:7px 9px!important;
+  text-align:center!important;
+  font-size:13px!important;
 }
 
 #teacherPage #teacherResults h3{
   margin:14px 0 10px!important;
-  font-size:16px!important;
-  background:#f5f1ff!important;
-  color:#5635a2!important;
   padding:10px 12px!important;
-  border-radius:14px!important;
-}
-
-#teacherPage .objectiveBox,
-#teacherPage .card{
-  border-radius:22px!important;
-}
-
-#teacherPage .howSteps{
-  grid-template-columns:1fr 1fr!important;
+  border-radius:16px!important;
+  background:#f3efff!important;
+  color:#5b37ac!important;
+  font-size:16px!important;
 }
 
 #teacherPage .teacherControlsBottom{
-  border-radius:22px!important;
+  margin-top:14px!important;
+  background:rgba(255,255,255,.97)!important;
+  border:1px solid #e0e8ff!important;
+  border-radius:24px!important;
+  box-shadow:0 12px 28px rgba(55,75,135,.10)!important;
+  padding:0!important;
+  overflow:hidden!important;
+}
+
+#teacherPage .teacherControlsBottom > h2{
+  margin:0!important;
+  padding:14px 16px!important;
+  font-size:20px!important;
+  background:linear-gradient(135deg,#f4f7ff,#fff8fd)!important;
+  border-bottom:1px solid #e5ecff!important;
 }
 
 #teacherPage #teacherSecretSettings{
-  grid-template-columns:1fr 1fr 1.2fr!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr 1.15fr!important;
+  gap:12px!important;
+  padding:14px 16px 6px!important;
+}
+
+#teacherPage .settingField{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:5px!important;
+}
+
+#teacherPage .teacherControlsBottom > label,
+#teacherPage .teacherControlsBottom > textarea,
+#teacherPage .teacherControlsBottom > button,
+#teacherPage .teacherControlsBottom > .status{
+  margin-left:16px!important;
+  margin-right:16px!important;
 }
 
 #teacherPage .teacherControlsBottom textarea{
-  min-height:60px!important;
+  min-height:64px!important;
+  margin-top:6px!important;
+  margin-bottom:8px!important;
 }
 
-/* Make the main top dashboard less tall */
-#teacherPage .objectiveBox,
-#teacherPage .two>.card{
-  min-height:0!important;
+#teacherPage .teacherControlsBottom > .status{
+  margin-bottom:16px!important;
 }
 
-#teacherPage .timerBig{
-  font-size:48px!important;
+#teacherPage .smallToggle{
+  float:right!important;
+  background:#eef4ff!important;
+  color:#284b9b!important;
+  border:1px solid #d7e3ff!important;
+  box-shadow:none!important;
 }
 
-@media(max-width:1000px){
-  #teacherPage .tabs{
-    overflow-x:auto!important;
-    justify-content:flex-start!important;
-  }
-  #teacherPage .grid,
-  #teacherPage .two,
+@media(max-width:1050px){
+  #teacherPage > .two,
+  #teacherPage > .grid,
   #teacherPage #teacherSecretSettings,
   #teacherPage .howSteps{
     grid-template-columns:1fr!important;
   }
+
   #teacherPage .studentList{
     grid-template-columns:1fr!important;
     max-height:none!important;
   }
+
   #teacherPage #teacherResults{
     max-height:none!important;
+  }
+
+  #teacherPage .tabs{
+    justify-content:flex-start!important;
+    overflow-x:auto!important;
   }
 }
 
@@ -1224,7 +753,7 @@ input,select,textarea{
       </div>
     </div>
 
-    <div class="grid" style="margin-top:14px">
+    <div class="grid">
       <div class="card">
         <h2>👥 Groups & Students</h2>
         <div id="teacherStudents" class="studentList"></div>
@@ -1241,30 +770,30 @@ input,select,textarea{
 
       <div id="teacherSecretSettings">
         <div class="settingField">
-        <label>Choose Topic</label>
-        <select id="topicInput" onchange="previewGeneratedWord()">
-          <option value="Technology">Technology</option>
-          <option value="Food">Food</option>
-          <option value="Sports">Sports</option>
-          <option value="School">School</option>
-          <option value="Jobs">Jobs</option>
-          <option value="Transportation">Transportation</option>
-          <option value="Drinks">Drinks</option>
-          <option value="Household">Household</option>
-          <option value="Clothes">Clothes</option>
-          <option value="Weather">Weather</option>
-          <option value="Nature">Nature</option>
-        </select>
+          <label>Choose Topic</label>
+          <select id="topicInput" onchange="previewGeneratedWord()">
+            <option value="Technology">Technology</option>
+            <option value="Food">Food</option>
+            <option value="Sports">Sports</option>
+            <option value="School">School</option>
+            <option value="Jobs">Jobs</option>
+            <option value="Transportation">Transportation</option>
+            <option value="Drinks">Drinks</option>
+            <option value="Household">Household</option>
+            <option value="Clothes">Clothes</option>
+            <option value="Weather">Weather</option>
+            <option value="Nature">Nature</option>
+          </select>
         </div>
 
         <div class="settingField">
-        <label>Generated Word</label>
-        <input id="wordInput" value="Smartphone" readonly>
+          <label>Generated Word</label>
+          <input id="wordInput" value="Smartphone" readonly>
         </div>
 
         <div class="settingField">
-        <label>Imposter Helper Hint</label>
-        <input id="helperInput" value="It is something people use every day to communicate." readonly>
+          <label>Imposter Helper Hint</label>
+          <input id="helperInput" value="It is something people use every day to communicate." readonly>
         </div>
       </div>
 
@@ -1944,19 +1473,20 @@ function renderTeacherStudents(s){
 
   box.innerHTML=gs.map(g=>{
     const groupStudents = Object.values(s.students||{}).filter(st=>st.group===g);
-    const imp=s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
+    const imp = s.students?.[s.groupImposters?.[g]]?.name || 'Not selected';
 
-    const members=groupStudents
+    const members = groupStudents
       .map(st=>`${st.name}${s.groupImposters?.[g]===st.id?' 🕵️':''}`)
       .join(', ');
 
-    const voteCount=Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
-    const total=groupStudents.length;
+    const voteCount = Object.keys(s.votes||{}).filter(id=>s.students?.[id]?.group===g).length;
+    const total = groupStudents.length;
 
     return `<div class="studentRow">
       <div class="name">👥 Group ${esc(g)}</div>
       <div class="mini">
-        <b>Members (${total}):</b><br>${esc(members || 'No members')}<br><br>
+        <b>Members (${total}):</b><br>
+        ${esc(members || 'No members')}<br><br>
         <span data-secret="true"><b>Imposter:</b> ${esc(imp)}</span><br>
         <b>Votes:</b> ${voteCount}/${total}
       </div>
@@ -1976,16 +1506,17 @@ function renderTeacherResults(s){
   const gs=activeGroups(s);
 
   const current = gs.length ? gs.map(g=>{
-    const result=s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
-    const shortStatus = result.includes('✅') ? '✅ Group Wins' : (result.includes('❌') ? '😈 Imposter Wins' : '⏳ Hidden');
+    const result = s.resultsReleased ? (s.groupResults?.[g] || 'No result yet.') : 'Results hidden until teacher releases.';
+    const status = result.includes('✅') ? '✅ Group Wins' : (result.includes('❌') ? '😈 Imposter Wins' : '⏳ Hidden');
+
     return `<div class="resultRow">
-      <div class="name">🏁 Group ${esc(g)} · ${shortStatus}</div>
+      <div class="name">🏁 Group ${esc(g)} · ${status}</div>
       <div class="mini">${esc(result)}</div>
       <div class="score">${s.groupScores?.[g]||0}<br>pts</div>
     </div>`;
   }).join('') : '<div class="status">No groups yet.</div>';
 
-  const historyItems = (s.roundHistory || []).slice().reverse().slice(0,6).map((r,idx)=>{
+  const history = (s.roundHistory || []).slice().reverse().slice(0,6).map((r,idx)=>{
     const roundNum = (s.roundHistory||[]).length - idx;
     const groupsText = Object.keys(r.groups || {}).map(g=>{
       const gr = r.groups[g];
@@ -1998,7 +1529,7 @@ function renderTeacherResults(s){
     </div>`;
   }).join('');
 
-  box.innerHTML = current + (historyItems ? '<h3>Round History</h3>' + historyItems : '');
+  box.innerHTML = current + (history ? '<h3>Round History</h3>' + history : '');
 }
 
 function studentRefresh(){
