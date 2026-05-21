@@ -1585,6 +1585,22 @@ input,select,textarea{
   margin-bottom:0!important;
 }
 
+
+/* ===== HINT SAVE CONFIRMATION ===== */
+.hintSaveMsg{
+  margin-top:8px!important;
+  padding:8px 10px!important;
+  border-radius:12px!important;
+  background:#eafff2!important;
+  border:1px solid #9fe3be!important;
+  color:#166b45!important;
+  font-size:13px!important;
+  font-weight:700!important;
+}
+#saveHintBtn.saving{opacity:.75!important;pointer-events:none!important;}
+#saveHintBtn.savedPulse{animation:savedPulse .7s ease;}
+@keyframes savedPulse{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
+
 </style>
 </head>
 
@@ -1805,7 +1821,9 @@ input,select,textarea{
         <div id="hintEditor">
           <label>Your hint</label>
           <textarea id="studentHint" placeholder="Write your hint here..."></textarea>
-          <button id="saveHintBtn" onclick="saveHint()">Save Hint</button>
+          <button id="saveHintBtn" onclick="saveHint()">💾 Save Hint</button>
+          <div id="hintSaveMsg" class="hintSaveMsg hidden">✅ Hint saved</div>
+          <div id="hintSaveMsg" class="hintSaveMsg hidden">✅ Hint saved</div>
         </div>
       </div>
 
@@ -2558,9 +2576,17 @@ function studentRefresh(){
   renderStudentResults(s,st);
 
   const box=byId('studentHint');
+  const savedHint = s.hints?.[currentUser.id] || '';
   if(document.activeElement!==box){
-    box.value=s.hints?.[currentUser.id] || '';
+    box.value = savedHint;
   }
+
+  const msg = byId('hintSaveMsg');
+  if(msg && savedHint && st==='hint'){
+    msg.classList.remove('hidden');
+    msg.innerText = '✅ Your hint is saved';
+  }
+
   byId('saveHintBtn').disabled = st!=='hint';
 }
 
@@ -2598,19 +2624,75 @@ function renderSecret(s,st){
 }
 
 async function saveHint(){
-  const s = await getState();
-
-  if(stageByTime(s)!=='hint'){
-    alert('Hint time is finished.');
+  if(!currentUser || currentUser.role !== 'student'){
+    alert('Please join as a student first.');
     return;
   }
 
-  s.hints = s.hints || {};
-  s.hints[currentUser.id] = byId('studentHint').value.trim();
+  const btn = byId('saveHintBtn');
+  const msg = byId('hintSaveMsg');
+  const hintBox = byId('studentHint');
+  const hintText = (hintBox?.value || '').trim();
 
-  await setState(s);
-  studentRefresh();
-  alert('Hint saved.');
+  if(!hintText){
+    alert('Please write your hint first.');
+    return;
+  }
+
+  try{
+    if(btn){
+      btn.classList.add('saving');
+      btn.innerText = 'Saving...';
+    }
+
+    const s = await getState();
+
+    if(stageByTime(s) !== 'hint'){
+      alert('Hint time is finished.');
+      if(btn){
+        btn.classList.remove('saving');
+        btn.innerText = '💾 Save Hint';
+      }
+      return;
+    }
+
+    s.hints = s.hints || {};
+    s.hints[currentUser.id] = hintText;
+
+    s.students = s.students || {};
+    if(s.students[currentUser.id]){
+      s.students[currentUser.id].lastSeen = Date.now();
+    }
+
+    await setState(s);
+
+    if(msg){
+      msg.classList.remove('hidden');
+      msg.innerText = '✅ Hint saved successfully';
+      setTimeout(()=>msg.classList.add('hidden'),2500);
+    }
+
+    if(btn){
+      btn.classList.remove('saving');
+      btn.classList.add('savedPulse');
+      btn.innerText = '✅ Saved';
+      setTimeout(()=>{
+        btn.classList.remove('savedPulse');
+        btn.innerText = '💾 Save Hint';
+      },1200);
+    }
+
+    studentRefresh();
+
+  }catch(err){
+    console.error(err);
+    alert('Hint was not saved. Please check internet/Firebase and try again.');
+
+    if(btn){
+      btn.classList.remove('saving');
+      btn.innerText = '💾 Save Hint';
+    }
+  }
 }
 
 function renderHints(s,st){
