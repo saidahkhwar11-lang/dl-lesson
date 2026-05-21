@@ -1752,6 +1752,7 @@ input,select,textarea{
         <div class="settingField">
           <label>Choose Topic</label>
           <select id="topicInput" onchange="previewGeneratedWord()">
+            <option value="__RANDOM__">🎲 Random Topic</option>
             <option value="Technology">Technology</option>
             <option value="Food">Food</option>
             <option value="Sports">Sports</option>
@@ -1990,6 +1991,11 @@ function getRandomItem(list){
   return list[Math.floor(Math.random()*list.length)];
 }
 
+function pickRandomTopic(){
+  const topics = Object.keys(TOPIC_BANK);
+  return topics[Math.floor(Math.random()*topics.length)] || 'Technology';
+}
+
 function generateRoundWord(topic, state){
   const list = TOPIC_BANK[topic] || TOPIC_BANK.Technology;
   state.lastWordsByTopic = state.lastWordsByTopic || {};
@@ -2038,6 +2044,7 @@ function defaultState(){
     resultsReleased:false,
     scored:false,
     topic:'Technology',
+    topicMode:'manual',
     word:'Smartphone',
     helper:'It is something people use every day to communicate.',
     instructions:'Look at your card, write a smart hint, discuss with your group, and vote for your group imposter.',
@@ -2248,8 +2255,17 @@ async function teacherJoin(){
 
 async function saveSettings(){
   const s = await getState();
-  const selectedTopic = byId('topicInput').value || 'Technology';
-  s.topic = selectedTopic;
+  const selectedValue = byId('topicInput').value || 'Technology';
+
+  if(selectedValue === '__RANDOM__'){
+    s.topicMode = 'random';
+    // Keep the current visible/generated topic until Start New Round chooses a fresh one.
+    s.topic = s.topic || 'Technology';
+  }else{
+    s.topicMode = 'manual';
+    s.topic = selectedValue;
+  }
+
   s.instructions = byId('instructionInput').value.trim();
 
   if(byId('wordInput').value.trim()){
@@ -2260,22 +2276,27 @@ async function saveSettings(){
   }
 
   await setState(s);
-  alert('Topic saved. Click Start New Round to generate a new word.');
+  alert(selectedValue === '__RANDOM__' ? 'Random topic mode saved. Start New Round will choose a random topic.' : 'Topic saved. Click Start New Round to generate a new word.');
 }
 
 function previewGeneratedWord(){
-  const topic = byId('topicInput').value || 'Technology';
+  const selectedValue = byId('topicInput').value || 'Technology';
+  const topic = selectedValue === '__RANDOM__' ? pickRandomTopic() : selectedValue;
   const list = TOPIC_BANK[topic] || TOPIC_BANK.Technology;
   const item = list[Math.floor(Math.random() * list.length)];
+
   byId('wordInput').value = item.word;
-  byId('helperInput').value = item.helper;
+  byId('helperInput').value = 'Topic: ' + topic + ' — ' + item.helper;
 }
 
 async function startNewRound(){
   const s = await getState();
 
-  // Use the topic selected on the teacher screen right now.
-  const selectedTopic = byId('topicInput').value || 'Technology';
+  // Use selected topic, or choose a random topic if teacher selected Random Topic.
+  const selectedValue = byId('topicInput').value || 'Technology';
+  const selectedTopic = selectedValue === '__RANDOM__' ? pickRandomTopic() : selectedValue;
+
+  s.topicMode = selectedValue === '__RANDOM__' ? 'random' : 'manual';
   s.topic = selectedTopic;
   s.instructions = byId('instructionInput').value.trim();
 
@@ -2285,7 +2306,7 @@ async function startNewRound(){
   s.helper = generated.helper;
 
   byId('wordInput').value = s.word;
-  byId('helperInput').value = s.helper;
+  byId('helperInput').value = 'Topic: ' + selectedTopic + ' — ' + s.helper;
 
   const gs = activeGroups(s);
 
@@ -2437,9 +2458,9 @@ function teacherRefresh(){
   if(byId('topicInput')){
     // Do not reset the teacher's selected topic while she is choosing a new topic.
     if(document.activeElement !== byId('topicInput')){
-      byId('topicInput').value = s.topic || 'Technology';
+      byId('topicInput').value = s.topicMode === 'random' ? '__RANDOM__' : (s.topic || 'Technology');
       byId('wordInput').value = s.word || '';
-      byId('helperInput').value = s.helper || '';
+      byId('helperInput').value = s.topic ? ('Topic: ' + s.topic + ' — ' + (s.helper || '')) : (s.helper || '');
     }
     if(document.activeElement !== byId('instructionInput')){
       byId('instructionInput').value = s.instructions || '';
