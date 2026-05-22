@@ -13,6 +13,9 @@
 .aiBadge{background:#f3efff;color:#5b37ac;border:1px solid #d9cdfd;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;display:inline-block;margin:4px}
 .bossBadge{background:#fff0f3;color:#9a2740;border:1px solid #ffc4cf;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;display:inline-block;margin:4px}
 .analyticsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.analyticsCard{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:12px}.analyticsCard b{color:#203a78}
+
+.teacherTopActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.builderShell.hiddenBuilder{display:none}.collectionsCompact details{background:#f8fbff;border:1px solid #dfe8ff;border-radius:16px;padding:10px;margin-bottom:8px}.collectionsCompact summary{cursor:pointer;font-family:Quicksand,sans-serif;font-weight:800;color:#203a78}.liveBoardTable{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}.liveBoardTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px}.liveBoardTable td{background:white;border-top:1px solid #dfe8ff;border-bottom:1px solid #dfe8ff;padding:10px;vertical-align:top}.liveBoardTable td:first-child{border-left:1px solid #dfe8ff;border-radius:14px 0 0 14px}.liveBoardTable td:last-child{border-right:1px solid #dfe8ff;border-radius:0 14px 14px 0}.groupChip{display:inline-block;border-radius:999px;padding:5px 9px;font-weight:800;margin:2px;color:#20345f}.g1{background:#fff3a6}.g2{background:#ffd6ec}.g3{background:#d7f8dc}.g4{background:#d8ecff}.g5{background:#eadcff}.g6{background:#ffe0c2}.perfButtons{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.perfBox{max-height:360px;overflow:auto}.tinyPill{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 8px;margin:2px;font-size:12px;font-weight:700}.scorePositive{color:#176b45;font-weight:800}.scoreNegative{color:#9a2740;font-weight:800}.perfBox .row{margin-bottom:6px}.liveBoardTable small{font-size:11px}.liveBoardTable th{position:sticky;top:0;z-index:1}
+
 </style>
 </head>
 <body>
@@ -21,7 +24,31 @@
 <div id="connectionBox" class="card status">Connecting to Firebase...</div>
 <div id="hubPage"><div class="grid"><div class="card"><h2>📚 Collection Mode</h2><p class="status good">Teacher creates a collection with many paragraphs. Each group member gets a different paragraph one at a time.</p><button onclick="openLogin()">Open Game</button><button class="secondary" onclick="location.href='Skill-Clash-Games.html'">🏠 Games Hub</button></div><div class="card"><h2>🎮 Flow</h2><div class="stepsGrid"><div class="stepCard"><span>📦</span><b>Collection</b><small>Teacher selects one set.</small></div><div class="stepCard"><span>📖</span><b>Paragraph</b><small>Students get different paragraphs.</small></div><div class="stepCard"><span>❓</span><b>Questions</b><small>Finish all assigned questions.</small></div><div class="stepCard"><span>🏆</span><b>Top 3</b><small>Teacher stops challenge.</small></div></div></div></div></div>
 <div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><label>Name</label><input id="studentName" placeholder="Write your name"><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Reading Rush</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button><div class="status">Default password: <b>1234</b></div></div><div class="card"><h2>📌 Rule</h2><div class="status">Correct answers = good events.</div><div class="status bad">Wrong answers = bad events.</div><div class="status good">Students move to next paragraph after finishing current paragraph questions.</div></div></div></div>
-<div id="teacherPage" class="hidden"><div class="grid"><div class="card"><h2>🤖 AI Collection Builder</h2><label>Collection Title</label><input id="collectionTitleInput" placeholder="Example: Dreams Reading Collection"><label>Paste Full Reading Text</label><textarea id="fullTextInput" placeholder="Paste the full text here. Separate paragraphs with blank lines."></textarea><button class="purple" onclick="generateFullCollection()">✨ AI Generate Full Collection</button><button onclick="createCollection()">➕ Create Empty Collection</button><label>Select Collection to Edit</label><select id="editCollectionSelect" onchange="renderEditCollection()"></select><div class="status good">AI creates 12 MOE/ESE-style questions per paragraph: 1 main idea + 3 details + 3 vocabulary + 2 grammar + 3 True/False/Not Given.</div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h3>Add Paragraph Manually</h3><label>Paragraph Title</label><input id="paragraphTitleInput" placeholder="Paragraph 1"><label>Paragraph Text</label><textarea id="paragraphInput" placeholder="Paste paragraph here..."></textarea><h3 style="margin-top:12px">Add Question</h3><label>Question</label><input id="qText" placeholder="Write question"><label>Options</label><input id="qA" placeholder="A"><input id="qB" placeholder="B"><input id="qC" placeholder="C"><input id="qD" placeholder="D"><label>Correct Answer</label><select id="qCorrect"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select><button onclick="addTempQuestion()">➕ Add Question</button><button class="success" onclick="saveParagraphToCollection()">💾 Save Paragraph</button><button class="secondary" onclick="loadExampleCollection()">✨ Load Example Collection</button><div id="questionPreview"></div></div><div class="card"><h2>📦 Collections</h2><div id="collectionsList" class="list"></div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h2>📖 Paragraphs</h2><div id="paragraphsList" class="list"></div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h2>🏆 Leaderboard</h2><div id="leaderboard" class="leaderboard"></div></div></div><div class="grid" style="margin-top:14px"><div class="card"><h2>👥 Live Groups</h2><div id="teacherStudents" class="list"></div></div><div class="card"><h2>📊 Answers / Events</h2><div id="teacherResults" class="list"></div></div></div><div id="finalWinnersBox" class="hidden finalWinners" style="margin-top:14px"></div><div id="analyticsBox" class="card hidden" style="margin-top:14px"></div><div class="actionBar"><button class="secondary" onclick="backHome()">🏠 Home</button><button onclick="startCollectionChallenge()">▶️ Start Collection</button><button class="pink" onclick="startBossRound()">👑 Boss Round</button><button class="success" onclick="stopChallenge()">🏆 Stop + Report</button><button class="danger" onclick="resetGame()">🧹 Reset</button></div></div>
+<div id="teacherPage" class="hidden">
+  <div class="teacherTopActions">
+    <button class="purple" onclick="toggleBuilder()">📝 Show / Hide Collection Builder</button>
+    <button class="secondary" onclick="backHome()">🏠 Home</button>
+    <button onclick="startCollectionChallenge()">▶️ Start Collection</button>
+    <button class="pink" onclick="startBossRound()">👑 Boss Round</button>
+    <button class="success" onclick="stopChallenge()">🏆 Stop + Report</button>
+    <button class="danger" onclick="resetGame()">🧹 Reset</button>
+  </div>
+
+  <div id="builderShell" class="builderShell hiddenBuilder">
+    <div class="grid">
+      <div class="card"><h2>📝 Manual Collection Builder</h2><label>Collection Title</label><input id="collectionTitleInput" placeholder="Example: Dreams Reading Collection"><label>Paste Full Reading Text</label><textarea id="fullTextInput" placeholder="Paste the full text here. Separate paragraphs with blank lines."></textarea><label>Paste ALL Questions + Answers + Keywords</label><textarea id="bulkQuestionsInput" style="min-height:180px" placeholder="Example:\nParagraph 1\nKeywords: suddenly, strange, wake up\nSkill: main idea\nQuestion: Why did the speaker feel scared?\nA) She saw dark clouds.\nB) She won a prize.\nC) She cooked lunch.\nD) She visited a friend.\nAnswer: A\n\nParagraph 2\nKeywords: confusing, familiar"></textarea><button class="success" onclick="createManualCollectionFromBulk()">💾 Build Collection from Text + Questions</button><button class="purple" onclick="generateFullCollection()">✨ Auto Draft Questions</button><button onclick="createCollection()">➕ Create Empty Collection</button><label>Select Collection to Edit</label><select id="editCollectionSelect" onchange="renderEditCollection()"></select><div class="status good">Manual mode: paste the full text, then paste questions grouped by Paragraph 1, Paragraph 2, etc. Keywords will be highlighted inside the student reading text.</div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h3>Add Paragraph Manually</h3><label>Paragraph Title</label><input id="paragraphTitleInput" placeholder="Paragraph 1"><label>Paragraph Text</label><textarea id="paragraphInput" placeholder="Paste paragraph here..."></textarea><h3 style="margin-top:12px">Add Question</h3><label>Question</label><input id="qText" placeholder="Write question"><label>Options</label><input id="qA" placeholder="A"><input id="qB" placeholder="B"><input id="qC" placeholder="C"><input id="qD" placeholder="D"><label>Correct Answer</label><select id="qCorrect"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select><button onclick="addTempQuestion()">➕ Add Question</button><button class="success" onclick="saveParagraphToCollection()">💾 Save Paragraph</button><button class="secondary" onclick="loadExampleCollection()">✨ Load Example Collection</button><div id="questionPreview"></div></div>
+      <div class="card"><h2>📦 Collections</h2><div id="collectionsList" class="list collectionsCompact"></div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h2>📖 Selected Collection Details</h2><div id="paragraphsList" class="list"></div></div>
+    </div>
+  </div>
+
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h2>🏆 Live Leaderboard</h2><div id="leaderboard" class="leaderboard"></div></div>
+    <div class="card"><h2>📊 Group Performance</h2><div id="teacherResults" class="list"></div></div>
+  </div>
+
+  <div class="card" style="margin-top:14px"><h2>👥 Live Board: Students + Progress</h2><div id="teacherStudents" class="list"></div></div>
+  <div id="finalWinnersBox" class="hidden finalWinners" style="margin-top:14px"></div><div id="analyticsBox" class="card hidden" style="margin-top:14px"></div>
+</div>
 <div id="studentPage" class="hidden">
   <div class="tabs">
     <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
@@ -72,7 +99,7 @@
 <div id="rewardPopup" class="rewardPopup hidden"><div class="rewardCard"><div id="rewardEmoji" class="rewardEmoji">🎰</div><div id="rewardTitle" class="rewardTitle">Reward</div><div id="rewardText" class="rewardText">Loading...</div><button onclick="closeReward()">OK</button></div></div>
 <script>
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
-const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='1234';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
+const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='1234';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';let selectedPerformanceGroup='all';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{}}}
 function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
@@ -82,8 +109,9 @@ function saveStudentSession(){if(currentUser?.role==='student')localStorage.setI
 function openLogin(){hide('hubPage');show('loginPage')}function backHome(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}function showLogin(type){type==='teacher'?(hide('studentLogin'),show('teacherLogin')):(show('studentLogin'),hide('teacherLogin'))}
 async function studentJoin(){const name=byId('studentName').value.trim(),cls=byId('studentClass').value,group=byId('studentGroup').value;if(!name){alert('Write your name.');return}const id='s_'+name.toLowerCase().replace(/[^a-z0-9]/g,'_')+'_'+cls.replace('/','_')+'_g'+group;const s=await getState();s.students=s.students||{};s.scores=s.scores||{};s.students[id]={id,name,cls,group,lastSeen:Date.now()};if(typeof s.scores[group]==='undefined')s.scores[group]=0;await setState(s);currentUser={role:'student',id,name,cls,group};saveStudentSession();hide('loginPage');show('studentPage');studentRefresh()}
 async function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
-function activeGroups(s){return[...new Set(Object.values(s.students||{}).map(x=>x.group))].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
+function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));(s.events||[]).forEach(e=>e.group&&set.add(String(e.group)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
 function getSelectedCollectionId(){return byId('editCollectionSelect')?.value||''}
+function toggleBuilder(){const el=byId('builderShell'); if(el) el.classList.toggle('hiddenBuilder');}
 
 
 function splitParagraphsAI(text){return text.split(/\n\s*\n|(?<=\.)\s*\n/).map(p=>p.trim()).filter(p=>p.length>40)}
@@ -203,6 +231,154 @@ function generateQuestionsForParagraph(paragraph,idx){
  ];
  return qs;
 }
+
+function splitKeywordLine(line){
+  return String(line||'')
+    .replace(/^(keywords?|key\s*words?)\s*[:：-]/i,'')
+    .split(/[,،;|]/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+}
+function detectSkillFromText(text){
+  const t=String(text||'').toLowerCase();
+  if(t.includes('main idea')||t.includes('best title')||t.includes('summar'))return 'main idea';
+  if(t.includes('vocabulary')||t.includes('meaning')||t.includes('context clue')||t.includes('closest in meaning'))return 'vocabulary';
+  if(t.includes('true')&&t.includes('false'))return 'TFNG';
+  if(t.includes('grammar')||t.includes('tense')||t.includes('preposition')||t.includes('pronoun'))return 'grammar';
+  return 'details';
+}
+function normalizeAnswerLetter(ans, options){
+  let a=String(ans||'').trim();
+  const letter=(a.match(/\b([ABCD])\b/i)||[])[1];
+  if(letter)return letter.toUpperCase();
+  const tf=a.toLowerCase();
+  const keys=Object.keys(options||{});
+  for(const k of keys){
+    if(String(options[k]).trim().toLowerCase()===tf)return k;
+  }
+  if(tf==='true')return 'A';
+  if(tf==='false')return 'B';
+  if(tf==='not given'||tf==='notgiven')return 'C';
+  return 'A';
+}
+function parseBulkQuestionsByParagraph(raw){
+  const text=String(raw||'').replace(/\r/g,'').trim();
+  const result={};
+  if(!text)return result;
+
+  const matches=[...text.matchAll(/(^|\n)\s*paragraph\s*(\d+)\s*[:：-]?\s*/gi)];
+  if(!matches.length){
+    result[1]={keywords:[],questions:parseQuestionsBlock(text,1)};
+    return result;
+  }
+
+  matches.forEach((m,idx)=>{
+    const n=Number(m[2]);
+    const start=m.index + m[0].length;
+    const end=idx+1<matches.length ? matches[idx+1].index : text.length;
+    const block=text.slice(start,end).trim();
+    const keywordLines=block.split('\n').filter(line=>/^\s*(keywords?|key\s*words?)\s*[:：-]/i.test(line));
+    const keywords=keywordLines.flatMap(splitKeywordLine);
+    result[n]={keywords,questions:parseQuestionsBlock(block,n)};
+  });
+  return result;
+}
+function parseQuestionsBlock(block, paraNum){
+  let cleaned=String(block||'')
+    .replace(/^\s*(keywords?|key\s*words?)\s*[:：-].*$/gim,'')
+    .trim();
+
+  const qStarts=[...cleaned.matchAll(/(^|\n)\s*(?:Q\s*\d*[\).:-]?|Question\s*\d*[\).:-]?)\s*/gi)];
+  let chunks=[];
+  if(qStarts.length){
+    qStarts.forEach((m,idx)=>{
+      const start=m.index+m[0].length;
+      const end=idx+1<qStarts.length?qStarts[idx+1].index:cleaned.length;
+      chunks.push(cleaned.slice(start,end).trim());
+    });
+  }else{
+    chunks=cleaned.split(/\n\s*\n+/).map(x=>x.trim()).filter(x=>/answer\s*[:：-]/i.test(x));
+  }
+
+  return chunks.map((chunk,i)=>{
+    const lines=chunk.split('\n').map(x=>x.trim()).filter(Boolean);
+    let skill='';
+    for(const line of lines){
+      const sm=line.match(/^skill\s*[:：-]\s*(.+)$/i);
+      if(sm)skill=sm[1].trim();
+    }
+    const answerLine=lines.find(line=>/^(answer|key answer|correct)\s*[:：-]/i.test(line))||'';
+    const ansRaw=answerLine.replace(/^(answer|key answer|correct)\s*[:：-]\s*/i,'').trim();
+
+    const options={};
+    lines.forEach(line=>{
+      const om=line.match(/^([ABCD])[\).:-]\s*(.+)$/i);
+      if(om)options[om[1].toUpperCase()]=om[2].trim();
+    });
+
+    let qLines=lines.filter(line=>
+      !/^skill\s*[:：-]/i.test(line) &&
+      !/^(answer|key answer|correct)\s*[:：-]/i.test(line) &&
+      !/^([ABCD])[\).:-]\s*/i.test(line)
+    );
+    let qText=qLines.join(' ').replace(/^question\s*\d*\s*[:：-]?\s*/i,'').trim();
+
+    const ansLower=ansRaw.toLowerCase();
+    if(!Object.keys(options).length && (ansLower==='true'||ansLower==='false'||ansLower==='not given'||ansLower==='notgiven')){
+      options.A='True'; options.B='False'; options.C='Not Given';
+    }
+
+    const correct=normalizeAnswerLetter(ansRaw,options);
+    if(!qText || !Object.keys(options).length)return null;
+    return {
+      id:'manual_p'+paraNum+'_'+Date.now()+'_'+i+'_'+Math.floor(Math.random()*999),
+      type:Object.keys(options).length===3?'tfng':'mcq',
+      text:qText,
+      options,
+      correct,
+      skill:skill||detectSkillFromText(qText)
+    };
+  }).filter(Boolean);
+}
+async function createManualCollectionFromBulk(){
+  const title=byId('collectionTitleInput').value.trim()||'Manual Reading Collection';
+  const text=byId('fullTextInput').value.trim();
+  const bulk=byId('bulkQuestionsInput').value.trim();
+  if(!text){alert('Paste the full reading text first.');return}
+  if(!bulk){alert('Paste the questions, answers, and keywords first.');return}
+  const paras=splitParagraphsAI(text);
+  if(!paras.length){alert('Please paste at least one clear paragraph.');return}
+  const grouped=parseBulkQuestionsByParagraph(bulk);
+  const s=await getState();
+  s.collections=s.collections||{};
+  const id='col_'+Date.now();
+  s.collections[id]={
+    id,title,
+    paragraphs:paras.map((p,i)=>{
+      const g=grouped[i+1]||{keywords:[],questions:[]};
+      return {
+        id:'p_'+Date.now()+'_'+i,
+        title:`Paragraph ${i+1}${i===paras.length-1?' 👑 Boss':''}`,
+        text:p,
+        keywords:g.keywords||[],
+        boss:i===paras.length-1,
+        questions:(g.questions&&g.questions.length)?g.questions:generateQuestionsForParagraph(p,i)
+      };
+    })
+  };
+  s.currentCollectionId=id;
+  s.currentCollectionTitle=title;
+  s.stage='waiting';
+  s.answers={};
+  s.studentProgress={};
+  s.boss=false;
+  byId('collectionTitleInput').value='';
+  byId('fullTextInput').value='';
+  byId('bulkQuestionsInput').value='';
+  await setState(s);
+  alert('Manual collection built successfully. Check paragraphs and questions before starting.');
+}
+
 async function generateFullCollection(){
  const title=byId('collectionTitleInput').value.trim()||'AI Reading Collection';
  const text=byId('fullTextInput').value.trim();
@@ -223,22 +399,31 @@ async function loadExampleCollection(){byId('collectionTitleInput').value='Dream
 Omar dreamed that he entered an exam room and suddenly forgot his pencil. Everyone else was writing quickly, but his paper was empty. Then his teacher smiled and gave him a glowing pencil. When Omar started writing, the answers appeared clearly in his mind.
 
 Aisha dreamed she was walking under the ocean without needing to breathe. Colorful fish swam around her, and a turtle showed her a hidden door made of shells. Behind the door, she found a peaceful garden full of light.`;await generateFullCollection()}
-function renderCollections(s){const select=byId('editCollectionSelect');const list=byId('collectionsList');const cols=Object.values(s.collections||{});select.innerHTML='<option value="">Select collection</option>'+cols.map(c=>`<option value="${c.id}">${esc(c.title)}</option>`).join('');if(s.currentCollectionId&&s.collections?.[s.currentCollectionId])select.value=s.currentCollectionId;list.innerHTML=cols.length?cols.map(c=>`<div class="row"><b>${esc(c.title)}</b><div class="mini">${(c.paragraphs||[]).length} paragraphs</div><button onclick="selectCollection('${c.id}')">Use Collection</button><button class="danger" onclick="deleteCollection('${c.id}')">Delete</button></div>`).join(''):'<div class="status">No collections yet.</div>';renderEditCollection()}
-function renderEditCollection(){const s=stateCache||defaultState();const col=s.collections?.[getSelectedCollectionId()];const box=byId('paragraphsList');if(!col){box.innerHTML='<div class="status">Select a collection.</div>';return}box.innerHTML=(col.paragraphs||[]).map((p,i)=>`<div class="row"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class="bossBadge">Boss</span>':''}<div class="mini">${(p.questions||[]).length} questions • ${esc((p.text||'').slice(0,90))}...</div></div>`).join('')||'<div class="status">No paragraphs in this collection.</div>'}
+function renderCollections(s){const select=byId('editCollectionSelect');const list=byId('collectionsList');if(!select||!list)return;const cols=Object.values(s.collections||{});select.innerHTML='<option value=\"\">Select collection</option>'+cols.map(c=>`<option value=\"${c.id}\">${esc(c.title)}</option>`).join('');if(s.currentCollectionId&&s.collections?.[s.currentCollectionId])select.value=s.currentCollectionId;list.innerHTML=cols.length?cols.map(c=>`<details><summary>📦 ${esc(c.title)} <span class=\"tinyPill\">${(c.paragraphs||[]).length} paragraphs</span></summary><div class=\"mini\" style=\"margin-top:8px\">Questions are hidden to keep the dashboard clean.</div><button onclick=\"selectCollection('${c.id}')\">Use Collection</button><button class=\"danger\" onclick=\"deleteCollection('${c.id}')\">Delete</button></details>`).join(''):'<div class=\"status\">No collections yet.</div>';renderEditCollection()}
+function renderEditCollection(){const s=stateCache||defaultState();const box=byId('paragraphsList');if(!box)return;const col=s.collections?.[getSelectedCollectionId()||s.currentCollectionId];if(!col){box.innerHTML='<div class=\"status\">Select a collection.</div>';return}box.innerHTML=`<details><summary>📖 ${esc(col.title)} <span class=\"tinyPill\">${(col.paragraphs||[]).length} paragraphs</span></summary>`+(col.paragraphs||[]).map((p,i)=>`<div class=\"row\"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class=\"bossBadge\">Boss</span>':''}<div class=\"mini\">${(p.questions||[]).length} questions • Keywords: ${esc((p.keywords||[]).join(', ')||'none')}</div></div>`).join('')+`</details>`}
 async function selectCollection(id){const s=await getState();const col=s.collections?.[id];if(!col)return;s.currentCollectionId=id;s.currentCollectionTitle=col.title;s.stage='waiting';s.answers={};s.studentProgress={};await setState(s)}async function deleteCollection(id){const s=await getState();delete s.collections[id];if(s.currentCollectionId===id){s.currentCollectionId=null;s.currentCollectionTitle=''}await setState(s)}
 function getInitialParaIndex(s,student){const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||1;const mates=Object.values(s.students||{}).filter(st=>st.group===student.group).sort((a,b)=>a.name.localeCompare(b.name));const idx=Math.max(0,mates.findIndex(st=>st.id===student.id));return idx%total}
 async function startCollectionChallenge(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select a collection first.');return}if(!col.paragraphs||!col.paragraphs.length){alert('Collection needs paragraphs.');return}s.stage='playing';s.answers={};s.events=[];s.studentProgress={};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:getInitialParaIndex(s,st),qIndex:0,done:false}});s.final=false;await setState(s)}async function startBossRound(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select collection first.');return}const last=(col.paragraphs||[]).length-1;if(last<0)return;s.stage='boss';s.boss=true;s.studentProgress=s.studentProgress||{};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:last,qIndex:0,done:false}});await setState(s)}
 async function stopChallenge(){const s=await getState();s.stage='final';s.final=true;s.analytics=buildAnalytics(s);await setState(s)}async function resetGame(){if(!confirm('Reset all Reading Rush data?'))return;await stateRef.set(defaultState())}
 function leaderboardRows(s){return activeGroups(s).map(g=>({g,pts:Number(s.scores?.[g]||0)})).sort((a,b)=>b.pts-a.pts)}function renderLeaderboard(id,s){const box=byId(id);if(!box)return;const rows=leaderboardRows(s);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="rankRow"><div class="rankName">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${esc(r.g)}</div><div class="rankPts">${r.pts} pts</div></div>`).join(''):'<div class="status">No groups yet.</div>'}
-function renderStudents(s){const box=byId('teacherStudents');const groups=activeGroups(s);if(!groups.length){box.innerHTML='<div class="status">No students joined.</div>';return}box.innerHTML=groups.map(g=>{const members=Object.values(s.students||{}).filter(st=>st.group===g).map(st=>{const pr=s.studentProgress?.[st.id];return `${st.name}${pr?' P'+(pr.paraIndex+1)+' Q'+(pr.qIndex+1):''}`}).join(', ');return`<div class="rankRow"><div><b>Group ${esc(g)}</b><br><small>${esc(members)}</small></div><div class="rankPts">${s.scores?.[g]||0} pts</div></div>`}).join('')}
-function renderTeacherResults(s){const box=byId('teacherResults');const ev=(s.events||[]).slice().reverse().slice(0,16);box.innerHTML=ev.length?ev.map(e=>`<div class="row"><b>${esc(e.student)} | Group ${esc(e.group)}</b><div class="mini">${esc(e.text)}</div></div>`).join(''):'<div class="status">No answers/events yet.</div>'}
+function groupClass(g){return 'g'+String(g||'').replace(/[^0-9]/g,'')}
+function progressTextForStudent(s,st){const pr=s.studentProgress?.[st.id];const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||0;if(!pr)return 'Waiting';if(pr.done)return `Completed ${total}/${total}`;return `P${Number(pr.paraIndex||0)+1}/${total} • Q${Number(pr.qIndex||0)+1}`}
+function paragraphCellForStudent(s,st,i){const pr=s.studentProgress?.[st.id];const ev=(s.events||[]).filter(e=>(e.studentId===st.id||e.student===st.name)&&Number(e.paragraphIndex)===i);if(ev.length){const c=ev.filter(e=>e.correct).length;return `<span class="tinyPill">${c}/${ev.length}</span>`}if(!pr)return '<span class="tinyPill">—</span>';if(pr.done||Number(pr.paraIndex)>i)return '<span class="tinyPill scorePositive">Done</span>';if(Number(pr.paraIndex)===i)return '<span class="tinyPill">Now</span>';return '<span class="tinyPill">—</span>'}
+function renderStudents(s){const box=byId('teacherStudents');const students=Object.values(s.students||{}).sort((a,b)=>Number(a.group)-Number(b.group)||String(a.name).localeCompare(String(b.name)));const col=s.collections?.[s.currentCollectionId];const paras=(col?.paragraphs||[]);if(!students.length){box.innerHTML='<div class="status">No active students joined now. The leaderboard can still show groups from previous answers.</div>';return}let heads=paras.map((p,i)=>`<th>P${i+1}</th>`).join('');let rows=students.map(st=>{const g=String(st.group);const last=(s.events||[]).filter(e=>e.studentId===st.id||e.student===st.name).slice(-1)[0];return `<tr><td><span class="groupChip ${groupClass(g)}">Group ${esc(g)}</span></td><td><b>${esc(st.name)}</b><div class="mini">${esc(st.cls||'')}</div></td><td>${esc(progressTextForStudent(s,st))}</td>${paras.map((p,i)=>`<td>${paragraphCellForStudent(s,st,i)}</td>`).join('')}<td><small>${last?esc(last.text):'—'}</small></td></tr>`}).join('');box.innerHTML=`<div style="overflow:auto"><table class="liveBoardTable"><thead><tr><th>Group</th><th>Student</th><th>Progress</th>${heads}<th>Last action</th></tr></thead><tbody>${rows}</tbody></table></div>`}
+function selectPerformanceGroup(g){selectedPerformanceGroup=String(g);teacherRefresh()}
+function renderTeacherResults(s){const box=byId('teacherResults');if(!box)return;const groups=activeGroups(s);const buttons=['all',...groups].map(g=>`<button class="${String(selectedPerformanceGroup)===String(g)?'purple':'secondary'}" onclick="selectPerformanceGroup('${esc(g)}')">${g==='all'?'All Groups':'Group '+esc(g)}</button>`).join('');let ev=(s.events||[]).slice().reverse();if(selectedPerformanceGroup!=='all')ev=ev.filter(e=>String(e.group)===String(selectedPerformanceGroup));const summary=groups.map(g=>{const ge=(s.events||[]).filter(e=>String(e.group)===String(g));const correct=ge.filter(e=>e.correct).length;return `<span class="groupChip ${groupClass(g)}">G${esc(g)}: ${correct}/${ge.length} • ${Number(s.scores?.[g]||0)} pts</span>`}).join('');box.innerHTML=`<div class="perfButtons">${buttons}</div><div>${summary||'<div class="status">No group answers yet.</div>'}</div><div class="perfBox">`+(ev.length?ev.slice(0,30).map(e=>`<div class="row"><b>${esc(e.student)} | Group ${esc(e.group)}</b><div class="mini">${esc(e.paragraphTitle||'Paragraph')} • ${esc(e.skill||'question')}</div><div class="mini">${esc(e.text)}</div></div>`).join(''):'<div class="status">Click a group after students start answering.</div>')+`</div>`}
 function teacherRefresh(){const s=stateCache||defaultState();renderStages('teacherStages',s.stage);renderCollections(s);renderLeaderboard('leaderboard',s);renderStudents(s);renderTeacherResults(s);renderFinalWinners(s);renderAnalytics(s)}function renderFinalWinners(s){const box=byId('finalWinnersBox');if(s.stage!=='final'){box.classList.add('hidden');return}const rows=leaderboardRows(s).slice(0,3);box.classList.remove('hidden');box.innerHTML=`<div class="winnerBig">🏆 Final Top 3 Groups</div>`+rows.map((r,i)=>`<div style="font-size:22px;margin-top:8px">${i===0?'🥇':i===1?'🥈':'🥉'} Group ${esc(r.g)} — ${r.pts} pts</div>`).join('')}
 
 function buildAnalytics(s){const ev=s.events||[];const total=ev.length,correct=ev.filter(e=>e.correct).length;const skills={};ev.forEach(e=>{const k=e.skill||'unknown';skills[k]=skills[k]||{total:0,correct:0};skills[k].total++;if(e.correct)skills[k].correct++});let weakest='Not enough data';Object.keys(skills).forEach(k=>{const rate=skills[k].correct/skills[k].total;if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/skills[weakest]?.total||1))weakest=k});return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills}}
 function renderAnalytics(s){const box=byId('analyticsBox');if(!box)return;if(s.stage!=='final'){box.classList.add('hidden');return}const a=s.analytics||buildAnalytics(s);box.classList.remove('hidden');box.innerHTML=`<h2>📊 Teacher Report</h2><div class="analyticsGrid"><div class="analyticsCard"><b>Total Answers</b><br>${a.total||0}</div><div class="analyticsCard"><b>Accuracy</b><br>${a.accuracy||0}%</div><div class="analyticsCard"><b>Correct Answers</b><br>${a.correct||0}</div><div class="analyticsCard"><b>Needs Practice</b><br>${esc(a.weakest||'Not enough data')}</div></div>`}
 
-function highlightKeywords(text){
-  const words=['suddenly','wake up','woke up','strange','scary','confusing','familiar','brain','mental health','psychology','review','solve','conclude'];
+function highlightKeywords(text, extraWords){
+  const defaultWords=['suddenly','wake up','woke up','strange','scary','confusing','familiar','brain','mental health','psychology','review','solve','conclude'];
+  const words=[...(extraWords||[]),...defaultWords]
+    .map(w=>String(w||'').trim())
+    .filter(Boolean)
+    .filter((w,i,arr)=>arr.findIndex(x=>x.toLowerCase()===w.toLowerCase())===i)
+    .sort((a,b)=>b.length-a.length);
   let safe=esc(text);
   words.forEach(w=>{
     const re=new RegExp('('+w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');
@@ -247,9 +432,9 @@ function highlightKeywords(text){
   return safe;
 }
 function currentPQ(s){const col=s.collections?.[s.currentCollectionId];const pr=s.studentProgress?.[currentUser.id];if(!col||!pr)return{p:null,q:null,pr:null,total:0};const paragraphs=col.paragraphs||[];const p=paragraphs[Math.min(pr.paraIndex,paragraphs.length-1)];const q=(p?.questions||[])[pr.qIndex];return{p,q,pr,total:paragraphs.length}}
-function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle">${esc(d.p.title)}</div><div class="pText">${highlightKeywords(d.p.text)}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
+function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle">${esc(d.p.title)}</div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
 function renderStudentQuestion(s,d){const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');if(!q||d.pr.done){box.innerHTML='<div class="status good">You finished all paragraphs in this collection 🎉</div>';opts.innerHTML='';byId('submitAnswerBtn').disabled=true;return}byId('questionNumberPill').innerText=`Question ${d.pr.qIndex+1} / ${(d.p.questions||[]).length}`;box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');byId('submitAnswerBtn').disabled=false}
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
-async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=ev.points;if(s.stage==='boss')pts=pts*2;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} took ${Math.abs(pts)} points from Group ${target}.`}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=ev.points<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(ev.points)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({student:currentUser.name,group:currentUser.group,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
+async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} took ${Math.abs(pts)} points from Group ${target}.`}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+pts;eventText=pts<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(pts)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({student:currentUser.name,studentId:currentUser.id,group:currentUser.group,paragraphIndex:Number(pr.paraIndex||0),paragraphTitle:p?.title||'Paragraph',questionText:q.text||'',selected:selectedAnswer,correctAnswer:q.correct,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
 function showReward(emoji,title,text){byId('rewardEmoji').innerText=emoji;byId('rewardTitle').innerText=title;byId('rewardText').innerText=text;show('rewardPopup')}function closeReward(){hide('rewardPopup')}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 </script></body></html>
