@@ -5,8 +5,7 @@
 <title>⚔️ Skill Clash Hub - Battle Voting Complete</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
 function getAssignedActivityForSelectedClass(){
   return hubRef.child(`classes/${selectedTeacherClass}/assignedActivities/group1`).once('value').then(s=>s.val() || {});
 }
@@ -99,7 +98,8 @@ window.addEventListener('load', hideStudentUploadBoxesSafely);
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-*{box-sizing:border-box}
+*{
+  if(studentHasLeftGroup && studentHasLeftGroup()){ showOnly('studentLoginPage'); return; }box-sizing:border-box}
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -2295,7 +2295,7 @@ button:hover{filter:brightness(.96)}
 }
 
 /* Make long text cleaner */
-#popupActivityDetails{
+
   font-size:14px!important;
   line-height:1.45!important;
 }
@@ -8040,22 +8040,7 @@ window.addEventListener('load',function(){
     updateTeacherTimerDisplay();
   }catch(e){}
 
-  try{
-    if(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')){
-      localStorage.removeItem('skillClashStudentSession');
-      sessionStorage.removeItem('skillClass');
-      sessionStorage.removeItem('skillGroup');
-      sessionStorage.removeItem('skillStudent');
-      sessionStorage.removeItem('skillStudentId');
-      sessionStorage.removeItem('skillRole');
-      if(typeof showOnly === 'function') showOnly('studentLoginPage');
-      if(typeof syncSecureHubLoginToSkillClash === 'function') syncSecureHubLoginToSkillClash();
-    } else if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) {
-      return;
-    }
-  }catch(e){
-    if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) return;
-  }
+  if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) return;
 
   try{
     if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
@@ -8177,90 +8162,5 @@ window.addEventListener('load', function(){
 });
 
 </script>
-
-<script>
-/* ===== Secure Hub Link: fill name + ID + class only. Group/role stay manual. ===== */
-(function(){
-  function readSecureStudent(){
-    try{
-      return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
-    }catch(e){
-      return null;
-    }
-  }
-
-  function normalizeClassValue(v){
-    v = String(v || '').trim();
-    if(!v) return '';
-    v = v.replace('/', '-');
-    if(/^9-?[1-4]$/.test(v)){
-      return v.replace(/^9-?/, '9-');
-    }
-    return v;
-  }
-
-  function setSelectSmart(select, value){
-    if(!select || !value) return;
-    value = normalizeClassValue(value);
-    const options = Array.from(select.options || []);
-    const found = options.find(function(o){
-      return normalizeClassValue(o.value) === value || normalizeClassValue(o.textContent) === value;
-    });
-    if(found){
-      select.value = found.value;
-      select.dispatchEvent(new Event('input', {bubbles:true}));
-      select.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-  }
-
-  window.syncSecureHubLoginToSkillClash = function(){
-    const s = readSecureStudent();
-    if(!s) return false;
-
-    try{
-      // Do not restore old group sessions when student comes from secure hub.
-      localStorage.removeItem('skillClashStudentSession');
-      sessionStorage.removeItem('skillClass');
-      sessionStorage.removeItem('skillGroup');
-      sessionStorage.removeItem('skillStudent');
-      sessionStorage.removeItem('skillStudentId');
-      sessionStorage.removeItem('skillRole');
-      localStorage.removeItem('skillClashStudentLeftGroup');
-    }catch(e){}
-
-    const nameBox = document.getElementById('studentName');
-    const idBox = document.getElementById('studentId');
-    const classBox = document.getElementById('className');
-
-    if(nameBox){
-      nameBox.disabled = false;
-      nameBox.readOnly = false;
-      nameBox.value = s.name || '';
-      nameBox.dispatchEvent(new Event('input', {bubbles:true}));
-      nameBox.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-
-    if(idBox){
-      idBox.disabled = false;
-      idBox.readOnly = false;
-      idBox.value = s.studentId || s.password || '';
-      idBox.dispatchEvent(new Event('input', {bubbles:true}));
-      idBox.dispatchEvent(new Event('change', {bubbles:true}));
-    }
-
-    setSelectSmart(classBox, s.className || s.classId || s.class || '');
-
-    // Important: do NOT select group or leader/member. Student chooses them manually.
-    if(typeof showOnly === 'function') showOnly('studentLoginPage');
-    return true;
-  };
-
-  window.addEventListener('load', function(){
-    setTimeout(window.syncSecureHubLoginToSkillClash, 500);
-    setTimeout(window.syncSecureHubLoginToSkillClash, 1500);
-  });
-})();
-</script>
-
 </body>
 </html>
