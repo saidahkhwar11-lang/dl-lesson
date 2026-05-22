@@ -83,7 +83,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 <div id="loginScreen" class="loginWrap">
   <div class="loginCard">
     <h1>🎮 DL Learning Hub</h1>
-    <p>Login once to open your classroom pages. Students’ marks are saved by ID number.</p>
+    <p>Login once with your student ID to open classroom pages. Your name will appear automatically.</p>
 
     <div class="tabs">
       <button id="studentTab" class="tabBtn active" onclick="showLoginTab('student')">👩‍🎓 Student</button>
@@ -94,11 +94,8 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <label>Choose Class</label>
       <select id="classSelect"></select>
 
-      <label>Student Name</label>
-      <input id="studentName" placeholder="Write your exact name">
-
       <label>Student ID / Password</label>
-      <input id="studentPassword" placeholder="Write your school ID">
+      <input id="studentPassword" placeholder="Write your school ID only">
 
       <button class="loginBtn" onclick="loginStudent()">Enter Student Hub</button>
     </div>
@@ -274,29 +271,32 @@ function checkExistingLogin(){
 
 async function loginStudent(){
   const classId=byId("classSelect").value;
-  const name=byId("studentName").value.trim();
   const pass=byId("studentPassword").value.trim();
 
-  if(!classId||!name||!pass){
-    showMsg("Please complete all fields.","bad");
+  if(!classId||!pass){
+    showMsg("Please choose your class and write your student ID.","bad");
     return;
   }
 
   const cls=classes[classId];
   const students=Object.values(cls?.students||{});
-  const match=students.find(s=>cleanText(s.name)===cleanText(name) && String(s.password||"").trim()===pass);
+
+  const match=students.find(s=>
+    String(s.password||"").trim()===pass ||
+    String(s.id||"").trim()===pass
+  );
 
   if(!match){
-    showMsg("❌ Login denied. Use your exact teacher-given name and ID.","bad");
+    showMsg("❌ Login denied. Check your class and student ID.","bad");
     return;
   }
 
   const session={
     classId:classId,
     className:cls.name,
-    studentId:match.password,
+    studentId:match.password || match.id,
     name:match.name,
-    password:match.password,
+    password:match.password || match.id,
     loginTime:Date.now()
   };
 
