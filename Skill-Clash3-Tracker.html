@@ -8248,6 +8248,12 @@ function syncSecureHubLoginToSkillClash(){
   }
 
   setSelectValueSmart(classBox, s.className || s.classId);
+  const groupBox = document.querySelector("#studentGroup, #groupNumber, select[name*='group' i]");
+
+if(groupBox && !groupBox.value){
+  groupBox.value = "1";
+  groupBox.dispatchEvent(new Event("change", {bubbles:true}));
+}
 }
 
 window.addEventListener("load", function(){
