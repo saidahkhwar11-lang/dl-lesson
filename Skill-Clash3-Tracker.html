@@ -5,7 +5,8 @@
 <title>⚔️ Skill Clash Hub - Battle Voting Complete</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js">
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script>
 function getAssignedActivityForSelectedClass(){
   return hubRef.child(`classes/${selectedTeacherClass}/assignedActivities/group1`).once('value').then(s=>s.val() || {});
 }
@@ -99,8 +100,7 @@ window.addEventListener('load', hideStudentUploadBoxesSafely);
 <script src="student-tracker.js"></script>
 
 <style>
-*{
-  if(studentHasLeftGroup && studentHasLeftGroup()){ showOnly('studentLoginPage'); return; }box-sizing:border-box}
+*{box-sizing:border-box}
 body{
   margin:0;
   font-family:Arial, sans-serif;
@@ -2296,7 +2296,7 @@ button:hover{filter:brightness(.96)}
 }
 
 /* Make long text cleaner */
-
+#popupActivityDetails{
   font-size:14px!important;
   line-height:1.45!important;
 }
@@ -8175,5 +8175,86 @@ window.addEventListener('load', function(){
 });
 
 </script>
+
+<script>
+/* ===== Secure Hub Login Sync Fix ===== */
+function getLoggedStudent(){
+  try{
+    const raw =
+      localStorage.getItem("DL_SECURE_STUDENT_LOGIN") ||
+      sessionStorage.getItem("DL_SECURE_STUDENT_LOGIN");
+
+    if(!raw) return null;
+
+    const s = JSON.parse(raw);
+    const id = s.studentId || s.password || s.id || s.studentID || "";
+
+    if(!s.name || !id) return null;
+
+    return {
+      name: s.name,
+      studentId: String(id),
+      password: String(id),
+      className: s.className || s.class || s.classId || "",
+      classId: s.classId || s.className || s.class || ""
+    };
+  }catch(err){
+    console.warn("Secure hub login read failed:", err);
+    return null;
+  }
+}
+
+function setSelectValueSmart(selectEl, wanted){
+  if(!selectEl || !wanted) return;
+  const w = String(wanted).trim();
+  const normalized = w.replace(/\//g, "-").replace(/\s+/g, "").toLowerCase();
+
+  for(const opt of Array.from(selectEl.options || [])){
+    const ov = String(opt.value || "").trim();
+    const ot = String(opt.text || "").trim();
+    const ovn = ov.replace(/\//g, "-").replace(/\s+/g, "").toLowerCase();
+    const otn = ot.replace(/\//g, "-").replace(/\s+/g, "").toLowerCase();
+
+    if(ov === w || ot === w || ovn === normalized || otn === normalized){
+      selectEl.value = opt.value;
+      selectEl.dispatchEvent(new Event("change", {bubbles:true}));
+      return;
+    }
+  }
+}
+
+function syncSecureHubLoginToSkillClash(){
+  const s = getLoggedStudent();
+  if(!s) return;
+
+  const nameBox = document.querySelector("#studentName, #joinName, input[placeholder*='name' i]");
+  const idBox = document.querySelector("#studentId, #studentCode, input[placeholder*='ID' i]");
+  const classBox = document.querySelector("#className, #studentClass, select[name*='class' i]");
+
+  if(nameBox){
+    nameBox.disabled = false;
+    nameBox.readOnly = false;
+    nameBox.value = s.name || "";
+    nameBox.dispatchEvent(new Event("input", {bubbles:true}));
+    nameBox.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+
+  if(idBox){
+    idBox.disabled = false;
+    idBox.readOnly = false;
+    idBox.value = s.studentId || s.password || "";
+    idBox.dispatchEvent(new Event("input", {bubbles:true}));
+    idBox.dispatchEvent(new Event("change", {bubbles:true}));
+  }
+
+  setSelectValueSmart(classBox, s.className || s.classId);
+}
+
+window.addEventListener("load", function(){
+  setTimeout(syncSecureHubLoginToSkillClash, 700);
+  setTimeout(syncSecureHubLoginToSkillClash, 1600);
+});
+</script>
+
 </body>
 </html>
