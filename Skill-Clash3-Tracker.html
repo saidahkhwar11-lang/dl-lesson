@@ -2295,7 +2295,7 @@ button:hover{filter:brightness(.96)}
 }
 
 /* Make long text cleaner */
-#popupActivityDetails{
+
   font-size:14px!important;
   line-height:1.45!important;
 }
@@ -8040,22 +8040,7 @@ window.addEventListener('load',function(){
     updateTeacherTimerDisplay();
   }catch(e){}
 
-  try{
-    if(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')){
-      localStorage.removeItem('skillClashStudentSession');
-      sessionStorage.removeItem('skillClass');
-      sessionStorage.removeItem('skillGroup');
-      sessionStorage.removeItem('skillStudent');
-      sessionStorage.removeItem('skillStudentId');
-      sessionStorage.removeItem('skillRole');
-      if(typeof showOnly === 'function') showOnly('studentLoginPage');
-      if(typeof syncSecureHubLoginToSkillClash === 'function') syncSecureHubLoginToSkillClash();
-    } else if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) {
-      return;
-    }
-  }catch(e){
-    if(typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) return;
-  }
+  if(!(typeof getSecureHubStudentForSkill === 'function' && getSecureHubStudentForSkill()) && typeof safeRestoreStudentSession === 'function' && safeRestoreStudentSession()) return;
 
   try{
     if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
@@ -8176,91 +8161,175 @@ window.addEventListener('load', function(){
   setTimeout(loadAllActivatedActivitiesSafe, 800);
 });
 
-</script>
 
-<script>
-/* ===== Secure Hub Link: fill name + ID + class only. Group/role stay manual. ===== */
-(function(){
-  function readSecureStudent(){
-    try{
-      return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
-    }catch(e){
-      return null;
-    }
+/* ===== SECURE HUB BRIDGE - Skill Clash safe link =====
+   Fills student name + ID + class only. Students choose group and leader/member manually. */
+function getSecureHubStudentForSkill(){
+  try{
+    const raw = localStorage.getItem('DL_SECURE_STUDENT_LOGIN');
+    if(!raw) return null;
+    const s = JSON.parse(raw);
+    if(!s) return null;
+    const name = s.name || s.studentName || s.fullName || '';
+    const id = s.studentId || s.password || s.id || '';
+    const cls = s.classId || s.className || s.cls || '';
+    if(!name && !id && !cls) return null;
+    return Object.assign({}, s, {name:name, studentId:id, classValue:cls});
+  }catch(e){ return null; }
+}
+
+function normalizeSkillClassForSelect(value){
+  let v = String(value || '').trim();
+  if(!v) return '';
+  v = v.replace(/Grade\s*/ig,'').replace(/Class\s*/ig,'').trim();
+  v = v.replace('/', '-');
+  v = v.replace(/\s+/g, '');
+  if(/^9[\-_ ]?1$/i.test(v)) return '9-1';
+  if(/^9[\-_ ]?2$/i.test(v)) return '9-2';
+  if(/^9[\-_ ]?3$/i.test(v)) return '9-3';
+  if(/^9[\-_ ]?4$/i.test(v)) return '9-4';
+  return v;
+}
+
+function setSkillSelectValueSmart(select, rawValue){
+  if(!select || !rawValue) return;
+  const wanted = normalizeSkillClassForSelect(rawValue);
+  const options = Array.from(select.options || []);
+  let found = options.find(o => String(o.value).trim() === wanted);
+  if(!found){
+    found = options.find(o => String(o.textContent || '').trim().replace('/', '-') === wanted);
+  }
+  if(found){
+    select.value = found.value;
+    select.dispatchEvent(new Event('input', {bubbles:true}));
+    select.dispatchEvent(new Event('change', {bubbles:true}));
+  }
+}
+
+function fillSkillClashFromSecureHub(){
+  const s = getSecureHubStudentForSkill();
+  if(!s) return false;
+
+  // Avoid old stale Skill Clash session opening an empty page.
+  try{
+    localStorage.removeItem('skillClashStudentSession');
+    sessionStorage.removeItem('skillClass');
+    sessionStorage.removeItem('skillGroup');
+    sessionStorage.removeItem('skillStudent');
+    sessionStorage.removeItem('skillStudentId');
+    sessionStorage.removeItem('skillRole');
+  }catch(e){}
+
+  const nameBox = document.getElementById('studentName');
+  const idBox = document.getElementById('studentId');
+  const classBox = document.getElementById('className');
+
+  if(nameBox){
+    nameBox.disabled = false;
+    nameBox.readOnly = false;
+    nameBox.value = s.name || '';
+    nameBox.dispatchEvent(new Event('input', {bubbles:true}));
+    nameBox.dispatchEvent(new Event('change', {bubbles:true}));
   }
 
-  function normalizeClassValue(v){
-    v = String(v || '').trim();
-    if(!v) return '';
-    v = v.replace('/', '-');
-    if(/^9-?[1-4]$/.test(v)){
-      return v.replace(/^9-?/, '9-');
-    }
-    return v;
+  if(idBox){
+    idBox.disabled = false;
+    idBox.readOnly = false;
+    idBox.value = s.studentId || s.password || '';
+    idBox.dispatchEvent(new Event('input', {bubbles:true}));
+    idBox.dispatchEvent(new Event('change', {bubbles:true}));
   }
 
-  function setSelectSmart(select, value){
-    if(!select || !value) return;
-    value = normalizeClassValue(value);
-    const options = Array.from(select.options || []);
-    const found = options.find(function(o){
-      return normalizeClassValue(o.value) === value || normalizeClassValue(o.textContent) === value;
-    });
-    if(found){
-      select.value = found.value;
-      select.dispatchEvent(new Event('input', {bubbles:true}));
-      select.dispatchEvent(new Event('change', {bubbles:true}));
-    }
+  if(classBox){
+    setSkillSelectValueSmart(classBox, s.classValue || s.className || s.classId);
   }
 
-  window.syncSecureHubLoginToSkillClash = function(){
-    const s = readSecureStudent();
-    if(!s) return false;
+  // Do NOT touch group or leader/member.
+  return true;
+}
 
-    try{
-      // Do not restore old group sessions when student comes from secure hub.
-      localStorage.removeItem('skillClashStudentSession');
-      sessionStorage.removeItem('skillClass');
-      sessionStorage.removeItem('skillGroup');
-      sessionStorage.removeItem('skillStudent');
-      sessionStorage.removeItem('skillStudentId');
-      sessionStorage.removeItem('skillRole');
-      localStorage.removeItem('skillClashStudentLeftGroup');
-    }catch(e){}
+window.joinGroup = async function(){
+  try{
+    fillSkillClashFromSecureHub();
 
+    const classBox = document.getElementById('className');
+    const groupBox = document.getElementById('studentGroup');
     const nameBox = document.getElementById('studentName');
     const idBox = document.getElementById('studentId');
-    const classBox = document.getElementById('className');
+    const roleBox = document.getElementById('studentRole');
 
-    if(nameBox){
-      nameBox.disabled = false;
-      nameBox.readOnly = false;
-      nameBox.value = s.name || '';
-      nameBox.dispatchEvent(new Event('input', {bubbles:true}));
-      nameBox.dispatchEvent(new Event('change', {bubbles:true}));
+    currentClass = classBox ? classBox.value : '';
+    currentGroup = groupBox ? groupBox.value : '';
+    currentStudent = nameBox ? nameBox.value.trim() : '';
+    currentStudentId = idBox ? idBox.value.trim() : '';
+    currentRole = roleBox ? roleBox.value : 'member';
+
+    if(!currentClass){ alert('Please choose your class.'); return; }
+    if(!currentGroup){ alert('Please choose your group number.'); return; }
+    if(!currentRole){ alert('Please choose Group Member or Group Leader.'); return; }
+    if(!currentStudent || !currentStudentId){ alert('Student name and ID are missing. Please login from the Secure Hub again.'); return; }
+
+    currentStudentId = String(currentStudentId).replace(/[^a-zA-Z0-9_-]/g,'_');
+
+    const groupPath = `classes/${activeClassKey()}/groups/group${currentGroup}/students`;
+    const studentsSnap = await hubRef.child(groupPath).once('value');
+    const existingStudents = studentsSnap.val() || {};
+    const existingLeader = Object.keys(existingStudents).find(id => existingStudents[id] && existingStudents[id].role === 'leader' && id !== currentStudentId);
+
+    if(currentRole === 'leader' && existingLeader){
+      const leaderName = existingStudents[existingLeader].name || existingLeader;
+      currentRole = 'member';
+      if(roleBox) roleBox.value = 'member';
+      alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
     }
 
-    if(idBox){
-      idBox.disabled = false;
-      idBox.readOnly = false;
-      idBox.value = s.studentId || s.password || '';
-      idBox.dispatchEvent(new Event('input', {bubbles:true}));
-      idBox.dispatchEvent(new Event('change', {bubbles:true}));
-    }
+    sessionStorage.setItem('skillClass', currentClass);
+    sessionStorage.setItem('skillGroup', currentGroup);
+    sessionStorage.setItem('skillStudent', currentStudent);
+    sessionStorage.setItem('skillStudentId', currentStudentId);
+    sessionStorage.setItem('skillRole', currentRole);
 
-    setSelectSmart(classBox, s.className || s.classId || s.class || '');
+    try{
+      localStorage.setItem('skillClashStudentSession', JSON.stringify({
+        className: currentClass,
+        group: currentGroup,
+        student: currentStudent,
+        studentId: currentStudentId,
+        role: currentRole,
+        savedAt: Date.now()
+      }));
+    }catch(e){}
 
-    // Important: do NOT select group or leader/member. Student chooses them manually.
-    if(typeof showOnly === 'function') showOnly('studentLoginPage');
-    return true;
-  };
+    await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+      id: currentStudentId,
+      name: currentStudent,
+      role: currentRole,
+      joinedAt: Date.now(),
+      lastSeenAt: Date.now()
+    });
 
-  window.addEventListener('load', function(){
-    setTimeout(window.syncSecureHubLoginToSkillClash, 500);
-    setTimeout(window.syncSecureHubLoginToSkillClash, 1500);
-  });
-})();
+    try{
+      const resetSnap = await hubRef.child(`classes/${activeClassKey()}/settings/resetToken`).once('value');
+      if(typeof saveCurrentResetToken === 'function') saveCurrentResetToken(resetSnap.val() || '');
+    }catch(e){}
+
+    showOnly('workPage');
+    if(typeof listenGroup === 'function') listenGroup();
+    if(typeof listenClassSettings === 'function') listenClassSettings();
+    if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
+    if(typeof listenChat === 'function') listenChat();
+    if(typeof forceLoadStudentActiveActivity === 'function') forceLoadStudentActiveActivity();
+  }catch(err){
+    console.error('Skill Clash join failed:', err);
+    alert('Could not join Skill Clash. Please refresh and try again. Error: ' + (err && err.message ? err.message : err));
+  }
+};
+
+window.addEventListener('load', function(){
+  setTimeout(fillSkillClashFromSecureHub, 80);
+  setTimeout(fillSkillClashFromSecureHub, 700);
+}, true);
+
 </script>
-
 </body>
 </html>
