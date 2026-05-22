@@ -3653,7 +3653,7 @@ function showOnly(id){
 function showStudentLogin(){showOnly('studentLoginPage')}
 function showTeacherLogin(){showOnly('teacherLoginPage')}
 
-async function joinGroup(){
+async async function joinGroup(){
   try{
     // Strong Secure Hub + manual fallback login
     const secure = (typeof getLoggedStudent === 'function') ? getLoggedStudent() : null;
