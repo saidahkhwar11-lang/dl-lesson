@@ -3654,68 +3654,80 @@ function showStudentLogin(){showOnly('studentLoginPage')}
 function showTeacherLogin(){showOnly('teacherLoginPage')}
 
 async function joinGroup(){
-  const secure=(typeof getLoggedStudent==='function')?getLoggedStudent():null;
-  if(!secure){location.href='student-login.html?next='+encodeURIComponent(location.pathname.split('/').pop()+location.search);return;}
-  currentClass = secure.className || secure.classId || document.getElementById('className').value;
-  currentGroup = document.getElementById('studentGroup').value;
-  currentStudent = secure.name;
-  currentStudentId = secure.studentId || secure.password;
-  if(document.getElementById('className')) document.getElementById('className').value=currentClass;
-  if(document.getElementById('studentName')) document.getElementById('studentName').value=currentStudent;
-  if(document.getElementById('studentId')) document.getElementById('studentId').value=currentStudentId;
-  autoPersistSkillSession();
-  currentRole = document.getElementById('studentRole').value;
+  try{
+    // Strong Secure Hub + manual fallback login
+    const secure = (typeof getLoggedStudent === 'function') ? getLoggedStudent() : null;
 
-  if(!currentClass || !currentGroup || !currentStudent || !currentStudentId){
-    alert('Login again from student secure login.');
-    return;
+    const classBox = document.getElementById('className');
+    const groupBox = document.getElementById('studentGroup');
+    const nameBox = document.getElementById('studentName');
+    const idBox = document.getElementById('studentId');
+    const roleBox = document.getElementById('studentRole');
+
+    currentClass = (secure && (secure.className || secure.classId)) || (classBox ? classBox.value : '') || '9/1';
+    currentGroup = (groupBox ? groupBox.value : '') || '1';
+    currentStudent = (secure && secure.name) || (nameBox ? nameBox.value.trim() : '');
+    currentStudentId = (secure && (secure.studentId || secure.password)) || (idBox ? idBox.value.trim() : '');
+    currentRole = (roleBox ? roleBox.value : '') || 'member';
+
+    if(classBox) classBox.value = currentClass;
+    if(groupBox) groupBox.value = currentGroup;
+    if(nameBox) nameBox.value = currentStudent;
+    if(idBox) idBox.value = currentStudentId;
+    if(roleBox) roleBox.value = currentRole;
+
+    if(!currentStudent || !currentStudentId){
+      alert('Student name and ID are missing. Please login from the Secure Hub again.');
+      return;
+    }
+
+    currentStudentId = String(currentStudentId).replace(/[^a-zA-Z0-9_-]/g,'_');
+
+    const groupPath = `classes/${activeClassKey()}/groups/group${currentGroup}/students`;
+    const studentsSnap = await hubRef.child(groupPath).once('value');
+    const existingStudents = studentsSnap.val() || {};
+    const existingLeader = Object.keys(existingStudents).find(id => {
+      return existingStudents[id] && existingStudents[id].role === 'leader' && id !== currentStudentId;
+    });
+
+    if(currentRole === 'leader' && existingLeader){
+      const leaderName = existingStudents[existingLeader].name || existingLeader;
+      currentRole = 'member';
+      if(roleBox) roleBox.value = 'member';
+      alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
+    }
+
+    sessionStorage.setItem('skillClass',currentClass);
+    sessionStorage.setItem('skillGroup',currentGroup);
+    sessionStorage.setItem('skillStudent',currentStudent);
+    sessionStorage.setItem('skillStudentId',currentStudentId);
+    sessionStorage.setItem('skillRole',currentRole);
+    if(typeof saveSkillSession === 'function') saveSkillSession();
+
+    await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+      id: currentStudentId,
+      name: currentStudent,
+      role: currentRole,
+      joinedAt: Date.now(),
+      lastSeenAt: Date.now()
+    });
+
+    if(typeof saveSkillSession === 'function') saveSkillSession();
+    if(typeof autoPersistSkillSession === 'function') autoPersistSkillSession();
+    if(typeof safeAutoPersistSkillSession === 'function') safeAutoPersistSkillSession();
+
+    try{
+      const resetSnap = await hubRef.child(`classes/${currentStudentClassKey ? currentStudentClassKey() : String(currentClass).replace('/','-')}/settings/resetToken`).once('value');
+      if(typeof saveCurrentResetToken === 'function') saveCurrentResetToken(resetSnap.val() || '');
+    }catch(e){}
+
+    if(typeof allowStudentAutoLoginAgain === 'function') allowStudentAutoLoginAgain();
+    showOnly('workPage');
+    listenGroup();
+  }catch(err){
+    console.error('Join group failed:', err);
+    alert('Could not join. Please refresh and try again. Error: ' + (err && err.message ? err.message : err));
   }
-
-  currentStudentId = currentStudentId.replace(/[^a-zA-Z0-9_-]/g,'_');
-
-  const groupPath = `classes/${activeClassKey()}/groups/group${currentGroup}/students`;
-  const studentsSnap = await hubRef.child(groupPath).once('value');
-  const existingStudents = studentsSnap.val() || {};
-  const existingLeader = Object.keys(existingStudents).find(id => {
-    return existingStudents[id] && existingStudents[id].role === 'leader' && id !== currentStudentId;
-  });
-
-  if(currentRole === 'leader' && existingLeader){
-    const leaderName = existingStudents[existingLeader].name || existingLeader;
-    currentRole = 'member';
-    document.getElementById('studentRole').value = 'member';
-    alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
-  }
-
-  sessionStorage.setItem('skillClass',currentClass);
-  sessionStorage.setItem('skillGroup',currentGroup);
-  sessionStorage.setItem('skillStudent',currentStudent);
-  sessionStorage.setItem('skillStudentId',currentStudentId);
-  sessionStorage.setItem('skillRole',currentRole);
-  saveSkillSession();
-
-  await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
-    id: currentStudentId,
-    name: currentStudent,
-    role: currentRole,
-    joinedAt: Date.now(),
-    lastSeenAt: Date.now()
-  });
-
-  saveSkillSession();
-  autoPersistSkillSession();
-  saveSkillSession();
-  safeAutoPersistSkillSession();
-  
-  const resetSnap = await hubRef.child(`classes/${currentStudentClassKey ? currentStudentClassKey() : String(currentClass).replace('/','-')}/settings/resetToken`).once('value');
-  saveCurrentResetToken(resetSnap.val() || '');
-
-  allowStudentAutoLoginAgain();
-  saveSkillSession && saveSkillSession();
-  if(typeof autoPersistSkillSession === 'function') autoPersistSkillSession();
-  if(typeof safeAutoPersistSkillSession === 'function') safeAutoPersistSkillSession();
-  showOnly('workPage');
-  listenGroup();
 }
 
 function listenGroup(){
@@ -8252,6 +8264,7 @@ function syncSecureHubLoginToSkillClash(){
 
 if(groupBox && !groupBox.value){
   groupBox.value = "1";
+  groupBox.dispatchEvent(new Event("input", {bubbles:true}));
   groupBox.dispatchEvent(new Event("change", {bubbles:true}));
 }
 }
