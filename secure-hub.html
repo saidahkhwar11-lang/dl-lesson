@@ -12,7 +12,6 @@
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-
 body{
   min-height:100vh;
   font-family:Inter,Arial,sans-serif;
@@ -20,302 +19,208 @@ body{
   color:#20345f;
   padding:22px;
 }
-
 .hidden{display:none!important}
-
-.wrapper{
-  max-width:1280px;
-  margin:auto;
-}
-
-.loginWrap{
-  min-height:80vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-}
-
+.wrapper{max-width:1280px;margin:auto}
+.loginWrap{min-height:80vh;display:flex;align-items:center;justify-content:center}
 .loginCard{
-  width:min(470px,96vw);
+  width:min(520px,96vw);
   background:white;
   border:1px solid #dfe8ff;
   border-radius:30px;
   padding:26px;
   box-shadow:0 18px 40px rgba(55,75,135,.14);
 }
-
-.loginCard h1{
-  font-family:Quicksand,sans-serif;
-  color:#203a78;
-  font-size:34px;
-  margin-bottom:10px;
+.loginCard h1{font-family:Quicksand,sans-serif;color:#203a78;font-size:34px;margin-bottom:10px}
+.loginCard p{color:#607197;font-size:14px;line-height:1.5;margin-bottom:14px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 16px}
+.tabBtn{
+  border:none;border-radius:16px;padding:12px;
+  font-family:Quicksand,sans-serif;font-weight:800;cursor:pointer;
+  background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;
 }
-
-.loginCard p{
-  color:#607197;
-  font-size:14px;
-  line-height:1.5;
-  margin-bottom:14px;
-}
-
-label{
-  display:block;
-  font-weight:800;
-  font-size:13px;
-  margin:10px 0 6px;
-  color:#314a80;
-}
-
-input,select{
-  width:100%;
-  border:1px solid #cfdcff;
-  border-radius:14px;
-  padding:12px;
-  font-size:15px;
-  outline:none;
-}
-
+.tabBtn.active{background:linear-gradient(135deg,#2f63d9,#7d5cff);color:white;border-color:transparent}
+label{display:block;font-weight:800;font-size:13px;margin:10px 0 6px;color:#314a80}
+input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px;font-size:15px;outline:none}
 .loginBtn{
-  width:100%;
-  margin-top:14px;
-  border:none;
-  border-radius:16px;
-  padding:13px;
+  width:100%;margin-top:14px;border:none;border-radius:16px;padding:13px;
   background:linear-gradient(135deg,#2f63d9,#7d5cff);
-  color:white;
-  font-family:Quicksand,sans-serif;
-  font-weight:800;
-  font-size:16px;
-  cursor:pointer;
+  color:white;font-family:Quicksand,sans-serif;font-weight:800;font-size:16px;cursor:pointer;
 }
-
-.status{
-  margin-top:12px;
-  padding:10px 12px;
-  border-radius:16px;
-  font-size:13px;
-  font-weight:700;
-  background:#fff8df;
-  border:1px solid #f2d98a;
-  color:#775704;
-}
-
-.bad{
-  background:#fff0f3;
-  border-color:#ffc4cf;
-  color:#9a2740;
-}
-
-.good{
-  background:#eafff3;
-  border-color:#9fe4bd;
-  color:#176b45;
-}
-
+.teacherBtn{background:linear-gradient(135deg,#7d5cff,#b35cff)}
+.status{margin-top:12px;padding:10px 12px;border-radius:16px;font-size:13px;font-weight:700;background:#fff8df;border:1px solid #f2d98a;color:#775704}
+.bad{background:#fff0f3;border-color:#ffc4cf;color:#9a2740}
+.good{background:#eafff3;border-color:#9fe4bd;color:#176b45}
 .hero{
   background:linear-gradient(135deg,#4f6edb,#8b6ee8);
-  color:white;
-  padding:34px 24px;
-  border-radius:30px;
-  text-align:center;
-  box-shadow:0 12px 30px rgba(0,0,0,.12);
-  margin-bottom:28px;
+  color:white;padding:34px 24px;border-radius:30px;text-align:center;
+  box-shadow:0 12px 30px rgba(0,0,0,.12);margin-bottom:28px;
 }
-
-.hero h1{
-  font-family:Quicksand,sans-serif;
-  font-size:60px;
-}
-
-.hero p{
-  margin-top:10px;
-  font-size:18px;
-}
-
-.topBar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  margin-bottom:18px;
-  flex-wrap:wrap;
-}
-
-.studentBox{
-  background:white;
-  border:1px solid #dfe8ff;
-  border-radius:18px;
-  padding:12px 16px;
-  box-shadow:0 8px 18px rgba(55,75,135,.08);
-}
-
-.studentBox b{
-  color:#203a78;
-}
-
-.logoutBtn{
-  border:none;
-  border-radius:14px;
-  padding:10px 14px;
-  background:#ef5267;
-  color:white;
-  font-family:Quicksand,sans-serif;
-  font-weight:800;
-  cursor:pointer;
-}
-
-.grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(250px,1fr));
-  gap:22px;
-}
-
+.hero h1{font-family:Quicksand,sans-serif;font-size:56px}
+.hero p{margin-top:10px;font-size:18px}
+.topBar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+.userBox{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:12px 16px;box-shadow:0 8px 18px rgba(55,75,135,.08)}
+.userBox b{color:#203a78}
+.logoutBtn{border:none;border-radius:14px;padding:10px 14px;background:#ef5267;color:white;font-family:Quicksand,sans-serif;font-weight:800;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
 .card{
-  background:white;
-  border-radius:26px;
-  padding:28px 20px;
-  text-align:center;
-  cursor:pointer;
-  transition:.25s;
-  border:2px solid #e4eaff;
-  box-shadow:0 8px 22px rgba(36,59,107,.08);
+  background:white;border-radius:26px;padding:28px 20px;text-align:center;cursor:pointer;transition:.25s;
+  border:2px solid #e4eaff;box-shadow:0 8px 22px rgba(36,59,107,.08);
 }
-
-.card:hover{
-  transform:translateY(-5px);
-  box-shadow:0 12px 28px rgba(36,59,107,.15);
-}
-
-.emoji{
-  font-size:72px;
-  margin-bottom:12px;
-}
-
-.card h2{
-  margin:0;
-  font-size:26px;
-  color:#243b6b;
-  font-family:Quicksand,sans-serif;
-}
-
-.card p{
-  margin-top:10px;
-  color:#6a7aa6;
-  line-height:1.6;
-  font-size:15px;
-}
-
-.footer{
-  text-align:center;
-  margin-top:30px;
-  color:#7b88aa;
-  font-size:13px;
-}
-
-@media(max-width:700px){
-  .hero h1{font-size:40px}
-}
+.card:hover{transform:translateY(-5px);box-shadow:0 12px 28px rgba(36,59,107,.15)}
+.teacherCard{border-color:#eadcff;background:linear-gradient(135deg,#fff,#fbf8ff)}
+.emoji{font-size:72px;margin-bottom:12px}
+.card h2{margin:0;font-size:26px;color:#243b6b;font-family:Quicksand,sans-serif}
+.card p{margin-top:10px;color:#6a7aa6;line-height:1.6;font-size:15px}
+.sectionTitle{font-family:Quicksand,sans-serif;color:#203a78;font-size:26px;margin:6px 0 16px}
+.footer{text-align:center;margin-top:30px;color:#7b88aa;font-size:13px}
+@media(max-width:700px){.hero h1{font-size:38px}.tabs{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
-
 <div class="wrapper">
 
 <div id="loginScreen" class="loginWrap">
   <div class="loginCard">
-    <h1>🔐 Secure Student Login</h1>
-    <p>
-      Login once to access all classroom activities and automatically save your marks and performance.
-    </p>
+    <h1>🎮 DL Learning Hub</h1>
+    <p>Login once to open your classroom pages. Students’ marks are saved by ID number.</p>
 
-    <label>Choose Class</label>
-    <select id="classSelect"></select>
+    <div class="tabs">
+      <button id="studentTab" class="tabBtn active" onclick="showLoginTab('student')">👩‍🎓 Student</button>
+      <button id="teacherTab" class="tabBtn" onclick="showLoginTab('teacher')">👩‍🏫 Teacher</button>
+    </div>
 
-    <label>Student Name</label>
-    <input id="studentName" placeholder="Write your exact name">
+    <div id="studentLoginBox">
+      <label>Choose Class</label>
+      <select id="classSelect"></select>
 
-    <label>Student ID / Password</label>
-    <input id="studentPassword" placeholder="Write your school ID">
+      <label>Student Name</label>
+      <input id="studentName" placeholder="Write your exact name">
 
-    <button class="loginBtn" onclick="loginStudent()">
-      Enter DL Learning Hub
-    </button>
+      <label>Student ID / Password</label>
+      <input id="studentPassword" placeholder="Write your school ID">
+
+      <button class="loginBtn" onclick="loginStudent()">Enter Student Hub</button>
+    </div>
+
+    <div id="teacherLoginBox" class="hidden">
+      <label>Teacher Password</label>
+      <input id="teacherPassword" type="password" placeholder="Teacher password">
+
+      <button class="loginBtn teacherBtn" onclick="loginTeacher()">Enter Teacher Hub</button>
+
+      <div class="status">Teacher password: Welcome@2020</div>
+    </div>
 
     <div id="loginMsg"></div>
   </div>
 </div>
 
-<div id="hubScreen" class="hidden">
-
+<div id="studentHub" class="hidden">
   <div class="hero">
     <h1>🎮 DL Learning Hub</h1>
-    <p>
-      One secure place for all classroom activities, reading challenges, and interactive lessons.
-    </p>
+    <p>Choose your activity. Your marks are saved automatically in the Teacher Control Center.</p>
   </div>
 
   <div class="topBar">
-    <div class="studentBox">
+    <div class="userBox">
       <b id="studentDisplay"></b><br>
       <span id="classDisplay"></span>
     </div>
-
-    <button class="logoutBtn" onclick="logoutStudent()">
-      Logout
-    </button>
+    <button class="logoutBtn" onclick="logoutAll()">Logout</button>
   </div>
+
+  <h2 class="sectionTitle">👩‍🎓 Student Activities</h2>
 
   <div class="grid">
-
-    <div class="card"
-      onclick="openPage('DL-Lesson-Tracker.html')">
+    <div class="card" onclick="openPage('DL-Lesson-Tracker.html')">
       <div class="emoji">📘</div>
       <h2>DL Lesson</h2>
-      <p>
-        Interactive stations, live trackers, timers, and classroom lesson activities.
-      </p>
+      <p>Interactive stations, live trackers, timers, and classroom lesson activities.</p>
     </div>
 
-    <div class="card"
-      onclick="openPage('Skill-Clash3-Tracker.html')">
+    <div class="card" onclick="openPage('Skill-Clash3-Tracker.html')">
       <div class="emoji">⚔️</div>
       <h2>Skill Clash</h2>
-      <p>
-        Debate battles, group writing, voting rounds, and competitions.
-      </p>
+      <p>Debate battles, group writing, voting rounds, and competitions.</p>
     </div>
 
-    <div class="card"
-      onclick="openPage('Reading-Rush-Tracker.html')">
+    <div class="card" onclick="openPage('Reading-Rush-Tracker.html')">
       <div class="emoji">📚</div>
       <h2>Reading Rush</h2>
-      <p>
-        Reading collections, paragraph races, comprehension, and vocabulary challenges.
-      </p>
+      <p>Reading collections, paragraph races, comprehension, and vocabulary challenges.</p>
     </div>
 
-    <div class="card"
-      onclick="openPage('Imposter.html')">
+    <div class="card" onclick="openPage('Imposter.html')">
       <div class="emoji">🕵️</div>
       <h2>Classroom Imposter</h2>
-      <p>
-        Fun classroom guessing game with hidden roles and discussions.
-      </p>
+      <p>Fun-only classroom guessing game. No marks are saved.</p>
+    </div>
+  </div>
+
+  <div class="footer">Student ID is used as the permanent record key.</div>
+</div>
+
+<div id="teacherHub" class="hidden">
+  <div class="hero">
+    <h1>👩‍🏫 Teacher Hub</h1>
+    <p>Create classes, manage records, and open any activity page to build lessons for students.</p>
+  </div>
+
+  <div class="topBar">
+    <div class="userBox">
+      <b>Welcome, Teacher</b><br>
+      <span>Control room + activity builders</span>
+    </div>
+    <button class="logoutBtn" onclick="logoutAll()">Logout</button>
+  </div>
+
+  <h2 class="sectionTitle">👩‍🏫 Teacher Pages</h2>
+
+  <div class="grid">
+    <div class="card teacherCard" onclick="openPage('teacher-control.html')">
+      <div class="emoji">📊</div>
+      <h2>Teacher Control</h2>
+      <p>Add classes, upload student Excel files, and check class/student performance records.</p>
     </div>
 
+    <div class="card teacherCard" onclick="openPage('DL-Lesson-Tracker.html')">
+      <div class="emoji">📘</div>
+      <h2>DL Lesson Builder</h2>
+      <p>Open DL lesson page to create/edit lessons, stations, images, questions, and activities.</p>
+    </div>
+
+    <div class="card teacherCard" onclick="openPage('Skill-Clash3-Tracker.html')">
+      <div class="emoji">⚔️</div>
+      <h2>Skill Clash Builder</h2>
+      <p>Open Skill Clash to create writing, reading, debate, voting, and group activities.</p>
+    </div>
+
+    <div class="card teacherCard" onclick="openPage('Reading-Rush-Tracker.html')">
+      <div class="emoji">📚</div>
+      <h2>Reading Rush Builder</h2>
+      <p>Open Reading Rush to create reading collections, questions, lesson plans, and live races.</p>
+    </div>
+
+    <div class="card teacherCard" onclick="openPage('Imposter.html')">
+      <div class="emoji">🕵️</div>
+      <h2>Classroom Imposter</h2>
+      <p>Open the fun game page for classroom speaking, guessing, and discussion.</p>
+    </div>
+
+    <div class="card teacherCard" onclick="openPage('hub.html')">
+      <div class="emoji">🏠</div>
+      <h2>Old Hub</h2>
+      <p>Open your old hub page if you need to check the previous version.</p>
+    </div>
   </div>
 
-  <div class="footer">
-    DL Learning Hub • All marks are connected to Teacher Control Center.
-  </div>
-
+  <div class="footer">Teacher access is protected by password: Welcome@2020</div>
 </div>
 
 </div>
 
 <script>
-
 const FIREBASE_CONFIG = {
   apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
   authDomain:"online-english-lesson-grade-9.firebaseapp.com",
@@ -325,185 +230,122 @@ const FIREBASE_CONFIG = {
   appId:"1:542666648554:web:5190c68ea73b3536dae093"
 };
 
-const SESSION_KEY = "DL_SECURE_STUDENT_LOGIN";
+const STUDENT_SESSION_KEY = "DL_SECURE_STUDENT_LOGIN";
+const TEACHER_SESSION_KEY = "DL_SECURE_TEACHER_LOGIN";
+const TEACHER_PASSWORD = "Welcome@2020";
 
-let db = null;
-let classes = {};
+let db=null;
+let classes={};
 
-function byId(id){ return document.getElementById(id); }
+function byId(id){return document.getElementById(id)}
+function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function cleanText(t){return String(t||"").trim().toLowerCase().replace(/\s+/g," ")}
+function showMsg(text,type="status"){byId("loginMsg").innerHTML=`<div class="${type}">${text}</div>`}
 
-function esc(t){
-  return String(t||"").replace(/[&<>'"]/g,c=>({
-    "&":"&amp;",
-    "<":"&lt;",
-    ">":"&gt;",
-    "'":"&#39;",
-    '"':"&quot;"
-  }[c]));
-}
-
-function cleanText(t){
-  return String(t||"").trim().toLowerCase().replace(/\s+/g," ");
-}
-
-function showMsg(text,type="status"){
-  byId("loginMsg").innerHTML =
-    `<div class="${type}">${text}</div>`;
+function showLoginTab(type){
+  byId("studentTab").classList.toggle("active",type==="student");
+  byId("teacherTab").classList.toggle("active",type==="teacher");
+  byId("studentLoginBox").classList.toggle("hidden",type!=="student");
+  byId("teacherLoginBox").classList.toggle("hidden",type!=="teacher");
+  byId("loginMsg").innerHTML="";
 }
 
 async function initFirebase(){
-
   try{
+    if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
 
-    if(!firebase.apps.length){
-      firebase.initializeApp(FIREBASE_CONFIG);
-    }
+    const snap=await db.ref("teacherControlCenter/classes").get();
+    classes=snap.exists()?snap.val():{};
 
-    db = firebase.database();
-
-    const snap =
-      await db.ref("teacherControlCenter/classes").get();
-
-    classes =
-      snap.exists() ? snap.val() : {};
-
-    const list =
-      Object.values(classes)
-      .sort((a,b)=>
-        String(a.name)
-        .localeCompare(String(b.name))
-      );
-
-    byId("classSelect").innerHTML =
-      list.length
-      ? list.map(c=>
-        `<option value="${esc(c.id)}">${esc(c.name)}</option>`
-      ).join("")
+    const list=Object.values(classes).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+    byId("classSelect").innerHTML=list.length
+      ? list.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")
       : `<option value="">No classes available</option>`;
 
     checkExistingLogin();
-
   }catch(err){
-
-    showMsg(
-      "Firebase error: " + esc(err.message),
-      "bad"
-    );
-
+    showMsg("Firebase error: "+esc(err.message),"bad");
   }
 }
 
 function checkExistingLogin(){
+  const teacher = sessionStorage.getItem(TEACHER_SESSION_KEY);
+  if(teacher==="yes"){openTeacherHub();return}
 
-  const session =
-    JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
-
-  if(session){
-
-    openHub(session);
-
-  }
-
+  try{
+    const student=JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY)||"null");
+    if(student)openStudentHub(student);
+  }catch(e){}
 }
 
 async function loginStudent(){
+  const classId=byId("classSelect").value;
+  const name=byId("studentName").value.trim();
+  const pass=byId("studentPassword").value.trim();
 
-  const classId =
-    byId("classSelect").value;
-
-  const name =
-    byId("studentName").value.trim();
-
-  const pass =
-    byId("studentPassword").value.trim();
-
-  if(!classId || !name || !pass){
-
-    showMsg(
-      "Please complete all fields.",
-      "bad"
-    );
-
+  if(!classId||!name||!pass){
+    showMsg("Please complete all fields.","bad");
     return;
   }
 
-  const cls = classes[classId];
-
-  const students =
-    Object.values(cls?.students || {});
-
-  const match =
-    students.find(s =>
-
-      cleanText(s.name) === cleanText(name)
-
-      &&
-
-      String(s.password||"").trim() === pass
-
-    );
+  const cls=classes[classId];
+  const students=Object.values(cls?.students||{});
+  const match=students.find(s=>cleanText(s.name)===cleanText(name) && String(s.password||"").trim()===pass);
 
   if(!match){
-
-    showMsg(
-      "❌ Login denied. Use your exact teacher-given name and ID.",
-      "bad"
-    );
-
+    showMsg("❌ Login denied. Use your exact teacher-given name and ID.","bad");
     return;
   }
 
-  const session = {
-    classId : classId,
-    className : cls.name,
-    studentId : match.password,
-    name : match.name,
-    password : match.password,
-    loginTime : Date.now()
+  const session={
+    classId:classId,
+    className:cls.name,
+    studentId:match.password,
+    name:match.name,
+    password:match.password,
+    loginTime:Date.now()
   };
 
-  localStorage.setItem(
-    SESSION_KEY,
-    JSON.stringify(session)
-  );
-
-  openHub(session);
-
+  localStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(session));
+  openStudentHub(session);
 }
 
-function openHub(session){
+function loginTeacher(){
+  const pass=byId("teacherPassword").value;
+  if(pass!==TEACHER_PASSWORD){
+    showMsg("❌ Incorrect teacher password.","bad");
+    return;
+  }
+  sessionStorage.setItem(TEACHER_SESSION_KEY,"yes");
+  openTeacherHub();
+}
 
+function openStudentHub(session){
   byId("loginScreen").classList.add("hidden");
-
-  byId("hubScreen").classList.remove("hidden");
-
-  byId("studentDisplay").innerText =
-    session.name;
-
-  byId("classDisplay").innerText =
-    session.className +
-    " • ID: " +
-    session.studentId;
-
+  byId("teacherHub").classList.add("hidden");
+  byId("studentHub").classList.remove("hidden");
+  byId("studentDisplay").innerText=session.name;
+  byId("classDisplay").innerText=session.className+" • ID: "+session.studentId;
 }
 
-function logoutStudent(){
+function openTeacherHub(){
+  byId("loginScreen").classList.add("hidden");
+  byId("studentHub").classList.add("hidden");
+  byId("teacherHub").classList.remove("hidden");
+}
 
-  localStorage.removeItem(SESSION_KEY);
-
+function logoutAll(){
+  localStorage.removeItem(STUDENT_SESSION_KEY);
+  sessionStorage.removeItem(TEACHER_SESSION_KEY);
   location.reload();
-
 }
 
 function openPage(page){
-
-  location.href = page;
-
+  location.href=page;
 }
 
 initFirebase();
-
 </script>
-
 </body>
 </html>
