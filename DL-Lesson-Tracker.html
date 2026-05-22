@@ -6150,47 +6150,110 @@ window.addEventListener('load', function(){
 
 <div id="imageModal" class="image-modal hidden"></div>
 <script>
-window.addEventListener('load', function(){
+/* ✅ Secure Hub Auto Login Fix - DL Lesson Tracker
+   Works when opened from secure-hub.html.
+   It fills student info, connects Firebase, and forces student view to open.
+*/
+(function(){
+  let autoLoginDone = false;
 
-  setTimeout(function(){
+  function getSecureStudentSafe(){
+    try{
+      return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    }catch(e){
+      return null;
+    }
+  }
 
-    const secureStudent = JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
-    const secureTeacher = sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes';
+  function fillSecureStudentFields(){
+    const s = getSecureStudentSafe();
+    if(!s) return null;
 
-    if(secureTeacher){
-      const teacherBox = document.getElementById('teacherPassword');
-      if(teacherBox){
-        teacherBox.value = 'Welcome@2020';
-        setTimeout(function(){
-          openTeacherView();
-        }, 500);
-      }
-      return;
+    const name = s.name || s.studentName || '';
+    const id = s.studentId || s.password || s.id || '';
+
+    const nameBox = document.getElementById('studentName');
+    const idBox = document.getElementById('studentCode');
+
+    if(nameBox){
+      nameBox.disabled = false;
+      nameBox.readOnly = false;
+      nameBox.value = name;
+      nameBox.dispatchEvent(new Event('input', {bubbles:true}));
+      nameBox.dispatchEvent(new Event('change', {bubbles:true}));
     }
 
-    if(secureStudent){
-      const nameBox = document.getElementById('studentName');
-      const idBox = document.getElementById('studentCode');
-
-      if(nameBox && idBox){
-        nameBox.value = secureStudent.name;
-        idBox.value = secureStudent.studentId || secureStudent.password;
-
-        sessionStorage.setItem('dl_role', 'student');
-        sessionStorage.setItem('dl_student_name', secureStudent.name);
-        sessionStorage.setItem('dl_student_id', secureStudent.studentId || secureStudent.password);
-
-        setTimeout(function(){
-          const btn = document.getElementById('studentStartBtn');
-          if(btn) btn.click();
-          else startStudentSession();
-        }, 800);
-      }
+    if(idBox){
+      idBox.disabled = false;
+      idBox.readOnly = false;
+      idBox.value = id;
+      idBox.dispatchEvent(new Event('input', {bubbles:true}));
+      idBox.dispatchEvent(new Event('change', {bubbles:true}));
     }
 
-  }, 2500);
+    sessionStorage.setItem('dl_role', 'student');
+    sessionStorage.setItem('dl_student_name', name);
+    sessionStorage.setItem('dl_student_id', id);
 
-});
+    return {name:name, id:id};
+  }
+
+  async function forceSecureStudentLogin(){
+    if(autoLoginDone) return;
+
+    const data = fillSecureStudentFields();
+    if(!data || !data.name || !data.id) return;
+
+    try{
+      if(typeof loadSavedConfig === 'function'){
+        loadSavedConfig();
+      }
+
+      if(typeof startStudentSession === 'function'){
+        autoLoginDone = true;
+        await startStudentSession();
+      }
+
+      setTimeout(function(){
+        const studentView = document.getElementById('studentView');
+        const homeRow = document.getElementById('homeRow');
+
+        if(studentView && studentView.classList.contains('hidden')){
+          if(typeof showOnly === 'function'){
+            showOnly('studentView');
+          }else{
+            if(homeRow) homeRow.classList.add('hidden');
+            studentView.classList.remove('hidden');
+          }
+
+          if(typeof renderStudentNav === 'function') renderStudentNav();
+          if(typeof listenStudentLive === 'function') listenStudentLive();
+          if(typeof updateStudentProgress === 'function') updateStudentProgress();
+        }
+      }, 1200);
+
+    }catch(err){
+      console.error('Secure Hub auto-login failed:', err);
+
+      const notice = document.getElementById('studentNotice');
+      if(notice){
+        notice.className = 'notice bad';
+        notice.textContent = 'Auto login failed. Please click Start Student Session once.';
+        notice.classList.remove('hidden');
+      }
+    }
+  }
+
+  window.addEventListener('load', function(){
+    fillSecureStudentFields();
+    setTimeout(forceSecureStudentLogin, 1800);
+    setTimeout(forceSecureStudentLogin, 3200);
+  });
+
+  document.addEventListener('DOMContentLoaded', function(){
+    fillSecureStudentFields();
+  });
+})();
 </script>
 </body>
 </html>
