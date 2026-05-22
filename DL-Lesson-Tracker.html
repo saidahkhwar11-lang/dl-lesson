@@ -6126,20 +6126,34 @@ window.addEventListener('load', function(){
     const secureTeacher = sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes';
 
     if(secureTeacher){
-      document.getElementById('teacherPassword').value = 'Welcome@2020';
-      openTeacherView();
+      const teacherBox = document.getElementById('teacherPassword');
+      if(teacherBox){
+        teacherBox.value = 'Welcome@2020';
+        setTimeout(function(){
+          openTeacherView();
+        }, 500);
+      }
       return;
     }
 
     if(secureStudent){
-      document.getElementById('studentName').value = secureStudent.name;
-      document.getElementById('studentCode').value = secureStudent.studentId || secureStudent.password;
+      const nameBox = document.getElementById('studentName');
+      const idBox = document.getElementById('studentCode');
 
-      sessionStorage.setItem('dl_role', 'student');
-      sessionStorage.setItem('dl_student_name', secureStudent.name);
-      sessionStorage.setItem('dl_student_id', secureStudent.studentId || secureStudent.password);
+      if(nameBox && idBox){
+        nameBox.value = secureStudent.name;
+        idBox.value = secureStudent.studentId || secureStudent.password;
 
-      startStudentSession();
+        sessionStorage.setItem('dl_role', 'student');
+        sessionStorage.setItem('dl_student_name', secureStudent.name);
+        sessionStorage.setItem('dl_student_id', secureStudent.studentId || secureStudent.password);
+
+        setTimeout(function(){
+          const btn = document.getElementById('studentStartBtn');
+          if(btn) btn.click();
+          else startStudentSession();
+        }, 800);
+      }
     }
 
   }, 2500);
