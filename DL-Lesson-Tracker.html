@@ -2194,14 +2194,6 @@ if(!studentCode){
   return;
 }
 
-const existing = Object.values(liveStudents || {}).find(function(s){
-  return s && String(s.id) === String(id);
-});
-
-if(existing){
-  showNotice('studentNotice','This Student ID is already logged in.','bad');
-  return;
-}
 
     hideNotice('studentNotice');
 
@@ -6125,6 +6117,34 @@ window.addEventListener('load', function(){
 </div>
 
 <div id="imageModal" class="image-modal hidden"></div>
+<script>
+window.addEventListener('load', function(){
 
+  setTimeout(function(){
+
+    const secureStudent = JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    const secureTeacher = sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes';
+
+    if(secureTeacher){
+      document.getElementById('teacherPassword').value = 'Welcome@2020';
+      openTeacherView();
+      return;
+    }
+
+    if(secureStudent){
+      document.getElementById('studentName').value = secureStudent.name;
+      document.getElementById('studentCode').value = secureStudent.studentId || secureStudent.password;
+
+      sessionStorage.setItem('dl_role', 'student');
+      sessionStorage.setItem('dl_student_name', secureStudent.name);
+      sessionStorage.setItem('dl_student_id', secureStudent.studentId || secureStudent.password);
+
+      startStudentSession();
+    }
+
+  }, 2500);
+
+});
+</script>
 </body>
 </html>
