@@ -1028,6 +1028,17 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 <script src="student-tracker.js"></script>
 
 <script>
+window.getLoggedStudent = window.getLoggedStudent || function(){
+  try{
+    return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+  }catch(e){
+    return null;
+  }
+};
+</script>
+
+
+<script>
 
   console.log('NEW VERSION LOADED 🚀'); 
   
@@ -2161,15 +2172,36 @@ window.startStudentSession = async function(){
 
    if(!requireConnection()) return;
 
-const secure=(typeof getLoggedStudent==='function')?getLoggedStudent():null;
-if(!secure){
-  location.href='student-login.html?next='+encodeURIComponent(location.pathname.split('/').pop()+location.search);
-  return;
+let secure = null;
+
+try{
+  if(typeof getLoggedStudent === 'function'){
+    secure = getLoggedStudent();
+  }
+}catch(e){
+  secure = null;
 }
-if(byId('studentName')) byId('studentName').value=secure.name;
-if(byId('studentCode')) byId('studentCode').value=secure.studentId || secure.password;
-const name = secure.name;
-const studentCode = secure.studentId || secure.password;
+
+if(!secure){
+  try{
+    secure = JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+  }catch(e){
+    secure = null;
+  }
+}
+
+if(secure){
+  if(byId('studentName')) byId('studentName').value = secure.name || '';
+  if(byId('studentCode')) byId('studentCode').value = secure.studentId || secure.password || '';
+}
+
+const name = (secure && secure.name)
+  ? String(secure.name).trim()
+  : byId('studentName').value.trim();
+
+const studentCode = (secure && (secure.studentId || secure.password))
+  ? String(secure.studentId || secure.password).trim()
+  : byId('studentCode').value.trim();
     let id = sanitizeKey(studentCode);
     const oldId = sessionStorage.getItem('dl_student_id');
 
