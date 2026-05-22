@@ -3664,17 +3664,27 @@ async function joinGroup(){
     const idBox = document.getElementById('studentId');
     const roleBox = document.getElementById('studentRole');
 
-    currentClass = (secure && (secure.className || secure.classId)) || (classBox ? classBox.value : '') || '9/1';
-    currentGroup = (groupBox ? groupBox.value : '') || '1';
-    currentStudent = (secure && secure.name) || (nameBox ? nameBox.value.trim() : '');
-    currentStudentId = (secure && (secure.studentId || secure.password)) || (idBox ? idBox.value.trim() : '');
+    // Name, ID, and class can come from Secure Hub, but group and role stay manual.
+    currentClass = (classBox ? classBox.value : '') || (secure && (secure.className || secure.classId)) || '';
+    currentGroup = (groupBox ? groupBox.value : '') || '';
+    currentStudent = (nameBox ? nameBox.value.trim() : '') || (secure && secure.name) || '';
+    currentStudentId = (idBox ? idBox.value.trim() : '') || (secure && (secure.studentId || secure.password)) || '';
     currentRole = (roleBox ? roleBox.value : '') || 'member';
 
-    if(classBox) classBox.value = currentClass;
-    if(groupBox) groupBox.value = currentGroup;
+    if(classBox && currentClass) classBox.value = currentClass;
     if(nameBox) nameBox.value = currentStudent;
     if(idBox) idBox.value = currentStudentId;
     if(roleBox) roleBox.value = currentRole;
+
+    if(!currentClass){
+      alert('Please choose your class.');
+      return;
+    }
+
+    if(!currentGroup){
+      alert('Please choose your group number.');
+      return;
+    }
 
     if(!currentStudent || !currentStudentId){
       alert('Student name and ID are missing. Please login from the Secure Hub again.');
@@ -5186,7 +5196,7 @@ function downloadCertificate(info){
       </div>
       <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
-  </div><script>window.addEventListener("load",function(){if(typeof addSecureStudentBar==="function"&&localStorage.getItem("DL_SECURE_STUDENT_LOGIN")){addSecureStudentBar();}});</script>
+  </div>
 </body></html>`;
 
   const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
@@ -8258,6 +8268,9 @@ function syncSecureHubLoginToSkillClash(){
     idBox.dispatchEvent(new Event("input", {bubbles:true}));
     idBox.dispatchEvent(new Event("change", {bubbles:true}));
   }
+
+  // Fill class from Secure Hub only. Student chooses group and leader/member manually.
+  setSelectValueSmart(classBox, s.className || s.classId);
 }
 
 window.addEventListener("load", function(){
