@@ -83,7 +83,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 <div id="loginScreen" class="loginWrap">
   <div class="loginCard">
     <h1>🎮 DL Learning Hub</h1>
-    <p>Login once with your student ID to open classroom pages. Your name will appear automatically.</p>
+    <p>Students login with ID only. Teachers login to create classes and activities.</p>
 
     <div class="tabs">
       <button id="studentTab" class="tabBtn active" onclick="showLoginTab('student')">👩‍🎓 Student</button>
@@ -98,6 +98,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <input id="studentPassword" placeholder="Write your school ID only">
 
       <button class="loginBtn" onclick="loginStudent()">Enter Student Hub</button>
+      <div class="status good">Your name will appear automatically after login.</div>
     </div>
 
     <div id="teacherLoginBox" class="hidden">
@@ -105,7 +106,6 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <input id="teacherPassword" type="password" placeholder="Teacher password">
 
       <button class="loginBtn teacherBtn" onclick="loginTeacher()">Enter Teacher Hub</button>
-
     </div>
 
     <div id="loginMsg"></div>
@@ -229,7 +229,6 @@ let classes={};
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
-function cleanText(t){return String(t||"").trim().toLowerCase().replace(/\s+/g," ")}
 function showMsg(text,type="status"){byId("loginMsg").innerHTML=`<div class="${type}">${text}</div>`}
 
 function showLoginTab(type){
@@ -281,7 +280,7 @@ async function loginStudent(){
   const cls=classes[classId];
   const students=Object.values(cls?.students||{});
 
-  const match=students.find(s=>
+  const match=students.find(s =>
     String(s.password||"").trim()===pass ||
     String(s.id||"").trim()===pass
   );
