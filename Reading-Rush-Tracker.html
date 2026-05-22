@@ -630,5 +630,35 @@ function renderStudentQuestion(s,d){const q=d.q,box=byId('studentQuestion'),opts
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
 async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;let ownDelta=0;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){ownDelta=Math.abs(pts);s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} took ${ownDelta} points from Group ${target}.`}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=pts;s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=ownDelta<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(ownDelta)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const answerParaIndex=Number(pr.paraIndex||0);const answerQIndex=Number(pr.qIndex||0);const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({studentId:currentUser.id,student:currentUser.name,group:currentUser.group,paraIndex:answerParaIndex,qIndex:answerQIndex,pointsDelta:ownDelta,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);await saveReadingRushToTeacherControl(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
 function showReward(emoji,title,text){byId('rewardEmoji').innerText=emoji;byId('rewardTitle').innerText=title;byId('rewardText').innerText=text;show('rewardPopup')}function closeReward(){hide('rewardPopup')}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
-window.addEventListener('load',function(){setTimeout(syncSecureHubLoginToReadingRush,700);});
-</script></body></html>
+
+<script>
+window.addEventListener("load", function(){
+  setTimeout(function(){
+
+    const s = JSON.parse(localStorage.getItem("DL_SECURE_STUDENT_LOGIN") || "null");
+    if(!s) return;
+
+    const nameBox = document.querySelector("#studentName, #playerName, #nameInput, input[placeholder*='name' i]");
+    const idBox = document.querySelector("#studentId, #studentCode, #playerId, input[placeholder*='ID' i]");
+
+    if(nameBox){
+      nameBox.disabled = false;
+      nameBox.readOnly = false;
+      nameBox.value = s.name || "";
+      nameBox.dispatchEvent(new Event("input", {bubbles:true}));
+      nameBox.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+
+    if(idBox){
+      idBox.disabled = false;
+      idBox.readOnly = false;
+      idBox.value = s.studentId || s.password || "";
+      idBox.dispatchEvent(new Event("input", {bubbles:true}));
+      idBox.dispatchEvent(new Event("change", {bubbles:true}));
+    }
+
+  }, 1500);
+});
+</script>
+</body>
+</html>
