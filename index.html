@@ -2186,15 +2186,6 @@ if(!studentCode){
   return;
 }
 
-const existing = Object.values(liveStudents || {}).find(function(s){
-  return s && String(s.id) === String(id);
-});
-
-if(existing){
-  showNotice('studentNotice','This Student ID is already logged in.','bad');
-  return;
-}
-
     hideNotice('studentNotice');
 
     currentStudent = {name:name, id:id};
@@ -6111,6 +6102,38 @@ window.addEventListener('load', function(){
 </div>
 
 <div id="imageModal" class="image-modal hidden"></div>
+<script>
+window.addEventListener('load', function(){
 
+  setTimeout(function(){
+
+    const secureStudent = JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    const secureTeacher = sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes';
+
+    if(secureTeacher){
+      const teacherBox = document.getElementById('teacherPassword');
+      if(teacherBox){
+        teacherBox.value = 'Welcome@2020';
+        openTeacherView();
+      }
+      return;
+    }
+
+    if(secureStudent){
+      const nameBox = document.getElementById('studentName');
+      const idBox = document.getElementById('studentCode');
+
+      if(nameBox && idBox){
+        nameBox.value = secureStudent.name;
+        idBox.value = secureStudent.studentId || secureStudent.password;
+
+        startStudentSession();
+      }
+    }
+
+  }, 1200);
+
+});
+</script>
 </body>
 </html>
