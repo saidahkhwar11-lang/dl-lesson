@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Teacher Control Center</title>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;
+  font-family:Inter,Arial,sans-serif;
+  background:linear-gradient(135deg,#eef6ff,#fff7fb,#f8f2ff);
+  color:#20345f;
+  padding:14px;
+}
+.hidden{display:none!important}
+.app{max-width:1250px;margin:auto;padding-bottom:40px}
+.hero{
+  background:linear-gradient(135deg,#2f63d9,#7d5cff);
+  color:white;
+  border-radius:26px;
+  padding:22px;
+  box-shadow:0 14px 30px rgba(58,78,140,.18);
+  margin-bottom:14px;
+}
+.hero h1{font-family:Quicksand,sans-serif;font-size:32px;margin-bottom:6px}
+.hero p{font-size:14px;opacity:.94;line-height:1.5}
+.card{
+  background:rgba(255,255,255,.96);
+  border:1px solid #dfe8ff;
+  border-radius:24px;
+  padding:16px;
+  box-shadow:0 12px 26px rgba(55,75,135,.10);
+  margin-bottom:14px;
+}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+h2,h3{font-family:Quicksand,sans-serif;color:#203a78;margin-bottom:10px}
+label{display:block;font-size:13px;font-weight:800;margin:8px 0 5px;color:#314a80}
+input,select,textarea{
+  width:100%;
+  border:1px solid #cfdcff;
+  border-radius:14px;
+  padding:10px 12px;
+  font-size:14px;
+  font-family:Inter,sans-serif;
+  outline:none;
+  background:white;
+}
+textarea{min-height:88px;resize:vertical}
+button{
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  font-family:Quicksand,sans-serif;
+  font-weight:800;
+  cursor:pointer;
+  background:#3f67d8;
+  color:white;
+  box-shadow:0 8px 16px rgba(63,103,216,.18);
+  margin:4px;
+}
+button.secondary{background:#eef4ff;color:#294a99;box-shadow:none;border:1px solid #d7e3ff}
+button.success{background:#1fb66d}
+button.danger{background:#ef5267}
+button.purple{background:#7d5cff}
+.status{
+  background:#fff8df;
+  border:1px solid #f2d98a;
+  color:#775704;
+  padding:10px 12px;
+  border-radius:16px;
+  font-size:13px;
+  font-weight:700;
+  margin:8px 0;
+}
+.good{background:#eafff3!important;border-color:#9fe4bd!important;color:#176b45!important}
+.bad{background:#fff0f3!important;border-color:#ffc4cf!important;color:#9a2740!important}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.row{
+  background:#f8fbff;
+  border:1px solid #dfe8ff;
+  border-radius:16px;
+  padding:10px;
+  margin-bottom:8px;
+}
+.classBtn{
+  width:100%;
+  text-align:left;
+  background:linear-gradient(135deg,#ffffff,#f8fbff);
+  color:#203a78;
+  border:1px solid #dfe8ff;
+  box-shadow:none;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.pill{
+  display:inline-block;
+  border-radius:999px;
+  padding:5px 9px;
+  background:#eef4ff;
+  border:1px solid #d7e3ff;
+  color:#294a99;
+  font-size:12px;
+  font-weight:800;
+  margin:2px;
+}
+.tableWrap{overflow:auto;border:1px solid #dfe8ff;border-radius:18px;background:white}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:760px}
+th{
+  position:sticky;
+  top:0;
+  background:#eef4ff;
+  color:#203a78;
+  text-align:left;
+  padding:10px;
+  border-bottom:1px solid #dfe8ff;
+  font-family:Quicksand,sans-serif;
+}
+td{padding:9px 10px;border-bottom:1px solid #edf2ff;vertical-align:top}
+tr:last-child td{border-bottom:none}
+.scoreGood{color:#157347;font-weight:900}
+.scoreBad{color:#b4233a;font-weight:900}
+.bigNumber{font-size:28px;font-family:Quicksand,sans-serif;font-weight:900;color:#203a78}
+.studentCard{
+  background:linear-gradient(135deg,#fff,#f8fbff);
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+}
+.studentCard b{color:#203a78}
+.recordBox{
+  max-height:380px;
+  overflow:auto;
+}
+.lockScreen{
+  min-height:70vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.loginCard{width:min(430px,94vw)}
+.footerNote{text-align:center;color:#667497;font-size:12px;margin-top:10px}
+@media(max-width:950px){.grid,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+  <div id="loginScreen" class="lockScreen">
+    <div class="card loginCard">
+      <h2>🔐 Teacher Control Login</h2>
+      <div class="status">Teacher only page. Enter password to manage classes and records.</div>
+      <label>Password</label>
+      <input id="teacherPassword" type="password" placeholder="Teacher password">
+      <button class="purple" onclick="loginTeacher()">Open Control Center</button>
+      <div id="loginMsg"></div>
+    </div>
+  </div>
+
+  <div id="mainApp" class="hidden">
+    <div class="hero">
+      <h1>👩‍🏫 Teacher Control Center</h1>
+      <p>Create classes, upload student names and passwords by Excel, and keep class/student performance records for DL Lesson, Skill Clash, Imposter, and Reading Rush.</p>
+    </div>
+
+    <div id="connectionBox" class="card status">Connecting to Firebase...</div>
+
+    <div class="tabs">
+      <button onclick="showSection('classes')">🏫 Classes</button>
+      <button onclick="showSection('students')">👩‍🎓 Students</button>
+      <button onclick="showSection('records')">📊 Performance Tracker</button>
+      <button onclick="showSection('individual')">🔎 Individual Record</button>
+      <button class="secondary" onclick="location.href='hub.html'">🎮 Back to Hub</button>
+      <button class="danger" onclick="logoutTeacher()">Logout</button>
+    </div>
+
+    <section id="classesSection">
+      <div class="grid">
+        <div class="card">
+          <h2>➕ Add Class</h2>
+          <label>Class Name</label>
+          <input id="classNameInput" placeholder="Example: 9/1">
+          <button class="success" onclick="addClass()">Create Class</button>
+
+          <hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0">
+
+          <h3>📥 Upload Students by Excel</h3>
+          <div class="status good">
+            Excel format: Column A = Student Name, Column B = Student Password / ID Number.
+          </div>
+          <label>Select Class</label>
+          <select id="uploadClassSelect"></select>
+          <label>Excel File</label>
+          <input id="excelFileInput" type="file" accept=".xlsx,.xls,.csv">
+          <button class="purple" onclick="uploadExcelStudents()">Upload Students</button>
+        </div>
+
+        <div class="card">
+          <h2>🏫 My Classes</h2>
+          <div id="classesList"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="studentsSection" class="hidden">
+      <div class="card">
+        <h2>👩‍🎓 Class Students</h2>
+        <label>Choose Class</label>
+        <select id="studentsClassSelect" onchange="renderStudentsTable()"></select>
+        <div class="status">Students are saved permanently in Firebase unless you delete them.</div>
+        <div id="studentsTable"></div>
+      </div>
+    </section>
+
+    <section id="recordsSection" class="hidden">
+      <div class="grid3">
+        <div class="card">
+          <h3>Total Students</h3>
+          <div id="totalStudentsBox" class="bigNumber">0</div>
+        </div>
+        <div class="card">
+          <h3>Total Records</h3>
+          <div id="totalRecordsBox" class="bigNumber">0</div>
+        </div>
+        <div class="card">
+          <h3>Average Score</h3>
+          <div id="averageScoreBox" class="bigNumber">0%</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📊 Whole Class Performance Tracker</h2>
+        <label>Choose Class</label>
+        <select id="recordsClassSelect" onchange="renderClassRecords()"></select>
+        <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Class CSV</button>
+        <div id="classRecordsTable"></div>
+      </div>
+    </section>
+
+    <section id="individualSection" class="hidden">
+      <div class="grid">
+        <div class="card">
+          <h2>🔎 Find Student Record</h2>
+          <label>Choose Class</label>
+          <select id="individualClassSelect" onchange="renderStudentSelect()"></select>
+          <label>Choose Student</label>
+          <select id="individualStudentSelect" onchange="renderIndividualRecord()"></select>
+          <button class="secondary" onclick="downloadStudentCSV()">⬇️ Download Student CSV</button>
+        </div>
+        <div class="card">
+          <h2>📌 Student Summary</h2>
+          <div id="studentSummary"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📚 Individual Activity Records</h2>
+        <div id="individualRecords"></div>
+      </div>
+    </section>
+
+    <div class="footerNote">Created for Ms. Saidah Khwar • Teacher Control System</div>
+  </div>
+
+</div>
+
+<script>
+const TEACHER_PASSWORD = "Welcome@2020";
+
+const DEFAULT_FIREBASE_CONFIG={
+  apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain:"online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId:"online-english-lesson-grade-9",
+  storageBucket:"online-english-lesson-grade-9.firebasestorage.app",
+  appId:"1:542666648554:web:5190c68ea73b3536dae093"
+};
+
+let db=null;
+let controlRef=null;
+let controlData={classes:{},records:{}};
+
+function byId(id){return document.getElementById(id)}
+function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function cleanKey(t){return String(t||"").trim().replace(/[.#$\[\]\/]/g,"_").replace(/\s+/g,"_")}
+function today(){return new Date().toLocaleDateString()}
+function nowText(){return new Date().toLocaleString()}
+
+function loginTeacher(){
+  const pass=byId("teacherPassword").value;
+  if(pass!==TEACHER_PASSWORD){
+    byId("loginMsg").innerHTML='<div class="status bad">Incorrect password.</div>';
+    return;
+  }
+  sessionStorage.setItem("teacher_control_login","yes");
+  byId("loginScreen").classList.add("hidden");
+  byId("mainApp").classList.remove("hidden");
+  initFirebase();
+}
+
+function logoutTeacher(){
+  sessionStorage.removeItem("teacher_control_login");
+  location.reload();
+}
+
+function showSection(name){
+  ["classes","students","records","individual"].forEach(s=>{
+    byId(s+"Section").classList.toggle("hidden",s!==name);
+  });
+  refreshAll();
+}
+
+async function initFirebase(){
+  const box=byId("connectionBox");
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);
+    db=firebase.database();
+    controlRef=db.ref("teacherControlCenter");
+    controlRef.on("value",snap=>{
+      controlData=snap.exists()?snap.val():{classes:{},records:{}};
+      refreshAll();
+    });
+    const snap=await controlRef.get();
+    if(!snap.exists()) await controlRef.set({classes:{},records:{}});
+    box.className="card status good";
+    box.innerHTML="✅ Firebase connected. Teacher records are saved live.";
+  }catch(err){
+    box.className="card status bad";
+    box.innerHTML="Firebase error: "+esc(err.message);
+  }
+}
+
+function getClasses(){return controlData.classes||{}}
+function getRecords(){return controlData.records||{}}
+
+async function addClass(){
+  const name=byId("classNameInput").value.trim();
+  if(!name){alert("Write class name.");return}
+  const id=cleanKey(name);
+  const cls={id,name,students:{},createdAt:Date.now()};
+  await db.ref("teacherControlCenter/classes/"+id).update(cls);
+  byId("classNameInput").value="";
+}
+
+async function deleteClass(id){
+  if(!confirm("Delete this class and its students? Records will stay unless manually removed."))return;
+  await db.ref("teacherControlCenter/classes/"+id).remove();
+}
+
+function fillClassSelects(){
+  const classes=Object.values(getClasses()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const options=classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
+  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","individualClassSelect"].forEach(id=>{
+    const el=byId(id);
+    if(!el)return;
+    const current=el.value;
+    el.innerHTML=options || '<option value="">No classes yet</option>';
+    if(current && [...el.options].some(o=>o.value===current))el.value=current;
+  });
+}
+
+function renderClasses(){
+  const box=byId("classesList");
+  const classes=Object.values(getClasses()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(!classes.length){box.innerHTML='<div class="status">No classes yet.</div>';return}
+  box.innerHTML=classes.map(c=>{
+    const count=Object.keys(c.students||{}).length;
+    return `<div class="row">
+      <button class="classBtn" onclick="selectClassEverywhere('${esc(c.id)}')">
+        <span>🏫 ${esc(c.name)}</span>
+        <span class="pill">${count} students</span>
+      </button>
+      <button class="danger" onclick="deleteClass('${esc(c.id)}')">Delete Class</button>
+    </div>`;
+  }).join("");
+}
+
+function selectClassEverywhere(id){
+  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","individualClassSelect"].forEach(x=>{if(byId(x))byId(x).value=id});
+  renderStudentsTable();
+  renderClassRecords();
+  renderStudentSelect();
+  renderIndividualRecord();
+}
+
+async function uploadExcelStudents(){
+  const classId=byId("uploadClassSelect").value;
+  const file=byId("excelFileInput").files[0];
+  if(!classId){alert("Choose class.");return}
+  if(!file){alert("Choose Excel file.");return}
+
+  const data=await file.arrayBuffer();
+  const workbook=XLSX.read(data,{type:"array"});
+  const sheet=workbook.Sheets[workbook.SheetNames[0]];
+  const rows=XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
+
+  const updates={};
+  let added=0;
+  rows.forEach((row,idx)=>{
+    const name=String(row[0]||"").trim();
+    const password=String(row[1]||"").trim();
+    if(!name || !password)return;
+    if(idx===0 && name.toLowerCase().includes("name"))return;
+    const sid=cleanKey(password);
+    updates["teacherControlCenter/classes/"+classId+"/students/"+sid]={
+      id:sid,
+      name,
+      password,
+      classId,
+      addedAt:Date.now()
+    };
+    added++;
+  });
+
+  if(!added){alert("No students found. Column A = name, Column B = password/ID.");return}
+  await db.ref().update(updates);
+  byId("excelFileInput").value="";
+  alert("Uploaded "+added+" students.");
+}
+
+function renderStudentsTable(){
+  const classId=byId("studentsClassSelect")?.value;
+  const cls=getClasses()[classId];
+  const box=byId("studentsTable");
+  if(!box)return;
+  if(!cls){box.innerHTML='<div class="status">Choose a class.</div>';return}
+  const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(!students.length){box.innerHTML='<div class="status">No students in this class yet.</div>';return}
+  box.innerHTML=`<div class="tableWrap"><table>
+    <thead><tr><th>#</th><th>Student Name</th><th>Password / ID</th><th>Actions</th></tr></thead>
+    <tbody>${students.map((s,i)=>`<tr>
+      <td>${i+1}</td>
+      <td><b>${esc(s.name)}</b></td>
+      <td>${esc(s.password)}</td>
+      <td><button class="danger" onclick="deleteStudent('${esc(classId)}','${esc(s.id)}')">Delete</button></td>
+    </tr>`).join("")}</tbody>
+  </table></div>`;
+}
+
+async function deleteStudent(classId,studentId){
+  if(!confirm("Delete this student from the class?"))return;
+  await db.ref("teacherControlCenter/classes/"+classId+"/students/"+studentId).remove();
+}
+
+function allRecordsArray(){
+  const records=getRecords();
+  const arr=[];
+  Object.keys(records).forEach(classId=>{
+    Object.keys(records[classId]||{}).forEach(studentId=>{
+      Object.keys(records[classId][studentId]||{}).forEach(recordId=>{
+        arr.push({classId,studentId,recordId,...records[classId][studentId][recordId]});
+      });
+    });
+  });
+  return arr;
+}
+
+function classRecords(classId){
+  return allRecordsArray().filter(r=>r.classId===classId);
+}
+
+function renderStats(){
+  const classes=getClasses();
+  const totalStudents=Object.values(classes).reduce((sum,c)=>sum+Object.keys(c.students||{}).length,0);
+  const records=allRecordsArray();
+  const scored=records.filter(r=>Number(r.total)>0);
+  const avg=scored.length?Math.round(scored.reduce((s,r)=>s+(Number(r.score||0)/Number(r.total||1)*100),0)/scored.length):0;
+  byId("totalStudentsBox").innerText=totalStudents;
+  byId("totalRecordsBox").innerText=records.length;
+  byId("averageScoreBox").innerText=avg+"%";
+}
+
+function renderClassRecords(){
+  const classId=byId("recordsClassSelect")?.value;
+  const cls=getClasses()[classId];
+  const box=byId("classRecordsTable");
+  if(!box)return;
+  if(!cls){box.innerHTML='<div class="status">Choose a class.</div>';return}
+  const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const records=classRecords(classId);
+
+  const rows=students.map(st=>{
+    const r=records.filter(x=>x.studentId===st.id);
+    const totalActivities=r.length;
+    const totalScore=r.reduce((s,x)=>s+Number(x.score||0),0);
+    const totalMarks=r.reduce((s,x)=>s+Number(x.total||0),0);
+    const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
+    const last=r.sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
+    return `<tr>
+      <td><b>${esc(st.name)}</b></td>
+      <td>${esc(st.password)}</td>
+      <td>${totalActivities}</td>
+      <td><span class="${avg>=70?'scoreGood':'scoreBad'}">${avg}%</span></td>
+      <td>${totalScore} / ${totalMarks}</td>
+      <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
+      <td>${last?esc(last.date||""):"-"}</td>
+    </tr>`;
+  }).join("");
+
+  box.innerHTML=`<div class="tableWrap"><table>
+    <thead><tr><th>Student</th><th>ID</th><th>Activities Done</th><th>Average</th><th>Total Score</th><th>Last Activity</th><th>Date</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+}
+
+function renderStudentSelect(){
+  const classId=byId("individualClassSelect")?.value;
+  const cls=getClasses()[classId];
+  const sel=byId("individualStudentSelect");
+  if(!sel)return;
+  if(!cls){sel.innerHTML='<option value="">Choose class first</option>';return}
+  const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  sel.innerHTML=students.map(s=>`<option value="${esc(s.id)}">${esc(s.name)} - ${esc(s.password)}</option>`).join("") || '<option value="">No students</option>';
+}
+
+function renderIndividualRecord(){
+  const classId=byId("individualClassSelect")?.value;
+  const studentId=byId("individualStudentSelect")?.value;
+  const cls=getClasses()[classId];
+  const st=cls?.students?.[studentId];
+  const summary=byId("studentSummary");
+  const box=byId("individualRecords");
+  if(!st){summary.innerHTML='<div class="status">Choose student.</div>';box.innerHTML="";return}
+
+  const records=classRecords(classId).filter(r=>r.studentId===studentId).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+  const totalScore=records.reduce((s,x)=>s+Number(x.score||0),0);
+  const totalMarks=records.reduce((s,x)=>s+Number(x.total||0),0);
+  const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
+
+  summary.innerHTML=`<div class="studentCard">
+    <b>${esc(st.name)}</b>
+    <div class="pill">ID: ${esc(st.password)}</div>
+    <div class="pill">Activities: ${records.length}</div>
+    <div class="pill">Average: ${avg}%</div>
+    <div class="pill">Total: ${totalScore}/${totalMarks}</div>
+  </div>`;
+
+  if(!records.length){box.innerHTML='<div class="status">No records for this student yet.</div>';return}
+  box.innerHTML=`<div class="tableWrap recordBox"><table>
+    <thead><tr><th>Date</th><th>Activity</th><th>Type</th><th>Score</th><th>Percentage</th><th>Notes</th></tr></thead>
+    <tbody>${records.map(r=>{
+      const pct=Number(r.total)>0?Math.round(Number(r.score||0)/Number(r.total||1)*100):0;
+      return `<tr>
+        <td>${esc(r.date||"")}</td>
+        <td><b>${esc(r.activityName||r.activity||"Activity")}</b></td>
+        <td>${esc(r.activityType||"")}</td>
+        <td>${Number(r.score||0)} / ${Number(r.total||0)}</td>
+        <td><span class="${pct>=70?'scoreGood':'scoreBad'}">${pct}%</span></td>
+        <td>${esc(r.notes||"")}</td>
+      </tr>`;
+    }).join("")}</tbody>
+  </table></div>`;
+}
+
+/* This function can be called by any activity page later:
+   saveStudentPerformance({
+     classId:'9_1',
+     studentId:'12345',
+     studentName:'Sara',
+     activityName:'Reading Rush - Dreams',
+     activityType:'Reading Rush',
+     score:8,
+     total:10,
+     notes:'Completed Paragraph 1'
+   })
+*/
+async function saveStudentPerformance(record){
+  if(!db){console.warn("Firebase not ready.");return}
+  const classId=cleanKey(record.classId||"unknown_class");
+  const studentId=cleanKey(record.studentId||record.password||record.studentName||Date.now());
+  const recordId="rec_"+Date.now()+"_"+Math.floor(Math.random()*999);
+  const finalRecord={
+    ...record,
+    classId,
+    studentId,
+    recordId,
+    date:record.date||today(),
+    time:Date.now()
+  };
+  await db.ref("teacherControlCenter/records/"+classId+"/"+studentId+"/"+recordId).set(finalRecord);
+}
+
+function toCSV(rows){
+  return rows.map(row=>row.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+}
+function downloadText(filename,text){
+  const blob=new Blob([text],{type:"text/csv;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=filename;a.click();
+  URL.revokeObjectURL(url);
+}
+
+function downloadClassCSV(){
+  const classId=byId("recordsClassSelect")?.value;
+  const cls=getClasses()[classId];
+  if(!cls){alert("Choose class.");return}
+  const rows=[["Student Name","ID","Activities Done","Average %","Total Score","Total Marks","Last Activity","Last Date"]];
+  const records=classRecords(classId);
+  Object.values(cls.students||{}).forEach(st=>{
+    const r=records.filter(x=>x.studentId===st.id);
+    const totalScore=r.reduce((s,x)=>s+Number(x.score||0),0);
+    const totalMarks=r.reduce((s,x)=>s+Number(x.total||0),0);
+    const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
+    const last=r.sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
+    rows.push([st.name,st.password,r.length,avg,totalScore,totalMarks,last?.activityName||"",last?.date||""]);
+  });
+  downloadText((cls.name||"class")+"_performance.csv",toCSV(rows));
+}
+
+function downloadStudentCSV(){
+  const classId=byId("individualClassSelect")?.value;
+  const studentId=byId("individualStudentSelect")?.value;
+  const cls=getClasses()[classId];
+  const st=cls?.students?.[studentId];
+  if(!st){alert("Choose student.");return}
+  const rows=[["Date","Activity","Type","Score","Total","Percentage","Notes"]];
+  const records=classRecords(classId).filter(r=>r.studentId===studentId).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+  records.forEach(r=>{
+    const pct=Number(r.total)>0?Math.round(Number(r.score||0)/Number(r.total||1)*100):0;
+    rows.push([r.date||"",r.activityName||r.activity||"",r.activityType||"",r.score||0,r.total||0,pct,r.notes||""]);
+  });
+  downloadText((st.name||"student")+"_record.csv",toCSV(rows));
+}
+
+function refreshAll(){
+  fillClassSelects();
+  renderClasses();
+  renderStudentsTable();
+  renderStats();
+  renderClassRecords();
+  renderStudentSelect();
+  renderIndividualRecord();
+}
+
+window.addEventListener("load",()=>{
+  if(sessionStorage.getItem("teacher_control_login")==="yes"){
+    byId("loginScreen").classList.add("hidden");
+    byId("mainApp").classList.remove("hidden");
+    initFirebase();
+  }
+});
+</script>
+</body>
+</html>
