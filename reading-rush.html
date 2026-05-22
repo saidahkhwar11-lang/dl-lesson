@@ -14,8 +14,13 @@
 .bossBadge{background:#fff0f3;color:#9a2740;border:1px solid #ffc4cf;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:800;display:inline-block;margin:4px}
 .analyticsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px}.analyticsCard{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:12px}.analyticsCard b{color:#203a78}
 
-.teacherTopActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.builderShell.hiddenBuilder{display:none}.collectionsCompact details{background:#f8fbff;border:1px solid #dfe8ff;border-radius:16px;padding:10px;margin-bottom:8px}.collectionsCompact summary{cursor:pointer;font-family:Quicksand,sans-serif;font-weight:800;color:#203a78}.liveBoardTable{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}.liveBoardTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px}.liveBoardTable td{background:white;border-top:1px solid #dfe8ff;border-bottom:1px solid #dfe8ff;padding:10px;vertical-align:top}.liveBoardTable td:first-child{border-left:1px solid #dfe8ff;border-radius:14px 0 0 14px}.liveBoardTable td:last-child{border-right:1px solid #dfe8ff;border-radius:0 14px 14px 0}.groupChip{display:inline-block;border-radius:999px;padding:5px 9px;font-weight:800;margin:2px;color:#20345f}.g1{background:#fff3a6}.g2{background:#ffd6ec}.g3{background:#d7f8dc}.g4{background:#d8ecff}.g5{background:#eadcff}.g6{background:#ffe0c2}.perfButtons{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.perfBox{max-height:360px;overflow:auto}.tinyPill{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 8px;margin:2px;font-size:12px;font-weight:700}.scorePositive{color:#176b45;font-weight:800}.scoreNegative{color:#9a2740;font-weight:800}.perfBox .row{margin-bottom:6px}.liveBoardTable small{font-size:11px}.liveBoardTable th{position:sticky;top:0;z-index:1}
+.teacherTopActions{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 14px}.builderShell.hiddenBuilder{display:none}.collectionsCompact details{background:#f8fbff;border:1px solid #dfe8ff;border-radius:16px;padding:10px;margin-bottom:8px}.collectionsCompact summary{cursor:pointer;font-family:Quicksand,sans-serif;font-weight:800;color:#203a78}.liveBoardTable{width:100%;border-collapse:separate;border-spacing:0 8px;font-size:13px}.liveBoardTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px}.liveBoardTable td{background:white;border-top:1px solid #dfe8ff;border-bottom:1px solid #dfe8ff;padding:10px;vertical-align:top}.liveBoardTable td:first-child{border-left:1px solid #dfe8ff;border-radius:14px 0 0 14px}.liveBoardTable td:last-child{border-right:1px solid #dfe8ff;border-radius:0 14px 14px 0}.groupChip{display:inline-block;border-radius:999px;padding:5px 9px;font-weight:800;margin:2px;color:#20345f}.g1{background:#fff3a6}.g2{background:#ffd6ec}.g3{background:#d7f8dc}.g4{background:#d8ecff}.g5{background:#eadcff}.g6{background:#ffe0c2}.perfButtons{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.perfBox{max-height:360px;overflow:auto}.tinyPill{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 8px;margin:2px;font-size:12px;font-weight:700}.scorePositive{color:#176b45;font-weight:800}.scoreNegative{color:#9a2740;font-weight:800}
 
+.teacherInfoBar{display:grid;grid-template-columns:1.2fr 1.2fr .8fr;gap:12px;margin:12px 0 14px}.teacherInfoCard{background:linear-gradient(135deg,#ffffff,#f8fbff);border:1px solid #dfe8ff;border-radius:20px;padding:12px}.teacherInfoCard h3{margin-bottom:6px}.teacherInfoCard p{font-size:13px;line-height:1.45;color:#42557f}.teacherInfoControls{display:grid;grid-template-columns:1fr 1fr 120px auto;gap:8px;align-items:end;margin-top:10px}.paragraphTimerGrid{display:flex;gap:8px;overflow-x:auto;padding:8px 2px}.paragraphTimerCard{min-width:92px;background:#fff;border:1px solid #dfe8ff;border-radius:16px;padding:10px;text-align:center;box-shadow:0 6px 14px rgba(55,75,135,.07)}.paragraphTimerCard b{display:block;font-family:Quicksand,sans-serif;color:#203a78;font-size:14px}.timerClock{font-size:20px;font-weight:900;color:#5b37ac;margin:4px 0}.doneCount{font-size:12px;font-weight:800;color:#176b45;background:#eafff3;border:1px solid #9fe4bd;border-radius:999px;padding:4px 6px;display:inline-block}.pTitle{font-weight:900!important}.selectedCollectionTitle{font-weight:900;color:#203a78}.
+@media(max-width:950px){.teacherInfoBar,.teacherInfoControls{grid-template-columns:1fr}}
+
+
+.lessonPlanShell.hiddenLessonPlan{display:none}.lessonPlanPreview{max-height:360px;overflow:auto;background:#fff;border:1px solid #dfe8ff;border-radius:18px;padding:14px;font-size:13px;line-height:1.55}.lessonPlanPreview h1,.lessonPlanPreview h2,.lessonPlanPreview h3{margin:8px 0}.lessonPlanPreview table{width:100%;border-collapse:collapse;margin:8px 0}.lessonPlanPreview th,.lessonPlanPreview td{border:1px solid #dfe8ff;padding:8px;text-align:left;vertical-align:top}.lessonPlanPreview th{background:#eef4ff;color:#203a78}.downloadMini{background:#1fb66d}
 </style>
 </head>
 <body>
@@ -27,11 +32,46 @@
 <div id="teacherPage" class="hidden">
   <div class="teacherTopActions">
     <button class="purple" onclick="toggleBuilder()">📝 Show / Hide Collection Builder</button>
+    <button class="secondary" onclick="toggleLessonPlanPanel()">📄 Lesson Plan Creator</button>
+    <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Download Lesson Plan</button>
     <button class="secondary" onclick="backHome()">🏠 Home</button>
     <button onclick="startCollectionChallenge()">▶️ Start Collection</button>
     <button class="pink" onclick="startBossRound()">👑 Boss Round</button>
     <button class="success" onclick="stopChallenge()">🏆 Stop + Report</button>
     <button class="danger" onclick="resetGame()">🧹 Reset</button>
+  </div>
+
+
+
+  <div class="teacherInfoBar">
+    <div class="teacherInfoCard">
+      <h3>🎯 Main Goal</h3>
+      <p id="teacherMainGoal">Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.</p>
+    </div>
+    <div class="teacherInfoCard">
+      <h3>📌 Instructions</h3>
+      <p id="teacherMainInstructions">Read carefully, use context clues, answer one question at a time, and move through the collection.</p>
+      <div class="teacherInfoControls">
+        <input id="goalInput" placeholder="Main goal">
+        <input id="instructionsInput" placeholder="Instructions">
+        <input id="timerMinutesInput" type="number" min="1" value="5" placeholder="Minutes">
+        <button class="success" onclick="saveTeacherInfo()">Save</button>
+      </div>
+    </div>
+    <div class="teacherInfoCard">
+      <h3>⏱️ Paragraph Live Timer</h3>
+      <div id="paragraphTimers" class="paragraphTimerGrid"><div class="status">Start a collection to see progress.</div></div>
+    </div>
+  </div>
+
+
+
+  <div id="lessonPlanShell" class="lessonPlanShell hiddenLessonPlan card" style="margin-top:14px">
+    <h2>📄 AI Lesson Plan Creator</h2>
+    <div class="status good">This uses the active collection to auto-fill the same DL/T2LP lesson plan format: objectives, HOT question, keywords, success criteria, procedures, differentiation, AFL, ICT, and UAE Vision 2031.</div>
+    <button class="purple" onclick="updateLessonPlanFromActiveCollection()">✨ Update Lesson Plan from Active Collection</button>
+    <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Download Current Lesson Plan</button>
+    <div id="lessonPlanPreview" class="lessonPlanPreview" style="margin-top:10px">Choose an active collection, then click update lesson plan.</div>
   </div>
 
   <div id="builderShell" class="builderShell hiddenBuilder">
@@ -54,6 +94,7 @@
     <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
     <button class="secondary" onclick="location.href='Skill-Clash-Games.html'">🏠 Games Hub</button>
     <button onclick="studentRefresh()">🔄 Refresh</button>
+    <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Lesson Plan</button>
   </div>
 
   <div class="card studentTopBar">
@@ -99,9 +140,9 @@
 <div id="rewardPopup" class="rewardPopup hidden"><div class="rewardCard"><div id="rewardEmoji" class="rewardEmoji">🎰</div><div id="rewardTitle" class="rewardTitle">Reward</div><div id="rewardText" class="rewardText">Loading...</div><button onclick="closeReward()">OK</button></div></div>
 <script>
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
-const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='1234';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';let selectedPerformanceGroup='all';
+const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='1234';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{}}}
+function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{},teacherInfo:{goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:5},lessonPlan:null,roundStartTime:null}}
 function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
 async function initFirebase(){const box=byId('connectionBox');try{if(!firebase.apps.length)firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);db=firebase.database();stateRef=db.ref(gamePath('state'));stateRef.on('value',snap=>{stateCache=snap.exists()?snap.val():defaultState();if(!currentUser)restoreStudentSession();if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()});const snap=await stateRef.get();if(!snap.exists())await stateRef.set(defaultState());box.className='card status good';box.innerHTML='✅ Firebase connected live.'}catch(err){box.className='card status bad';box.innerHTML='Firebase error: '+esc(err.message)}}
 async function getState(){if(stateCache)return JSON.parse(JSON.stringify(stateCache));const snap=await stateRef.get();return snap.exists()?snap.val():defaultState()}async function setState(s){stateCache=JSON.parse(JSON.stringify(s));await stateRef.set(s)}
@@ -387,7 +428,7 @@ async function generateFullCollection(){
  if(!paras.length){alert('Please paste at least one clear paragraph.');return}
  const s=await getState();s.collections=s.collections||{};const id='col_'+Date.now();
  s.collections[id]={id,title,paragraphs:paras.map((p,i)=>({id:'p_'+Date.now()+'_'+i,title:`Paragraph ${i+1}${i===paras.length-1?' 👑 Boss':''}`,text:p,boss:i===paras.length-1,questions:generateQuestionsForParagraph(p,i)}))};
- s.currentCollectionId=id;s.currentCollectionTitle=title;s.stage='waiting';s.answers={};s.studentProgress={};s.boss=false;
+ s.currentCollectionId=id;s.currentCollectionTitle=title;s.stage='waiting';s.answers={};s.studentProgress={};s.boss=false;s.lessonPlan=buildLessonPlanObject(s);
  byId('collectionTitleInput').value='';byId('fullTextInput').value='';await setState(s);alert('AI collection generated successfully.');
 }
 async function createCollection(){const title=byId('collectionTitleInput').value.trim();if(!title){alert('Write collection title.');return}const s=await getState();s.collections=s.collections||{};const id='col_'+Date.now();s.collections[id]={id,title,paragraphs:[]};byId('collectionTitleInput').value='';await setState(s)}
@@ -400,19 +441,124 @@ Omar dreamed that he entered an exam room and suddenly forgot his pencil. Everyo
 
 Aisha dreamed she was walking under the ocean without needing to breathe. Colorful fish swam around her, and a turtle showed her a hidden door made of shells. Behind the door, she found a peaceful garden full of light.`;await generateFullCollection()}
 function renderCollections(s){const select=byId('editCollectionSelect');const list=byId('collectionsList');if(!select||!list)return;const cols=Object.values(s.collections||{});select.innerHTML='<option value=\"\">Select collection</option>'+cols.map(c=>`<option value=\"${c.id}\">${esc(c.title)}</option>`).join('');if(s.currentCollectionId&&s.collections?.[s.currentCollectionId])select.value=s.currentCollectionId;list.innerHTML=cols.length?cols.map(c=>`<details><summary>📦 ${esc(c.title)} <span class=\"tinyPill\">${(c.paragraphs||[]).length} paragraphs</span></summary><div class=\"mini\" style=\"margin-top:8px\">Questions are hidden to keep the dashboard clean.</div><button onclick=\"selectCollection('${c.id}')\">Use Collection</button><button class=\"danger\" onclick=\"deleteCollection('${c.id}')\">Delete</button></details>`).join(''):'<div class=\"status\">No collections yet.</div>';renderEditCollection()}
-function renderEditCollection(){const s=stateCache||defaultState();const box=byId('paragraphsList');if(!box)return;const col=s.collections?.[getSelectedCollectionId()||s.currentCollectionId];if(!col){box.innerHTML='<div class=\"status\">Select a collection.</div>';return}box.innerHTML=`<details><summary>📖 ${esc(col.title)} <span class=\"tinyPill\">${(col.paragraphs||[]).length} paragraphs</span></summary>`+(col.paragraphs||[]).map((p,i)=>`<div class=\"row\"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class=\"bossBadge\">Boss</span>':''}<div class=\"mini\">${(p.questions||[]).length} questions • Keywords: ${esc((p.keywords||[]).join(', ')||'none')}</div></div>`).join('')+`</details>`}
-async function selectCollection(id){const s=await getState();const col=s.collections?.[id];if(!col)return;s.currentCollectionId=id;s.currentCollectionTitle=col.title;s.stage='waiting';s.answers={};s.studentProgress={};await setState(s)}async function deleteCollection(id){const s=await getState();delete s.collections[id];if(s.currentCollectionId===id){s.currentCollectionId=null;s.currentCollectionTitle=''}await setState(s)}
+function renderEditCollection(){const s=stateCache||defaultState();const box=byId('paragraphsList');if(!box)return;const col=s.collections?.[getSelectedCollectionId()||s.currentCollectionId];if(!col){box.innerHTML='<div class=\"status\">Select a collection.</div>';return}box.innerHTML=`<details><summary>📖 <span class="selectedCollectionTitle">${esc(col.title)}</span> <span class=\"tinyPill\">${(col.paragraphs||[]).length} paragraphs</span></summary>`+(col.paragraphs||[]).map((p,i)=>`<div class=\"row\"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class=\"bossBadge\">Boss</span>':''}<div class=\"mini\">${(p.questions||[]).length} questions • Keywords: ${esc((p.keywords||[]).join(', ')||'none')}</div></div>`).join('')+`</details>`}
+async function selectCollection(id){const s=await getState();const col=s.collections?.[id];if(!col)return;s.currentCollectionId=id;s.currentCollectionTitle=col.title;s.stage='waiting';s.answers={};s.studentProgress={};s.lessonPlan=buildLessonPlanObject(s);await setState(s)}async function deleteCollection(id){const s=await getState();delete s.collections[id];if(s.currentCollectionId===id){s.currentCollectionId=null;s.currentCollectionTitle=''}await setState(s)}
 function getInitialParaIndex(s,student){const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||1;const mates=Object.values(s.students||{}).filter(st=>st.group===student.group).sort((a,b)=>a.name.localeCompare(b.name));const idx=Math.max(0,mates.findIndex(st=>st.id===student.id));return idx%total}
-async function startCollectionChallenge(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select a collection first.');return}if(!col.paragraphs||!col.paragraphs.length){alert('Collection needs paragraphs.');return}s.stage='playing';s.answers={};s.events=[];s.studentProgress={};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:getInitialParaIndex(s,st),qIndex:0,done:false}});s.final=false;await setState(s)}async function startBossRound(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select collection first.');return}const last=(col.paragraphs||[]).length-1;if(last<0)return;s.stage='boss';s.boss=true;s.studentProgress=s.studentProgress||{};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:last,qIndex:0,done:false}});await setState(s)}
+async function startCollectionChallenge(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select a collection first.');return}if(!col.paragraphs||!col.paragraphs.length){alert('Collection needs paragraphs.');return}s.stage='playing';s.roundStartTime=Date.now();s.answers={};s.events=[];s.studentProgress={};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:getInitialParaIndex(s,st),qIndex:0,done:false}});s.final=false;await setState(s)}async function startBossRound(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select collection first.');return}const last=(col.paragraphs||[]).length-1;if(last<0)return;s.stage='boss';s.roundStartTime=Date.now();s.boss=true;s.studentProgress=s.studentProgress||{};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:last,qIndex:0,done:false}});await setState(s)}
 async function stopChallenge(){const s=await getState();s.stage='final';s.final=true;s.analytics=buildAnalytics(s);await setState(s)}async function resetGame(){if(!confirm('Reset all Reading Rush data?'))return;await stateRef.set(defaultState())}
+
+function formatTimeLeft(ms){
+  if(ms<=0)return '0:00';
+  const total=Math.ceil(ms/1000),m=Math.floor(total/60),sec=String(total%60).padStart(2,'0');
+  return m+':'+sec;
+}
+function groupFinishedParagraph(s,group,paraIndex){
+  const members=Object.values(s.students||{}).filter(st=>String(st.group)===String(group));
+  if(!members.length)return false;
+  return members.every(st=>{
+    const pr=s.studentProgress?.[st.id];
+    if(!pr)return false;
+    return pr.done || Number(pr.paraIndex)>paraIndex;
+  });
+}
+function renderTeacherInfo(s){
+  const info=s.teacherInfo||{};
+  const goal=info.goal||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.';
+  const instructions=info.instructions||'Read carefully, use context clues, answer one question at a time, and move through the collection.';
+  if(byId('teacherMainGoal'))byId('teacherMainGoal').innerText=goal;
+  if(byId('teacherMainInstructions'))byId('teacherMainInstructions').innerText=instructions;
+  if(byId('goalInput')&&!byId('goalInput').value)byId('goalInput').value=goal;
+  if(byId('instructionsInput')&&!byId('instructionsInput').value)byId('instructionsInput').value=instructions;
+  if(byId('timerMinutesInput')&&!byId('timerMinutesInput').value)byId('timerMinutesInput').value=info.timerMinutes||5;
+  renderParagraphTimers(s);
+}
+async function saveTeacherInfo(){
+  const s=await getState();
+  s.teacherInfo=s.teacherInfo||{};
+  s.teacherInfo.goal=byId('goalInput').value.trim()||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.';
+  s.teacherInfo.instructions=byId('instructionsInput').value.trim()||'Read carefully, use context clues, answer one question at a time, and move through the collection.';
+  s.teacherInfo.timerMinutes=Math.max(1,Number(byId('timerMinutesInput').value||5));
+  await setState(s);
+}
+function renderParagraphTimers(s){
+  const box=byId('paragraphTimers');if(!box)return;
+  const col=s.collections?.[s.currentCollectionId];
+  if(!col||!(col.paragraphs||[]).length){box.innerHTML='<div class="status">Select a collection first.</div>';return;}
+  const groups=activeGroups(s);
+  const totalGroups=groups.length;
+  const mins=Number(s.teacherInfo?.timerMinutes||5);
+  const started=Number(s.roundStartTime||0);
+  const elapsed=started?Date.now()-started:0;
+  box.innerHTML=(col.paragraphs||[]).map((p,i)=>{
+    const done=groups.filter(g=>groupFinishedParagraph(s,g,i)).length;
+    const start=i*mins*60000;
+    const end=(i+1)*mins*60000;
+    let time='--:--';
+    if(started){
+      if(elapsed<start)time='Soon';
+      else if(elapsed>=end)time='Done';
+      else time=formatTimeLeft(end-elapsed);
+    }
+    return `<div class="paragraphTimerCard"><b>P${i+1}</b><div class="timerClock">${time}</div><span class="doneCount">${done}/${totalGroups} groups done</span></div>`;
+  }).join('');
+}
 function leaderboardRows(s){return activeGroups(s).map(g=>({g,pts:Number(s.scores?.[g]||0)})).sort((a,b)=>b.pts-a.pts)}function renderLeaderboard(id,s){const box=byId(id);if(!box)return;const rows=leaderboardRows(s);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="rankRow"><div class="rankName">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${esc(r.g)}</div><div class="rankPts">${r.pts} pts</div></div>`).join(''):'<div class="status">No groups yet.</div>'}
-function groupClass(g){return 'g'+String(g||'').replace(/[^0-9]/g,'')}
-function progressTextForStudent(s,st){const pr=s.studentProgress?.[st.id];const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||0;if(!pr)return 'Waiting';if(pr.done)return `Completed ${total}/${total}`;return `P${Number(pr.paraIndex||0)+1}/${total} • Q${Number(pr.qIndex||0)+1}`}
-function paragraphCellForStudent(s,st,i){const pr=s.studentProgress?.[st.id];const ev=(s.events||[]).filter(e=>(e.studentId===st.id||e.student===st.name)&&Number(e.paragraphIndex)===i);if(ev.length){const c=ev.filter(e=>e.correct).length;return `<span class="tinyPill">${c}/${ev.length}</span>`}if(!pr)return '<span class="tinyPill">—</span>';if(pr.done||Number(pr.paraIndex)>i)return '<span class="tinyPill scorePositive">Done</span>';if(Number(pr.paraIndex)===i)return '<span class="tinyPill">Now</span>';return '<span class="tinyPill">—</span>'}
-function renderStudents(s){const box=byId('teacherStudents');const students=Object.values(s.students||{}).sort((a,b)=>Number(a.group)-Number(b.group)||String(a.name).localeCompare(String(b.name)));const col=s.collections?.[s.currentCollectionId];const paras=(col?.paragraphs||[]);if(!students.length){box.innerHTML='<div class="status">No active students joined now. The leaderboard can still show groups from previous answers.</div>';return}let heads=paras.map((p,i)=>`<th>P${i+1}</th>`).join('');let rows=students.map(st=>{const g=String(st.group);const last=(s.events||[]).filter(e=>e.studentId===st.id||e.student===st.name).slice(-1)[0];return `<tr><td><span class="groupChip ${groupClass(g)}">Group ${esc(g)}</span></td><td><b>${esc(st.name)}</b><div class="mini">${esc(st.cls||'')}</div></td><td>${esc(progressTextForStudent(s,st))}</td>${paras.map((p,i)=>`<td>${paragraphCellForStudent(s,st,i)}</td>`).join('')}<td><small>${last?esc(last.text):'—'}</small></td></tr>`}).join('');box.innerHTML=`<div style="overflow:auto"><table class="liveBoardTable"><thead><tr><th>Group</th><th>Student</th><th>Progress</th>${heads}<th>Last action</th></tr></thead><tbody>${rows}</tbody></table></div>`}
-function selectPerformanceGroup(g){selectedPerformanceGroup=String(g);teacherRefresh()}
-function renderTeacherResults(s){const box=byId('teacherResults');if(!box)return;const groups=activeGroups(s);const buttons=['all',...groups].map(g=>`<button class="${String(selectedPerformanceGroup)===String(g)?'purple':'secondary'}" onclick="selectPerformanceGroup('${esc(g)}')">${g==='all'?'All Groups':'Group '+esc(g)}</button>`).join('');let ev=(s.events||[]).slice().reverse();if(selectedPerformanceGroup!=='all')ev=ev.filter(e=>String(e.group)===String(selectedPerformanceGroup));const summary=groups.map(g=>{const ge=(s.events||[]).filter(e=>String(e.group)===String(g));const correct=ge.filter(e=>e.correct).length;return `<span class="groupChip ${groupClass(g)}">G${esc(g)}: ${correct}/${ge.length} • ${Number(s.scores?.[g]||0)} pts</span>`}).join('');box.innerHTML=`<div class="perfButtons">${buttons}</div><div>${summary||'<div class="status">No group answers yet.</div>'}</div><div class="perfBox">`+(ev.length?ev.slice(0,30).map(e=>`<div class="row"><b>${esc(e.student)} | Group ${esc(e.group)}</b><div class="mini">${esc(e.paragraphTitle||'Paragraph')} • ${esc(e.skill||'question')}</div><div class="mini">${esc(e.text)}</div></div>`).join(''):'<div class="status">Click a group after students start answering.</div>')+`</div>`}
-function teacherRefresh(){const s=stateCache||defaultState();renderStages('teacherStages',s.stage);renderCollections(s);renderLeaderboard('leaderboard',s);renderStudents(s);renderTeacherResults(s);renderFinalWinners(s);renderAnalytics(s)}function renderFinalWinners(s){const box=byId('finalWinnersBox');if(s.stage!=='final'){box.classList.add('hidden');return}const rows=leaderboardRows(s).slice(0,3);box.classList.remove('hidden');box.innerHTML=`<div class="winnerBig">🏆 Final Top 3 Groups</div>`+rows.map((r,i)=>`<div style="font-size:22px;margin-top:8px">${i===0?'🥇':i===1?'🥈':'🥉'} Group ${esc(r.g)} — ${r.pts} pts</div>`).join('')}
+function renderStudents(s){const box=byId('teacherStudents');const groups=activeGroups(s);if(!groups.length){box.innerHTML='<div class="status">No students joined.</div>';return}box.innerHTML=groups.map(g=>{const members=Object.values(s.students||{}).filter(st=>st.group===g).map(st=>{const pr=s.studentProgress?.[st.id];return `${st.name}${pr?' P'+(pr.paraIndex+1)+' Q'+(pr.qIndex+1):''}`}).join(', ');return`<div class="rankRow"><div><b>Group ${esc(g)}</b><br><small>${esc(members)}</small></div><div class="rankPts">${s.scores?.[g]||0} pts</div></div>`}).join('')}
+function renderTeacherResults(s){const box=byId('teacherResults');const ev=(s.events||[]).slice().reverse().slice(0,16);box.innerHTML=ev.length?ev.map(e=>`<div class="row"><b>${esc(e.student)} | Group ${esc(e.group)}</b><div class="mini">${esc(e.text)}</div></div>`).join(''):'<div class="status">No answers/events yet.</div>'}
+function teacherRefresh(){const s=stateCache||defaultState();renderTeacherInfo(s);renderStages('teacherStages',s.stage);renderCollections(s);renderLeaderboard('leaderboard',s);renderStudents(s);renderTeacherResults(s);renderFinalWinners(s);renderAnalytics(s);renderLessonPlanPreview(s)}function renderFinalWinners(s){const box=byId('finalWinnersBox');if(s.stage!=='final'){box.classList.add('hidden');return}const rows=leaderboardRows(s).slice(0,3);box.classList.remove('hidden');box.innerHTML=`<div class="winnerBig">🏆 Final Top 3 Groups</div>`+rows.map((r,i)=>`<div style="font-size:22px;margin-top:8px">${i===0?'🥇':i===1?'🥈':'🥉'} Group ${esc(r.g)} — ${r.pts} pts</div>`).join('')}
+
+
+function toggleLessonPlanPanel(){const el=byId('lessonPlanShell'); if(el) el.classList.toggle('hiddenLessonPlan'); renderLessonPlanPreview(stateCache||defaultState());}
+function collectionKeywords(col){const set=new Set();(col?.paragraphs||[]).forEach(p=>{(p.keywords||[]).forEach(k=>String(k).trim()&&set.add(String(k).trim()));(p.questions||[]).forEach(q=>{const sk=q.skill||''; if(sk) set.add(sk);});});return [...set].slice(0,24)}
+function inferLessonTitle(col){return (col?.title||stateCache?.currentCollectionTitle||'Reading Rush Collection Lesson').trim()}
+function buildLessonPlanObject(s){
+ const col=s.collections?.[s.currentCollectionId]; if(!col) return null;
+ const title=inferLessonTitle(col); const paras=col.paragraphs||[]; const kws=collectionKeywords(col);
+ const objectives=[
+  'Students will be able to identify the main idea of each paragraph.',
+  'Students will be able to locate supporting details and use evidence from the text.',
+  'Students will be able to use context clues to understand vocabulary in a reading text.',
+  'Students will be able to answer MCQ and True/False/Not Given questions accurately.'
+ ];
+ const success=[
+  'I can read my assigned paragraph carefully and understand its main idea.',
+  'I can find details that support the main idea.',
+  'I can use context clues to guess the meaning of new words.',
+  'I can answer exam-style questions and move through the collection successfully.'
+ ];
+ return {date:new Date().toLocaleDateString(),subject:'English',teacher:'Ms. Saidah Khwar',lessonTitle:title,topic:'Reading comprehension through Reading Rush collection mode',hotQuestion:'How can context clues and supporting details help us understand a text more deeply?',keywords:kws,objectives,success,paragraphs:paras.map((p,i)=>({title:p.title||`Paragraph ${i+1}`,questions:(p.questions||[]).length,keywords:p.keywords||[],text:p.text||''})),goal:s.teacherInfo?.goal||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:s.teacherInfo?.instructions||'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:s.teacherInfo?.timerMinutes||5};
+}
+function lessonPlanHTML(plan, forDownload=false){
+ if(!plan) return '<div class="status bad">No active collection lesson plan yet.</div>';
+ const paraRows=plan.paragraphs.map((p,i)=>`<tr><td><b>${i+1}. ${esc(p.title)}</b></td><td>${esc((p.keywords||[]).join(', ')||'Main idea, details, vocabulary')}</td><td>${p.questions} questions</td><td>Students read, answer, and progress to the next assigned paragraph.</td></tr>`).join('');
+ const obj=plan.objectives.map(x=>`<li>${esc(x)}</li>`).join('');
+ const suc=plan.success.map(x=>`<li>${esc(x)}</li>`).join('');
+ const keys=esc((plan.keywords||[]).join(' • ')||'main idea • supporting details • context clues • vocabulary');
+ return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(plan.lessonTitle)} Lesson Plan</title><style>body{font-family:Arial,sans-serif;color:#1f2f57;line-height:1.45;padding:24px}h1,h2,h3{color:#203a78}table{width:100%;border-collapse:collapse;margin:10px 0}th,td{border:1px solid #cfdcff;padding:8px;vertical-align:top}th{background:#eef4ff}.box{border:1px solid #dfe8ff;border-radius:14px;padding:12px;margin:10px 0}.small{font-size:12px;color:#607197}@media print{button{display:none}}</style></head><body>
+ <h1>Al Reyada School - Digital Lesson Plan</h1>
+ <div class="box"><b>Date:</b> ${esc(plan.date)} &nbsp; | &nbsp; <b>Subject:</b> ${esc(plan.subject)} &nbsp; | &nbsp; <b>Teacher:</b> ${esc(plan.teacher)}</div>
+ <h2>Lesson Title: ${esc(plan.lessonTitle)}</h2>
+ <table><tr><th>Lesson Topic</th><td>${esc(plan.topic)}</td></tr><tr><th>HOT Question</th><td>${esc(plan.hotQuestion)}</td></tr><tr><th>Keywords</th><td>${keys}</td></tr></table>
+ <h3>Key Learning Objectives</h3><ul>${obj}</ul>
+ <h3>Success Criteria</h3><ul>${suc}</ul>
+ <h3>Lesson Procedures</h3>
+ <table><tr><th>Stage</th><th>Time</th><th>Teacher Role</th><th>Student Role</th><th>AFL / Differentiation</th></tr>
+ <tr><td><b>Starter</b></td><td>5 minutes</td><td>Introduce the active Reading Rush collection and explain the goal.</td><td>Read the instructions and prepare to work with the group.</td><td>Check prior knowledge through quick oral questions.</td></tr>
+ <tr><td><b>Main Activity 1</b></td><td>${Math.max(20, plan.paragraphs.length*(Number(plan.timerMinutes)||5))} minutes</td><td>Monitor live progress, timer, group performance, and question accuracy.</td><td>Read assigned paragraphs, answer one question at a time, and use context clues.</td><td>Support low-level students with keywords; challenge high-level students to justify answers.</td></tr>
+ <tr><td><b>Main Activity 2</b></td><td>10 minutes</td><td>Review difficult questions and common mistakes from group performance.</td><td>Discuss answers, explain evidence, and review vocabulary.</td><td>Use live board data to identify misconceptions.</td></tr>
+ <tr><td><b>Plenary / Exit Ticket</b></td><td>5 minutes</td><td>Ask students to conclude what helped them understand the text.</td><td>Share one reading strategy they used successfully.</td><td>Quick reflection and teacher feedback.</td></tr></table>
+ <h3>Active Collection Paragraphs</h3><table><tr><th>Paragraph</th><th>Keywords / Skills</th><th>Questions</th><th>Task</th></tr>${paraRows}</table>
+ <h3>Learning Skills</h3><p>Reading comprehension, critical thinking, collaboration, communication, digital learning, self-monitoring.</p>
+ <h3>Cross-Curricular Links</h3><p>Psychology, mental health awareness, ICT, and social-emotional learning where relevant to the collection topic.</p>
+ <h3>ICT Link</h3><p>Students use the Reading Rush online collection mode to read, answer, track progress, and receive feedback.</p>
+ <h3>UAE Vision 2031 Link</h3><p>The lesson supports quality education, digital skills, collaboration, and student readiness for future learning.</p>
+ <h3>Differentiation</h3><table><tr><th>High</th><td>Justify answers using evidence and explain implied meaning.</td></tr><tr><th>Middle</th><td>Answer exam-style questions and identify details independently.</td></tr><tr><th>Low</th><td>Use highlighted keywords, context clues, and teacher support to answer.</td></tr></table>
+ <p class="small">Generated automatically from the active Reading Rush collection.</p>
+ </body></html>`;
+}
+async function updateLessonPlanFromActiveCollection(){const s=await getState();const plan=buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}s.lessonPlan=plan;await setState(s);renderLessonPlanPreview(s);alert('Lesson plan updated from the active collection.');}
+function renderLessonPlanPreview(s){const box=byId('lessonPlanPreview');if(!box)return;const plan=s.lessonPlan||buildLessonPlanObject(s);box.innerHTML=lessonPlanHTML(plan).replace(/<!DOCTYPE[\s\S]*?<body>/i,'').replace(/<\/body><\/html>/i,'');}
+async function downloadLessonPlan(){const s=await getState();let plan=s.lessonPlan||buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}const html=lessonPlanHTML(plan,true);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(plan.lessonTitle||'Reading_Rush_Lesson_Plan').replace(/[^a-z0-9]+/gi,'_')+'_Lesson_Plan.doc';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
 
 function buildAnalytics(s){const ev=s.events||[];const total=ev.length,correct=ev.filter(e=>e.correct).length;const skills={};ev.forEach(e=>{const k=e.skill||'unknown';skills[k]=skills[k]||{total:0,correct:0};skills[k].total++;if(e.correct)skills[k].correct++});let weakest='Not enough data';Object.keys(skills).forEach(k=>{const rate=skills[k].correct/skills[k].total;if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/skills[weakest]?.total||1))weakest=k});return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills}}
 function renderAnalytics(s){const box=byId('analyticsBox');if(!box)return;if(s.stage!=='final'){box.classList.add('hidden');return}const a=s.analytics||buildAnalytics(s);box.classList.remove('hidden');box.innerHTML=`<h2>📊 Teacher Report</h2><div class="analyticsGrid"><div class="analyticsCard"><b>Total Answers</b><br>${a.total||0}</div><div class="analyticsCard"><b>Accuracy</b><br>${a.accuracy||0}%</div><div class="analyticsCard"><b>Correct Answers</b><br>${a.correct||0}</div><div class="analyticsCard"><b>Needs Practice</b><br>${esc(a.weakest||'Not enough data')}</div></div>`}
@@ -432,9 +578,9 @@ function highlightKeywords(text, extraWords){
   return safe;
 }
 function currentPQ(s){const col=s.collections?.[s.currentCollectionId];const pr=s.studentProgress?.[currentUser.id];if(!col||!pr)return{p:null,q:null,pr:null,total:0};const paragraphs=col.paragraphs||[];const p=paragraphs[Math.min(pr.paraIndex,paragraphs.length-1)];const q=(p?.questions||[])[pr.qIndex];return{p,q,pr,total:paragraphs.length}}
-function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle">${esc(d.p.title)}</div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
+function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle"><b>${esc(d.p.title)}</b></div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
 function renderStudentQuestion(s,d){const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');if(!q||d.pr.done){box.innerHTML='<div class="status good">You finished all paragraphs in this collection 🎉</div>';opts.innerHTML='';byId('submitAnswerBtn').disabled=true;return}byId('questionNumberPill').innerText=`Question ${d.pr.qIndex+1} / ${(d.p.questions||[]).length}`;box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');byId('submitAnswerBtn').disabled=false}
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
-async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} took ${Math.abs(pts)} points from Group ${target}.`}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+pts;eventText=pts<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(pts)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({student:currentUser.name,studentId:currentUser.id,group:currentUser.group,paragraphIndex:Number(pr.paraIndex||0),paragraphTitle:p?.title||'Paragraph',questionText:q.text||'',selected:selectedAnswer,correctAnswer:q.correct,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
+async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} took ${Math.abs(pts)} points from Group ${target}.`}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+Math.abs(pts);eventText=`${ev.title}: Group ${currentUser.group} gained ${Math.abs(pts)} points.`}}else{s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+pts;eventText=pts<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(pts)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({student:currentUser.name,group:currentUser.group,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
 function showReward(emoji,title,text){byId('rewardEmoji').innerText=emoji;byId('rewardTitle').innerText=title;byId('rewardText').innerText=text;show('rewardPopup')}function closeReward(){hide('rewardPopup')}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 </script></body></html>
