@@ -8331,5 +8331,329 @@ window.addEventListener('load', function(){
 }, true);
 
 </script>
+
+<script>
+/* =========================================================
+   SECURE HUB + STUDENT PAGE FIX
+   - Fill student name, ID, and class from Secure Hub only
+   - Student still chooses group + leader/member manually
+   - After join, force-load the active activity so the page is not empty
+   ========================================================= */
+
+(function(){
+
+  function safeJsonParse(v){
+    try{ return JSON.parse(v || 'null'); }catch(e){ return null; }
+  }
+
+  window.getSkillSecureStudent = function(){
+    return safeJsonParse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')) ||
+           safeJsonParse(sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN')) ||
+           null;
+  };
+
+  function normalizeClassValue(v){
+    v = String(v || '').trim();
+    if(!v) return '';
+    v = v.replace(/\s+/g,'');
+    if(v === '91' || v === '9/1' || v === '9-1') return '9-1';
+    if(v === '92' || v === '9/2' || v === '9-2') return '9-2';
+    if(v === '93' || v === '9/3' || v === '9-3') return '9-3';
+    if(v === '94' || v === '9/4' || v === '9-4') return '9-4';
+    return v.replace('/','-');
+  }
+
+  function setSelectSmart(select, value){
+    if(!select || !value) return false;
+
+    const wanted = normalizeClassValue(value).toLowerCase();
+    let matched = false;
+
+    Array.from(select.options || []).forEach(function(opt){
+      const ov = normalizeClassValue(opt.value).toLowerCase();
+      const ot = normalizeClassValue(opt.textContent).toLowerCase();
+
+      if(ov === wanted || ot === wanted){
+        select.value = opt.value;
+        matched = true;
+      }
+    });
+
+    if(matched){
+      select.dispatchEvent(new Event('input', {bubbles:true}));
+      select.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+
+    return matched;
+  }
+
+  window.fillSkillClashFromSecureHub = function(){
+    const s = window.getSkillSecureStudent ? window.getSkillSecureStudent() : null;
+    if(!s) return false;
+
+    const nameBox = document.getElementById('studentName');
+    const idBox = document.getElementById('studentId');
+    const classBox = document.getElementById('className');
+
+    if(nameBox){
+      nameBox.disabled = false;
+      nameBox.readOnly = false;
+      nameBox.value = s.name || s.studentName || '';
+      nameBox.dispatchEvent(new Event('input', {bubbles:true}));
+      nameBox.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+
+    if(idBox){
+      idBox.disabled = false;
+      idBox.readOnly = false;
+      idBox.value = s.studentId || s.password || s.id || '';
+      idBox.dispatchEvent(new Event('input', {bubbles:true}));
+      idBox.dispatchEvent(new Event('change', {bubbles:true}));
+    }
+
+    if(classBox){
+      setSelectSmart(classBox, s.classValue || s.className || s.classId || s.class || '');
+    }
+
+    return true;
+  };
+
+  async function getActiveActivityRobust(){
+    if(!currentClass || !currentGroup) return {};
+
+    const clsKey = (typeof activeClassKey === 'function')
+      ? activeClassKey()
+      : String(currentClass || '').replace('/','-');
+
+    const paths = [
+      `classes/${clsKey}/activeActivityGroups/group${currentGroup}`,
+      `classes/${clsKey}/assignedActivities/group${currentGroup}`,
+      `classes/${clsKey}/activeActivity`,
+      `classes/${clsKey}/currentActivity`
+    ];
+
+    for(const path of paths){
+      try{
+        const snap = await hubRef.child(path).once('value');
+        const a = snap.val() || {};
+        if(a && a.title) return a;
+      }catch(e){
+        console.log('Activity path failed:', path, e);
+      }
+    }
+
+    return {};
+  }
+
+  window.forceLoadStudentActiveActivity = async function(){
+    try{
+      const activity = await getActiveActivityRobust();
+
+      if(typeof renderAssignedActivityOnStudent === 'function'){
+        renderAssignedActivityOnStudent(activity && activity.title ? activity : {});
+      }
+
+      if(typeof renderMyGroupFinalPreview === 'function'){
+        renderMyGroupFinalPreview();
+      }
+
+      if(typeof renderMembersWork === 'function'){
+        renderMembersWork();
+      }
+
+      return activity;
+    }catch(err){
+      console.log('forceLoadStudentActiveActivity fixed error:', err);
+      if(typeof renderAssignedActivityOnStudent === 'function'){
+        renderAssignedActivityOnStudent({});
+      }
+      return {};
+    }
+  };
+
+  window.listenAssignedActivity = function(){
+    try{
+      if(assignedActivityListener) assignedActivityListener.off();
+      if(classActiveActivityListener) classActiveActivityListener.off();
+      if(window.assignedActivityFallbackListener) window.assignedActivityFallbackListener.off();
+    }catch(e){}
+
+    const clsKey = (typeof activeClassKey === 'function')
+      ? activeClassKey()
+      : String(currentClass || '').replace('/','-');
+
+    const activeRef = hubRef.child(`classes/${clsKey}/activeActivityGroups/group${currentGroup}`);
+    assignedActivityListener = activeRef;
+
+    activeRef.on('value', async function(snap){
+      const a = snap.val() || {};
+      if(a && a.title){
+        renderAssignedActivityOnStudent(a);
+      }else{
+        await forceLoadStudentActiveActivity();
+      }
+    });
+
+    const assignedRef = hubRef.child(`classes/${clsKey}/assignedActivities/group${currentGroup}`);
+    window.assignedActivityFallbackListener = assignedRef;
+
+    assignedRef.on('value', function(snap){
+      const a = snap.val() || {};
+      if(a && a.title){
+        renderAssignedActivityOnStudent(a);
+      }
+    });
+
+    const changedRef = hubRef.child(`classes/${clsKey}/settings/activeActivityChangedAt`);
+    classActiveActivityListener = changedRef;
+    changedRef.on('value', function(){
+      forceLoadStudentActiveActivity();
+    });
+
+    setTimeout(forceLoadStudentActiveActivity, 200);
+    setTimeout(forceLoadStudentActiveActivity, 1000);
+    setTimeout(forceLoadStudentActiveActivity, 1800);
+  };
+
+  async function loadStudentPageAfterJoin(){
+    try{
+      showOnly('workPage');
+
+      if(typeof listenGroup === 'function') listenGroup();
+      if(typeof listenClassSettings === 'function') listenClassSettings();
+      if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
+      if(typeof listenChat === 'function') listenChat();
+
+      await forceLoadStudentActiveActivity();
+
+      if(typeof renderMembersWork === 'function') renderMembersWork();
+      if(typeof routeStudentStage === 'function') routeStudentStage();
+
+      setTimeout(forceLoadStudentActiveActivity, 400);
+      setTimeout(forceLoadStudentActiveActivity, 1200);
+    }catch(err){
+      console.log('loadStudentPageAfterJoin error:', err);
+    }
+  }
+
+  window.joinGroup = async function(){
+    try{
+      fillSkillClashFromSecureHub();
+
+      const classBox = document.getElementById('className');
+      const groupBox = document.getElementById('studentGroup');
+      const nameBox = document.getElementById('studentName');
+      const idBox = document.getElementById('studentId');
+      const roleBox = document.getElementById('studentRole');
+
+      currentClass = classBox ? classBox.value : '';
+      currentGroup = groupBox ? groupBox.value : '';
+      currentStudent = nameBox ? nameBox.value.trim() : '';
+      currentStudentId = idBox ? idBox.value.trim() : '';
+      currentRole = roleBox ? roleBox.value : 'member';
+
+      if(!currentClass){
+        alert('Please choose your class.');
+        return;
+      }
+
+      if(!currentGroup){
+        alert('Please choose your group number.');
+        return;
+      }
+
+      if(!currentRole){
+        alert('Please choose Group Member or Group Leader.');
+        return;
+      }
+
+      if(!currentStudent || !currentStudentId){
+        alert('Student name and ID are missing. Please login from the Secure Hub again.');
+        return;
+      }
+
+      currentStudentId = String(currentStudentId).replace(/[^a-zA-Z0-9_-]/g,'_');
+
+      const groupPath = `classes/${activeClassKey()}/groups/group${currentGroup}/students`;
+      const studentsSnap = await hubRef.child(groupPath).once('value');
+      const existingStudents = studentsSnap.val() || {};
+      const existingLeader = Object.keys(existingStudents).find(function(id){
+        return existingStudents[id] &&
+               existingStudents[id].role === 'leader' &&
+               id !== currentStudentId;
+      });
+
+      if(currentRole === 'leader' && existingLeader){
+        const leaderName = existingStudents[existingLeader].name || existingLeader;
+        currentRole = 'member';
+        if(roleBox) roleBox.value = 'member';
+        alert('This group already has a leader: ' + leaderName + '. You will join as a group member.');
+      }
+
+      sessionStorage.setItem('skillClass', currentClass);
+      sessionStorage.setItem('skillGroup', currentGroup);
+      sessionStorage.setItem('skillStudent', currentStudent);
+      sessionStorage.setItem('skillStudentId', currentStudentId);
+      sessionStorage.setItem('skillRole', currentRole);
+
+      try{
+        localStorage.setItem('skillClashStudentSession', JSON.stringify({
+          className: currentClass,
+          group: currentGroup,
+          student: currentStudent,
+          studentId: currentStudentId,
+          role: currentRole,
+          savedAt: Date.now()
+        }));
+      }catch(e){}
+
+      await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
+        id: currentStudentId,
+        name: currentStudent,
+        role: currentRole,
+        joinedAt: Date.now(),
+        lastSeenAt: Date.now()
+      });
+
+      try{
+        const resetSnap = await hubRef.child(`classes/${activeClassKey()}/settings/resetToken`).once('value');
+        if(typeof saveCurrentResetToken === 'function') saveCurrentResetToken(resetSnap.val() || '');
+      }catch(e){}
+
+      await loadStudentPageAfterJoin();
+
+    }catch(err){
+      console.error('Skill Clash join failed:', err);
+      alert('Could not join Skill Clash. Please refresh and try again. Error: ' + (err && err.message ? err.message : err));
+    }
+  };
+
+  window.studentRefreshPage = async function(){
+    try{
+      showOnly('workPage');
+      if(typeof listenGroup === 'function') listenGroup();
+      if(typeof listenClassSettings === 'function') listenClassSettings();
+      if(typeof listenAssignedActivity === 'function') listenAssignedActivity();
+      await forceLoadStudentActiveActivity();
+
+      const msg = document.getElementById('studentRefreshMsg');
+      if(msg){
+        msg.innerText = '✅ Refreshed';
+        setTimeout(function(){ msg.innerText=''; }, 1500);
+      }
+    }catch(err){
+      alert('Refresh failed: ' + (err && err.message ? err.message : err));
+    }
+  };
+
+  window.addEventListener('load', function(){
+    setTimeout(fillSkillClashFromSecureHub, 100);
+    setTimeout(fillSkillClashFromSecureHub, 700);
+    setTimeout(fillSkillClashFromSecureHub, 1500);
+  }, true);
+
+})();
+</script>
+
 </body>
 </html>
