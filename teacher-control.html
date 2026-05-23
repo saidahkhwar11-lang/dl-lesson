@@ -133,6 +133,80 @@ tr:last-child td{border-bottom:none}
 .programCell{line-height:1.45;white-space:nowrap}
 .programCell .raw{font-size:11px;color:#667497;font-weight:700}
 .weightNote{font-size:11px;color:#667497;font-weight:700}
+.reportHeader{
+  background:linear-gradient(135deg,#fff7fb 0%,#f3f8ff 52%,#fffbea 100%);
+  border:2px solid #dbe7ff;
+  border-radius:22px;
+  padding:16px;
+  margin:12px 0 14px;
+  box-shadow:0 10px 22px rgba(65,90,165,.10);
+}
+.reportHeaderTop{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+  flex-wrap:wrap;
+}
+.reportTitle{
+  font-family:Quicksand,sans-serif;
+  font-size:24px;
+  font-weight:900;
+  color:#1f3f8f;
+  margin-bottom:6px;
+}
+.reportMeta{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+.metaChip{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:8px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:900;
+  color:#203a78;
+  background:#ffffff;
+  border:1px solid #dfe8ff;
+}
+.termControls{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:10px;
+  align-items:end;
+  background:#ffffffaa;
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+  min-width:min(480px,100%);
+}
+.termControls label{margin:0 0 5px 0;font-size:12px}
+.termControls input,.termControls select{padding:9px 10px;border-radius:12px}
+.summaryStrip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.summaryMini{
+  border-radius:18px;
+  padding:12px;
+  background:#fff;
+  border:1px solid #dfe8ff;
+  text-align:center;
+  font-weight:900;
+}
+.summaryMini .miniLabel{font-size:11px;color:#667497;margin-bottom:4px}
+.summaryMini .miniValue{font-family:Quicksand,sans-serif;font-size:20px;color:#203a78}
+th.dlCol{background:#eaf5ff;color:#175d9d}
+th.skillCol{background:#fff1e8;color:#9b4a0d}
+th.readingCol{background:#ecfff4;color:#167447}
+th.finalCol{background:#f1ecff;color:#5531ad}
+td.dlCol{background:#f8fcff}
+td.skillCol{background:#fffaf6}
+td.readingCol{background:#f7fffa}
+td.finalCol{background:#fbf9ff;font-weight:900}
+.termBadge{background:linear-gradient(135deg,#3f67d8,#7d5cff);color:white;border:0}
+@media(max-width:850px){.termControls{grid-template-columns:1fr}.summaryStrip{grid-template-columns:1fr 1fr}}
 .bigNumber{font-size:28px;font-family:Quicksand,sans-serif;font-weight:900;color:#203a78}
 .studentCard{
   background:linear-gradient(135deg,#fff,#f8fbff);
@@ -244,9 +318,28 @@ tr:last-child td{border-bottom:none}
 
       <div class="card">
         <h2>📊 Whole Class Performance Tracker</h2>
-        <label>Choose Class</label>
-        <select id="recordsClassSelect" onchange="renderClassRecords()"></select>
-        <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Class CSV</button>
+        <div class="grid">
+          <div>
+            <label>Choose Class</label>
+            <select id="recordsClassSelect" onchange="renderClassRecords()"></select>
+          </div>
+          <div class="termControls">
+            <div>
+              <label>Current Term</label>
+              <select id="termSelect" onchange="saveTrackerSettings()">
+                <option value="term1">Term 1</option>
+                <option value="term2">Term 2</option>
+                <option value="term3">Term 3</option>
+              </select>
+            </div>
+            <div>
+              <label>Studying Year</label>
+              <input id="studyYearInput" placeholder="2025-2026" onchange="saveTrackerSettings()">
+            </div>
+            <button class="purple" onclick="saveTrackerSettings()">Update</button>
+          </div>
+        </div>
+        <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Tracker Excel/CSV</button>
         <div id="classRecordsTable"></div>
       </div>
     </section>
@@ -293,12 +386,54 @@ const DEFAULT_FIREBASE_CONFIG={
 let db=null;
 let controlRef=null;
 let controlData={classes:{},records:{}};
+let trackerSettings={term:'term1',studyYear:''};
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
 function cleanKey(t){return String(t||"").trim().replace(/[.#$\[\]\/]/g,"_").replace(/\s+/g,"_")}
 function today(){return new Date().toLocaleDateString()}
 function nowText(){return new Date().toLocaleString()}
+function defaultStudyYear(){
+  const d=new Date();
+  const y=d.getFullYear();
+  const m=d.getMonth()+1;
+  return m>=8 ? y+'-'+(y+1) : (y-1)+'-'+y;
+}
+function termLabel(term){
+  if(term==='term2')return 'Term 2';
+  if(term==='term3')return 'Term 3';
+  return 'Term 1';
+}
+function getCurrentTerm(){return (trackerSettings && trackerSettings.term) || 'term1'}
+function getStudyYear(){return (trackerSettings && trackerSettings.studyYear) || defaultStudyYear()}
+function normalizeTerm(v){
+  const raw=String(v||'').toLowerCase().replace(/\s+/g,'');
+  if(raw.includes('2'))return 'term2';
+  if(raw.includes('3'))return 'term3';
+  return 'term1';
+}
+function recordMatchesCurrentTerm(record){
+  const term=getCurrentTerm();
+  const year=getStudyYear();
+  const rTerm=record.term || record.currentTerm || record.schoolTerm || '';
+  const rYear=record.studyYear || record.academicYear || record.year || '';
+  // Old records had no term/year. Keep them visible in Term 1 so existing data is not lost.
+  if(!rTerm && !rYear) return term==='term1';
+  const termOk=!rTerm || normalizeTerm(rTerm)===term;
+  const yearOk=!rYear || String(rYear)===String(year);
+  return termOk && yearOk;
+}
+async function saveTrackerSettings(){
+  const term=byId('termSelect')?.value || getCurrentTerm();
+  const studyYear=(byId('studyYearInput')?.value || defaultStudyYear()).trim();
+  trackerSettings={term,studyYear};
+  if(db){
+    await db.ref('teacherControlCenter/settings/tracker').set(trackerSettings);
+  }
+  renderStats();
+  renderClassRecords();
+  renderIndividualRecord();
+}
 
 function loginTeacher(){
   const pass=byId("teacherPassword").value;
@@ -332,10 +467,14 @@ async function initFirebase(){
     controlRef=db.ref("teacherControlCenter");
     controlRef.on("value",snap=>{
       controlData=snap.exists()?snap.val():{classes:{},records:{}};
+      trackerSettings=(controlData.settings && controlData.settings.tracker) || trackerSettings;
+      if(!trackerSettings.studyYear) trackerSettings.studyYear=defaultStudyYear();
+      if(byId('termSelect')) byId('termSelect').value=getCurrentTerm();
+      if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
       refreshAll();
     });
     const snap=await controlRef.get();
-    if(!snap.exists()) await controlRef.set({classes:{},records:{}});
+    if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear()}}});
     box.className="card status good";
     box.innerHTML="✅ Firebase connected. Teacher records are saved live.";
   }catch(err){
@@ -577,12 +716,14 @@ function classRecords(classId){
   });
 }
 
-function studentRecordsForClass(classId, student){
+function studentRecordsForClass(classId, student, options={}){
   const sid1=normalizeStudentForCompare(student.id);
   const sid2=normalizeStudentForCompare(student.password);
+  const includeAllTerms=options && options.allTerms;
   return classRecords(classId).filter(r=>{
     const rid=normalizeStudentForCompare(r.studentId || r.password || r.id);
-    return rid===sid1 || rid===sid2;
+    const sameStudent = rid===sid1 || rid===sid2;
+    return sameStudent && (includeAllTerms || recordMatchesCurrentTerm(r));
   });
 }
 
@@ -658,26 +799,64 @@ function renderClassRecords(){
   if(!box)return;
   if(!cls){box.innerHTML='<div class="status">Choose a class.</div>';return}
   const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  const reportDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+
+  let classFinals=[];
+  let totals={dl:0,skill:0,reading:0,final:0,records:0};
 
   const rows=students.map(st=>{
     const r=studentRecordsForClass(classId, st);
     const summary=buildPerformanceSummary(r);
+    totals.dl += summary.dl.weighted;
+    totals.skill += summary.skill.weighted;
+    totals.reading += summary.reading.weighted;
+    totals.final += summary.finalPercent;
+    totals.records += r.length;
+    if(r.length) classFinals.push(summary.finalPercent);
     const last=r.slice().sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
     return `<tr>
       <td><b>${esc(st.name)}</b></td>
       <td>${esc(st.password || st.id)}</td>
-      <td>${programCellHtml(summary.dl,'dl')}</td>
-      <td>${programCellHtml(summary.skill,'skill')}</td>
-      <td>${programCellHtml(summary.reading,'reading')}</td>
-      <td><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
+      <td class="dlCol">${programCellHtml(summary.dl,'dl')}</td>
+      <td class="skillCol">${programCellHtml(summary.skill,'skill')}</td>
+      <td class="readingCol">${programCellHtml(summary.reading,'reading')}</td>
+      <td class="finalCol"><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
       <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
       <td>${last?esc(last.date||""):"-"}</td>
     </tr>`;
   }).join("");
 
-  box.innerHTML=`<div class="weightNote">Final Term = DL Lesson 50% + Skill Clash 20% + Reading Rush 30%</div>
+  const studentCount=students.length || 1;
+  const classAvg=classFinals.length?Math.round(classFinals.reduce((a,b)=>a+b,0)/classFinals.length):0;
+  const avgDL=Math.round(totals.dl/studentCount);
+  const avgSkill=Math.round(totals.skill/studentCount);
+  const avgReading=Math.round(totals.reading/studentCount);
+
+  box.innerHTML=`
+  <div class="reportHeader">
+    <div class="reportHeaderTop">
+      <div>
+        <div class="reportTitle">📘 English Performance Tracker</div>
+        <div class="reportMeta">
+          <span class="metaChip">👩‍🏫 Teacher: Saidah Khwar</span>
+          <span class="metaChip">🏫 Class: ${esc(cls.name || classId)}</span>
+          <span class="metaChip">📚 Subject: English</span>
+          <span class="metaChip termBadge">🗓 ${termLabel(getCurrentTerm())}</span>
+          <span class="metaChip">🎓 Year: ${esc(getStudyYear())}</span>
+          <span class="metaChip">📅 Date: ${esc(reportDate)}</span>
+        </div>
+      </div>
+      <div class="metaChip" style="font-size:14px;">Final = DL 50% + Skill 20% + Reading 30%</div>
+    </div>
+    <div class="summaryStrip">
+      <div class="summaryMini"><div class="miniLabel">Class DL Avg /50</div><div class="miniValue">${avgDL}/50</div></div>
+      <div class="summaryMini"><div class="miniLabel">Skill Clash Avg /20</div><div class="miniValue">${avgSkill}/20</div></div>
+      <div class="summaryMini"><div class="miniLabel">Reading Avg /30</div><div class="miniValue">${avgReading}/30</div></div>
+      <div class="summaryMini"><div class="miniLabel">Final Term Avg</div><div class="miniValue">${classAvg}%</div></div>
+    </div>
+  </div>
   <div class="tableWrap"><table>
-    <thead><tr><th>Student</th><th>ID</th><th>DL Lesson 50%</th><th>Skill Clash 20%</th><th>Reading Rush 30%</th><th>Final Term 100%</th><th>Last Activity</th><th>Date</th></tr></thead>
+    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="finalCol">Final Term 100%</th><th>Last Activity</th><th>Date</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
 }
@@ -706,6 +885,7 @@ function renderIndividualRecord(){
 
   summary.innerHTML=`<div class="studentCard">
     <b>${esc(st.name)}</b>
+    <div class="pill termBadge">${termLabel(getCurrentTerm())} • ${esc(getStudyYear())}</div>
     <div class="pill">ID: ${esc(st.password || st.id)}</div>
     <div class="pill">DL: ${perf.dl.weighted}/50</div>
     <div class="pill">Skill Clash: ${perf.skill.weighted}/20</div>
@@ -756,6 +936,8 @@ async function saveStudentPerformance(record){
     activityType:PROGRAM_WEIGHTS[programKey].label,
     score:sc.score,
     total:sc.total,
+    term:record.term || getCurrentTerm(),
+    studyYear:record.studyYear || getStudyYear(),
     date:record.date||today(),
     time:Date.now()
   };
@@ -777,14 +959,32 @@ function downloadClassCSV(){
   const classId=byId("recordsClassSelect")?.value;
   const cls=getClasses()[classId];
   if(!cls){alert("Choose class.");return}
-  const rows=[["Student Name","ID","DL Weighted /50","DL Raw %","DL Score","DL Total","Skill Weighted /20","Skill Raw %","Skill Score","Skill Total","Reading Weighted /30","Reading Raw %","Reading Score","Reading Total","Final Term %","Activities","Last Activity","Last Date"]];
-  Object.values(cls.students||{}).forEach(st=>{
+
+  // IMPORTANT: keep Excel export in the EXACT same order as the tracker table.
+  const students=Object.values(cls.students||{})
+    .sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+
+  const reportDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const rows=[
+    ["English Performance Tracker"],
+    ["Teacher","Saidah Khwar"],
+    ["Class",cls.name||classId],
+    ["Subject","English"],
+    ["Term",termLabel(getCurrentTerm())],
+    ["Studying Year",getStudyYear()],
+    ["Date",reportDate],
+    [],
+    ["Student Name","ID","DL Lesson Weighted /50","DL Raw %","DL Score","DL Total","Skill Clash Weighted /20","Skill Raw %","Skill Score","Skill Total","Reading Rush Weighted /30","Reading Raw %","Reading Score","Reading Total","Final Term %","Activities","Last Activity","Last Date"]
+  ];
+
+  students.forEach(st=>{
     const r=studentRecordsForClass(classId, st);
     const p=buildPerformanceSummary(r);
     const last=r.slice().sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
     rows.push([st.name,st.password||st.id,p.dl.weighted,p.dl.percent,p.dl.score,p.dl.total,p.skill.weighted,p.skill.percent,p.skill.score,p.skill.total,p.reading.weighted,p.reading.percent,p.reading.score,p.reading.total,p.finalPercent,r.length,last?.activityName||"",last?.date||""]);
   });
-  downloadText((cls.name||"class")+"_weighted_performance.csv",toCSV(rows));
+
+  downloadText((cls.name||"class")+"_"+termLabel(getCurrentTerm()).replace(/\s+/g,'_')+"_performance.csv",toCSV(rows));
 }
 
 function downloadStudentCSV(){
@@ -796,6 +996,12 @@ function downloadStudentCSV(){
   const records=studentRecordsForClass(classId, st).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
   const p=buildPerformanceSummary(records);
   const rows=[
+    ["English Individual Performance Record"],
+    ["Teacher","Saidah Khwar"],
+    ["Subject","English"],
+    ["Class",cls.name||classId],
+    ["Term",termLabel(getCurrentTerm())],
+    ["Studying Year",getStudyYear()],
     ["Student",st.name],
     ["ID",st.password||st.id],
     ["DL Lesson /50",p.dl.weighted],
@@ -814,6 +1020,8 @@ function downloadStudentCSV(){
 }
 
 function refreshAll(){
+  if(byId('termSelect')) byId('termSelect').value=getCurrentTerm();
+  if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
   fillClassSelects();
   renderClasses();
   renderStudentsTable();
