@@ -1266,7 +1266,7 @@ window.addEventListener("load",()=>{
   }
 });
   async function clearDLRecordsOnly(){
-  if(!confirm("Clear all saved DL Lesson performance records only? Students and other activities will stay.")) return;
+  if(!confirm("Clear all DL Lesson marks and missed-work comments only?")) return;
 
   const snap = await db.ref("teacherControlCenter/records").get();
   const data = snap.val() || {};
@@ -1276,17 +1276,34 @@ window.addEventListener("load",()=>{
     Object.keys(data[classId] || {}).forEach(studentId=>{
       Object.keys(data[classId][studentId] || {}).forEach(recordId=>{
         const rec = data[classId][studentId][recordId] || {};
-        const type = String(rec.activityType || rec.app || "").toLowerCase();
 
-        if(type.includes("dl lesson")){
+        const text = (
+          (rec.activityType || "") + " " +
+          (rec.activityName || "") + " " +
+          (rec.activity || "") + " " +
+          (rec.notes || "") + " " +
+          (rec.comment || "")
+        ).toLowerCase();
+
+        if(
+          text.includes("dl lesson") ||
+          text.includes("missed") ||
+          text.includes("unfinished") ||
+          text.includes("makeup")
+        ){
           updates[`teacherControlCenter/records/${classId}/${studentId}/${recordId}`] = null;
         }
       });
     });
   });
 
+  if(!Object.keys(updates).length){
+    alert("No DL Lesson records found to clear.");
+    return;
+  }
+
   await db.ref().update(updates);
-  alert("✅ DL Lesson old records cleared. New lessons will start fresh.");
+  alert("✅ DL Lesson marks and missed-work comments cleared.");
 }
 </script>
 </body>
