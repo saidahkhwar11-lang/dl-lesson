@@ -832,8 +832,73 @@ function highlightKeywords(text, extraWords){
   return safe;
 }
 function currentPQ(s){const col=s.collections?.[s.currentCollectionId];const pr=s.studentProgress?.[currentUser.id];if(!col||!pr)return{p:null,q:null,pr:null,total:0};const paragraphs=col.paragraphs||[];const p=paragraphs[Math.min(pr.paraIndex,paragraphs.length-1)];const q=(p?.questions||[])[pr.qIndex];return{p,q,pr,total:paragraphs.length}}
-function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);renderStudentParagraphTimers(s);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle"><b>${esc(d.p.title)}</b></div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
-function renderStudentQuestion(s,d){
+function studentRefresh(){
+  const s = stateCache || defaultState();
+
+  if(!currentUser) return;
+
+  if(!s.students?.[currentUser.id]){
+    clearStudentSession();
+    currentUser = null;
+    hide('studentPage');
+    show('loginPage');
+    return;
+  }
+
+  byId('studentWelcome').innerText =
+    `Welcome, ${currentUser.name} | Group ${currentUser.group}`;
+
+  renderStages('studentStages', s.stage);
+
+  if(typeof renderStudentParagraphTimers === 'function'){
+    renderStudentParagraphTimers(s);
+  }
+
+  byId('studentInstruction').innerText =
+    s.stage === 'playing'
+      ? 'Read your paragraph and answer all questions.'
+      : 'Wait for teacher.';
+
+  byId('studentRoundTitle').innerText =
+    s.currentCollectionTitle || 'Current Collection';
+
+  renderLeaderboard('studentLeaderboard', s);
+
+  const d = currentPQ(s);
+
+  if(byId('bossNotice')){
+    byId('bossNotice').classList.toggle('hidden', s.stage !== 'boss');
+  }
+
+  if((s.stage === 'playing' || s.stage === 'boss') && d.p){
+
+    byId('studentProgress').innerText = d.pr.done
+      ? 'You finished all paragraphs 🎉'
+      : `Paragraph ${d.pr.paraIndex + 1}/${d.total} • Question ${Math.min(d.pr.qIndex + 1, (d.p.questions || []).length)}/${(d.p.questions || []).length}`;
+
+    byId('paragraphBox').innerHTML =
+      `<div class="pTitle"><b>${esc(d.p.title)}</b></div>
+       <div class="pText">${highlightKeywords(d.p.text, d.p.keywords || [])}</div>`;
+
+    show('questionBox');
+    renderStudentQuestion(s, d);
+
+  }else if(s.stage === 'final'){
+
+    hide('questionBox');
+    byId('studentProgress').innerText = 'Challenge ended.';
+    byId('paragraphBox').innerText = 'Final winners are ready.';
+    byId('studentResultBox').innerHTML =
+      '<div class="finalWinners">' + byId('studentLeaderboard').innerHTML + '</div>';
+
+  }else{
+
+    hide('questionBox');
+    byId('studentProgress').innerText = 'Progress will appear here.';
+    byId('paragraphBox').innerText = 'Wait for teacher to start collection.';
+  }
+}
+  function renderStudentQuestion(s,d){
 
   const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');
 
