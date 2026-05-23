@@ -36,6 +36,35 @@
 .studentNameCell{font-weight:900;color:#203a78;border-radius:12px}
 .progressSmall{font-size:12px;color:#526790;font-weight:800}
 .scoreGood{color:#157347;font-weight:900}.scoreBad{color:#b4233a;font-weight:900}.scoreNeutral{color:#526790;font-weight:900}
+  .studentInfoBar{
+  display:grid;
+  grid-template-columns:1fr 1fr 1.1fr;
+  gap:12px;
+  margin:12px 0 14px;
+}
+
+.studentInfoCard{
+  background:linear-gradient(135deg,#ffffff,#f8fbff);
+  border:1px solid #dfe8ff;
+  border-radius:20px;
+  padding:12px;
+}
+
+.studentInfoCard h3{
+  margin-bottom:6px;
+}
+
+.studentInfoCard p{
+  font-size:13px;
+  line-height:1.45;
+  color:#42557f;
+}
+
+@media(max-width:950px){
+  .studentInfoBar{
+    grid-template-columns:1fr;
+  }
+}
 
 </style>
 </head>
@@ -111,10 +140,22 @@
     <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Lesson Plan</button>
   </div>
   
-  <div id="studentParagraphTimerBox" class="card hidden">
-    <h2>⏰ Paragraph Progress</h2>
-    <div id="studentParagraphTimers" class="timerGrid"></div>
+  <div class="studentInfoBar">
+  <div class="studentInfoCard">
+    <h3>🎯 Main Goal</h3>
+    <p id="studentMainGoal">Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.</p>
   </div>
+
+  <div class="studentInfoCard">
+    <h3>📌 Instructions</h3>
+    <p id="studentMainInstructions">Read carefully, use context clues, answer one question at a time, and move through the collection.</p>
+  </div>
+
+  <div class="studentInfoCard">
+    <h3>⏱️ Paragraph Progress</h3>
+    <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
+  </div>
+</div>
 
   <div class="card studentTopBar">
     <div>
@@ -683,19 +724,14 @@ function renderParagraphTimers(s){
 }
   function renderStudentParagraphTimers(s){
   const wrap = byId('studentParagraphTimers');
-  const box = byId('studentParagraphTimerBox');
-
-  if(!wrap || !box || !currentUser) return;
+  if(!wrap || !currentUser) return;
 
   const col = s.collections?.[s.currentCollectionId];
 
   if(!col || !(col.paragraphs || []).length){
-    box.classList.add('hidden');
-    wrap.innerHTML = '';
+    wrap.innerHTML = '<div class="status">Start collection to see progress.</div>';
     return;
   }
-
-  box.classList.remove('hidden');
 
   const paragraphs = col.paragraphs || [];
   const pr = s.studentProgress?.[currentUser.id] || {
@@ -717,8 +753,8 @@ function renderParagraphTimers(s){
     return `
       <div class="paragraphTimerCard">
         <b>P${i+1}</b>
-        <div class="timerClock">${doneQ}/${totalQ}</div>
-        <span class="doneCount">questions done</span>
+        <div class="timerClock" style="font-size:17px">${doneQ}/${totalQ}</div>
+        <span class="doneCount" style="font-size:11px">questions done</span>
       </div>
     `;
   }).join('');
