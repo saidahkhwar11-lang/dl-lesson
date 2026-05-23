@@ -205,6 +205,11 @@ td.dlCol{background:#f8fcff}
 td.skillCol{background:#fffaf6}
 td.readingCol{background:#f7fffa}
 td.finalCol{background:#fbf9ff;font-weight:900}
+th.commentCol{background:#fff8e8;color:#8a5b00}
+td.commentCol{background:#fffdf5;min-width:240px}
+.commentList{display:flex;flex-direction:column;gap:5px;max-height:90px;overflow:auto}
+.commentItem{background:#fff7df;border:1px solid #f2d98a;color:#775704;border-radius:10px;padding:6px 8px;font-size:11px;font-weight:800;line-height:1.3}
+.noComment{color:#9aa6bd;font-size:12px;font-weight:800}
 .termBadge{background:linear-gradient(135deg,#3f67d8,#7d5cff);color:white;border:0}
 @media(max-width:850px){.termControls{grid-template-columns:1fr}.summaryStrip{grid-template-columns:1fr 1fr}}
 .bigNumber{font-size:28px;font-family:Quicksand,sans-serif;font-weight:900;color:#203a78}
@@ -386,6 +391,8 @@ const DEFAULT_FIREBASE_CONFIG={
 let db=null;
 let controlRef=null;
 let controlData={classes:{},records:{}};
+let lessonsData={};
+let lessonsRef=null;
 let trackerSettings={term:'term1',studyYear:''};
 
 function byId(id){return document.getElementById(id)}
@@ -473,6 +480,15 @@ async function initFirebase(){
       if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
       refreshAll();
     });
+
+    // Read DL Lesson station tracker directly. This lets Teacher Control count
+    // one completed DL lesson as one activity without changing the DL Lesson page.
+    lessonsRef=db.ref("lessons");
+    lessonsRef.on("value",snap=>{
+      lessonsData=snap.exists()?snap.val():{};
+      refreshAll();
+    });
+
     const snap=await controlRef.get();
     if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear()}}});
     box.className="card status good";
@@ -657,6 +673,190 @@ function pushUniqueRecord(arr, seen, record, fallback){
   });
 }
 
+
+function isDLRecord(record){
+  return normalizeProgramName(record)==='dl';
+}
+
+function pushUniqueNonDLRecord(arr, seen, record, fallback){
+  if(!record) return;
+  if(isDLRecord(record)) return; // DL is counted from the live DL Lesson station tracker below
+  pushUniqueRecord(arr, seen, record, fallback);
+}
+
+function findTeacherControlStudentSync(studentId){
+  const sid=cleanKey(studentId||'');
+  if(!sid) return null;
+  const classes=getClasses();
+  const classIds=Object.keys(classes||{});
+  for(let i=0;i<classIds.length;i++){
+    const classId=classIds[i];
+    const cls=classes[classId]||{};
+    const students=cls.students||{};
+    if(students[sid]){
+      return {classId, studentKey:sid, student:students[sid], className:cls.name||classId};
+    }
+    const studentKeys=Object.keys(students);
+    for(let j=0;j<studentKeys.length;j++){
+      const key=studentKeys[j];
+      const st=students[key]||{};
+      if(cleanKey(st.password||st.id||key)===sid){
+        return {classId, studentKey:key, student:st, className:cls.name||classId};
+      }
+    }
+  }
+  return null;
+}
+
+function getLessonStationsArray(lessonObj){
+  const config=lessonObj && lessonObj.config;
+  if(Array.isArray(config)) return config.filter(Boolean);
+  if(config && typeof config==='object') return Object.values(config).filter(Boolean);
+  return [];
+}
+
+function totalMarksForLessonStation(content, stationId){
+  const stationContent=(content||{})[stationId] || {};
+  const questions=Array.isArray(stationContent.questions) ? stationContent.questions : [];
+  return questions.reduce((total,q)=>{
+    if(q && q.type==='written') return total + Number(q.maxMark || 1);
+    return total + 1;
+  },0);
+}
+
+function getDLStudentScore(studentData){
+  if(studentData && studentData.total!==undefined) return Number(studentData.total||0);
+  const scores=(studentData && studentData.scores) || {};
+  return Object.values(scores).reduce((sum,v)=>sum+Number(v||0),0);
+}
+
+function isDLLessonCompleted(lessonObj, studentData){
+  const stations=getLessonStationsArray(lessonObj).filter(st=>st && st.id);
+  if(!stations.length) return false;
+  const submitted=(studentData && studentData.submittedStations) || {};
+  return stations.every(st=>submitted[st.id]===true);
+}
+
+function makeDateFromTime(ts){
+  const n=Number(ts||0);
+  if(!n) return today();
+  try{return new Date(n).toLocaleDateString('en-GB');}catch(e){return today();}
+}
+
+function addDLFullLessonRecords(arr, seen){
+  const lessons=lessonsData || {};
+
+  Object.keys(lessons).forEach(lessonKey=>{
+    const lessonObj=lessons[lessonKey] || {};
+    const students=lessonObj.students || {};
+    const stations=getLessonStationsArray(lessonObj).filter(st=>st && st.id);
+    const lessonContent=lessonObj.content || {};
+    const lessonMeta=lessonObj.lessonMeta || {};
+    const lessonTitle=lessonMeta.lessonTitle || lessonObj.lessonTitle || lessonKey;
+    const maxMark=stations.reduce((sum,st)=>sum+totalMarksForLessonStation(lessonContent, st.id),0);
+    if(maxMark<=0) return;
+
+    const completedByClass={};
+    const completedStudentKeys={};
+
+    // 1) Add completed DL lesson records: one full lesson = one activity.
+    Object.keys(students).forEach(rawStudentId=>{
+      const studentData=students[rawStudentId] || {};
+      const found=findTeacherControlStudentSync(studentData.id || rawStudentId);
+      if(!found) return;
+
+      const classId=found.classId;
+      if(!completedByClass[classId]){
+        completedByClass[classId]={
+          classId,
+          lessonKey,
+          lessonTitle,
+          total:maxMark,
+          latestTime:0,
+          date:today(),
+          completedCount:0
+        };
+      }
+
+      if(!isDLLessonCompleted(lessonObj, studentData)) return;
+
+      const score=getDLStudentScore(studentData);
+      const time=Number(studentData.lastLoginAt || studentData.startedAt || Date.now());
+      completedByClass[classId].completedCount++;
+      if(time>completedByClass[classId].latestTime){
+        completedByClass[classId].latestTime=time;
+        completedByClass[classId].date=makeDateFromTime(time);
+      }
+      completedStudentKeys[classId+'|'+cleanKey(found.studentKey)] = true;
+
+      const recordId='dl_full_'+cleanKey(lessonKey)+'_'+cleanKey(found.studentKey);
+      if(seen[recordId]) return;
+      seen[recordId]=true;
+      arr.push({
+        classId:found.classId,
+        className:found.className,
+        studentId:found.studentKey,
+        studentName:(found.student && found.student.name) || studentData.name || 'Student',
+        recordId,
+        program:'DL Lesson',
+        programKey:'dl',
+        activityType:'DL Lesson',
+        activityName:lessonTitle,
+        score:score,
+        total:maxMark,
+        term:getCurrentTerm(),
+        studyYear:getStudyYear(),
+        sourceLessonKey:lessonKey,
+        isFullDLLesson:true,
+        notes:'Completed full DL lesson. Counted as one activity from all stations.',
+        date:makeDateFromTime(time),
+        time:time
+      });
+    });
+
+    // 2) Add virtual missed-work records for classmates when at least one student in the class completed the lesson.
+    // This keeps DL tracker by stations unchanged, but the Teacher Control term tracker counts the missed full lesson as 0/max.
+    Object.values(completedByClass).forEach(info=>{
+      if(!info.completedCount) return;
+      const cls=(getClasses()||{})[info.classId] || {};
+      const classStudents=cls.students || {};
+
+      Object.keys(classStudents).forEach(studentKey=>{
+        const cleanStudentKey=cleanKey(studentKey);
+        const doneKey=info.classId+'|'+cleanStudentKey;
+        if(completedStudentKeys[doneKey]) return;
+
+        const st=classStudents[studentKey] || {};
+        const recordId='dl_missed_'+cleanKey(lessonKey)+'_'+cleanStudentKey;
+        if(seen[recordId]) return;
+        seen[recordId]=true;
+
+        const missedNote='Missed / unfinished DL Lesson: '+info.lessonTitle+' on '+info.date+'. Makeup needed.';
+        arr.push({
+          classId:info.classId,
+          className:cls.name || info.classId,
+          studentId:studentKey,
+          studentName:st.name || 'Student',
+          recordId,
+          program:'DL Lesson',
+          programKey:'dl',
+          activityType:'DL Lesson',
+          activityName:info.lessonTitle,
+          score:0,
+          total:info.total,
+          term:getCurrentTerm(),
+          studyYear:getStudyYear(),
+          sourceLessonKey:lessonKey,
+          isFullDLLesson:true,
+          isMissedWork:true,
+          notes:missedNote,
+          date:info.date,
+          time:info.latestTime || Date.now()
+        });
+      });
+    });
+  });
+}
 function allRecordsArray(){
   const arr=[];
   const seen={};
@@ -666,7 +866,7 @@ function allRecordsArray(){
   Object.keys(records).forEach(classId=>{
     Object.keys(records[classId]||{}).forEach(studentId=>{
       Object.keys(records[classId][studentId]||{}).forEach(recordId=>{
-        pushUniqueRecord(arr, seen, records[classId][studentId][recordId], {classId,studentId,recordId});
+        pushUniqueNonDLRecord(arr, seen, records[classId][studentId][recordId], {classId,studentId,recordId});
       });
     });
   });
@@ -676,7 +876,7 @@ function allRecordsArray(){
   Object.keys(perf).forEach(classId=>{
     Object.keys(perf[classId]||{}).forEach(studentId=>{
       Object.keys(perf[classId][studentId]||{}).forEach(programId=>{
-        pushUniqueRecord(arr, seen, perf[classId][studentId][programId], {classId,studentId,recordId:programId});
+        pushUniqueNonDLRecord(arr, seen, perf[classId][studentId][programId], {classId,studentId,recordId:programId});
       });
     });
   });
@@ -689,16 +889,18 @@ function allRecordsArray(){
         const item=activityRecords[programId][classId][studentId];
         if(item && typeof item === 'object'){
           if(item.score !== undefined || item.activityName || item.activityType){
-            pushUniqueRecord(arr, seen, {...item, activityType:item.activityType || programId}, {classId,studentId,recordId:programId});
+            pushUniqueNonDLRecord(arr, seen, {...item, activityType:item.activityType || programId}, {classId,studentId,recordId:programId});
           }else{
             Object.keys(item).forEach(recordId=>{
-              pushUniqueRecord(arr, seen, {...item[recordId], activityType:item[recordId]?.activityType || programId}, {classId,studentId,recordId});
+              pushUniqueNonDLRecord(arr, seen, {...item[recordId], activityType:item[recordId]?.activityType || programId}, {classId,studentId,recordId});
             });
           }
         }
       });
     });
   });
+
+  addDLFullLessonRecords(arr, seen);
 
   return arr;
 }
@@ -792,6 +994,29 @@ function renderStats(){
   byId("averageScoreBox").innerText=avg+"%";
 }
 
+
+function performanceCommentsHtml(records){
+  const missed=records
+    .filter(r=>r && r.isMissedWork)
+    .sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+
+  if(!missed.length){
+    return '<span class="noComment">No missed DL lessons</span>';
+  }
+
+  return '<div class="commentList">' + missed.map(r=>{
+    return '<div class="commentItem">📌 ' + esc(r.notes || ('Missed '+(r.activityName||'DL Lesson'))) + '</div>';
+  }).join('') + '</div>';
+}
+
+function performanceCommentsText(records){
+  return records
+    .filter(r=>r && r.isMissedWork)
+    .sort((a,b)=>Number(b.time||0)-Number(a.time||0))
+    .map(r=>r.notes || ('Missed '+(r.activityName||'DL Lesson')))
+    .join(' | ');
+}
+
 function renderClassRecords(){
   const classId=byId("recordsClassSelect")?.value;
   const cls=getClasses()[classId];
@@ -821,6 +1046,7 @@ function renderClassRecords(){
       <td class="skillCol">${programCellHtml(summary.skill,'skill')}</td>
       <td class="readingCol">${programCellHtml(summary.reading,'reading')}</td>
       <td class="finalCol"><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
+      <td class="commentCol">${performanceCommentsHtml(r)}</td>
       <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
       <td>${last?esc(last.date||""):"-"}</td>
     </tr>`;
@@ -856,7 +1082,7 @@ function renderClassRecords(){
     </div>
   </div>
   <div class="tableWrap"><table>
-    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="finalCol">Final Term 100%</th><th>Last Activity</th><th>Date</th></tr></thead>
+    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="finalCol">Final Term 100%</th><th class="commentCol">Performance Comments</th><th>Last Activity</th><th>Date</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
 }
@@ -974,14 +1200,14 @@ function downloadClassCSV(){
     ["Studying Year",getStudyYear()],
     ["Date",reportDate],
     [],
-    ["Student Name","ID","DL Lesson Weighted /50","DL Raw %","DL Score","DL Total","Skill Clash Weighted /20","Skill Raw %","Skill Score","Skill Total","Reading Rush Weighted /30","Reading Raw %","Reading Score","Reading Total","Final Term %","Activities","Last Activity","Last Date"]
+    ["Student Name","ID","DL Lesson Weighted /50","DL Raw %","DL Score","DL Total","Skill Clash Weighted /20","Skill Raw %","Skill Score","Skill Total","Reading Rush Weighted /30","Reading Raw %","Reading Score","Reading Total","Final Term %","Performance Comments","Activities","Last Activity","Last Date"]
   ];
 
   students.forEach(st=>{
     const r=studentRecordsForClass(classId, st);
     const p=buildPerformanceSummary(r);
     const last=r.slice().sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
-    rows.push([st.name,st.password||st.id,p.dl.weighted,p.dl.percent,p.dl.score,p.dl.total,p.skill.weighted,p.skill.percent,p.skill.score,p.skill.total,p.reading.weighted,p.reading.percent,p.reading.score,p.reading.total,p.finalPercent,r.length,last?.activityName||"",last?.date||""]);
+    rows.push([st.name,st.password||st.id,p.dl.weighted,p.dl.percent,p.dl.score,p.dl.total,p.skill.weighted,p.skill.percent,p.skill.score,p.skill.total,p.reading.weighted,p.reading.percent,p.reading.score,p.reading.total,p.finalPercent,performanceCommentsText(r),r.length,last?.activityName||"",last?.date||""]);
   });
 
   downloadText((cls.name||"class")+"_"+termLabel(getCurrentTerm()).replace(/\s+/g,'_')+"_performance.csv",toCSV(rows));
