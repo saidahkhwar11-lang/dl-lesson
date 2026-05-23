@@ -8767,6 +8767,16 @@ window.addEventListener('load', function(){
     return true;
   };
 
+  async function scGetActiveTermSettings(){
+    try{
+      if(typeof db === "undefined" || !db) return {};
+      const snap = await db.ref("teacherControlCenter/settings/tracker").once("value");
+      return snap.val() || {};
+    }catch(e){
+      return {};
+    }
+  }
+
   async function scSavePerformance(record){
     try{
       if(typeof db === "undefined" || !db) return;
@@ -8775,11 +8785,28 @@ window.addEventListener('load', function(){
       const studentId = scCleanKey(record.studentId || record.password || currentStudentId);
       if(!classId || !studentId) return;
 
-      const recId = "skill_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+      const settings = await scGetActiveTermSettings();
+      const activeTerm = record.term || settings.activeSavingTerm || settings.term || "term1";
+      const studyYear = record.studyYear || settings.studyYear || "";
+
+      // Deterministic recordId prevents duplicated marks when teacher clicks Save more than once.
+      const baseId = record.recordId || [
+        "skill_final",
+        record.activityName || scActivityName(),
+        record.activityType || "Skill Clash",
+        studentId
+      ].join("_");
+
+      const recId = scCleanKey(baseId);
       const finalRecord = Object.assign({}, record, {
         classId: classId,
         studentId: studentId,
         recordId: recId,
+        program: "Skill Clash",
+        app: "Skill Clash",
+        activityType: "Skill Clash",
+        term: activeTerm,
+        studyYear: studyYear,
         date: record.date || new Date().toLocaleDateString(),
         time: Date.now()
       });
@@ -9036,17 +9063,21 @@ window.addEventListener('load', function(){
           return;
         }
 
+        const activityName = scActivityName();
+        const activityId = scCleanKey(activityName || "Skill Clash Activity");
+
         for(const sid of Object.keys(students)){
           const st = students[sid] || {};
           await scSavePerformance({
             classId: scCleanKey(String(selectedTeacherClass || clsKey).replace("-","/")),
             studentId: sid,
             studentName: st.name || sid,
-            activityName: scActivityName(),
+            activityName: activityName,
             activityType: "Skill Clash",
             score: finalMark,
             total: finalMax,
-            notes: comment || "Final teacher mark for Skill Clash group work"
+            recordId: "skill_final_" + activityId + "_group" + groupNum + "_" + scCleanKey(sid),
+            notes: comment || "Final teacher mark for Skill Clash assignment. Voting points are not included."
           });
         }
       }catch(e){ console.log("Could not save teacher feedback to control center:", e); }
