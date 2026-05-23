@@ -345,6 +345,7 @@ td.commentCol{background:#fffdf5;min-width:240px}
           </div>
         </div>
         <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Tracker Excel/CSV</button>
+        <button class="danger" onclick="clearDLRecordsOnly()">🧹 Clear DL Lesson Records</button>
         <div id="classRecordsTable"></div>
       </div>
     </section>
@@ -1264,6 +1265,29 @@ window.addEventListener("load",()=>{
     initFirebase();
   }
 });
+  async function clearDLRecordsOnly(){
+  if(!confirm("Clear all saved DL Lesson performance records only? Students and other activities will stay.")) return;
+
+  const snap = await db.ref("teacherControlCenter/records").get();
+  const data = snap.val() || {};
+  const updates = {};
+
+  Object.keys(data).forEach(classId=>{
+    Object.keys(data[classId] || {}).forEach(studentId=>{
+      Object.keys(data[classId][studentId] || {}).forEach(recordId=>{
+        const rec = data[classId][studentId][recordId] || {};
+        const type = String(rec.activityType || rec.app || "").toLowerCase();
+
+        if(type.includes("dl lesson")){
+          updates[`teacherControlCenter/records/${classId}/${studentId}/${recordId}`] = null;
+        }
+      });
+    });
+  });
+
+  await db.ref().update(updates);
+  alert("✅ DL Lesson old records cleared. New lessons will start fresh.");
+}
 </script>
 </body>
 </html>
