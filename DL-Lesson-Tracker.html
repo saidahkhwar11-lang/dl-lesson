@@ -1797,6 +1797,7 @@ window.handleCreatorVideo = function(event){
 const TEACHER_PASSWORD = 'Welcome@2020'; const APP_NAME = 'dl_online_live_app'; const REQUIRED_COUNTS = { starter:2, st1:5, st2:5, st3:5, exit:7 }; const defaultStations = [ {id:'starter', title:'Starter', time:'5 min', objective:'Predict the topic', details:'Look at the activity and answer two warm-up questions.', unlocked:false, displayed:true, thumbnail:''}, {id:'st1', title:'Station 1', time:'10 min', objective:'Read for main idea and details', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'st2', title:'Station 2', time:'10 min', objective:'Understand key ideas', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'st3', title:'Station 3', time:'10 min', objective:'Use evidence from the text', details:'Read and answer the questions.', unlocked:false, displayed:false, thumbnail:''}, {id:'exit', title:'Exit Ticket', time:'5 min', objective:'Wrap up the whole lesson', details:'Show your overall understanding.', unlocked:false, displayed:false, thumbnail:''} ]; const defaultContent = { starter:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st1:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st2:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, st3:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]}, exit:{imageUrl:'', sourceText:'', imageNotes:'', audioUrl:'', videoUrl:'', linkUrl:'', linkTitle:'', questions:[]} };
 let firebaseConfig = null;
 let lessonKey = '';
+const ACTIVE_DL_LESSON_KEY = 'Skill_Clash';
 let appInstance = null;
 let db = null;
 let currentStudent = null;
@@ -2108,7 +2109,11 @@ window.closeImageModal = function(){
 };
 
 function initFirebaseFromInputs(){
-  lessonKey = sanitizeKey(byId('lessonKey').value || 'default_lesson');
+lessonKey = sanitizeKey(ACTIVE_DL_LESSON_KEY || 'DL_Lesson');
+
+if(byId('lessonKey')){
+  byId('lessonKey').value = lessonKey;
+}
   firebaseConfig = JSON.parse(byId('firebaseConfigText').value || '{}');
 
   console.log('RAW CONFIG TEXT:', byId('firebaseConfigText').value);
@@ -2132,15 +2137,17 @@ storage = firebase.app().storage('gs://online-english-lesson-grade-9.firebasesto
 console.log('Using storage bucket:', firebase.app().options.storageBucket);
 }
 
-  async function ensureLessonDefaults(){
+ async function ensureLessonDefaults(){
   const configSnap = await getSnap(configPath());
+
   if(!configSnap.exists()){
-    await dbRef(configPath()).set([]);
+    await dbRef(configPath()).set(defaultStations);
   }
 
   const contentSnap = await getSnap(contentPath());
+
   if(!contentSnap.exists()){
-    await dbRef(contentPath()).set({});
+    await dbRef(contentPath()).set(defaultContent);
   }
 }
 function isLegacyBadQuestion(q){
