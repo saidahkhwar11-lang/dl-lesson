@@ -3746,11 +3746,12 @@ function listenGroup(){
     }
     document.getElementById('finalAnswerBox').value = data.finalAnswer || '';
 
-    if(data.teacherPoints || data.teacherComment){
+    if(data.teacherPoints || data.teacherComment || data.finalActivityMark){
       document.getElementById('teacherFeedbackStudent').classList.remove('hidden');
       document.getElementById('teacherFeedbackStudent').innerHTML =
         `<h2>⭐ Teacher Feedback</h2>
-         <p><b>Points:</b> ${escapeHtml(data.teacherPoints || 'Not marked')}</p>
+         <p><b>Teacher Voting Points:</b> ${escapeHtml(data.teacherPoints || 'Not marked')} <small>(competition only)</small></p>
+         <p><b>Final Activity Mark:</b> ${data.finalActivityMark !== undefined && data.finalActivityMark !== '' ? escapeHtml(data.finalActivityMark) + ' / ' + escapeHtml(data.finalActivityMax || 10) : 'Not marked yet'}</p>
          <p><b>Comment:</b> ${escapeHtml(data.teacherComment || 'No comment')}</p>`;
     }else{
       document.getElementById('teacherFeedbackStudent').classList.add('hidden');
@@ -5607,18 +5608,32 @@ function renderSelectedClass(classData){
       <h3>Group ${i}</h3>
       <p><b>Members:</b> ${names.length ? names.map(escapeHtml).join(', ') : 'No students joined yet'}</p>
       <p><b>Status:</b> ${g.finalSubmitted ? '✅ Final submitted' : names.length ? '✍️ In progress' : 'Empty'}</p>
-      <p><b>Teacher Points:</b> ${g.teacherPoints || 'Not marked'}</p>
+      <p><b>Teacher Voting Points:</b> ${g.teacherPoints || 'Not marked'} <small>(competition only)</small></p>
+      <p><b>Final Activity Mark:</b> ${g.finalActivityMark !== undefined && g.finalActivityMark !== '' ? escapeHtml(g.finalActivityMark) + ' / ' + escapeHtml(g.finalActivityMax || 10) : 'Not marked'}</p>
       <details data-group="${i}" ${detailOpen} ontoggle="teacherOpenGroupDetails[String(${i})]=this.open">
-        <summary>👀 Check Group Work</summary>
+        <summary>👀 Check Group Work + Final Mark</summary>
         <h4>Saved Work</h4>
         <div class="answerPreview">${escapeHtml(savedWorkText(students))}</div>
         <h4>Final Work</h4>
         <div class="answerPreview">${escapeHtml(g.finalAnswer || 'No final answer yet.')}</div>
-        <label>Teacher Points</label>
-        <input id="points_${i}" type="number" value="${escapeHtml(g.teacherPoints || '')}">
+
+        <div class="note">
+          <b>Important:</b> Voting points are only for the competition/results. Final Activity Mark is the mark saved in Teacher Control performance tracker.
+        </div>
+
+        <label>Teacher Voting Points <small>(optional - competition only)</small></label>
+        <input id="points_${i}" type="number" min="0" value="${escapeHtml(g.teacherPoints || '')}">
+
+        <label>Final Activity Mark <small>(saved to performance tracker)</small></label>
+        <input id="finalMark_${i}" type="number" min="0" value="${escapeHtml(g.finalActivityMark || '')}" placeholder="Example: 8">
+
+        <label>Final Activity Full Mark</label>
+        <input id="finalMax_${i}" type="number" min="1" value="${escapeHtml(g.finalActivityMax || 10)}" placeholder="Example: 10">
+
         <label>Teacher Comment</label>
         <textarea id="comment_${i}">${escapeHtml(g.teacherComment || '')}</textarea>
-        <button class="green" onclick="saveTeacherFeedback(${i})">Save Points + Comment</button>
+
+        <button class="green" onclick="saveTeacherFeedback(${i})">Save Voting Points + Final Mark</button>
       </details>
     </div>`;
   }
@@ -5636,15 +5651,27 @@ function savedWorkText(students){
   return txt || 'No saved work yet.';
 }
 async function saveTeacherFeedback(groupNum){
-  const points = document.getElementById('points_'+groupNum).value;
-  const comment = document.getElementById('comment_'+groupNum).value;
+  const points = document.getElementById('points_'+groupNum)?.value || '';
+  const finalMark = document.getElementById('finalMark_'+groupNum)?.value || '';
+  const finalMax = document.getElementById('finalMax_'+groupNum)?.value || '10';
+  const comment = document.getElementById('comment_'+groupNum)?.value || '';
+
   await hubRef.child(`classes/${activeTeacherClassKey()}/groups/group${groupNum}`).update({
-    teacherPoints:points,
-    teacherComment:comment,
-    markedAt:Date.now()
+    teacherPoints: points,                 // voting/competition only
+    finalActivityMark: finalMark,          // saved to Teacher Control tracker
+    finalActivityMax: finalMax || 10,
+    teacherComment: comment,
+    markedAt: Date.now(),
+    finalMarkedAt: finalMark !== '' ? Date.now() : null
   });
+
   teacherOpenGroupDetails[String(groupNum)] = true;
-  alert('✅ Feedback saved.');
+
+  if(finalMark === ''){
+    alert('✅ Voting feedback saved. Final Activity Mark is empty, so no performance mark was saved yet.');
+  }else{
+    alert('✅ Feedback and final activity mark saved.');
+  }
 }
 
 
@@ -8995,9 +9022,19 @@ window.addEventListener('load', function(){
         const clsKey = (typeof activeTeacherClassKey === "function") ? activeTeacherClassKey() : String(selectedTeacherClass || "").replace("/","-");
         const gSnap = await hubRef.child("classes/" + clsKey + "/groups/group" + groupNum).once("value");
         const g = gSnap.val() || {};
-        const points = Number(g.teacherPoints || document.getElementById("points_" + groupNum)?.value || 0);
+        const finalMarkRaw = (g.finalActivityMark !== undefined && g.finalActivityMark !== '') ? g.finalActivityMark : (document.getElementById("finalMark_" + groupNum)?.value || '');
+        const finalMaxRaw = (g.finalActivityMax !== undefined && g.finalActivityMax !== '') ? g.finalActivityMax : (document.getElementById("finalMax_" + groupNum)?.value || 10);
+        const finalMark = Number(finalMarkRaw || 0);
+        const finalMax = Number(finalMaxRaw || 10);
         const comment = g.teacherComment || document.getElementById("comment_" + groupNum)?.value || "";
         const students = g.students || {};
+
+        // IMPORTANT: Teacher Control receives ONLY the Final Activity Mark.
+        // Voting points stay inside Skill Clash results and are not used as grades.
+        if(finalMarkRaw === ''){
+          console.log("Final Activity Mark is empty. Nothing saved to Teacher Control for group", groupNum);
+          return;
+        }
 
         for(const sid of Object.keys(students)){
           const st = students[sid] || {};
@@ -9006,10 +9043,10 @@ window.addEventListener('load', function(){
             studentId: sid,
             studentName: st.name || sid,
             activityName: scActivityName(),
-            activityType: "Skill Clash Group Work",
-            score: points,
-            total: 10,
-            notes: comment || "Teacher group points"
+            activityType: "Skill Clash",
+            score: finalMark,
+            total: finalMax,
+            notes: comment || "Final teacher mark for Skill Clash group work"
           });
         }
       }catch(e){ console.log("Could not save teacher feedback to control center:", e); }
