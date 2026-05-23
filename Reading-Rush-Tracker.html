@@ -153,6 +153,7 @@
 </div>
 <div id="rewardPopup" class="rewardPopup hidden"><div class="rewardCard"><div id="rewardEmoji" class="rewardEmoji">🎰</div><div id="rewardTitle" class="rewardTitle">Reward</div><div id="rewardText" class="rewardText">Loading...</div><button onclick="closeReward()">OK</button></div></div>
 <script>
+  let collectionUIBusy = false;
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
 const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
@@ -454,9 +455,93 @@ async function loadExampleCollection(){byId('collectionTitleInput').value='Dream
 Omar dreamed that he entered an exam room and suddenly forgot his pencil. Everyone else was writing quickly, but his paper was empty. Then his teacher smiled and gave him a glowing pencil. When Omar started writing, the answers appeared clearly in his mind.
 
 Aisha dreamed she was walking under the ocean without needing to breathe. Colorful fish swam around her, and a turtle showed her a hidden door made of shells. Behind the door, she found a peaceful garden full of light.`;await generateFullCollection()}
-function renderCollections(s){const select=byId('editCollectionSelect');const list=byId('collectionsList');if(!select||!list)return;const cols=Object.values(s.collections||{});select.innerHTML='<option value=\"\">Select collection</option>'+cols.map(c=>`<option value=\"${c.id}\">${esc(c.title)}</option>`).join('');if(s.currentCollectionId&&s.collections?.[s.currentCollectionId])select.value=s.currentCollectionId;list.innerHTML=cols.length?cols.map(c=>`<details><summary>📦 ${esc(c.title)} <span class=\"tinyPill\">${(c.paragraphs||[]).length} paragraphs</span></summary><div class=\"mini\" style=\"margin-top:8px\">Questions are hidden to keep the dashboard clean.</div><button onclick=\"selectCollection('${c.id}')\">Use Collection</button><button class=\"danger\" onclick=\"deleteCollection('${c.id}')\">Delete</button></details>`).join(''):'<div class=\"status\">No collections yet.</div>';renderEditCollection()}
+function renderCollections(s){
+    if(collectionUIBusy) return;
+
+  const select = byId('editCollectionSelect');
+  const list = byId('collectionsList');
+  if(!select || !list) return;
+
+  const cols = Object.values(s.collections || {});
+
+  const oldOpen = Array.from(list.querySelectorAll('details[data-id]'))
+    .filter(d => d.open)
+    .map(d => d.dataset.id);
+
+  const oldSelect = select.value;
+
+  select.innerHTML =
+    '<option value="">Select collection</option>' +
+    cols.map(c => `<option value="${c.id}">${esc(c.title)}</option>`).join('');
+
+  if(oldSelect) select.value = oldSelect;
+  else if(s.currentCollectionId && s.collections?.[s.currentCollectionId]){
+    select.value = s.currentCollectionId;
+  }
+
+  list.innerHTML = cols.length ? cols.map(c => `
+    <details data-id="${c.id}" ${oldOpen.includes(c.id) ? 'open' : ''}>
+      <summary onclick="event.stopPropagation();">
+        📦 ${esc(c.title)}
+        <span class="tinyPill">${(c.paragraphs || []).length} paragraphs</span>
+      </summary>
+
+      <div class="mini" style="margin-top:8px">
+        Questions are hidden to keep the dashboard clean.
+      </div>
+
+      <button onclick="event.stopPropagation();selectCollection('${c.id}')">
+        Use Collection
+      </button>
+
+      <button class="danger" onclick="event.stopPropagation();deleteCollection('${c.id}')">
+        Delete
+      </button>
+    </details>
+  `).join('') : '<div class="status">No collections yet.</div>';
+
+  renderEditCollection();
+}
 function renderEditCollection(){const s=stateCache||defaultState();const box=byId('paragraphsList');if(!box)return;const col=s.collections?.[getSelectedCollectionId()||s.currentCollectionId];if(!col){box.innerHTML='<div class=\"status\">Select a collection.</div>';return}box.innerHTML=`<details><summary>📖 <span class="selectedCollectionTitle">${esc(col.title)}</span> <span class=\"tinyPill\">${(col.paragraphs||[]).length} paragraphs</span></summary>`+(col.paragraphs||[]).map((p,i)=>`<div class=\"row\"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class=\"bossBadge\">Boss</span>':''}<div class=\"mini\">${(p.questions||[]).length} questions • Keywords: ${esc((p.keywords||[]).join(', ')||'none')}</div></div>`).join('')+`</details>`}
-async function selectCollection(id){const s=await getState();const col=s.collections?.[id];if(!col)return;s.currentCollectionId=id;s.currentCollectionTitle=col.title;s.stage='waiting';s.answers={};s.studentProgress={};s.lessonPlan=buildLessonPlanObject(s);await setState(s)}async function deleteCollection(id){const s=await getState();delete s.collections[id];if(s.currentCollectionId===id){s.currentCollectionId=null;s.currentCollectionTitle=''}await setState(s)}
+async function selectCollection(id){
+  event?.stopPropagation?.();
+
+  const s = await getState();
+  const col = s.collections?.[id];
+  if(!col) return;
+
+  s.currentCollectionId = id;
+  s.currentCollectionTitle = col.title;
+  s.stage = 'waiting';
+
+  // keep collection safe
+  if(!s.answers) s.answers = {};
+  if(!s.studentProgress) s.studentProgress = {};
+
+  s.lessonPlan = buildLessonPlanObject(s);
+
+  await setState(s);
+
+  renderCollections(s);
+  renderTeacher?.();
+}
+  async function deleteCollection(id){
+
+  event?.stopPropagation?.();
+
+  const s = await getState();
+
+  delete s.collections[id];
+
+  if(s.currentCollectionId === id){
+    s.currentCollectionId = null;
+    s.currentCollectionTitle = '';
+  }
+
+  await setState(s);
+
+  renderCollections(s);
+}
 function getInitialParaIndex(s,student){const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||1;const mates=Object.values(s.students||{}).filter(st=>st.group===student.group).sort((a,b)=>a.name.localeCompare(b.name));const idx=Math.max(0,mates.findIndex(st=>st.id===student.id));return idx%total}
 async function startCollectionChallenge(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select a collection first.');return}if(!col.paragraphs||!col.paragraphs.length){alert('Collection needs paragraphs.');return}s.stage='playing';s.roundStartTime=Date.now();s.answers={};s.events=[];s.studentProgress={};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:getInitialParaIndex(s,st),qIndex:0,done:false}});s.final=false;await setState(s)}async function startBossRound(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select collection first.');return}const last=(col.paragraphs||[]).length-1;if(last<0)return;s.stage='boss';s.roundStartTime=Date.now();s.boss=true;s.studentProgress=s.studentProgress||{};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:last,qIndex:0,done:false}});await setState(s)}
 async function stopChallenge(){const s=await getState();s.stage='final';s.final=true;s.analytics=buildAnalytics(s);await setState(s)}
