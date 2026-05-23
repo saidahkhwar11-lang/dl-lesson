@@ -139,39 +139,47 @@
     <button onclick="studentRefresh()">🔄 Refresh</button>
     <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Lesson Plan</button>
   </div>
-  
-  <div class="studentInfoBar">
+
+  <div class="card studentTopBar">
+  <div>
+    <h2 id="studentWelcome">Welcome</h2>
+    <div class="stageBar" id="studentStages"></div>
+  </div>
+
+  <div>
+    <div id="studentInstruction" class="status">Waiting...</div>
+    <div id="studentProgress" class="progressPill">Progress will appear here.</div>
+  </div>
+
+  <div>
+    <h3>🏆 Leaderboard</h3>
+    <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
+  </div>
+</div>
+
+
+<div class="studentInfoBar">
+
   <div class="studentInfoCard">
     <h3>🎯 Main Goal</h3>
-    <p id="studentMainGoal">Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.</p>
+    <p id="studentMainGoal">
+      Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.
+    </p>
   </div>
 
   <div class="studentInfoCard">
     <h3>📌 Instructions</h3>
-    <p id="studentMainInstructions">Read carefully, use context clues, answer one question at a time, and move through the collection.</p>
+    <p id="studentMainInstructions">
+      Read carefully, use context clues, answer one question at a time, and move through the collection.
+    </p>
   </div>
 
   <div class="studentInfoCard">
     <h3>⏱️ Paragraph Progress</h3>
     <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
   </div>
+
 </div>
-
-  <div class="card studentTopBar">
-    <div>
-      <h2 id="studentWelcome">Welcome</h2>
-      <div class="stageBar" id="studentStages"></div>
-    </div>
-    <div>
-      <div id="studentInstruction" class="status">Waiting...</div>
-      <div id="studentProgress" class="progressPill">Progress will appear here.</div>
-    </div>
-    <div>
-      <h3>🏆 Leaderboard</h3>
-      <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
-    </div>
-  </div>
-
   <div class="studentGameGrid">
     <div class="card readingSide">
       <div class="readingMeta">
