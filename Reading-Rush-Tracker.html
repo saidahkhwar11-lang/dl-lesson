@@ -848,15 +848,50 @@ async function saveReadingRushToTeacherControl(s){
     const group = String(currentUser?.group || '');
     const groupScore = Number((s.scores || {})[group] || 0);
     const myEvents = (s.events || []).filter(e => String(e.studentId) === String(id));
-    const myPoints = myEvents.reduce((sum,e)=>sum + Number(e.pointsDelta || 0), 0);
+const allParagraphs =
+  s.collections?.[s.currentCollectionId]?.paragraphs || [];
+
+const totalQuestions = allParagraphs.reduce((sum,p)=>
+  sum + ((p.questions || []).length), 0);
+
+const correctAnswers = myEvents.filter(e => e.correct).length;
+
+const percentage =
+  totalQuestions
+    ? (correctAnswers / totalQuestions)
+    : 0;
+
+// Reading Rush weight = 30
+const weightedScore = Math.round(percentage * 30);
     const correct = myEvents.filter(e => e.correct).length;
     const total = myEvents.length;
 
-    const record = {
-      activityType: 'Reading Rush',
-      activityName: s.currentCollectionTitle || 'Reading Rush Collection',
-      score: myPoints,
-      total: total,
+    const allParagraphs =
+  s.collections?.[s.currentCollectionId]?.paragraphs || [];
+
+const totalQuestions = allParagraphs.reduce((sum,p)=>
+  sum + ((p.questions || []).length), 0);
+
+const correctAnswers = myEvents.filter(e => e.correct).length;
+
+const percentage =
+  totalQuestions
+    ? (correctAnswers / totalQuestions)
+    : 0;
+
+const weightedScore = Math.round(percentage * 30);
+
+const record = {
+  activityType: 'Reading Rush',
+  activityName: s.currentCollectionTitle || 'Reading Rush Collection',
+
+  score: weightedScore,
+  total: 30,
+
+  correct: correctAnswers,
+  questionsTotal: totalQuestions,
+
+  percentage: Math.round(percentage * 100)
       correct: correct,
       group: group,
       groupScore: groupScore,
