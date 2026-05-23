@@ -805,38 +805,38 @@ function getSecureHubStudent(){
 }
 
 function syncSecureHubLoginToReadingRush(){
-  const s = getSecureHubStudent();
-  if(!s) return;
 
-  const nameBox = byId('studentName');
-  const idBox = byId('studentId');
-  const classBox = byId('studentClass');
+  const name =
+    localStorage.getItem('secureHubStudentName') ||
+    localStorage.getItem('studentName') ||
+    sessionStorage.getItem('secureHubStudentName') ||
+    sessionStorage.getItem('studentName') ||
+    '';
 
-  if(nameBox){
-    nameBox.disabled = false;
-    nameBox.readOnly = false;
-    nameBox.value = s.name || '';
-    nameBox.dispatchEvent(new Event('input', {bubbles:true}));
-    nameBox.dispatchEvent(new Event('change', {bubbles:true}));
+  const id =
+    localStorage.getItem('secureHubStudentId') ||
+    localStorage.getItem('studentId') ||
+    sessionStorage.getItem('secureHubStudentId') ||
+    sessionStorage.getItem('studentId') ||
+    '';
+
+  const nameInput = byId('studentName');
+  const idInput = byId('studentId');
+
+  if(nameInput && name){
+    nameInput.value = name;
+    nameInput.readOnly = true;
   }
 
-  if(idBox){
-    idBox.disabled = false;
-    idBox.readOnly = false;
-    idBox.value = s.studentId || s.password || '';
-    idBox.dispatchEvent(new Event('input', {bubbles:true}));
-    idBox.dispatchEvent(new Event('change', {bubbles:true}));
-  }
-
-  if(classBox && (s.className || s.classId)){
-    const wanted = String(s.className || s.classId || '').trim();
-    const opt = Array.from(classBox.options).find(o =>
-      String(o.value).trim() === wanted || String(o.text).trim() === wanted
-    );
-    if(opt) classBox.value = opt.value;
+  if(idInput && id){
+    idInput.value = id;
+    idInput.readOnly = true;
   }
 }
-
+  window.addEventListener('load', function(){
+  setTimeout(syncSecureHubLoginToReadingRush, 1000);
+});
+  
 async function saveReadingRushToTeacherControl(s){
   try{
     const secure = getSecureHubStudent();
