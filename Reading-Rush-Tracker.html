@@ -36,28 +36,94 @@
 .studentNameCell{font-weight:900;color:#203a78;border-radius:12px}
 .progressSmall{font-size:12px;color:#526790;font-weight:800}
 .scoreGood{color:#157347;font-weight:900}.scoreBad{color:#b4233a;font-weight:900}.scoreNeutral{color:#526790;font-weight:900}
-  .studentInfoBar{
+ .studentInfoBar{
   display:grid;
-  grid-template-columns:1fr 1fr 1.1fr;
-  gap:12px;
-  margin:12px 0 14px;
+  grid-template-columns:1fr 1fr 1.15fr;
+  gap:10px;
+  margin:10px 0 12px;
+}
+  .studentTopBar{
+  padding:14px 18px!important;
+  margin-bottom:10px!important;
+  gap:16px!important;
+  align-items:center!important;
+}
+
+#studentWelcome{
+  font-size:24px!important;
+  line-height:1.2!important;
+  margin-bottom:8px!important;
+}
+
+.studentTopBar .stageBar{
+  gap:8px!important;
+}
+
+.studentTopBar .stage{
+  font-size:12px!important;
+  padding:6px 12px!important;
+  border-radius:999px!important;
+}
+
+#studentInstruction,
+#studentProgress{
+  font-size:14px!important;
+  padding:10px 14px!important;
+  margin:6px 0!important;
+  border-radius:16px!important;
+}
+
+.studentLeaderboardMini{
+  min-width:260px!important;
+}
+
+.studentLeaderboardMini .leaderboardItem{
+  padding:10px 14px!important;
+  font-size:14px!important;
+}
+
+.studentTopBar h3{
+  font-size:18px!important;
+  margin-bottom:8px!important;
+}
+
+@media(max-width:900px){
+  .studentTopBar{
+    grid-template-columns:1fr!important;
+  }
+
+  #studentWelcome{
+    font-size:21px!important;
+  }
 }
 
 .studentInfoCard{
   background:linear-gradient(135deg,#ffffff,#f8fbff);
   border:1px solid #dfe8ff;
-  border-radius:20px;
-  padding:12px;
+  border-radius:18px;
+  padding:12px 14px;
+  min-height:150px;
 }
 
 .studentInfoCard h3{
-  margin-bottom:6px;
+  font-size:20px;
+  margin-bottom:8px;
 }
 
 .studentInfoCard p{
   font-size:13px;
-  line-height:1.45;
+  line-height:1.5;
   color:#42557f;
+}
+
+.studentInfoCard h3::after{
+  content:"";
+  display:block;
+  width:38px;
+  height:3px;
+  background:#7d5cff;
+  border-radius:999px;
+  margin-top:7px;
 }
 
 @media(max-width:950px){
@@ -65,7 +131,6 @@
     grid-template-columns:1fr;
   }
 }
-
 </style>
 </head>
 <body>
