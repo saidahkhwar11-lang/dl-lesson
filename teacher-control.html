@@ -114,7 +114,7 @@ button.purple{background:#7d5cff}
   margin:2px;
 }
 .tableWrap{overflow:auto;border:1px solid #dfe8ff;border-radius:18px;background:white}
-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:760px}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;min-width:1120px}
 th{
   position:sticky;
   top:0;
@@ -129,6 +129,10 @@ td{padding:9px 10px;border-bottom:1px solid #edf2ff;vertical-align:top}
 tr:last-child td{border-bottom:none}
 .scoreGood{color:#157347;font-weight:900}
 .scoreBad{color:#b4233a;font-weight:900}
+.scoreMid{color:#b86a00;font-weight:900}
+.programCell{line-height:1.45;white-space:nowrap}
+.programCell .raw{font-size:11px;color:#667497;font-weight:700}
+.weightNote{font-size:11px;color:#667497;font-weight:700}
 .bigNumber{font-size:28px;font-family:Quicksand,sans-serif;font-weight:900;color:#203a78}
 .studentCard{
   background:linear-gradient(135deg,#fff,#f8fbff);
@@ -452,29 +456,196 @@ async function deleteStudent(classId,studentId){
   await db.ref("teacherControlCenter/classes/"+classId+"/students/"+studentId).remove();
 }
 
+
+const PROGRAM_WEIGHTS = {
+  dl: {label:'DL Lesson', weight:50},
+  skill: {label:'Skill Clash', weight:20},
+  reading: {label:'Reading Rush', weight:30}
+};
+
+function normalizeProgramName(record){
+  const raw = String(
+    record.program || record.app || record.activityType || record.type || record.activityName || record.activity || ''
+  ).toLowerCase();
+
+  if(raw.includes('reading') || raw.includes('rush')) return 'reading';
+  if(raw.includes('skill') || raw.includes('clash') || raw.includes('debate') || raw.includes('battle')) return 'skill';
+  if(raw.includes('dl') || raw.includes('lesson') || raw.includes('station')) return 'dl';
+
+  return 'dl';
+}
+
+function normalizeClassForCompare(value){
+  return cleanKey(String(value || '').replace(/-/g,'_'));
+}
+
+function normalizeStudentForCompare(value){
+  return cleanKey(value || '');
+}
+
+function recordScore(record){
+  const score = Number(
+    record.score ?? record.earned ?? record.points ?? record.mark ?? record.finalScore ?? 0
+  );
+  const total = Number(
+    record.total ?? record.max ?? record.fullMark ?? record.outOf ?? record.maxScore ?? 0
+  );
+  return {score:isNaN(score)?0:score,total:isNaN(total)?0:total};
+}
+
+function pushUniqueRecord(arr, seen, record, fallback){
+  if(!record) return;
+  const classId = cleanKey(record.classId || record.className || fallback?.classId || 'unknown_class');
+  const studentId = cleanKey(record.studentId || record.password || record.id || fallback?.studentId || 'unknown_student');
+  const programKey = normalizeProgramName(record);
+  const sc = recordScore(record);
+  const time = Number(record.time || record.updatedAt || record.createdAt || record.savedAt || 0) || 0;
+  const activityName = record.activityName || record.activity || record.title || PROGRAM_WEIGHTS[programKey].label;
+  const key = String(record.recordId || record.id || [classId, studentId, programKey, activityName, sc.score, sc.total, time].join('|'));
+  if(seen[key]) return;
+  seen[key] = true;
+  arr.push({
+    ...record,
+    classId,
+    studentId,
+    programKey,
+    activityName,
+    activityType: PROGRAM_WEIGHTS[programKey].label,
+    score: sc.score,
+    total: sc.total,
+    date: record.date || '',
+    time
+  });
+}
+
 function allRecordsArray(){
-  const records=getRecords();
   const arr=[];
+  const seen={};
+
+  // Main shared records path used by DL Lesson + Skill Clash and future pages
+  const records=controlData.records || {};
   Object.keys(records).forEach(classId=>{
     Object.keys(records[classId]||{}).forEach(studentId=>{
       Object.keys(records[classId][studentId]||{}).forEach(recordId=>{
-        arr.push({classId,studentId,recordId,...records[classId][studentId][recordId]});
+        pushUniqueRecord(arr, seen, records[classId][studentId][recordId], {classId,studentId,recordId});
       });
     });
   });
+
+  // Reading Rush currently saves latest/current record here
+  const perf=controlData.performance || {};
+  Object.keys(perf).forEach(classId=>{
+    Object.keys(perf[classId]||{}).forEach(studentId=>{
+      Object.keys(perf[classId][studentId]||{}).forEach(programId=>{
+        pushUniqueRecord(arr, seen, perf[classId][studentId][programId], {classId,studentId,recordId:programId});
+      });
+    });
+  });
+
+  // Extra Reading Rush/activity-history compatibility path
+  const activityRecords=controlData.activityRecords || {};
+  Object.keys(activityRecords).forEach(programId=>{
+    Object.keys(activityRecords[programId]||{}).forEach(classId=>{
+      Object.keys(activityRecords[programId][classId]||{}).forEach(studentId=>{
+        const item=activityRecords[programId][classId][studentId];
+        if(item && typeof item === 'object'){
+          if(item.score !== undefined || item.activityName || item.activityType){
+            pushUniqueRecord(arr, seen, {...item, activityType:item.activityType || programId}, {classId,studentId,recordId:programId});
+          }else{
+            Object.keys(item).forEach(recordId=>{
+              pushUniqueRecord(arr, seen, {...item[recordId], activityType:item[recordId]?.activityType || programId}, {classId,studentId,recordId});
+            });
+          }
+        }
+      });
+    });
+  });
+
   return arr;
 }
 
 function classRecords(classId){
-  return allRecordsArray().filter(r=>r.classId===classId);
+  const classes=getClasses();
+  const cls=classes[classId] || {};
+  const wantedClass=normalizeClassForCompare(classId);
+  const wantedName=normalizeClassForCompare(cls.name || classId);
+  return allRecordsArray().filter(r=>{
+    return normalizeClassForCompare(r.classId)===wantedClass ||
+           normalizeClassForCompare(r.className)===wantedName ||
+           normalizeClassForCompare(r.className)===wantedClass ||
+           normalizeClassForCompare(r.classId)===wantedName;
+  });
+}
+
+function studentRecordsForClass(classId, student){
+  const sid1=normalizeStudentForCompare(student.id);
+  const sid2=normalizeStudentForCompare(student.password);
+  return classRecords(classId).filter(r=>{
+    const rid=normalizeStudentForCompare(r.studentId || r.password || r.id);
+    return rid===sid1 || rid===sid2;
+  });
+}
+
+function buildPerformanceSummary(records){
+  const summary={
+    dl:{score:0,total:0,count:0,percent:0,weighted:0},
+    skill:{score:0,total:0,count:0,percent:0,weighted:0},
+    reading:{score:0,total:0,count:0,percent:0,weighted:0},
+    totalScore:0,
+    totalMarks:0,
+    activities:records.length,
+    finalPercent:0
+  };
+
+  records.forEach(r=>{
+    const key=normalizeProgramName(r);
+    const sc=recordScore(r);
+    if(!summary[key]) return;
+    summary[key].score += sc.score;
+    summary[key].total += sc.total;
+    summary[key].count += 1;
+    summary.totalScore += sc.score;
+    summary.totalMarks += sc.total;
+  });
+
+  Object.keys(PROGRAM_WEIGHTS).forEach(key=>{
+    const item=summary[key];
+    item.percent = item.total ? Math.round((item.score/item.total)*100) : 0;
+    item.weighted = Math.round((item.percent * PROGRAM_WEIGHTS[key].weight) / 100);
+    summary.finalPercent += item.weighted;
+  });
+
+  return summary;
+}
+
+function scoreClass(percent){
+  if(percent>=70) return 'scoreGood';
+  if(percent>=50) return 'scoreMid';
+  return 'scoreBad';
+}
+
+function programCellHtml(item, key){
+  const w=PROGRAM_WEIGHTS[key].weight;
+  return `<div class="programCell">
+    <span class="${scoreClass(item.percent)}">${item.weighted}/${w}</span>
+    <div class="raw">${item.percent}% • ${item.score}/${item.total} • ${item.count} act.</div>
+  </div>`;
 }
 
 function renderStats(){
   const classes=getClasses();
   const totalStudents=Object.values(classes).reduce((sum,c)=>sum+Object.keys(c.students||{}).length,0);
   const records=allRecordsArray();
-  const scored=records.filter(r=>Number(r.total)>0);
-  const avg=scored.length?Math.round(scored.reduce((s,r)=>s+(Number(r.score||0)/Number(r.total||1)*100),0)/scored.length):0;
+  const studentFinals=[];
+  Object.values(classes).forEach(cls=>{
+    Object.values(cls.students||{}).forEach(st=>{
+      const recs=studentRecordsForClass(cls.id, st);
+      if(recs.length){
+        studentFinals.push(buildPerformanceSummary(recs).finalPercent);
+      }
+    });
+  });
+  const avg=studentFinals.length?Math.round(studentFinals.reduce((a,b)=>a+b,0)/studentFinals.length):0;
   byId("totalStudentsBox").innerText=totalStudents;
   byId("totalRecordsBox").innerText=records.length;
   byId("averageScoreBox").innerText=avg+"%";
@@ -487,28 +658,26 @@ function renderClassRecords(){
   if(!box)return;
   if(!cls){box.innerHTML='<div class="status">Choose a class.</div>';return}
   const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-  const records=classRecords(classId);
 
   const rows=students.map(st=>{
-    const r=records.filter(x=>x.studentId===st.id);
-    const totalActivities=r.length;
-    const totalScore=r.reduce((s,x)=>s+Number(x.score||0),0);
-    const totalMarks=r.reduce((s,x)=>s+Number(x.total||0),0);
-    const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
-    const last=r.sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
+    const r=studentRecordsForClass(classId, st);
+    const summary=buildPerformanceSummary(r);
+    const last=r.slice().sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
     return `<tr>
       <td><b>${esc(st.name)}</b></td>
-      <td>${esc(st.password)}</td>
-      <td>${totalActivities}</td>
-      <td><span class="${avg>=70?'scoreGood':'scoreBad'}">${avg}%</span></td>
-      <td>${totalScore} / ${totalMarks}</td>
+      <td>${esc(st.password || st.id)}</td>
+      <td>${programCellHtml(summary.dl,'dl')}</td>
+      <td>${programCellHtml(summary.skill,'skill')}</td>
+      <td>${programCellHtml(summary.reading,'reading')}</td>
+      <td><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
       <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
       <td>${last?esc(last.date||""):"-"}</td>
     </tr>`;
   }).join("");
 
-  box.innerHTML=`<div class="tableWrap"><table>
-    <thead><tr><th>Student</th><th>ID</th><th>Activities Done</th><th>Average</th><th>Total Score</th><th>Last Activity</th><th>Date</th></tr></thead>
+  box.innerHTML=`<div class="weightNote">Final Term = DL Lesson 50% + Skill Clash 20% + Reading Rush 30%</div>
+  <div class="tableWrap"><table>
+    <thead><tr><th>Student</th><th>ID</th><th>DL Lesson 50%</th><th>Skill Clash 20%</th><th>Reading Rush 30%</th><th>Final Term 100%</th><th>Last Activity</th><th>Date</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
 }
@@ -532,58 +701,61 @@ function renderIndividualRecord(){
   const box=byId("individualRecords");
   if(!st){summary.innerHTML='<div class="status">Choose student.</div>';box.innerHTML="";return}
 
-  const records=classRecords(classId).filter(r=>r.studentId===studentId).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
-  const totalScore=records.reduce((s,x)=>s+Number(x.score||0),0);
-  const totalMarks=records.reduce((s,x)=>s+Number(x.total||0),0);
-  const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
+  const records=studentRecordsForClass(classId, st).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+  const perf=buildPerformanceSummary(records);
 
   summary.innerHTML=`<div class="studentCard">
     <b>${esc(st.name)}</b>
-    <div class="pill">ID: ${esc(st.password)}</div>
+    <div class="pill">ID: ${esc(st.password || st.id)}</div>
+    <div class="pill">DL: ${perf.dl.weighted}/50</div>
+    <div class="pill">Skill Clash: ${perf.skill.weighted}/20</div>
+    <div class="pill">Reading Rush: ${perf.reading.weighted}/30</div>
+    <div class="pill">Final Term: ${perf.finalPercent}%</div>
     <div class="pill">Activities: ${records.length}</div>
-    <div class="pill">Average: ${avg}%</div>
-    <div class="pill">Total: ${totalScore}/${totalMarks}</div>
   </div>`;
 
   if(!records.length){box.innerHTML='<div class="status">No records for this student yet.</div>';return}
   box.innerHTML=`<div class="tableWrap recordBox"><table>
-    <thead><tr><th>Date</th><th>Activity</th><th>Type</th><th>Score</th><th>Percentage</th><th>Notes</th></tr></thead>
+    <thead><tr><th>Date</th><th>Program</th><th>Activity</th><th>Score</th><th>Percentage</th><th>Notes</th></tr></thead>
     <tbody>${records.map(r=>{
-      const pct=Number(r.total)>0?Math.round(Number(r.score||0)/Number(r.total||1)*100):0;
+      const sc=recordScore(r);
+      const pct=sc.total>0?Math.round(sc.score/sc.total*100):0;
+      const prog=PROGRAM_WEIGHTS[normalizeProgramName(r)].label;
       return `<tr>
         <td>${esc(r.date||"")}</td>
+        <td>${esc(prog)}</td>
         <td><b>${esc(r.activityName||r.activity||"Activity")}</b></td>
-        <td>${esc(r.activityType||"")}</td>
-        <td>${Number(r.score||0)} / ${Number(r.total||0)}</td>
-        <td><span class="${pct>=70?'scoreGood':'scoreBad'}">${pct}%</span></td>
+        <td>${sc.score} / ${sc.total}</td>
+        <td><span class="${scoreClass(pct)}">${pct}%</span></td>
         <td>${esc(r.notes||"")}</td>
       </tr>`;
     }).join("")}</tbody>
   </table></div>`;
 }
 
-/* This function can be called by any activity page later:
-   saveStudentPerformance({
-     classId:'9_1',
-     studentId:'12345',
-     studentName:'Sara',
-     activityName:'Reading Rush - Dreams',
-     activityType:'Reading Rush',
-     score:8,
-     total:10,
-     notes:'Completed Paragraph 1'
-   })
+/* This function can be called by DL Lesson, Skill Clash, and Reading Rush.
+   It saves one permanent activity record by Student ID.
+   Accepted program/app/activityType values:
+   - DL Lesson
+   - Skill Clash
+   - Reading Rush
 */
 async function saveStudentPerformance(record){
   if(!db){console.warn("Firebase not ready.");return}
-  const classId=cleanKey(record.classId||"unknown_class");
+  const classId=cleanKey(record.classId||record.className||"unknown_class");
   const studentId=cleanKey(record.studentId||record.password||record.studentName||Date.now());
-  const recordId="rec_"+Date.now()+"_"+Math.floor(Math.random()*999);
+  const programKey=normalizeProgramName(record);
+  const recordId=(record.recordId || (programKey+"_"+Date.now()+"_"+Math.floor(Math.random()*999))).replace(/[.#$\[\]\/]/g,"_");
+  const sc=recordScore(record);
   const finalRecord={
     ...record,
     classId,
     studentId,
     recordId,
+    program:PROGRAM_WEIGHTS[programKey].label,
+    activityType:PROGRAM_WEIGHTS[programKey].label,
+    score:sc.score,
+    total:sc.total,
     date:record.date||today(),
     time:Date.now()
   };
@@ -605,17 +777,14 @@ function downloadClassCSV(){
   const classId=byId("recordsClassSelect")?.value;
   const cls=getClasses()[classId];
   if(!cls){alert("Choose class.");return}
-  const rows=[["Student Name","ID","Activities Done","Average %","Total Score","Total Marks","Last Activity","Last Date"]];
-  const records=classRecords(classId);
+  const rows=[["Student Name","ID","DL Weighted /50","DL Raw %","DL Score","DL Total","Skill Weighted /20","Skill Raw %","Skill Score","Skill Total","Reading Weighted /30","Reading Raw %","Reading Score","Reading Total","Final Term %","Activities","Last Activity","Last Date"]];
   Object.values(cls.students||{}).forEach(st=>{
-    const r=records.filter(x=>x.studentId===st.id);
-    const totalScore=r.reduce((s,x)=>s+Number(x.score||0),0);
-    const totalMarks=r.reduce((s,x)=>s+Number(x.total||0),0);
-    const avg=totalMarks?Math.round(totalScore/totalMarks*100):0;
-    const last=r.sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
-    rows.push([st.name,st.password,r.length,avg,totalScore,totalMarks,last?.activityName||"",last?.date||""]);
+    const r=studentRecordsForClass(classId, st);
+    const p=buildPerformanceSummary(r);
+    const last=r.slice().sort((a,b)=>Number(b.time||0)-Number(a.time||0))[0];
+    rows.push([st.name,st.password||st.id,p.dl.weighted,p.dl.percent,p.dl.score,p.dl.total,p.skill.weighted,p.skill.percent,p.skill.score,p.skill.total,p.reading.weighted,p.reading.percent,p.reading.score,p.reading.total,p.finalPercent,r.length,last?.activityName||"",last?.date||""]);
   });
-  downloadText((cls.name||"class")+"_performance.csv",toCSV(rows));
+  downloadText((cls.name||"class")+"_weighted_performance.csv",toCSV(rows));
 }
 
 function downloadStudentCSV(){
@@ -624,13 +793,24 @@ function downloadStudentCSV(){
   const cls=getClasses()[classId];
   const st=cls?.students?.[studentId];
   if(!st){alert("Choose student.");return}
-  const rows=[["Date","Activity","Type","Score","Total","Percentage","Notes"]];
-  const records=classRecords(classId).filter(r=>r.studentId===studentId).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+  const records=studentRecordsForClass(classId, st).sort((a,b)=>Number(b.time||0)-Number(a.time||0));
+  const p=buildPerformanceSummary(records);
+  const rows=[
+    ["Student",st.name],
+    ["ID",st.password||st.id],
+    ["DL Lesson /50",p.dl.weighted],
+    ["Skill Clash /20",p.skill.weighted],
+    ["Reading Rush /30",p.reading.weighted],
+    ["Final Term %",p.finalPercent],
+    [],
+    ["Date","Program","Activity","Score","Total","Percentage","Notes"]
+  ];
   records.forEach(r=>{
-    const pct=Number(r.total)>0?Math.round(Number(r.score||0)/Number(r.total||1)*100):0;
-    rows.push([r.date||"",r.activityName||r.activity||"",r.activityType||"",r.score||0,r.total||0,pct,r.notes||""]);
+    const sc=recordScore(r);
+    const pct=sc.total>0?Math.round(sc.score/sc.total*100):0;
+    rows.push([r.date||"",PROGRAM_WEIGHTS[normalizeProgramName(r)].label,r.activityName||r.activity||"",sc.score,sc.total,pct,r.notes||""]);
   });
-  downloadText((st.name||"student")+"_record.csv",toCSV(rows));
+  downloadText((st.name||"student")+"_weighted_record.csv",toCSV(rows));
 }
 
 function refreshAll(){
