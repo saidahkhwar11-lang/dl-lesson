@@ -175,7 +175,7 @@ tr:last-child td{border-bottom:none}
 }
 .termControls{
   display:grid;
-  grid-template-columns:1fr 1fr auto;
+  grid-template-columns:1fr 1fr auto auto;
   gap:10px;
   align-items:end;
   background:#ffffffaa;
@@ -341,8 +341,10 @@ td.commentCol{background:#fffdf5;min-width:240px}
               <label>Studying Year</label>
               <input id="studyYearInput" placeholder="2025-2026" onchange="saveTrackerSettings()">
             </div>
-            <button class="purple" onclick="saveTrackerSettings()">Update</button>
+            <button class="purple" onclick="saveTrackerSettings()">View Term</button>
+            <button class="success" onclick="setActiveSavingTerm()">✅ Set Active Saving Term</button>
           </div>
+          <div id="activeSavingTermBox" class="status good" style="margin-top:10px;">Active saving term: loading...</div>
         </div>
         <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Tracker Excel/CSV</button>
         <button class="danger" onclick="clearDLRecordsOnly()">🧹 Clear DL Lesson Records</button>
@@ -394,7 +396,7 @@ let controlRef=null;
 let controlData={classes:{},records:{}};
 let lessonsData={};
 let lessonsRef=null;
-let trackerSettings={term:'term1',studyYear:'',dlLessonStartAt:0};
+let trackerSettings={term:'term1',studyYear:'',activeTerm:'term1',activeStudyYear:'',termStarts:{}};
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
@@ -414,6 +416,33 @@ function termLabel(term){
 }
 function getCurrentTerm(){return (trackerSettings && trackerSettings.term) || 'term1'}
 function getStudyYear(){return (trackerSettings && trackerSettings.studyYear) || defaultStudyYear()}
+function getActiveTerm(){return (trackerSettings && trackerSettings.activeTerm) || getCurrentTerm()}
+function getActiveStudyYear(){return (trackerSettings && trackerSettings.activeStudyYear) || getStudyYear()}
+function termStartKey(term, year){return String(year || getStudyYear()) + '_' + String(term || 'term1')}
+function getTermStart(term, year){
+  const starts=(trackerSettings && trackerSettings.termStarts) || {};
+  return Number(starts[termStartKey(term, year)] || 0);
+}
+function getTermFromTime(timeValue){
+  const t=Number(timeValue || 0);
+  if(!t) return null;
+  const year=getStudyYear();
+  const starts=(trackerSettings && trackerSettings.termStarts) || {};
+  let best=null;
+  let bestStart=0;
+  Object.keys(starts).forEach(key=>{
+    const parts=key.split('_');
+    const term=parts.pop();
+    const y=parts.join('_');
+    if(String(y)!==String(year)) return;
+    const st=Number(starts[key] || 0);
+    if(st && t>=st && st>=bestStart){
+      bestStart=st;
+      best=term;
+    }
+  });
+  return best;
+}
 function normalizeTerm(v){
   const raw=String(v||'').toLowerCase().replace(/\s+/g,'');
   if(raw.includes('2'))return 'term2';
@@ -425,24 +454,69 @@ function recordMatchesCurrentTerm(record){
   const year=getStudyYear();
   const rTerm=record.term || record.currentTerm || record.schoolTerm || '';
   const rYear=record.studyYear || record.academicYear || record.year || '';
-  // Old records had no term/year. Keep them visible in Term 1 so existing data is not lost.
-  if(!rTerm && !rYear) return term==='term1';
+
+  // If a record has no saved term, place it by the ACTIVE TERM START date.
+  // This prevents old marks/comments from moving into every term.
+  if(!rTerm && !rYear){
+    const inferred=getTermFromTime(record.time || record.createdAt || record.updatedAt || record.savedAt);
+    return inferred === term;
+  }
+
   const termOk=!rTerm || normalizeTerm(rTerm)===term;
   const yearOk=!rYear || String(rYear)===String(year);
   return termOk && yearOk;
 }
+function renderActiveSavingTermBox(){
+  const box=byId('activeSavingTermBox');
+  if(!box) return;
+  const activeTerm=getActiveTerm();
+  const activeYear=getActiveStudyYear();
+  const started=getTermStart(activeTerm, activeYear);
+  const startedText=started ? new Date(started).toLocaleString() : 'not set yet';
+  box.innerHTML='✅ Active saving term: <b>'+termLabel(activeTerm)+'</b> • Year: <b>'+esc(activeYear)+'</b><br><span style="font-size:12px;">New saved marks from DL Lesson, Skill Clash, and Reading Rush will go to this term. Started: '+esc(startedText)+'</span>';
+}
 async function saveTrackerSettings(){
   const term=byId('termSelect')?.value || getCurrentTerm();
   const studyYear=(byId('studyYearInput')?.value || defaultStudyYear()).trim();
-  const dlLessonStartAt=Number((trackerSettings && trackerSettings.dlLessonStartAt) || 0);
-  trackerSettings={term,studyYear,dlLessonStartAt};
+  trackerSettings=Object.assign({}, trackerSettings || {}, {term,studyYear});
   if(db){
-    await db.ref('teacherControlCenter/settings/tracker').set(trackerSettings);
+    await db.ref('teacherControlCenter/settings/tracker').update({term,studyYear});
   }
+  renderActiveSavingTermBox();
   renderStats();
   renderClassRecords();
   renderIndividualRecord();
 }
+async function setActiveSavingTerm(){
+  const term=byId('termSelect')?.value || getCurrentTerm();
+  const studyYear=(byId('studyYearInput')?.value || defaultStudyYear()).trim();
+  const starts=Object.assign({}, (trackerSettings && trackerSettings.termStarts) || {});
+  const key=termStartKey(term, studyYear);
+
+  const msg='Set '+termLabel(term)+' / '+studyYear+' as the ACTIVE saving term?\n\nFrom now on, new DL Lesson, Skill Clash, and Reading Rush marks will be counted in this term only.';
+  if(!confirm(msg)) return;
+
+  // Reset the start point for this term. Old data before this moment will not appear in this term.
+  starts[key]=Date.now();
+  trackerSettings=Object.assign({}, trackerSettings || {}, {
+    term,
+    studyYear,
+    activeTerm:term,
+    activeStudyYear:studyYear,
+    termStarts:starts
+  });
+
+  if(db){
+    await db.ref('teacherControlCenter/settings/tracker').set(trackerSettings);
+  }
+
+  renderActiveSavingTermBox();
+  renderStats();
+  renderClassRecords();
+  renderIndividualRecord();
+  alert('✅ Active saving term is now '+termLabel(term)+' / '+studyYear+'. New marks will be saved here only.');
+}
+
 
 function loginTeacher(){
   const pass=byId("teacherPassword").value;
@@ -478,9 +552,12 @@ async function initFirebase(){
       controlData=snap.exists()?snap.val():{classes:{},records:{}};
       trackerSettings=(controlData.settings && controlData.settings.tracker) || trackerSettings;
       if(!trackerSettings.studyYear) trackerSettings.studyYear=defaultStudyYear();
-      if(!trackerSettings.dlLessonStartAt) trackerSettings.dlLessonStartAt=0;
+      if(!trackerSettings.activeTerm) trackerSettings.activeTerm=trackerSettings.term || 'term1';
+      if(!trackerSettings.activeStudyYear) trackerSettings.activeStudyYear=trackerSettings.studyYear || defaultStudyYear();
+      if(!trackerSettings.termStarts) trackerSettings.termStarts={};
       if(byId('termSelect')) byId('termSelect').value=getCurrentTerm();
       if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
+      renderActiveSavingTermBox();
       refreshAll();
     });
 
@@ -493,7 +570,7 @@ async function initFirebase(){
     });
 
     const snap=await controlRef.get();
-    if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear(),dlLessonStartAt:0}}});
+    if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear(),activeTerm:'term1',activeStudyYear:defaultStudyYear(),termStarts:{}}}});
     box.className="card status good";
     box.innerHTML="✅ Firebase connected. Teacher records are saved live.";
   }catch(err){
@@ -748,7 +825,6 @@ function makeDateFromTime(ts){
 
 function addDLFullLessonRecords(arr, seen){
   const lessons=lessonsData || {};
-  const dlLessonStartAt = Number((trackerSettings && trackerSettings.dlLessonStartAt) || 0);
 
   Object.keys(lessons).forEach(lessonKey=>{
     const lessonObj=lessons[lessonKey] || {};
@@ -778,25 +854,24 @@ function addDLFullLessonRecords(arr, seen){
           total:maxMark,
           latestTime:0,
           date:today(),
-          completedCount:0
+          completedCount:0,
+          term:null,
+          studyYear:getStudyYear()
         };
       }
 
       if(!isDLLessonCompleted(lessonObj, studentData)) return;
 
       const score=getDLStudentScore(studentData);
-      const time=Number(studentData.completedAt || studentData.lastSubmitAt || studentData.lastLoginAt || studentData.startedAt || Date.now());
-
-      // If the teacher clicked "Clear DL Lesson Records", ignore all DL lesson
-      // completions before that restart point. This removes old saved work from
-      // the DL Lesson column and Performance Comments without changing DL Lesson itself.
-      if(dlLessonStartAt && time < dlLessonStartAt) return;
-
+      const time=Number(studentData.lastLoginAt || studentData.startedAt || Date.now());
+      const dlTerm=getTermFromTime(time);
+      if(!dlTerm) return; // ignore old DL live lesson data before active term start
       completedByClass[classId].completedCount++;
       if(time>completedByClass[classId].latestTime){
         completedByClass[classId].latestTime=time;
         completedByClass[classId].date=makeDateFromTime(time);
       }
+      completedByClass[classId].term=dlTerm;
       completedStudentKeys[classId+'|'+cleanKey(found.studentKey)] = true;
 
       const recordId='dl_full_'+cleanKey(lessonKey)+'_'+cleanKey(found.studentKey);
@@ -814,7 +889,7 @@ function addDLFullLessonRecords(arr, seen){
         activityName:lessonTitle,
         score:score,
         total:maxMark,
-        term:getCurrentTerm(),
+        term:dlTerm,
         studyYear:getStudyYear(),
         sourceLessonKey:lessonKey,
         isFullDLLesson:true,
@@ -854,7 +929,7 @@ function addDLFullLessonRecords(arr, seen){
           activityName:info.lessonTitle,
           score:0,
           total:info.total,
-          term:getCurrentTerm(),
+          term:info.term || getActiveTerm(),
           studyYear:getStudyYear(),
           sourceLessonKey:lessonKey,
           isFullDLLesson:true,
@@ -1172,8 +1247,8 @@ async function saveStudentPerformance(record){
     activityType:PROGRAM_WEIGHTS[programKey].label,
     score:sc.score,
     total:sc.total,
-    term:record.term || getCurrentTerm(),
-    studyYear:record.studyYear || getStudyYear(),
+    term:record.term || getActiveTerm(),
+    studyYear:record.studyYear || getActiveStudyYear(),
     date:record.date||today(),
     time:Date.now()
   };
@@ -1258,6 +1333,7 @@ function downloadStudentCSV(){
 function refreshAll(){
   if(byId('termSelect')) byId('termSelect').value=getCurrentTerm();
   if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
+  renderActiveSavingTermBox();
   fillClassSelects();
   renderClasses();
   renderStudentsTable();
@@ -1282,26 +1358,8 @@ window.addEventListener("load",()=>{
     return;
   }
 
-  if(!confirm("Clear all OLD DL Lesson marks and missed comments for this selected class and start DL Lesson tracking fresh from now? Skill Clash and Reading Rush will stay.")) return;
+  if(!confirm("Clear OLD DL Lesson records/comments for this selected class only? Skill Clash and Reading Rush will stay.")) return;
 
-  const restartAt = Date.now();
-
-  // 1) Save a restart point. This hides/removes old DL lesson station data that
-  // is being read live from the DL Lesson page, so DL Lesson 50% and Performance
-  // Comments start fresh from upcoming lessons.
-  trackerSettings = Object.assign({}, trackerSettings || {}, {
-    term: getCurrentTerm(),
-    studyYear: getStudyYear(),
-    dlLessonStartAt: restartAt
-  });
-
-  await db.ref("teacherControlCenter/settings/tracker").update({
-    term: trackerSettings.term,
-    studyYear: trackerSettings.studyYear,
-    dlLessonStartAt: restartAt
-  });
-
-  // 2) Also delete any old saved DL records/comments from Teacher Control records path.
   const snap = await db.ref("teacherControlCenter/records/" + classId).once("value");
   const data = snap.val() || {};
   const updates = {};
@@ -1312,8 +1370,6 @@ window.addEventListener("load",()=>{
       const rec = data[studentId][recordId] || {};
 
       const text = (
-        (rec.program || "") + " " +
-        (rec.app || "") + " " +
         (rec.activityType || "") + " " +
         (rec.activityName || "") + " " +
         (rec.activity || "") + " " +
@@ -1332,15 +1388,24 @@ window.addEventListener("load",()=>{
     });
   });
 
-  if(Object.keys(updates).length){
-    await db.ref().update(updates);
+  if(count === 0){
+    alert("No old DL Lesson records found in this class.");
+    return;
   }
 
+  await db.ref().update(updates);
+
+  // Also set a fresh start point for the selected term so old live DL station data is ignored.
+  const term=byId('termSelect')?.value || getCurrentTerm();
+  const studyYear=(byId('studyYearInput')?.value || getStudyYear()).trim();
+  const starts=Object.assign({}, (trackerSettings && trackerSettings.termStarts) || {});
+  starts[termStartKey(term, studyYear)] = Date.now();
+  trackerSettings=Object.assign({}, trackerSettings || {}, {term, studyYear, activeTerm:term, activeStudyYear:studyYear, termStarts:starts});
+  await db.ref('teacherControlCenter/settings/tracker').set(trackerSettings);
+
+  alert("✅ Cleared " + count + " old DL Lesson records/comments and started a fresh DL tracker for " + termLabel(term) + ".");
   renderClassRecords();
   renderStats();
-  renderIndividualRecord();
-
-  alert("✅ DL Lesson column and Performance Comments are cleared for this class. Future DL lessons will save normally from now.");
 };
 </script>
 </body>
