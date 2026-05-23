@@ -523,27 +523,26 @@ function renderEditCollection(){
 
   box.innerHTML = paragraphs.length
     ? paragraphs.map((p,i)=>`
-      <details data-pid="${i}" style="margin-bottom:10px">
-        <summary onclick="event.stopPropagation();" style="cursor:pointer;font-weight:700">
-          📄 Paragraph ${i+1}: ${esc(p.title || 'Untitled')}
-        </summary>
+      <div class="card" style="margin-bottom:10px">
 
-        <div class="card" style="margin-top:8px">
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  ">
 
-          <div style="margin-bottom:10px">
-            <b>Text:</b>
-            <div class="mini">${esc(p.text || '')}</div>
-          </div>
+    <div style="font-weight:700">
+      📄 Paragraph ${i+1}
+    </div>
 
-          <div>
-            <b>Questions:</b>
-            <div class="tinyPill">
-              ${(p.questions || []).length} questions
-            </div>
-          </div>
+    <div class="tinyPill">
+      ${(p.questions || []).length} Questions
+    </div>
 
-        </div>
-      </details>
+  </div>
+
+</div>
     `).join('')
     : '<div class="status">No paragraphs yet.</div>';
 }
