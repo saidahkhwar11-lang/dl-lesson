@@ -83,16 +83,16 @@ function winnerGroupStudentNames(groupObj){
 
 function hideStudentUploadBoxesSafely(){
   try{
-    const all = Array.from(document.querySelectorAll('div,section,article'));
-    all.forEach(function(el){
-      const text = (el.innerText || '').trim();
-      if(text.includes('Upload your work file / picture') || text.includes('Allowed: Word, PDF, PPT, or picture')){
-        el.style.display = 'none';
-      }
+    /* IMPORTANT FIX:
+       Do NOT scan and hide parent divs by innerText.
+       The old version hid #workPage because it contains the upload text,
+       so students saw only the blue Skill Clash header.
+       Hide only the upload box itself. */
+    document.querySelectorAll('.uploadStudentBox').forEach(function(el){
+      el.style.display = 'none';
     });
   }catch(e){}
 }
-setInterval(hideStudentUploadBoxesSafely, 1000);
 window.addEventListener('load', hideStudentUploadBoxesSafely);
 
 </script>
