@@ -923,8 +923,23 @@ function safeKey(value){
 }
 
 function getSecureHubStudent(){
+
   try{
-    return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    const raw =
+      localStorage.getItem('DL_SECURE_STUDENT_LOGIN') ||
+      sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN');
+
+    if(!raw) return null;
+
+    const obj = JSON.parse(raw);
+
+    return {
+      name: obj.name || '',
+      studentId: obj.studentId || obj.id || '',
+      className: obj.className || obj.class || '',
+      classId: obj.classId || ''
+    };
+
   }catch(e){
     return null;
   }
@@ -932,35 +947,31 @@ function getSecureHubStudent(){
 
 function syncSecureHubLoginToReadingRush(){
 
-  const name =
-    localStorage.getItem('secureHubStudentName') ||
-    localStorage.getItem('studentName') ||
-    sessionStorage.getItem('secureHubStudentName') ||
-    sessionStorage.getItem('studentName') ||
-    '';
+  const secure = getSecureHubStudent();
 
-  const id =
-    localStorage.getItem('secureHubStudentId') ||
-    localStorage.getItem('studentId') ||
-    sessionStorage.getItem('secureHubStudentId') ||
-    sessionStorage.getItem('studentId') ||
-    '';
+  if(!secure) return;
 
   const nameInput = byId('studentName');
   const idInput = byId('studentId');
+  const classInput = byId('studentClass');
 
-  if(nameInput && name){
-    nameInput.value = name;
+  if(nameInput && secure.name){
+    nameInput.value = secure.name;
     nameInput.readOnly = true;
   }
 
-  if(idInput && id){
-    idInput.value = id;
+  if(idInput && secure.studentId){
+    idInput.value = secure.studentId;
     idInput.readOnly = true;
   }
+
+  if(classInput && secure.className){
+    classInput.value = secure.className;
+  }
 }
-  window.addEventListener('load', function(){
-  setTimeout(syncSecureHubLoginToReadingRush, 1000);
+
+window.addEventListener('load', function(){
+  setTimeout(syncSecureHubLoginToReadingRush, 500);
 });
   
 async function saveReadingRushToTeacherControl(s){
