@@ -628,7 +628,7 @@ function currentPQ(s){const col=s.collections?.[s.currentCollectionId];const pr=
 function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle"><b>${esc(d.p.title)}</b></div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
 function renderStudentQuestion(s,d){const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');if(!q||d.pr.done){box.innerHTML='<div class="status good">You finished all paragraphs in this collection 🎉</div>';opts.innerHTML='';byId('submitAnswerBtn').disabled=true;return}byId('questionNumberPill').innerText=`Question ${d.pr.qIndex+1} / ${(d.p.questions||[]).length}`;box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');byId('submitAnswerBtn').disabled=false}
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
-async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;let ownDelta=0;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){ownDelta=Math.abs(pts);s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} took ${ownDelta} points from Group ${target}.`}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=pts;s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=ownDelta<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(ownDelta)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const answerParaIndex=Number(pr.paraIndex||0);const answerQIndex=Number(pr.qIndex||0);const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({studentId:currentUser.id,student:currentUser.name,group:currentUser.group,paraIndex:answerParaIndex,qIndex:answerQIndex,pointsDelta:ownDelta,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);await saveReadingRushToTeacherControl(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
+async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;let ownDelta=0;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){ownDelta=Math.abs(pts);s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} took ${ownDelta} points from Group ${target}.`}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=pts;s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=ownDelta<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(ownDelta)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const answerParaIndex=Number(pr.paraIndex||0);const answerQIndex=Number(pr.qIndex||0);const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({collectionId:s.currentCollectionId||'',collectionTitle:s.currentCollectionTitle||'',studentId:currentUser.id,student:currentUser.name,group:currentUser.group,paraIndex:answerParaIndex,qIndex:answerQIndex,pointsDelta:ownDelta,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);await saveReadingRushToTeacherControl(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
 function showReward(emoji,title,text){byId('rewardEmoji').innerText=emoji;byId('rewardTitle').innerText=title;byId('rewardText').innerText=text;show('rewardPopup')}function closeReward(){hide('rewardPopup')}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 
 function safeKey(value){
@@ -676,38 +676,111 @@ function syncSecureHubLoginToReadingRush(){
   }
 }
 
+
+function getReadingRushCollectionTotalMark(s){
+  const col = s && s.collections && s.currentCollectionId ? s.collections[s.currentCollectionId] : null;
+  if(!col) return 0;
+
+  return (col.paragraphs || []).reduce(function(total, paragraph){
+    return total + (((paragraph || {}).questions || []).length || 0);
+  }, 0);
+}
+
+function getStudentReadingRushProgress(s, studentId){
+  const events = (s.events || []).filter(function(e){
+    return String(e.studentId) === String(studentId) &&
+           (!e.collectionId || !s.currentCollectionId || String(e.collectionId) === String(s.currentCollectionId));
+  });
+
+  const correct = events.filter(function(e){ return e.correct === true; }).length;
+  const answered = events.length;
+
+  return {
+    events: events,
+    correct: correct,
+    answered: answered
+  };
+}
+
+async function getActiveTeacherControlTerm(){
+  try{
+    if(!db) return {};
+    const snap = await db.ref('teacherControlCenter/settings/tracker').get();
+    const settings = snap.exists() ? (snap.val() || {}) : {};
+    return {
+      term: settings.activeSavingTerm || settings.term || 'term1',
+      studyYear: settings.studyYear || settings.academicYear || ''
+    };
+  }catch(e){
+    return {};
+  }
+}
+
 async function saveReadingRushToTeacherControl(s){
   try{
     const secure = getSecureHubStudent();
-    if(!secure || !db) return;
+    if(!secure || !db || !s) return;
 
     const id = String(secure.studentId || secure.password || currentUser?.id || '').trim();
     if(!id) return;
 
+    const collectionId = s.currentCollectionId || 'reading_rush_collection';
+    const collectionTitle = s.currentCollectionTitle || 'Reading Rush Collection';
     const group = String(currentUser?.group || '');
-    const groupScore = Number((s.scores || {})[group] || 0);
-    const myEvents = (s.events || []).filter(e => String(e.studentId) === String(id));
-    const myPoints = myEvents.reduce((sum,e)=>sum + Number(e.pointsDelta || 0), 0);
-    const correct = myEvents.filter(e => e.correct).length;
-    const total = myEvents.length;
+
+    const collectionTotal = getReadingRushCollectionTotalMark(s);
+    const progress = getStudentReadingRushProgress(s, id);
+
+    // FINAL MARK RULE:
+    // Reading Rush mark = student's correct answers / collection total questions.
+    // Group points stay only for motivation and are NOT sent as marks.
+    const finalScore = progress.correct;
+    const finalTotal = collectionTotal || progress.answered || 0;
+    const percent = finalTotal ? Math.round((finalScore / finalTotal) * 100) : 0;
+
+    const classId = secure.classId || safeKey(secure.className || currentUser?.cls || '');
+    const recordId = 'reading_rush_' + safeKey(collectionId);
+    const trackerTerm = await getActiveTeacherControlTerm();
 
     const record = {
+      recordId: recordId,
       activityType: 'Reading Rush',
-      activityName: s.currentCollectionTitle || 'Reading Rush Collection',
-      score: myPoints,
-      total: total,
-      correct: correct,
+      program: 'Reading Rush',
+      app: 'Reading Rush',
+      activityName: collectionTitle,
+      score: finalScore,
+      earned: finalScore,
+      total: finalTotal,
+      max: finalTotal,
+      percent: percent,
+      correct: progress.correct,
+      answered: progress.answered,
+      collectionTotal: finalTotal,
       group: group,
-      groupScore: groupScore,
-      classId: secure.classId || safeKey(secure.className || currentUser?.cls || ''),
+      groupScore: Number((s.scores || {})[group] || 0),
+      groupPointsForMotivationOnly: true,
+      classId: classId,
       className: secure.className || currentUser?.cls || '',
       studentId: id,
       studentName: secure.name || currentUser?.name || '',
-      updatedAt: Date.now()
+      term: trackerTerm.term || 'term1',
+      studyYear: trackerTerm.studyYear || '',
+      date: new Date().toLocaleDateString('en-GB'),
+      updatedAt: Date.now(),
+      time: Date.now(),
+      notes: 'Reading Rush final mark is based on correct answers out of the full collection total. Group points are motivation only.'
     };
 
-    await db.ref('teacherControlCenter/performance/' + record.classId + '/' + id + '/Reading_Rush').set(record);
-    await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + record.classId + '/' + id).set(record);
+    const updates = {};
+
+    // Remove old Reading Rush direct/latest records that used group points, so the Teacher Control tracker reads the accurate mark.
+    updates['teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush'] = null;
+    updates['teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id] = null;
+
+    // Save the accurate per-collection record by Student ID.
+    updates['teacherControlCenter/records/' + classId + '/' + id + '/' + recordId] = record;
+
+    await db.ref().update(updates);
   }catch(err){
     console.warn('Reading Rush tracker save skipped:', err);
   }
