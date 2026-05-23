@@ -682,66 +682,45 @@ function renderParagraphTimers(s){
   }).join('');
 }
   function renderStudentParagraphTimers(s){
-
   const wrap = byId('studentParagraphTimers');
   const box = byId('studentParagraphTimerBox');
 
-  if(!wrap || !currentUser) return;
+  if(!wrap || !box || !currentUser) return;
 
-  const col =
-    s.collections?.[s.currentCollectionId];
+  const col = s.collections?.[s.currentCollectionId];
 
-  if(!col){
+  if(!col || !(col.paragraphs || []).length){
+    box.classList.add('hidden');
     wrap.innerHTML = '';
-    hide('studentParagraphTimerBox');
     return;
   }
 
-  show('studentParagraphTimerBox');
+  box.classList.remove('hidden');
 
   const paragraphs = col.paragraphs || [];
-
-  const studentId = currentUser.id || '';
-
-  const progress =
-    s.studentProgress?.[studentId] || {};
+  const pr = s.studentProgress?.[currentUser.id] || {
+    paraIndex:0,
+    qIndex:0,
+    done:false
+  };
 
   wrap.innerHTML = paragraphs.map((p,i)=>{
+    const totalQ = (p.questions || []).length;
+    let doneQ = 0;
 
-    const totalQuestions =
-      (p.questions || []).length;
-
-    const doneQuestions =
-      progress[`p${i}_doneQuestions`] || 0;
-
-    const seconds =
-      progress[`p${i}_timer`] || 0;
-
-    const mins =
-      String(Math.floor(seconds / 60)).padStart(2,'0');
-
-    const secs =
-      String(seconds % 60).padStart(2,'0');
+    if(pr.done || i < Number(pr.paraIndex || 0)){
+      doneQ = totalQ;
+    }else if(i === Number(pr.paraIndex || 0)){
+      doneQ = Number(pr.qIndex || 0);
+    }
 
     return `
-      <div class="timerCard">
-
-        <div class="timerTitle">
-          P${i+1}
-        </div>
-
-        <div class="timerClock">
-          ${mins}:${secs}
-        </div>
-
-        <div class="timerDone">
-          ${doneQuestions}/${totalQuestions}<br>
-          questions done
-        </div>
-
+      <div class="paragraphTimerCard">
+        <b>P${i+1}</b>
+        <div class="timerClock">${doneQ}/${totalQ}</div>
+        <span class="doneCount">questions done</span>
       </div>
     `;
-
   }).join('');
 }
 function leaderboardRows(s){return activeGroups(s).map(g=>({g,pts:Number(s.scores?.[g]||0)})).sort((a,b)=>b.pts-a.pts)}function renderLeaderboard(id,s){const box=byId(id);if(!box)return;const rows=leaderboardRows(s);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="rankRow groupColor${((Number(r.g)-1)%6)+1}"><div class="rankName">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${esc(r.g)}</div><div class="rankPts">${r.pts} pts</div></div>`).join(''):'<div class="status">No groups yet.</div>'}
@@ -853,12 +832,9 @@ function highlightKeywords(text, extraWords){
   return safe;
 }
 function currentPQ(s){const col=s.collections?.[s.currentCollectionId];const pr=s.studentProgress?.[currentUser.id];if(!col||!pr)return{p:null,q:null,pr:null,total:0};const paragraphs=col.paragraphs||[];const p=paragraphs[Math.min(pr.paraIndex,paragraphs.length-1)];const q=(p?.questions||[])[pr.qIndex];return{p,q,pr,total:paragraphs.length}}
-function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle"><b>${esc(d.p.title)}</b></div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
+function studentRefresh(){const s=stateCache||defaultState();if(!currentUser)return;if(!s.students?.[currentUser.id]){clearStudentSession();currentUser=null;hide('studentPage');show('loginPage');return}byId('studentWelcome').innerText=`Welcome, ${currentUser.name} | Group ${currentUser.group}`;renderStages('studentStages',s.stage);renderStudentParagraphTimers(s);byId('studentInstruction').innerText=s.stage==='playing'?'Read your paragraph and answer all questions.':'Wait for teacher.';byId('studentRoundTitle').innerText=s.currentCollectionTitle||'Current Collection';renderLeaderboard('studentLeaderboard',s);const d=currentPQ(s);byId('bossNotice')&&byId('bossNotice').classList.toggle('hidden',s.stage!=='boss');if((s.stage==='playing'||s.stage==='boss')&&d.p){byId('studentProgress').innerText=d.pr.done?'You finished all paragraphs 🎉':`Paragraph ${d.pr.paraIndex+1}/${d.total} • Question ${Math.min(d.pr.qIndex+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;byId('paragraphBox').innerHTML=`<div class="pTitle"><b>${esc(d.p.title)}</b></div><div class="pText">${highlightKeywords(d.p.text,d.p.keywords||[])}</div>`;show('questionBox');renderStudentQuestion(s,d)}else if(s.stage==='final'){hide('questionBox');byId('studentProgress').innerText='Challenge ended.';byId('paragraphBox').innerText='Final winners are ready.';byId('studentResultBox').innerHTML='<div class="finalWinners">'+byId('studentLeaderboard').innerHTML+'</div>'}else{hide('questionBox');byId('studentProgress').innerText='Progress will appear here.';byId('paragraphBox').innerText='Wait for teacher to start collection.'}}
 function renderStudentQuestion(s,d){
 
-if(typeof renderStudentParagraphTimers === 'function'){
-  renderStudentParagraphTimers(s);
-}
   const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');
 
   if(!q||d.pr.done){
