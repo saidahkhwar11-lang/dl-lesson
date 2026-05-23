@@ -5566,24 +5566,6 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     }, 600);
   }
-
-  if(savedRole === 'student'){
-    const savedName = sessionStorage.getItem('dl_student_name');
-    const savedId = sessionStorage.getItem('dl_student_id');
-
-    if(savedName && savedId){
-      if(byId('studentName')) byId('studentName').value = savedName;
-      if(byId('studentCode')) byId('studentCode').value = savedId;
-
-      setTimeout(function(){
-        try{
-          startStudentSession();
-        }catch(e){
-          console.warn('Student restore failed', e);
-        }
-      }, 600);
-    }
-  }
 });
 
   let stationTimerInterval = null;
@@ -6239,5 +6221,93 @@ window.addEventListener('load', function(){
 </div>
 
 <div id="imageModal" class="image-modal hidden"></div>
+    <script>
+      window.addEventListener('load', function(){
+
+  setTimeout(function(){
+
+    // =========================
+    // SECURE HUB LOGIN DATA
+    // =========================
+    const secureStudent =
+      JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+
+    const secureTeacher =
+      sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes';
+
+    // =========================
+    // TEACHER AUTO LOGIN
+    // =========================
+    if(secureTeacher){
+
+      const teacherBox = document.getElementById('teacherPassword');
+
+      if(teacherBox){
+        teacherBox.value = 'Welcome@2020';
+
+        try{
+          openTeacherView();
+        }catch(e){
+          console.warn(e);
+        }
+      }
+
+      return;
+    }
+
+    // =========================
+    // STUDENT AUTO LOGIN
+    // ALWAYS TAKE LATEST
+    // SECURE HUB ACCOUNT
+    // =========================
+    if(secureStudent){
+
+      // overwrite old session
+      sessionStorage.setItem(
+        'dl_student_name',
+        secureStudent.name || ''
+      );
+
+      sessionStorage.setItem(
+        'dl_student_id',
+        secureStudent.studentId ||
+        secureStudent.password ||
+        ''
+      );
+
+      sessionStorage.setItem('dl_role', 'student');
+
+      const latestName =
+        sessionStorage.getItem('dl_student_name');
+
+      const latestId =
+        sessionStorage.getItem('dl_student_id');
+
+      if(latestName && latestId){
+
+        if(byId('studentName')){
+          byId('studentName').value = latestName;
+        }
+
+        if(byId('studentCode')){
+          byId('studentCode').value = latestId;
+        }
+
+        setTimeout(function(){
+
+          try{
+            startStudentSession();
+          }catch(e){
+            console.warn('Student restore failed', e);
+          }
+
+        }, 600);
+      }
+    }
+
+  }, 1200);
+
+});
+    </script>
 </body>
 </html>
