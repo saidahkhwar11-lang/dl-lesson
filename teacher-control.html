@@ -1265,46 +1265,55 @@ window.addEventListener("load",()=>{
     initFirebase();
   }
 });
-  async function clearDLRecordsOnly(){
-  if(!confirm("Clear all DL Lesson marks and missed-work comments only?")) return;
+  window.clearDLRecordsOnly = async function(){
+  const classId = byId("recordsClassSelect")?.value;
 
-  const snap = await db.ref("teacherControlCenter/records").get();
+  if(!classId){
+    alert("Choose class first.");
+    return;
+  }
+
+  if(!confirm("Clear OLD DL Lesson records/comments for this selected class only? Skill Clash and Reading Rush will stay.")) return;
+
+  const snap = await db.ref("teacherControlCenter/records/" + classId).once("value");
   const data = snap.val() || {};
   const updates = {};
+  let count = 0;
 
-  Object.keys(data).forEach(classId=>{
-    Object.keys(data[classId] || {}).forEach(studentId=>{
-      Object.keys(data[classId][studentId] || {}).forEach(recordId=>{
-        const rec = data[classId][studentId][recordId] || {};
+  Object.keys(data).forEach(studentId=>{
+    Object.keys(data[studentId] || {}).forEach(recordId=>{
+      const rec = data[studentId][recordId] || {};
 
-        const text = (
-          (rec.activityType || "") + " " +
-          (rec.activityName || "") + " " +
-          (rec.activity || "") + " " +
-          (rec.notes || "") + " " +
-          (rec.comment || "")
-        ).toLowerCase();
+      const text = (
+        (rec.activityType || "") + " " +
+        (rec.activityName || "") + " " +
+        (rec.activity || "") + " " +
+        (rec.notes || "") + " " +
+        (rec.comment || "")
+      ).toLowerCase();
 
-        if(
-          text.includes("dl lesson") ||
-          text.includes("missed") ||
-          text.includes("unfinished") ||
-          text.includes("makeup")
-        ){
-          updates[`teacherControlCenter/records/${classId}/${studentId}/${recordId}`] = null;
-        }
-      });
+      const isSkill = text.includes("skill clash");
+      const isReading = text.includes("reading rush");
+      const isImposter = text.includes("imposter");
+
+      if(!isSkill && !isReading && !isImposter){
+        updates["teacherControlCenter/records/" + classId + "/" + studentId + "/" + recordId] = null;
+        count++;
+      }
     });
   });
 
-  if(!Object.keys(updates).length){
-    alert("No DL Lesson records found to clear.");
+  if(count === 0){
+    alert("No old DL Lesson records found in this class.");
     return;
   }
 
   await db.ref().update(updates);
-  alert("✅ DL Lesson marks and missed-work comments cleared.");
-}
+
+  alert("✅ Cleared " + count + " old DL Lesson records/comments.");
+  renderClassRecords();
+  renderStats();
+};
 </script>
 </body>
 </html>
