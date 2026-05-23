@@ -416,8 +416,8 @@ function termLabel(term){
 }
 function getCurrentTerm(){return (trackerSettings && trackerSettings.term) || 'term1'}
 function getStudyYear(){return (trackerSettings && trackerSettings.studyYear) || defaultStudyYear()}
-function getActiveTerm(){return (trackerSettings && trackerSettings.activeTerm) || getCurrentTerm()}
-function getActiveStudyYear(){return (trackerSettings && trackerSettings.activeStudyYear) || getStudyYear()}
+function getActiveTerm(){return (trackerSettings && (trackerSettings.activeSavingTerm || trackerSettings.activeTerm)) || getCurrentTerm()}
+function getActiveStudyYear(){return (trackerSettings && (trackerSettings.activeSavingStudyYear || trackerSettings.activeStudyYear)) || getStudyYear()}
 function termStartKey(term, year){return String(year || getStudyYear()) + '_' + String(term || 'term1')}
 function getTermStart(term, year){
   const starts=(trackerSettings && trackerSettings.termStarts) || {};
@@ -449,7 +449,20 @@ function normalizeTerm(v){
   if(raw.includes('3'))return 'term3';
   return 'term1';
 }
+
+function normalizeIncomingRecordTerm(record){
+  if(!record || typeof record !== 'object') return record;
+  const activeTerm = getActiveTerm();
+  const activeYear = getActiveStudyYear();
+  const r = Object.assign({}, record);
+  // Pages may send activeSavingTerm/activeSavingStudyYear or term/studyYear.
+  r.term = r.term || r.activeSavingTerm || r.activeTerm || r.currentTerm || r.schoolTerm || activeTerm;
+  r.studyYear = r.studyYear || r.activeSavingStudyYear || r.activeStudyYear || r.academicYear || r.year || activeYear;
+  return r;
+}
+
 function recordMatchesCurrentTerm(record){
+  record = normalizeIncomingRecordTerm(record);
   const term=getCurrentTerm();
   const year=getStudyYear();
   const rTerm=record.term || record.currentTerm || record.schoolTerm || '';
@@ -502,7 +515,9 @@ async function setActiveSavingTerm(){
     term,
     studyYear,
     activeTerm:term,
+    activeSavingTerm:term,
     activeStudyYear:studyYear,
+    activeSavingStudyYear:studyYear,
     termStarts:starts
   });
 
@@ -552,8 +567,10 @@ async function initFirebase(){
       controlData=snap.exists()?snap.val():{classes:{},records:{}};
       trackerSettings=(controlData.settings && controlData.settings.tracker) || trackerSettings;
       if(!trackerSettings.studyYear) trackerSettings.studyYear=defaultStudyYear();
-      if(!trackerSettings.activeTerm) trackerSettings.activeTerm=trackerSettings.term || 'term1';
-      if(!trackerSettings.activeStudyYear) trackerSettings.activeStudyYear=trackerSettings.studyYear || defaultStudyYear();
+      if(!trackerSettings.activeTerm) trackerSettings.activeTerm=trackerSettings.activeSavingTerm || trackerSettings.term || 'term1';
+      if(!trackerSettings.activeSavingTerm) trackerSettings.activeSavingTerm=trackerSettings.activeTerm || trackerSettings.term || 'term1';
+      if(!trackerSettings.activeStudyYear) trackerSettings.activeStudyYear=trackerSettings.activeSavingStudyYear || trackerSettings.studyYear || defaultStudyYear();
+      if(!trackerSettings.activeSavingStudyYear) trackerSettings.activeSavingStudyYear=trackerSettings.activeStudyYear || trackerSettings.studyYear || defaultStudyYear();
       if(!trackerSettings.termStarts) trackerSettings.termStarts={};
       if(byId('termSelect')) byId('termSelect').value=getCurrentTerm();
       if(byId('studyYearInput')) byId('studyYearInput').value=getStudyYear();
@@ -570,7 +587,7 @@ async function initFirebase(){
     });
 
     const snap=await controlRef.get();
-    if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear(),activeTerm:'term1',activeStudyYear:defaultStudyYear(),termStarts:{}}}});
+    if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear(),activeTerm:'term1',activeSavingTerm:'term1',activeStudyYear:defaultStudyYear(),activeSavingStudyYear:defaultStudyYear(),termStarts:{}}}});
     box.className="card status good";
     box.innerHTML="✅ Firebase connected. Teacher records are saved live.";
   }catch(err){
@@ -740,7 +757,7 @@ function pushUniqueRecord(arr, seen, record, fallback){
   if(seen[key]) return;
   seen[key] = true;
   arr.push({
-    ...record,
+    ...normalizeIncomingRecordTerm(record),
     classId,
     studentId,
     programKey,
@@ -1247,8 +1264,10 @@ async function saveStudentPerformance(record){
     activityType:PROGRAM_WEIGHTS[programKey].label,
     score:sc.score,
     total:sc.total,
-    term:record.term || getActiveTerm(),
-    studyYear:record.studyYear || getActiveStudyYear(),
+    term:record.term || record.activeSavingTerm || record.activeTerm || getActiveTerm(),
+    activeSavingTerm:record.term || record.activeSavingTerm || record.activeTerm || getActiveTerm(),
+    studyYear:record.studyYear || record.activeSavingStudyYear || record.activeStudyYear || getActiveStudyYear(),
+    activeSavingStudyYear:record.studyYear || record.activeSavingStudyYear || record.activeStudyYear || getActiveStudyYear(),
     date:record.date||today(),
     time:Date.now()
   };
@@ -1400,7 +1419,7 @@ window.addEventListener("load",()=>{
   const studyYear=(byId('studyYearInput')?.value || getStudyYear()).trim();
   const starts=Object.assign({}, (trackerSettings && trackerSettings.termStarts) || {});
   starts[termStartKey(term, studyYear)] = Date.now();
-  trackerSettings=Object.assign({}, trackerSettings || {}, {term, studyYear, activeTerm:term, activeStudyYear:studyYear, termStarts:starts});
+  trackerSettings=Object.assign({}, trackerSettings || {}, {term, studyYear, activeTerm:term, activeSavingTerm:term, activeStudyYear:studyYear, activeSavingStudyYear:studyYear, termStarts:starts});
   await db.ref('teacherControlCenter/settings/tracker').set(trackerSettings);
 
   alert("✅ Cleared " + count + " old DL Lesson records/comments and started a fresh DL tracker for " + termLabel(term) + ".");
