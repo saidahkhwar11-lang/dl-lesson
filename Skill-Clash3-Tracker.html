@@ -8655,5 +8655,369 @@ window.addEventListener('load', function(){
 })();
 </script>
 
+
+<script>
+/* =========================================================
+   FINAL STABLE FIX - Skill Clash
+   1) Student page loads assigned activity after join
+   2) Name/ID/Class may fill from Hub, but NO auto join
+   3) Saves marks/points to Teacher Control Center by Student ID
+   ========================================================= */
+
+(function(){
+  function scSafeJson(v){ try{return JSON.parse(v || "null");}catch(e){return null;} }
+  function scCleanKey(v){
+    return String(v || "").trim()
+      .replace(/[.#$\[\]\/]/g,"_")
+      .replace(/\s+/g,"_")
+      .replace(/-/g,"_");
+  }
+  function scHubStudent(){
+    return scSafeJson(localStorage.getItem("DL_SECURE_STUDENT_LOGIN")) ||
+           scSafeJson(sessionStorage.getItem("DL_SECURE_STUDENT_LOGIN")) ||
+           null;
+  }
+  function scClassForSkill(v){
+    v = String(v || "").trim();
+    if(!v) return "";
+    v = v.replace(/Grade\s*/ig,"").replace(/Class\s*/ig,"").trim();
+    v = v.replace(/\s+/g,"");
+    if(v==="91" || v==="9/1" || v==="9_1" || v==="9-1") return "9-1";
+    if(v==="92" || v==="9/2" || v==="9_2" || v==="9-2") return "9-2";
+    if(v==="93" || v==="9/3" || v==="9_3" || v==="9-3") return "9-3";
+    if(v==="94" || v==="9/4" || v==="9_4" || v==="9-4") return "9-4";
+    return v.replace("_","-").replace("/","-");
+  }
+  function scClassForControl(){
+    const s = scHubStudent();
+    if(s && s.classId) return scCleanKey(s.classId);
+    if(s && s.className) return scCleanKey(s.className);
+    return scCleanKey(String(currentClass || "").replace("-","/"));
+  }
+  function scActivityName(){
+    const a = window.latestAssignedActivity || {};
+    return a.title || a.activityName || "Skill Clash Activity";
+  }
+  function scActivityType(){
+    const a = window.latestAssignedActivity || {};
+    if(a.activityType) return "Skill Clash - " + a.activityType;
+    return "Skill Clash";
+  }
+
+  window.fillSkillClashFromSecureHub = function(){
+    const s = scHubStudent();
+    if(!s) return false;
+
+    const nameBox = document.getElementById("studentName");
+    const idBox = document.getElementById("studentId");
+    const classBox = document.getElementById("className");
+
+    if(nameBox && !nameBox.value){
+      nameBox.disabled = false;
+      nameBox.readOnly = false;
+      nameBox.value = s.name || s.studentName || "";
+      nameBox.dispatchEvent(new Event("input",{bubbles:true}));
+      nameBox.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+    if(idBox && !idBox.value){
+      idBox.disabled = false;
+      idBox.readOnly = false;
+      idBox.value = s.studentId || s.password || s.id || "";
+      idBox.dispatchEvent(new Event("input",{bubbles:true}));
+      idBox.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+    if(classBox && !classBox.value){
+      const wanted = scClassForSkill(s.className || s.classId || s.class || "");
+      Array.from(classBox.options || []).forEach(function(opt){
+        if(scClassForSkill(opt.value) === wanted || scClassForSkill(opt.textContent) === wanted){
+          classBox.value = opt.value;
+        }
+      });
+      classBox.dispatchEvent(new Event("input",{bubbles:true}));
+      classBox.dispatchEvent(new Event("change",{bubbles:true}));
+    }
+
+    return true;
+  };
+
+  async function scSavePerformance(record){
+    try{
+      if(typeof db === "undefined" || !db) return;
+
+      const classId = scCleanKey(record.classId || scClassForControl());
+      const studentId = scCleanKey(record.studentId || record.password || currentStudentId);
+      if(!classId || !studentId) return;
+
+      const recId = "skill_" + Date.now() + "_" + Math.floor(Math.random()*9999);
+      const finalRecord = Object.assign({}, record, {
+        classId: classId,
+        studentId: studentId,
+        recordId: recId,
+        date: record.date || new Date().toLocaleDateString(),
+        time: Date.now()
+      });
+
+      await db.ref("teacherControlCenter/records/" + classId + "/" + studentId + "/" + recId).set(finalRecord);
+    }catch(err){
+      console.log("Teacher Control save failed:", err);
+    }
+  }
+
+  async function scGetActiveActivity(){
+    if(!currentClass || !currentGroup) return {};
+    const clsKey = (typeof activeClassKey === "function") ? activeClassKey() : String(currentClass || "").replace("/","-");
+    const paths = [
+      "classes/" + clsKey + "/activeActivityGroups/group" + currentGroup,
+      "classes/" + clsKey + "/assignedActivities/group" + currentGroup,
+      "classes/" + clsKey + "/activeActivityGroups/group1",
+      "classes/" + clsKey + "/assignedActivities/group1",
+      "classes/" + clsKey + "/activeActivity",
+      "classes/" + clsKey + "/currentActivity"
+    ];
+    for(const path of paths){
+      try{
+        const snap = await hubRef.child(path).once("value");
+        const a = snap.val() || {};
+        if(a && (a.title || a.activityName || a.groupTask || a.instructions)) return a;
+      }catch(e){}
+    }
+    return {};
+  }
+
+  window.forceLoadStudentActiveActivity = async function(){
+    const activity = await scGetActiveActivity();
+    if(typeof renderAssignedActivityOnStudent === "function"){
+      renderAssignedActivityOnStudent(activity && (activity.title || activity.activityName) ? activity : {});
+    }
+
+    const nameBox = document.getElementById("activityNameBox");
+    const instructionBox = document.getElementById("activityInstructionsBox");
+    const taskBox = document.getElementById("groupTaskBox");
+
+    if(!activity || (!activity.title && !activity.activityName)){
+      if(nameBox) nameBox.innerText = "No activity assigned yet";
+      if(instructionBox) instructionBox.innerText = "Please wait for your teacher to activate an activity.";
+      if(taskBox) taskBox.innerText = "When your teacher activates an activity, it will appear here automatically.";
+    }
+
+    if(typeof renderMembersWork === "function") renderMembersWork();
+    if(typeof renderMyGroupFinalPreview === "function") renderMyGroupFinalPreview();
+    return activity;
+  };
+
+  window.listenAssignedActivity = function(){
+    try{
+      if(window.assignedActivityListener && window.assignedActivityListener.off) window.assignedActivityListener.off();
+      if(window.classActiveActivityListener && window.classActiveActivityListener.off) window.classActiveActivityListener.off();
+      if(window.assignedActivityFallbackListener && window.assignedActivityFallbackListener.off) window.assignedActivityFallbackListener.off();
+    }catch(e){}
+
+    const clsKey = (typeof activeClassKey === "function") ? activeClassKey() : String(currentClass || "").replace("/","-");
+    const refs = [
+      hubRef.child("classes/" + clsKey + "/activeActivityGroups/group" + currentGroup),
+      hubRef.child("classes/" + clsKey + "/assignedActivities/group" + currentGroup),
+      hubRef.child("classes/" + clsKey + "/activeActivityGroups/group1"),
+      hubRef.child("classes/" + clsKey + "/assignedActivities/group1")
+    ];
+
+    refs.forEach(function(ref){
+      ref.on("value", function(snap){
+        const a = snap.val() || {};
+        if(a && (a.title || a.activityName || a.groupTask || a.instructions)){
+          if(typeof renderAssignedActivityOnStudent === "function") renderAssignedActivityOnStudent(a);
+        }
+      });
+    });
+
+    window.assignedActivityListener = refs[0];
+    window.assignedActivityFallbackListener = refs[1];
+
+    const changedRef = hubRef.child("classes/" + clsKey + "/settings/activeActivityChangedAt");
+    window.classActiveActivityListener = changedRef;
+    changedRef.on("value", function(){ forceLoadStudentActiveActivity(); });
+
+    setTimeout(forceLoadStudentActiveActivity, 150);
+    setTimeout(forceLoadStudentActiveActivity, 800);
+    setTimeout(forceLoadStudentActiveActivity, 1600);
+  };
+
+  async function scLoadStudentPageAfterJoin(){
+    showOnly("workPage");
+    if(typeof listenGroup === "function") listenGroup();
+    if(typeof listenClassSettings === "function") listenClassSettings();
+    if(typeof listenAssignedActivity === "function") listenAssignedActivity();
+    if(typeof listenChat === "function") listenChat();
+    await forceLoadStudentActiveActivity();
+    if(typeof routeStudentStage === "function") routeStudentStage();
+  }
+
+  window.joinGroup = async function(){
+    try{
+      fillSkillClashFromSecureHub();
+
+      const classBox = document.getElementById("className");
+      const groupBox = document.getElementById("studentGroup");
+      const nameBox = document.getElementById("studentName");
+      const idBox = document.getElementById("studentId");
+      const roleBox = document.getElementById("studentRole");
+
+      currentClass = classBox ? classBox.value : "";
+      currentGroup = groupBox ? groupBox.value : "";
+      currentStudent = nameBox ? nameBox.value.trim() : "";
+      currentStudentId = idBox ? idBox.value.trim() : "";
+      currentRole = roleBox ? roleBox.value : "member";
+
+      if(!currentClass){ alert("Please choose your class."); return; }
+      if(!currentGroup){ alert("Please choose your group number."); return; }
+      if(!currentRole){ alert("Please choose Group Member or Group Leader."); return; }
+      if(!currentStudent){ alert("Please write your name."); return; }
+      if(!currentStudentId){ alert("Please write your student ID."); return; }
+
+      currentStudentId = String(currentStudentId).replace(/[^a-zA-Z0-9_-]/g,"_");
+
+      const groupPath = "classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students";
+      const studentsSnap = await hubRef.child(groupPath).once("value");
+      const existingStudents = studentsSnap.val() || {};
+      const existingLeader = Object.keys(existingStudents).find(function(id){
+        return existingStudents[id] && existingStudents[id].role === "leader" && id !== currentStudentId;
+      });
+
+      if(currentRole === "leader" && existingLeader){
+        const leaderName = existingStudents[existingLeader].name || existingLeader;
+        currentRole = "member";
+        if(roleBox) roleBox.value = "member";
+        alert("This group already has a leader: " + leaderName + ". You will join as a group member.");
+      }
+
+      sessionStorage.setItem("skillClass", currentClass);
+      sessionStorage.setItem("skillGroup", currentGroup);
+      sessionStorage.setItem("skillStudent", currentStudent);
+      sessionStorage.setItem("skillStudentId", currentStudentId);
+      sessionStorage.setItem("skillRole", currentRole);
+
+      try{
+        localStorage.setItem("skillClashStudentSession", JSON.stringify({
+          className: currentClass,
+          group: currentGroup,
+          student: currentStudent,
+          studentId: currentStudentId,
+          role: currentRole,
+          savedAt: Date.now()
+        }));
+      }catch(e){}
+
+      await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).update({
+        id: currentStudentId,
+        name: currentStudent,
+        role: currentRole,
+        joinedAt: Date.now(),
+        lastSeenAt: Date.now()
+      });
+
+      try{
+        const resetSnap = await hubRef.child("classes/" + activeClassKey() + "/settings/resetToken").once("value");
+        if(typeof saveCurrentResetToken === "function") saveCurrentResetToken(resetSnap.val() || "");
+      }catch(e){}
+
+      await scLoadStudentPageAfterJoin();
+
+    }catch(err){
+      console.error("Skill Clash join failed:", err);
+      alert("Could not join Skill Clash. Please refresh and try again. Error: " + (err && err.message ? err.message : err));
+    }
+  };
+
+  window.studentRefreshPage = async function(){
+    await scLoadStudentPageAfterJoin();
+    const msg = document.getElementById("studentRefreshMsg");
+    if(msg){
+      msg.innerText = "✅ Refreshed";
+      setTimeout(function(){ msg.innerText = ""; }, 1500);
+    }
+  };
+
+  window.addEventListener("load", function(){
+    setTimeout(fillSkillClashFromSecureHub, 100);
+    setTimeout(fillSkillClashFromSecureHub, 700);
+    setTimeout(fillSkillClashFromSecureHub, 1500);
+  }, true);
+
+  /* Save Reading Paragraph scores */
+  if(typeof window.submitParagraphReadingQuestions === "function"){
+    const oldSubmitParagraphReadingQuestions = window.submitParagraphReadingQuestions;
+    window.submitParagraphReadingQuestions = async function(){
+      await oldSubmitParagraphReadingQuestions.apply(this, arguments);
+      try{
+        const snap = await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
+        const s = snap.val() || {};
+        await scSavePerformance({
+          classId: scClassForControl(),
+          studentId: currentStudentId,
+          studentName: currentStudent,
+          activityName: scActivityName(),
+          activityType: "Skill Clash Reading Paragraph",
+          score: Number(s.readingScore || 0),
+          total: Number(s.readingTotal || 0),
+          notes: "Paragraph " + (s.assignedParagraphNumber || "") + " - " + (s.selfEvaluation || "")
+        });
+      }catch(e){ console.log(e); }
+    };
+  }
+
+  /* Save Reading Quiz scores */
+  if(typeof window.submitReadingQuiz === "function"){
+    const oldSubmitReadingQuiz = window.submitReadingQuiz;
+    window.submitReadingQuiz = async function(){
+      await oldSubmitReadingQuiz.apply(this, arguments);
+      try{
+        const snap = await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
+        const s = snap.val() || {};
+        await scSavePerformance({
+          classId: scClassForControl(),
+          studentId: currentStudentId,
+          studentName: currentStudent,
+          activityName: scActivityName(),
+          activityType: "Skill Clash Reading Quiz",
+          score: Number(s.readingScore || 0),
+          total: Number(s.readingTotal || 0),
+          notes: s.selfEvaluation || "Reading submitted"
+        });
+      }catch(e){ console.log(e); }
+    };
+  }
+
+  /* Save group teacher points to every student in the marked group */
+  if(typeof window.saveTeacherFeedback === "function"){
+    const oldSaveTeacherFeedback = window.saveTeacherFeedback;
+    window.saveTeacherFeedback = async function(groupNum){
+      await oldSaveTeacherFeedback.apply(this, arguments);
+      try{
+        const clsKey = (typeof activeTeacherClassKey === "function") ? activeTeacherClassKey() : String(selectedTeacherClass || "").replace("/","-");
+        const gSnap = await hubRef.child("classes/" + clsKey + "/groups/group" + groupNum).once("value");
+        const g = gSnap.val() || {};
+        const points = Number(g.teacherPoints || document.getElementById("points_" + groupNum)?.value || 0);
+        const comment = g.teacherComment || document.getElementById("comment_" + groupNum)?.value || "";
+        const students = g.students || {};
+
+        for(const sid of Object.keys(students)){
+          const st = students[sid] || {};
+          await scSavePerformance({
+            classId: scCleanKey(String(selectedTeacherClass || clsKey).replace("-","/")),
+            studentId: sid,
+            studentName: st.name || sid,
+            activityName: scActivityName(),
+            activityType: "Skill Clash Group Work",
+            score: points,
+            total: 10,
+            notes: comment || "Teacher group points"
+          });
+        }
+      }catch(e){ console.log("Could not save teacher feedback to control center:", e); }
+    };
+  }
+
+})();
+</script>
+
 </body>
 </html>
