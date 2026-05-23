@@ -92,7 +92,7 @@
 
   <div id="builderShell" class="builderShell hiddenBuilder">
     <div class="grid">
-      <div class="card"><h2>📝 Manual Collection Builder</h2><label>Collection Title</label><input id="collectionTitleInput" placeholder="Example: Dreams Reading Collection"><label>Paste Full Reading Text</label><textarea id="fullTextInput" placeholder="Paste the full text here. Separate paragraphs with blank lines."></textarea><label>Paste ALL Questions + Answers + Keywords</label><textarea id="bulkQuestionsInput" style="min-height:180px" placeholder="Example:\nParagraph 1\nKeywords: suddenly, strange, wake up\nSkill: main idea\nQuestion: Why did the speaker feel scared?\nA) She saw dark clouds.\nB) She won a prize.\nC) She cooked lunch.\nD) She visited a friend.\nAnswer: A\n\nParagraph 2\nKeywords: confusing, familiar"></textarea><button class="success" onclick="createManualCollectionFromBulk()">💾 Build Collection from Text + Questions</button><button class="purple" onclick="generateFullCollection()">✨ Auto Draft Questions</button><button onclick="createCollection()">➕ Create Empty Collection</button><label>Select Collection to Edit</label><select id="editCollectionSelect" onchange="renderEditCollection()"></select><div class="status good">Manual mode: paste the full text, then paste questions grouped by Paragraph 1, Paragraph 2, etc. Keywords will be highlighted inside the student reading text.</div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h3>Add Paragraph Manually</h3><label>Paragraph Title</label><input id="paragraphTitleInput" placeholder="Paragraph 1"><label>Paragraph Text</label><textarea id="paragraphInput" placeholder="Paste paragraph here..."></textarea><h3 style="margin-top:12px">Add Question</h3><label>Question</label><input id="qText" placeholder="Write question"><label>Options</label><input id="qA" placeholder="A"><input id="qB" placeholder="B"><input id="qC" placeholder="C"><input id="qD" placeholder="D"><label>Correct Answer</label><select id="qCorrect"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select><button onclick="addTempQuestion()">➕ Add Question</button><button class="success" onclick="saveParagraphToCollection()">💾 Save Paragraph</button><button class="secondary" onclick="loadExampleCollection()">✨ Load Example Collection</button><div id="questionPreview"></div></div>
+      <div class="card"><h2>📝 Manual Collection Builder</h2><label>Collection Title</label><input id="collectionTitleInput" placeholder="Example: Dreams Reading Collection"><label>Paste Full Reading Text</label><textarea id="fullTextInput" placeholder="Paste the full text here. Separate paragraphs with blank lines."></textarea><label>Paste ALL Questions + Answers + Keywords</label><textarea id="bulkQuestionsInput" style="min-height:180px" placeholder="Example:\nParagraph 1\nKeywords: suddenly, strange, wake up\nSkill: main idea\nQuestion: Why did the speaker feel scared?\nA) She saw dark clouds.\nB) She won a prize.\nC) She cooked lunch.\nD) She visited a friend.\nAnswer: A\n\nParagraph 2\nKeywords: confusing, familiar"></textarea><button class="success" onclick="createManualCollectionFromBulk()">💾 Build Collection from Text + Questions</button><button class="purple" onclick="generateFullCollection()">✨ Auto Draft Questions</button><button onclick="createCollection()">➕ Create Empty Collection</button><label>Select Collection to Edit</label><select id="editCollectionSelect" onchange="event.stopPropagation(); renderEditCollection();"></select><div class="status good">Manual mode: paste the full text, then paste questions grouped by Paragraph 1, Paragraph 2, etc. Keywords will be highlighted inside the student reading text.</div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h3>Add Paragraph Manually</h3><label>Paragraph Title</label><input id="paragraphTitleInput" placeholder="Paragraph 1"><label>Paragraph Text</label><textarea id="paragraphInput" placeholder="Paste paragraph here..."></textarea><h3 style="margin-top:12px">Add Question</h3><label>Question</label><input id="qText" placeholder="Write question"><label>Options</label><input id="qA" placeholder="A"><input id="qB" placeholder="B"><input id="qC" placeholder="C"><input id="qD" placeholder="D"><label>Correct Answer</label><select id="qCorrect"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select><button onclick="addTempQuestion()">➕ Add Question</button><button class="success" onclick="saveParagraphToCollection()">💾 Save Paragraph</button><button class="secondary" onclick="loadExampleCollection()">✨ Load Example Collection</button><div id="questionPreview"></div></div>
       <div class="card"><h2>📦 Collections</h2><div id="collectionsList" class="list collectionsCompact"></div><hr style="border:none;border-top:1px solid #dfe8ff;margin:14px 0"><h2>📖 Selected Collection Details</h2><div id="paragraphsList" class="list"></div></div>
     </div>
   </div>
@@ -502,7 +502,51 @@ function renderCollections(s){
 
   renderEditCollection();
 }
-function renderEditCollection(){const s=stateCache||defaultState();const box=byId('paragraphsList');if(!box)return;const col=s.collections?.[getSelectedCollectionId()||s.currentCollectionId];if(!col){box.innerHTML='<div class=\"status\">Select a collection.</div>';return}box.innerHTML=`<details><summary>📖 <span class="selectedCollectionTitle">${esc(col.title)}</span> <span class=\"tinyPill\">${(col.paragraphs||[]).length} paragraphs</span></summary>`+(col.paragraphs||[]).map((p,i)=>`<div class=\"row\"><b>${i+1}. ${esc(p.title)}</b>${p.boss?'<span class=\"bossBadge\">Boss</span>':''}<div class=\"mini\">${(p.questions||[]).length} questions • Keywords: ${esc((p.keywords||[]).join(', ')||'none')}</div></div>`).join('')+`</details>`}
+function renderEditCollection(){
+
+  const select = byId('editCollectionSelect');
+  const box = byId('paragraphsList');
+
+  if(!select || !box) return;
+
+  const s = stateCache || {};
+  const id = select.value;
+
+  const col = s.collections?.[id];
+
+  if(!id || !col){
+    box.innerHTML = '<div class="status">Select a collection to view details.</div>';
+    return;
+  }
+
+  const paragraphs = col.paragraphs || [];
+
+  box.innerHTML = paragraphs.length
+    ? paragraphs.map((p,i)=>`
+      <details data-pid="${i}" style="margin-bottom:10px">
+        <summary onclick="event.stopPropagation();" style="cursor:pointer;font-weight:700">
+          📄 Paragraph ${i+1}: ${esc(p.title || 'Untitled')}
+        </summary>
+
+        <div class="card" style="margin-top:8px">
+
+          <div style="margin-bottom:10px">
+            <b>Text:</b>
+            <div class="mini">${esc(p.text || '')}</div>
+          </div>
+
+          <div>
+            <b>Questions:</b>
+            <div class="tinyPill">
+              ${(p.questions || []).length} questions
+            </div>
+          </div>
+
+        </div>
+      </details>
+    `).join('')
+    : '<div class="status">No paragraphs yet.</div>';
+}
 async function selectCollection(id){
   event?.stopPropagation?.();
 
