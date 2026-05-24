@@ -4886,6 +4886,134 @@ function getMyGroupMembersForCertificate(){
   return Object.keys(students).filter(Boolean);
 }
 
+
+/* ===== Secure Hub Certificate Save Link =====
+   Saves Skill Clash certificates for every member in the winning group.
+   Secure Hub reads these records by classId + studentId and can generate/download PDF there.
+*/
+function getSkillSecureHubSession(){
+  try{
+    return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+  }catch(e){
+    return null;
+  }
+}
+
+function skillCertCleanKey(value){
+  return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+
+function getSkillCertClassId(){
+  const secure = getSkillSecureHubSession();
+
+  if(secure && secure.classId){
+    return skillCertCleanKey(secure.classId);
+  }
+
+  if(typeof scClassForControl === 'function'){
+    const key = scClassForControl();
+    if(key) return skillCertCleanKey(key);
+  }
+
+  if(secure && secure.className){
+    return skillCertCleanKey(secure.className);
+  }
+
+  return skillCertCleanKey(currentClass || 'unknown_class');
+}
+
+function getSkillCertClassName(){
+  const secure = getSkillSecureHubSession();
+  return (secure && (secure.className || secure.class || secure.cls)) || currentClass || '';
+}
+
+function getSkillCertificateMembers(){
+  const g = (latestClassGroups || {})['group' + currentGroup] || {};
+  const students = g.students || latestStudents || {};
+  const ids = Object.keys(students || {}).filter(Boolean);
+
+  if(ids.length){
+    return ids.map(function(id){
+      const st = students[id] || {};
+      return {
+        studentId: skillCertCleanKey(st.id || id),
+        studentName: st.name || id || 'Student'
+      };
+    });
+  }
+
+  return [{
+    studentId: skillCertCleanKey(currentStudentId || ''),
+    studentName: currentStudent || 'Student'
+  }].filter(function(x){ return x.studentId; });
+}
+
+async function saveSkillClashCertificateToSecureHub(info){
+  try{
+    if(!db || !info) return;
+
+    const classId = getSkillCertClassId();
+    const className = getSkillCertClassName();
+    const members = getSkillCertificateMembers();
+
+    if(!classId || !members.length) return;
+
+    const activityName =
+      (typeof scActivityName === 'function' ? scActivityName() : '') ||
+      (latestAssignedActivity && (latestAssignedActivity.title || latestAssignedActivity.activityName)) ||
+      'Skill Clash Activity';
+
+    const certificateId =
+      'Skill_Clash_' +
+      skillCertCleanKey(info.certType || info.title || 'Certificate') + '_' +
+      skillCertCleanKey(activityName) + '_' +
+      'Group_' + skillCertCleanKey(currentGroup || '') + '_' +
+      Date.now();
+
+    const issuedAt = Date.now();
+
+    const baseRecord = {
+      certificateId: certificateId,
+      source: 'Skill Clash',
+      activityName: activityName,
+      certificateTitle: info.certType || info.title || 'Skill Clash Certificate',
+      title: info.title || 'Skill Clash Certificate',
+      subtitle: info.subtitle || '',
+      detail: info.detail || '',
+      note: info.note || '',
+      group: currentGroup || '',
+      classId: classId,
+      className: className,
+      issuedAt: issuedAt,
+      date: new Date(issuedAt).toLocaleDateString('en-GB'),
+      downloadType: 'generated_pdf'
+    };
+
+    const updates = {};
+
+    members.forEach(function(member){
+      if(!member.studentId) return;
+
+      updates[
+        'teacherControlCenter/certificates/' +
+        classId + '/' +
+        member.studentId + '/' +
+        certificateId
+      ] = Object.assign({}, baseRecord, {
+        studentId: member.studentId,
+        studentName: member.studentName
+      });
+    });
+
+    if(Object.keys(updates).length){
+      await db.ref().update(updates);
+    }
+
+  }catch(err){
+    console.warn('Skill Clash certificate save skipped:', err);
+  }
+}
+
 function downloadCertificate(info){
   const safeGroup = escapeHtml(currentGroup || '');
   const members = getMyGroupMembersForCertificate();
@@ -5170,6 +5298,10 @@ function downloadCertificate(info){
       <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
   </div></body></html>`;
+
+  if(typeof saveSkillClashCertificateToSecureHub === 'function'){
+    saveSkillClashCertificateToSecureHub(info);
+  }
 
   const blob = new Blob([certHtml], {type:'text/html;charset=utf-8'});
   const a = document.createElement('a');
