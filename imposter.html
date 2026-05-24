@@ -2243,30 +2243,64 @@ function stepTitle(st){
   if(st==='results') return '🏆 Results are released.';
   return '🎭 Waiting for teacher to start.';
 }
-  function loadSecureHubStudent(){
+  function getSecureHubStudent(){
+  try{
+    return JSON.parse(
+      localStorage.getItem('DL_SECURE_STUDENT_LOGIN') ||
+      sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') ||
+      localStorage.getItem('secureStudent') ||
+      sessionStorage.getItem('secureStudent') ||
+      'null'
+    );
+  }catch(e){
+    return null;
+  }
+}
+  
+function loadSecureHubStudent(){
 
-  const secure = getSecureHubStudent?.();
+  const secure = getSecureHubStudent();
 
-  if(!secure) return;
+  const name =
+    secure?.name ||
+    secure?.studentName ||
+    localStorage.getItem('secureHubStudentName') ||
+    sessionStorage.getItem('secureHubStudentName') ||
+    localStorage.getItem('studentName') ||
+    sessionStorage.getItem('studentName') ||
+    '';
+
+  const id =
+    secure?.studentId ||
+    secure?.id ||
+    secure?.password ||
+    localStorage.getItem('secureHubStudentId') ||
+    sessionStorage.getItem('secureHubStudentId') ||
+    localStorage.getItem('studentId') ||
+    sessionStorage.getItem('studentId') ||
+    '';
+
+  const cls =
+    secure?.className ||
+    secure?.cls ||
+    localStorage.getItem('secureHubClassName') ||
+    sessionStorage.getItem('secureHubClassName') ||
+    localStorage.getItem('studentClass') ||
+    sessionStorage.getItem('studentClass') ||
+    '9/1';
 
   if(byId('studentName')){
-    byId('studentName').value =
-      secure.name || '';
+    byId('studentName').value = name;
   }
 
   if(byId('studentId')){
-    byId('studentId').value =
-      secure.studentId ||
-      secure.password ||
-      '';
+    byId('studentId').value = id;
   }
 
   if(byId('studentClass')){
-    byId('studentClass').value =
-      secure.className || '9/1';
+    byId('studentClass').value = cls;
   }
 }
-
 async function studentJoin(){
   const name = byId('studentName').value.trim();
   const cls = byId('studentClass').value;
