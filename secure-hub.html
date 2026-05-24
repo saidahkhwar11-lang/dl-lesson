@@ -74,6 +74,78 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 .sectionTitle{font-family:Quicksand,sans-serif;color:#203a78;font-size:26px;margin:6px 0 16px}
 .footer{text-align:center;margin-top:30px;color:#7b88aa;font-size:13px}
 @media(max-width:700px){.hero h1{font-size:38px}.tabs{grid-template-columns:1fr}}
+
+/* ===== STUDENT REPORT + CERTIFICATE WINDOWS ===== */
+.studentWindows{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:22px;
+  margin:26px 0;
+}
+.infoWindow{
+  background:white;
+  border:2px solid #e4eaff;
+  border-radius:26px;
+  padding:20px;
+  box-shadow:0 8px 22px rgba(36,59,107,.08);
+  text-align:left;
+}
+.infoWindow h2{
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+  font-size:24px;
+  margin-bottom:10px;
+}
+.feedbackBox{
+  background:#eef4ff;
+  border:1px solid #d7e3ff;
+  color:#294a99;
+  border-radius:18px;
+  padding:12px 14px;
+  font-weight:700;
+  line-height:1.45;
+  margin:10px 0 14px;
+}
+.reportTableWrap{overflow:auto;border:1px solid #dfe8ff;border-radius:18px;background:white}
+.reportTable{width:100%;border-collapse:collapse;min-width:560px;font-size:13px}
+.reportTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px;font-family:Quicksand,sans-serif}
+.reportTable td{border-top:1px solid #edf2ff;padding:10px;vertical-align:top}
+.markGood{color:#176b45;font-weight:800}
+.markBad{color:#9a2740;font-weight:800}
+.actionList{display:grid;gap:8px;margin-top:10px}
+.actionItem{
+  background:#fff8df;
+  border:1px solid #f2d98a;
+  color:#775704;
+  border-radius:16px;
+  padding:10px 12px;
+  font-weight:700;
+  font-size:13px;
+}
+.certList{display:grid;gap:10px;margin-top:12px}
+.certCard{
+  background:linear-gradient(135deg,#fff,#f8fbff);
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+}
+.certCard b{color:#203a78}
+.certMeta{font-size:12px;color:#607197;margin-top:4px;line-height:1.4}
+.certBtn{
+  display:inline-block;
+  margin-top:8px;
+  border-radius:12px;
+  padding:8px 12px;
+  background:#2f63d9;
+  color:white;
+  font-family:Quicksand,sans-serif;
+  font-weight:800;
+  font-size:13px;
+  text-decoration:none;
+}
+.miniLoading{color:#607197;font-size:13px;line-height:1.5}
+@media(max-width:900px){.studentWindows{grid-template-columns:1fr}}
+
 </style>
 </head>
 
@@ -152,6 +224,26 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <h2>Classroom Imposter</h2>
       <p>Fun-only classroom guessing game. No marks are saved.</p>
     </div>
+  </div>
+
+  <div class="studentWindows">
+
+    <div class="infoWindow">
+      <h2>📊 My Performance Report</h2>
+      <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
+      <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, and Reading Rush marks...</div>
+      <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
+      <div id="studentNeededActions" class="actionList"></div>
+    </div>
+
+    <div class="infoWindow">
+      <h2>🏅 My Certificates</h2>
+      <div class="miniLoading">
+        Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files.
+      </div>
+      <div id="studentCertificatesList" class="certList"></div>
+    </div>
+
   </div>
 
   <div class="footer">Student ID is used as the permanent record key.</div>
@@ -313,12 +405,196 @@ function loginTeacher(){
   openTeacherHub();
 }
 
+
+function safeKey(value){
+  return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g,"_");
+}
+
+function getScoreText(record){
+  if(!record) return "Missing";
+  const score = record.score ?? record.finalMark ?? record.totalScore ?? record.mark ?? record.percentage ?? "";
+  const total = record.total ?? record.maxScore ?? record.outOf ?? "";
+  if(score === "" || score === null || typeof score === "undefined") return "Missing";
+  return total ? `${score}/${total}` : String(score);
+}
+
+function getActivityName(record, fallback){
+  return record?.activityName || record?.lessonTitle || record?.title || fallback;
+}
+
+function getUpdatedText(record){
+  const t = record?.updatedAt || record?.completedAt || record?.savedAt || record?.time || record?.date;
+  if(!t) return "-";
+  try{return new Date(Number(t)).toLocaleDateString();}catch(e){return String(t);}
+}
+
+async function readPerformanceRecord(classId, studentId, keys){
+  for(const key of keys){
+    const snap = await db.ref(`teacherControlCenter/performance/${classId}/${studentId}/${key}`).get();
+    if(snap.exists()) return snap.val();
+  }
+  return null;
+}
+
+async function readScheduledRecovery(session){
+  const studentId = String(session.studentId || session.password || "").trim();
+  const keys = [safeKey(session.className), session.classId].filter(Boolean);
+  const all = {};
+
+  for(const k of keys){
+    const snap = await db.ref(`games/reading_rush_collection_v1/state/scheduledCollections/${k}/${studentId}`).get();
+    if(snap.exists()){
+      Object.assign(all, snap.val() || {});
+    }
+  }
+
+  return Object.values(all).filter(x => x && x.status !== "completed");
+}
+
+function renderReportTable(rows){
+  return `
+    <div class="reportTableWrap">
+      <table class="reportTable">
+        <thead>
+          <tr>
+            <th>Page</th>
+            <th>Activity / Lesson</th>
+            <th>Mark</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td><b>${esc(r.page)}</b></td>
+              <td>${esc(r.activity)}</td>
+              <td class="${r.record ? 'markGood' : 'markBad'}">${esc(r.mark)}</td>
+              <td>${r.record ? '✅ Saved' : '⚠️ Missing'}</td>
+              <td>${esc(r.updated)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+async function loadStudentPerformanceWindow(session){
+  if(!db || !session) return;
+
+  const classId = session.classId;
+  const studentId = String(session.studentId || session.password || "").trim();
+
+  const dl = await readPerformanceRecord(classId, studentId, ["DL_Lesson","DL Lesson","DL_Lesson_Total","Full_Lesson"]);
+  const skill = await readPerformanceRecord(classId, studentId, ["Skill_Clash","Skill Clash","SkillClash","Skill_Clash_Final"]);
+  const rush = await readPerformanceRecord(classId, studentId, ["Reading_Rush","Reading Rush","ReadingRush"]);
+
+  const rows = [
+    {page:"DL Lesson", activity:getActivityName(dl,"DL Lesson"), mark:getScoreText(dl), updated:getUpdatedText(dl), record:dl},
+    {page:"Skill Clash", activity:getActivityName(skill,"Skill Clash"), mark:getScoreText(skill), updated:getUpdatedText(skill), record:skill},
+    {page:"Reading Rush", activity:getActivityName(rush,"Reading Rush"), mark:getScoreText(rush), updated:getUpdatedText(rush), record:rush}
+  ];
+
+  const recovery = await readScheduledRecovery(session);
+
+  byId("studentReportTable").innerHTML = renderReportTable(rows);
+
+  const actions = [];
+  rows.forEach(r=>{
+    if(!r.record) actions.push(`⚠️ Missing mark in ${r.page}. Please complete or ask the teacher to check it.`);
+  });
+  recovery.forEach(a=>{
+    actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`);
+  });
+
+  if(actions.length){
+    byId("studentAutoMessage").innerHTML =
+      `Dear ${esc(session.name)}, you still have a few things to complete. Finish the needed actions below so your tracker becomes complete. 🌟`;
+    byId("studentNeededActions").innerHTML = actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
+  }else{
+    byId("studentAutoMessage").innerHTML =
+      `Excellent work, ${esc(session.name)}! Your current learning record looks complete. Keep going — your effort is clear and you should be proud of your progress. 🌟`;
+    byId("studentNeededActions").innerHTML =
+      `<div class="actionItem good">✅ No missing marks or recovery assignments found.</div>`;
+  }
+}
+
+function certificateUrl(cert){
+  return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
+}
+
+async function loadStudentCertificatesWindow(session){
+  if(!db || !session) return;
+
+  const classId = session.classId;
+  const classKey = safeKey(session.className);
+  const studentId = String(session.studentId || session.password || "").trim();
+
+  const certs = [];
+
+  for(const key of [classId, classKey].filter(Boolean)){
+    const snap = await db.ref(`teacherControlCenter/certificates/${key}/${studentId}`).get();
+    if(snap.exists()){
+      Object.values(snap.val() || {}).forEach(c=>certs.push(c));
+    }
+  }
+
+  const perfSnap = await db.ref(`teacherControlCenter/performance/${classId}/${studentId}`).get();
+  if(perfSnap.exists()){
+    Object.values(perfSnap.val() || {}).forEach(r=>{
+      if(r && certificateUrl(r)){
+        certs.push({
+          title:r.activityName || r.lessonTitle || r.title || "Achievement Certificate",
+          activityName:r.activityName || r.lessonTitle || r.title || "Activity",
+          date:r.completedAt || r.updatedAt || Date.now(),
+          pdfUrl:certificateUrl(r)
+        });
+      }
+    });
+  }
+
+  const box = byId("studentCertificatesList");
+  if(!certs.length){
+    box.innerHTML = `<div class="actionItem">🏅 No certificates saved yet. Complete activities and teacher-released certificates will appear here.</div>`;
+    return;
+  }
+
+  box.innerHTML = certs.map(c=>{
+    const url = certificateUrl(c);
+    const title = c.title || c.certificateTitle || "Achievement Certificate";
+    const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
+    const date = c.date || c.createdAt || c.completedAt || c.updatedAt || "";
+    const dateText = date ? new Date(Number(date)).toLocaleDateString() : "-";
+    return `
+      <div class="certCard">
+        <b>🏅 ${esc(title)}</b>
+        <div class="certMeta">
+          Activity: ${esc(activity)}<br>
+          Date: ${esc(dateText)}
+        </div>
+        ${
+          url
+          ? `<a class="certBtn" href="${esc(url)}" target="_blank" download>Download PDF</a>`
+          : `<div class="certMeta">PDF file not attached yet.</div>`
+        }
+      </div>
+    `;
+  }).join("");
+}
+
+function loadStudentHubWindows(session){
+  loadStudentPerformanceWindow(session);
+  loadStudentCertificatesWindow(session);
+}
+
 function openStudentHub(session){
   byId("loginScreen").classList.add("hidden");
   byId("teacherHub").classList.add("hidden");
   byId("studentHub").classList.remove("hidden");
   byId("studentDisplay").innerText=session.name;
   byId("classDisplay").innerText=session.className+" • ID: "+session.studentId;
+  loadStudentHubWindows(session);
 }
 
 function openTeacherHub(){
