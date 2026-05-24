@@ -475,7 +475,77 @@ async function initFirebase(){const box=byId('connectionBox');try{if(!firebase.a
 async function getState(){if(stateCache)return JSON.parse(JSON.stringify(stateCache));const snap=await stateRef.get();return snap.exists()?snap.val():defaultState()}async function setState(s){stateCache=JSON.parse(JSON.stringify(s));await stateRef.set(s)}
 function saveStudentSession(){if(currentUser?.role==='student')localStorage.setItem(SESSION_KEY,JSON.stringify(currentUser))}function clearStudentSession(){localStorage.removeItem(SESSION_KEY)}function restoreStudentSession(){try{const saved=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(!saved||saved.role!=='student')return false;currentUser=saved;hide('hubPage');hide('loginPage');hide('teacherPage');show('studentPage');return true}catch(e){return false}}
 function openLogin(){hide('hubPage');show('loginPage');showLogin('student');setTimeout(syncSecureHubLoginToReadingRush,100)}function backHome(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}function showLogin(type){type==='teacher'?(hide('studentLogin'),show('teacherLogin')):(show('studentLogin'),hide('teacherLogin'))}
-async function studentJoin(){const secure=getSecureHubStudent();const name=(secure?.name||byId('studentName').value.trim());const studentId=(secure?.studentId||secure?.password||byId('studentId').value.trim());const cls=(secure?.className||byId('studentClass').value);const classId=(secure?.classId||safeKey(cls));const group=byId('studentGroup').value;if(!name){alert('Student name was not found. Please login from Secure Hub first.');return}if(!studentId){alert('Student ID was not found. Please login from Secure Hub first.');return}const id=String(studentId).trim();const s=await getState();s.students=s.students||{};s.scores=s.scores||{};s.students[id]={id,name,studentId:id,cls,classId,group,lastSeen:Date.now()};if(typeof s.scores[group]==='undefined')s.scores[group]=0;await setState(s);currentUser={role:'student',id,name,studentId:id,cls,classId,group};saveStudentSession();hide('loginPage');show('studentPage');studentRefresh()}
+async function studentJoin(){const secure=getSecureHubStudent();const name=(secure?.name||byId('studentName').value.trim());const studentId=(secure?.studentId||secure?.password||byId('studentId').value.trim());const cls=(secure?.className||byId('studentClass').value);const classId=(secure?.classId||safeKey(cls));const group=byId('studentGroup').value;if(!name){alert('Student name was not found. Please login from Secure Hub first.');return}if(!studentId){alert('Student ID was not found. Please login from Secure Hub first.');return}const id=String(studentId).trim();const s=await getState();s.students=s.students||{};s.scores=s.scores||{};s.students[id] = {
+  id,
+  name,
+  studentId:id,
+  cls,
+  classId,
+  group,
+  lastSeen:Date.now()
+};
+
+if(typeof s.scores[group] === 'undefined'){
+  s.scores[group] = 0;
+}
+
+/* ✅ Late join fix:
+   If teacher already started a live collection,
+   give this student progress immediately.
+*/
+if(
+  (s.stage === 'playing' || s.stage === 'boss') &&
+  s.currentCollectionId &&
+  s.collections?.[s.currentCollectionId]
+){
+  s.studentProgress = s.studentProgress || {};
+
+  const col = s.collections[s.currentCollectionId];
+  const paragraphs = col.paragraphs || [];
+
+  if(paragraphs.length){
+    if(s.stage === 'boss'){
+      const last = paragraphs.length - 1;
+
+      s.studentProgress[id] = {
+        paraIndex:last,
+        qIndex:0,
+        done:false
+      };
+    }else{
+      s.studentProgress[id] = {
+        paraIndex:getInitialParaIndex(s, { id, name, group, cls, classId }),
+        qIndex:0,
+        done:false
+      };
+    }
+
+    if(typeof assignMagicQuestionForStudent === 'function'){
+      assignMagicQuestionForStudent(s, id);
+    }
+  }
+}
+
+await setState(s);
+
+currentUser = {
+  role:'student',
+  id,
+  name,
+  studentId:id,
+  cls,
+  classId,
+  group
+};
+
+saveStudentSession();
+
+hide('loginPage');
+show('studentPage');
+
+studentRefresh();
+ }
+ 
 async function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
 function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));(s.events||[]).forEach(e=>e.group&&set.add(String(e.group)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
 function getSelectedCollectionId(){return byId('editCollectionSelect')?.value||''}
@@ -1197,7 +1267,10 @@ function autoScheduleUnfinishedStudents(s){
     list.innerHTML = '';
     return;
   }
-
+const liveIsRunning =
+  s.stage === 'playing' ||
+  s.stage === 'boss';
+  
   wrap.style.display = 'block';
   
   list.innerHTML = pending.map(item => `
@@ -1241,22 +1314,29 @@ function autoScheduleUnfinishedStudents(s){
 
       </div>
 
-      ${
-        item.status === 'completed'
+     ${
+  item.status === 'completed'
 
-        ? `
-          <button disabled
-                  class="secondary">
-            Completed
-          </button>
-        `
+  ? `
+    <button class="secondary" disabled>
+      Completed
+    </button>
+  `
 
-        : `
-          <button onclick="openScheduledCollection('${item.collectionId}')">
-            Open Collection
-          </button>
-        `
-      }
+  : liveIsRunning
+
+    ? `
+      <button class="secondary" disabled>
+        Live lesson running
+      </button>
+    `
+
+    : `
+      <button onclick="openScheduledCollection('${item.collectionId}')">
+        Open Collection
+      </button>
+    `
+}
 
     </div>
 
