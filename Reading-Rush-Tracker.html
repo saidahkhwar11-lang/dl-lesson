@@ -1206,51 +1206,70 @@ function autoScheduleUnfinishedStudents(s){
 
   wrap.style.display = 'block';
   
-  list.innerHTML = pending.map(item=>`
+  list.innerHTML = pending.map(item => `
 
-    <div class="row">
+  <div class="card"
+       style="
+         margin-top:10px;
+         padding:14px;
+         border:1px solid #dfe8ff;
+         border-radius:16px;
+         background:linear-gradient(135deg,#ffffff,#f8fbff);
+       ">
 
-      <div style="
-        display:flex;
-        justify-content:space-between;
-        align-items:center;
-        gap:10px;
-        flex-wrap:wrap;
-      ">
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    ">
 
-        <div>
-          <b>📖 ${esc(item.title || 'Collection')}</b>
+      <div>
 
-          <div class="mini">
-            ${
-              item.status === 'completed'
-              ? '✅ Completed'
-              : '🕓 Pending'
-            }
-          </div>
+        <div style="
+          font-weight:800;
+          color:#203a78;
+          font-size:16px;
+        ">
+          📖 ${esc(item.title || 'Collection')}
         </div>
 
-        ${
-          item.status === 'completed'
-          ? `
-            <button disabled>
-              Completed
-            </button>
-          `
-          : `
-            <button onclick="openScheduledCollection('${item.collectionId}')">
-              Open Collection
-            </button>
-          `
-        }
+        <div class="mini" style="margin-top:4px">
+
+          ${
+            item.status === 'completed'
+            ? '✅ Completed'
+            : '🕓 Recovery assignment'
+          }
+
+        </div>
 
       </div>
 
+      ${
+        item.status === 'completed'
+
+        ? `
+          <button disabled
+                  class="secondary">
+            Completed
+          </button>
+        `
+
+        : `
+          <button onclick="openScheduledCollection('${item.collectionId}')">
+            Open Collection
+          </button>
+        `
+      }
+
     </div>
 
-  `).join('');
-}
+  </div>
 
+`).join('');
+}
 function renderScheduledCollections(s){
   const panel = byId('scheduledCollectionsPanel');
   const list = byId('scheduledCollectionsList');
