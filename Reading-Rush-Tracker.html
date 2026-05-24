@@ -230,6 +230,35 @@
   display:grid;
   gap:8px;
 }
+
+
+.scheduledCollectionsPanel{
+  margin:10px 0 12px;
+  border:1px solid #dfe8ff;
+  background:linear-gradient(135deg,#ffffff,#f8fbff);
+  border-radius:20px;
+  padding:12px 14px;
+}
+.scheduledCollectionsPanel h3{
+  margin-bottom:8px;
+  font-size:20px;
+}
+.scheduledCollectionCard{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  background:#fff;
+  border:1px solid #dfe8ff;
+  border-radius:16px;
+  padding:10px 12px;
+  margin-top:8px;
+}
+.scheduledCollectionCard b{color:#203a78}
+.scheduledStatusPending{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+.scheduledStatusDone{background:#eafff3;border:1px solid #9fe4bd;color:#176b45;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+.recoveryBanner{background:#eef4ff;border:1px solid #cfdcff;color:#294a99;border-radius:16px;padding:10px 12px;font-weight:800;margin-bottom:10px}
+
 </style>
 </head>
 <body>
@@ -352,6 +381,13 @@
   </div>
 
 </div>
+
+<div id="scheduledCollectionsPanel" class="scheduledCollectionsPanel hidden">
+  <h3>📚 Scheduled Collections</h3>
+  <div class="mini">Unfinished live collections appear here automatically. Complete them without game events or magic questions.</div>
+  <div id="scheduledCollectionsList"></div>
+</div>
+
   <div class="studentGameGrid">
     <div class="card readingSide">
       <div class="readingMeta">
@@ -433,7 +469,7 @@
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
 const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{},teacherInfo:{goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:5},lessonPlan:null,roundStartTime:null}}
+function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{},teacherInfo:{goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:5},lessonPlan:null,roundStartTime:null,scheduledCollections:{}}}
 function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
 async function initFirebase(){const box=byId('connectionBox');try{if(!firebase.apps.length)firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);db=firebase.database();stateRef=db.ref(gamePath('state'));stateRef.on('value',snap=>{stateCache=snap.exists()?snap.val():defaultState();if(!currentUser)restoreStudentSession();if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()});const snap=await stateRef.get();if(!snap.exists())await stateRef.set(defaultState());box.className='card status good';box.innerHTML='✅ Firebase connected live.'}catch(err){box.className='card status bad';box.innerHTML='Firebase error: '+esc(err.message)}}
 async function getState(){if(stateCache)return JSON.parse(JSON.stringify(stateCache));const snap=await stateRef.get();return snap.exists()?snap.val():defaultState()}async function setState(s){stateCache=JSON.parse(JSON.stringify(s));await stateRef.set(s)}
@@ -1039,6 +1075,355 @@ function renderEditCollection(){
   renderCollections(s);
 }
 
+
+function classKeyFromValue(value){
+  return safeKey(value || '');
+}
+
+function getStudentClassKey(student){
+  return student?.classId || classKeyFromValue(student?.cls || student?.className || '');
+}
+
+function getCurrentStudentClassKey(){
+  return currentUser?.classId || classKeyFromValue(currentUser?.cls || '');
+}
+
+function ensureStudentScheduleBucket(s, classId, studentId){
+  s.scheduledCollections = s.scheduledCollections || {};
+  s.scheduledCollections[classId] = s.scheduledCollections[classId] || {};
+  s.scheduledCollections[classId][studentId] = s.scheduledCollections[classId][studentId] || {};
+  return s.scheduledCollections[classId][studentId];
+}
+
+function getScheduledClassAssignments(s, classId){
+  return s.scheduledCollections?.[classId]?._classAssignments || {};
+}
+
+function getStudentScheduledAssignments(s, classId, studentId){
+  const direct = s.scheduledCollections?.[classId]?.[studentId] || {};
+  const classAssignments = getScheduledClassAssignments(s, classId);
+  const result = {};
+
+  Object.keys(direct).forEach(colId=>{
+    if(colId !== '_classAssignments') result[colId] = direct[colId];
+  });
+
+  Object.keys(classAssignments).forEach(colId=>{
+    const ca = classAssignments[colId];
+    if(ca?.completedLiveStudents?.[studentId]) return;
+    if(!result[colId]){
+      result[colId] = {
+        collectionId: colId,
+        title: ca.title || 'Reading Rush Collection',
+        assignedAt: ca.assignedAt || Date.now(),
+        status: 'pending',
+        mode: 'recovery',
+        fromClassAssignment: true
+      };
+    }
+  });
+
+  return result;
+}
+
+function autoScheduleUnfinishedStudents(s){
+  const activeClass = s.activeClass || getActiveClass();
+  const classId = classKeyFromValue(activeClass);
+  const colId = s.currentCollectionId;
+  const col = s.collections?.[colId];
+
+  if(!classId || !colId || !col) return s;
+
+  s.scheduledCollections = s.scheduledCollections || {};
+  s.scheduledCollections[classId] = s.scheduledCollections[classId] || {};
+  s.scheduledCollections[classId]._classAssignments = s.scheduledCollections[classId]._classAssignments || {};
+
+  const completedLiveStudents = {};
+
+  Object.values(s.students || {})
+    .filter(st => classKeyFromValue(st.cls || st.className) === classId || String(st.cls) === String(activeClass))
+    .forEach(st => {
+      const pr = s.studentProgress?.[st.id];
+      const finished = pr?.done === true;
+
+      if(finished){
+        completedLiveStudents[st.id] = true;
+        return;
+      }
+
+      const bucket = ensureStudentScheduleBucket(s, classId, st.id);
+      const old = bucket[colId] || {};
+      bucket[colId] = {
+        collectionId: colId,
+        title: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
+        assignedAt: old.assignedAt || Date.now(),
+        status: old.status === 'completed' ? 'completed' : 'pending',
+        mode: 'recovery',
+        progress: old.progress || {paraIndex:0,qIndex:0,done:false},
+        answers: old.answers || []
+      };
+    });
+
+  s.scheduledCollections[classId]._classAssignments[colId] = {
+    collectionId: colId,
+    title: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
+    assignedAt: Date.now(),
+    mode: 'recovery',
+    completedLiveStudents
+  };
+
+  return s;
+}
+
+function renderScheduledCollections(s){
+  const panel = byId('scheduledCollectionsPanel');
+  const list = byId('scheduledCollectionsList');
+  if(!panel || !list || !currentUser || currentUser.role !== 'student') return;
+
+  const classId = getCurrentStudentClassKey();
+  const studentId = currentUser.id;
+  const assignments = getStudentScheduledAssignments(s, classId, studentId);
+  const items = Object.values(assignments)
+    .filter(a => a && a.collectionId && s.collections?.[a.collectionId])
+    .sort((a,b)=>Number(a.assignedAt||0)-Number(b.assignedAt||0));
+
+  if(!items.length){
+    panel.classList.add('hidden');
+    list.innerHTML = '';
+    return;
+  }
+
+  panel.classList.remove('hidden');
+  list.innerHTML = items.map(a=>{
+    const col = s.collections?.[a.collectionId];
+    const totalQ = (col?.paragraphs || []).reduce((sum,p)=>sum + ((p.questions || []).length),0);
+    const done = a.status === 'completed';
+    return `
+      <div class="scheduledCollectionCard">
+        <div>
+          <b>${esc(a.title || col?.title || 'Reading Rush Collection')}</b>
+          <div class="mini">${(col?.paragraphs || []).length} paragraphs • ${totalQ} questions • Recovery mode</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+          <span class="${done ? 'scheduledStatusDone' : 'scheduledStatusPending'}">${done ? '✅ Completed' : '⏳ Pending'}</span>
+          ${done ? '' : `<button class="success" onclick="startScheduledCollection('${a.collectionId}')">Continue</button>`}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+async function startScheduledCollection(collectionId){
+  const s = await getState();
+  const classId = getCurrentStudentClassKey();
+  const studentId = currentUser.id;
+  const col = s.collections?.[collectionId];
+
+  if(!col){
+    alert('This scheduled collection cannot be found. Ask your teacher to check the saved collection.');
+    return;
+  }
+
+  const bucket = ensureStudentScheduleBucket(s, classId, studentId);
+  const old = bucket[collectionId] || {};
+
+  bucket[collectionId] = {
+    collectionId,
+    title: col.title || old.title || 'Reading Rush Collection',
+    assignedAt: old.assignedAt || Date.now(),
+    status: old.status === 'completed' ? 'completed' : 'pending',
+    mode: 'recovery',
+    progress: old.progress || {paraIndex:0,qIndex:0,done:false},
+    answers: old.answers || []
+  };
+
+  currentUser.recoveryMode = true;
+  currentUser.recoveryCollectionId = collectionId;
+  saveStudentSession();
+
+  await setState(s);
+  selectedAnswer = '';
+  studentRefresh();
+}
+
+function exitScheduledCollection(){
+  if(!currentUser) return;
+  currentUser.recoveryMode = false;
+  currentUser.recoveryCollectionId = '';
+  saveStudentSession();
+  selectedAnswer = '';
+  studentRefresh();
+}
+
+function currentRecoveryPQ(s){
+  const classId = getCurrentStudentClassKey();
+  const studentId = currentUser?.id;
+  const colId = currentUser?.recoveryCollectionId;
+  const col = s.collections?.[colId];
+  const assignment = s.scheduledCollections?.[classId]?.[studentId]?.[colId];
+
+  if(!col || !assignment) return {p:null,q:null,pr:null,total:0,col:null,assignment:null};
+
+  assignment.progress = assignment.progress || {paraIndex:0,qIndex:0,done:false};
+  const pr = assignment.progress;
+  const paragraphs = col.paragraphs || [];
+  const p = paragraphs[Math.min(Number(pr.paraIndex||0), Math.max(0, paragraphs.length-1))];
+  const q = (p?.questions || [])[Number(pr.qIndex||0)];
+
+  return {p,q,pr,total:paragraphs.length,col,assignment};
+}
+
+function renderRecoveryStudentView(s){
+  const d = currentRecoveryPQ(s);
+
+  if(!d.col || !d.assignment){
+    exitScheduledCollection();
+    return;
+  }
+
+  byId('studentWelcome').innerText = `Welcome, ${currentUser.name} | Recovery Assignment`;
+  renderStages('studentStages', 'playing');
+  if(typeof renderStudentParagraphTimers === 'function') renderStudentParagraphTimers(s);
+  renderScheduledCollections(s);
+
+  byId('studentInstruction').innerText = 'Recovery mode: read and answer. No game events or magic questions.';
+  byId('studentRoundTitle').innerText = d.col.title || d.assignment.title || 'Scheduled Collection';
+
+  if(byId('miniLeaderboardGroup')) byId('miniLeaderboardGroup').innerText = 'Recovery';
+  if(byId('miniLeaderboardPoints')) byId('miniLeaderboardPoints').innerText = 'No points';
+  if(byId('magicQuestionIcon')) byId('magicQuestionIcon').classList.add('hidden');
+  if(byId('bossNotice')) byId('bossNotice').classList.add('hidden');
+
+  if(d.pr?.done || d.assignment.status === 'completed'){
+    hide('questionBox');
+    byId('studentProgress').innerText = 'Scheduled collection completed ✅';
+    byId('paragraphBox').innerHTML = `<div class="status good">✅ You completed this scheduled collection.</div><button class="secondary" onclick="exitScheduledCollection()">Back to Scheduled Collections</button>`;
+    byId('studentResultBox').innerHTML = '';
+    return;
+  }
+
+  if(d.p){
+    byId('studentProgress').innerText = `Scheduled Collection • Paragraph ${Number(d.pr.paraIndex||0)+1}/${d.total} • Question ${Math.min(Number(d.pr.qIndex||0)+1,(d.p.questions||[]).length)}/${(d.p.questions||[]).length}`;
+    byId('paragraphBox').innerHTML = `<div class="recoveryBanner">📚 Scheduled Recovery Assignment</div><div class="pTitle"><b>${esc(d.p.title || '')}</b></div><div class="pText">${highlightKeywords(d.p.text, d.p.keywords || [])}</div><button class="secondary" onclick="exitScheduledCollection()">Back to Scheduled Collections</button>`;
+    show('questionBox');
+    renderStudentQuestion(s, d);
+  }else{
+    hide('questionBox');
+    byId('studentProgress').innerText = 'Scheduled collection is not ready.';
+    byId('paragraphBox').innerHTML = '<div class="status">This scheduled collection has no questions.</div>';
+  }
+}
+
+async function submitRecoveryAnswer(){
+  if(!selectedAnswer){
+    alert('Choose an answer.');
+    return;
+  }
+
+  const s = await getState();
+  const classId = getCurrentStudentClassKey();
+  const studentId = currentUser.id;
+  const colId = currentUser.recoveryCollectionId;
+  const bucket = ensureStudentScheduleBucket(s, classId, studentId);
+  const assignment = bucket[colId];
+  const col = s.collections?.[colId];
+
+  if(!assignment || !col){
+    alert('Scheduled collection not found.');
+    return;
+  }
+
+  assignment.progress = assignment.progress || {paraIndex:0,qIndex:0,done:false};
+  assignment.answers = assignment.answers || [];
+
+  const pr = assignment.progress;
+  const paraIndex = Number(pr.paraIndex || 0);
+  const qIndex = Number(pr.qIndex || 0);
+  const p = (col.paragraphs || [])[paraIndex];
+  const q = (p?.questions || [])[qIndex];
+
+  if(!q) return;
+
+  const correct = selectedAnswer === q.correct;
+
+  assignment.answers.push({
+    paraIndex,
+    qIndex,
+    selected:selectedAnswer,
+    correct,
+    skill:q.skill || 'unknown',
+    time:Date.now()
+  });
+
+  const qTotal = (p?.questions || []).length;
+  pr.qIndex++;
+
+  if(pr.qIndex >= qTotal){
+    pr.qIndex = 0;
+    pr.paraIndex++;
+
+    if(pr.paraIndex >= (col.paragraphs || []).length){
+      pr.done = true;
+      pr.paraIndex = Math.max(0,(col.paragraphs || []).length - 1);
+      pr.qIndex = qTotal;
+      assignment.status = 'completed';
+      assignment.completedAt = Date.now();
+    }
+  }
+
+  await setState(s);
+  await saveScheduledReadingRushToTeacherControl(s, assignment, col);
+
+  selectedAnswer = '';
+
+  if(assignment.status === 'completed'){
+    showReward('✅','Completed!','Your scheduled collection mark was saved to Teacher Control.');
+  }
+
+  studentRefresh();
+}
+
+async function saveScheduledReadingRushToTeacherControl(s, assignment, col){
+  try{
+    if(!db || !currentUser || !assignment || !col) return;
+
+    const classId = getCurrentStudentClassKey();
+    const id = String(currentUser.studentId || currentUser.id || '').trim();
+    if(!id) return;
+
+    const totalQuestions = (col.paragraphs || []).reduce((sum,p)=>sum + ((p.questions || []).length),0);
+    const correctAnswers = (assignment.answers || []).filter(a=>a.correct).length;
+    const percentage = totalQuestions ? correctAnswers / totalQuestions : 0;
+    const weightedScore = Math.round(percentage * 30);
+
+    const record = {
+      activityType:'Reading Rush',
+      activityName: col.title || assignment.title || 'Reading Rush Scheduled Collection',
+      mode:'Scheduled Recovery',
+      score: weightedScore,
+      total: 30,
+      correct: correctAnswers,
+      questionsTotal: totalQuestions,
+      percentage: Math.round(percentage * 100),
+      group: currentUser.group || '',
+      groupScore: 0,
+      classId,
+      className: currentUser.cls || '',
+      studentId: id,
+      studentName: currentUser.name || '',
+      collectionId: assignment.collectionId,
+      completed: assignment.status === 'completed',
+      updatedAt: Date.now()
+    };
+
+    await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush_' + assignment.collectionId).set(record);
+    await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
+    await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + assignment.collectionId).set(record);
+  }catch(err){
+    console.warn('Scheduled Reading Rush tracker save skipped:', err);
+  }
+}
+
+
  function getInitialParaIndex(s, student){
 
   const col = s.collections?.[s.currentCollectionId];
@@ -1135,7 +1520,17 @@ async function startBossRound(){
 
   await setState(s);
 }
-async function stopChallenge(){const s=await getState();s.stage='final';s.final=true;s.analytics=buildAnalytics(s);await setState(s)}
+async function stopChallenge(){
+  const s = await getState();
+
+  autoScheduleUnfinishedStudents(s);
+
+  s.stage = 'final';
+  s.final = true;
+  s.analytics = buildAnalytics(s);
+
+  await setState(s);
+}
 
 async function resetGame(){
   if(!confirm('Reset students, group points, answers, events, and progress only?\n\nYour saved collections will stay unless you click Delete Collection.')) return;
@@ -1151,6 +1546,7 @@ async function resetGame(){
   // KEEP teacher info and lesson plan.
   fresh.teacherInfo = s.teacherInfo || fresh.teacherInfo;
   fresh.lessonPlan = s.lessonPlan || null;
+  fresh.scheduledCollections = s.scheduledCollections || {};
 
   // RESET only class/game session data.
   fresh.stage = 'waiting';
@@ -1354,6 +1750,35 @@ function lessonPlanHTML(plan, forDownload=false){
 .progressSmall{font-size:12px;color:#526790;font-weight:800}
 .scoreGood{color:#157347;font-weight:900}.scoreBad{color:#b4233a;font-weight:900}.scoreNeutral{color:#526790;font-weight:900}
 
+
+
+.scheduledCollectionsPanel{
+  margin:10px 0 12px;
+  border:1px solid #dfe8ff;
+  background:linear-gradient(135deg,#ffffff,#f8fbff);
+  border-radius:20px;
+  padding:12px 14px;
+}
+.scheduledCollectionsPanel h3{
+  margin-bottom:8px;
+  font-size:20px;
+}
+.scheduledCollectionCard{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  background:#fff;
+  border:1px solid #dfe8ff;
+  border-radius:16px;
+  padding:10px 12px;
+  margin-top:8px;
+}
+.scheduledCollectionCard b{color:#203a78}
+.scheduledStatusPending{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+.scheduledStatusDone{background:#eafff3;border:1px solid #9fe4bd;color:#176b45;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+.recoveryBanner{background:#eef4ff;border:1px solid #cfdcff;color:#294a99;border-radius:16px;padding:10px 12px;font-weight:800;margin-bottom:10px}
+
 </style></head><body>
  <h1>Al Reyada School - Digital Lesson Plan</h1>
  <div class="box"><b>Date:</b> ${esc(plan.date)} &nbsp; | &nbsp; <b>Subject:</b> ${esc(plan.subject)} &nbsp; | &nbsp; <b>Teacher:</b> ${esc(plan.teacher)}</div>
@@ -1411,6 +1836,11 @@ function studentRefresh(){
     return;
   }
 
+  if(currentUser.recoveryMode){
+    renderRecoveryStudentView(s);
+    return;
+  }
+
   byId('studentWelcome').innerText =
     `Welcome, ${currentUser.name} | Group ${currentUser.group}`;
 
@@ -1419,6 +1849,8 @@ function studentRefresh(){
   if(typeof renderStudentParagraphTimers === 'function'){
     renderStudentParagraphTimers(s);
   }
+
+  renderScheduledCollections(s);
 
   byId('studentInstruction').innerText =
     s.stage === 'playing'
@@ -1429,16 +1861,17 @@ function studentRefresh(){
     s.currentCollectionTitle || 'Current Collection';
 
   renderLeaderboard('studentLeaderboard', s);
- const myGroup = String(currentUser.group || '');
-const myPoints = Number(s.scores?.[myGroup] || 0);
 
-if(byId('miniLeaderboardGroup')){
-  byId('miniLeaderboardGroup').innerText = 'G' + myGroup;
-}
+  const myGroup = String(currentUser.group || '');
+  const myPoints = Number(s.scores?.[myGroup] || 0);
 
-if(byId('miniLeaderboardPoints')){
-  byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
-}
+  if(byId('miniLeaderboardGroup')){
+    byId('miniLeaderboardGroup').innerText = 'G' + myGroup;
+  }
+
+  if(byId('miniLeaderboardPoints')){
+    byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
+  }
 
   const d = currentPQ(s);
 
@@ -1472,9 +1905,10 @@ if(byId('miniLeaderboardPoints')){
     hide('questionBox');
     byId('studentProgress').innerText = 'Progress will appear here.';
     byId('paragraphBox').innerText = 'Wait for teacher to start collection.';
+    byId('studentResultBox').innerHTML = '';
   }
 }
-  function renderStudentQuestion(s,d){
+function renderStudentQuestion(s,d){
 
   const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');
 
@@ -1489,6 +1923,10 @@ if(byId('miniLeaderboardPoints')){
    const magicIcon = byId('magicQuestionIcon');
 
 if(magicIcon){
+
+  if(currentUser?.recoveryMode){
+    magicIcon.classList.add('hidden');
+  }else{
 
   const used = s.magicUsed?.[currentUser.id];
 
@@ -1515,6 +1953,7 @@ if(magicIcon){
     magicIcon.style.border = '1px solid #ff8b8b';
     magicIcon.style.color = '#a11d1d';
   }
+  }
 }
   box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;
   opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');
@@ -1522,6 +1961,10 @@ if(magicIcon){
 }
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
 async function submitAnswer(){
+  if(currentUser?.recoveryMode){
+    return submitRecoveryAnswer();
+  }
+
   if(!selectedAnswer){
     alert('Choose an answer.');
     return;
@@ -1760,12 +2203,6 @@ async function saveReadingRushToTeacherControl(s){
     console.warn('Reading Rush tracker save skipped:', err);
   }
 }
-</script>
-
-<script>
-window.addEventListener('load', function(){
-  setTimeout(syncSecureHubLoginToReadingRush, 1000);
-});
 </script>
 
 </body>
