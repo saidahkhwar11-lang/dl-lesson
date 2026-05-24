@@ -142,7 +142,10 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
   font-weight:800;
   font-size:13px;
   text-decoration:none;
+  border:none;
+  cursor:pointer;
 }
+.certBtn.secondaryCert{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}
 .miniLoading{color:#607197;font-size:13px;line-height:1.5}
 @media(max-width:900px){.studentWindows{grid-template-columns:1fr}}
 
@@ -318,6 +321,7 @@ const TEACHER_PASSWORD = "Welcome@2020";
 
 let db=null;
 let classes={};
+let STUDENT_CERT_CACHE=[];
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
@@ -524,6 +528,79 @@ function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
 }
 
+function certificateDateText(c){
+  const date = c.date || c.issuedAt || c.createdAt || c.completedAt || c.updatedAt || Date.now();
+  try{return new Date(Number(date)).toLocaleDateString();}catch(e){return String(date || "-");}
+}
+
+function buildCertificateHTML(c, session){
+  const title = c.title || c.certificateTitle || "Certificate of Appreciation";
+  const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
+  const student = c.studentName || session?.name || "Student";
+  const className = c.className || session?.className || "";
+  const reason = c.reason || "Excellent performance and active learning achievement";
+  const source = c.source || "DL Learning Hub";
+  const dateText = certificateDateText(c);
+  const scoreLine = (c.correct && c.questionsTotal)
+    ? `${c.correct}/${c.questionsTotal} correct answers`
+    : (c.percentage ? `${c.percentage}% achievement` : "Outstanding achievement");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>${esc(title)}</title>
+<style>
+  @page{size:A4 landscape;margin:12mm}
+  body{font-family:Arial,sans-serif;background:#eef4ff;margin:0;padding:0;color:#20345f}
+  .cert{min-height:calc(100vh - 40px);background:linear-gradient(135deg,#ffffff,#f8fbff,#fff7fb);border:10px solid #d8c7ff;border-radius:28px;margin:18px;padding:42px;text-align:center;box-sizing:border-box;position:relative}
+  .badge{font-size:62px;margin-bottom:8px}
+  h1{font-size:46px;color:#203a78;margin:8px 0 6px;font-family:Georgia,serif}
+  .subtitle{font-size:18px;color:#607197;margin-bottom:24px}
+  .student{font-size:44px;font-weight:800;color:#2f63d9;margin:18px 0;border-bottom:3px solid #d8c7ff;display:inline-block;padding:0 28px 8px}
+  .text{font-size:20px;line-height:1.6;max-width:850px;margin:18px auto;color:#405377}
+  .activity{font-size:24px;font-weight:800;color:#203a78;margin-top:12px}
+  .meta{display:flex;justify-content:space-between;gap:20px;margin-top:42px;font-size:16px;color:#506080}
+  .sign{margin-top:34px;border-top:2px solid #cfdcff;padding-top:8px;min-width:220px}
+  .printBtn{position:fixed;top:12px;right:12px;background:#2f63d9;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
+  @media print{.printBtn{display:none}body{background:white}.cert{margin:0;min-height:auto}}
+</style>
+</head>
+<body>
+<button class="printBtn" onclick="window.print()">Download / Save PDF</button>
+<div class="cert">
+  <div class="badge">🏅</div>
+  <h1>${esc(title)}</h1>
+  <div class="subtitle">This certificate is proudly presented to</div>
+  <div class="student">${esc(student)}</div>
+  <div class="text">For ${esc(reason)} in</div>
+  <div class="activity">${esc(activity)}</div>
+  <div class="text"><b>${esc(scoreLine)}</b></div>
+  <div class="meta">
+    <div><b>Class:</b> ${esc(className)}</div>
+    <div><b>Source:</b> ${esc(source)}</div>
+    <div><b>Date:</b> ${esc(dateText)}</div>
+  </div>
+  <div style="display:flex;justify-content:center;margin-top:30px">
+    <div class="sign">Teacher / DL Learning Hub</div>
+  </div>
+</div>
+<script>setTimeout(()=>window.print(),600)<\/script>
+</body>
+</html>`;
+}
+
+function downloadCertificatePDF(index){
+  const c = STUDENT_CERT_CACHE[index];
+  if(!c){alert("Certificate not found.");return;}
+  const session = JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY) || "null");
+  const win = window.open("", "_blank");
+  if(!win){alert("Please allow popups to download the certificate PDF.");return;}
+  win.document.open();
+  win.document.write(buildCertificateHTML(c, session));
+  win.document.close();
+}
+
 async function loadStudentCertificatesWindow(session){
   if(!db || !session) return;
 
@@ -560,12 +637,13 @@ async function loadStudentCertificatesWindow(session){
     return;
   }
 
-  box.innerHTML = certs.map(c=>{
+  STUDENT_CERT_CACHE = certs;
+
+  box.innerHTML = certs.map((c,index)=>{
     const url = certificateUrl(c);
     const title = c.title || c.certificateTitle || "Achievement Certificate";
     const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
-    const date = c.date || c.createdAt || c.completedAt || c.updatedAt || "";
-    const dateText = date ? new Date(Number(date)).toLocaleDateString() : "-";
+    const dateText = certificateDateText(c);
     return `
       <div class="certCard">
         <b>🏅 ${esc(title)}</b>
@@ -573,11 +651,8 @@ async function loadStudentCertificatesWindow(session){
           Activity: ${esc(activity)}<br>
           Date: ${esc(dateText)}
         </div>
-        ${
-          url
-          ? `<a class="certBtn" href="${esc(url)}" target="_blank" download>Download PDF</a>`
-          : `<div class="certMeta">PDF file not attached yet.</div>`
-        }
+        <button class="certBtn" onclick="downloadCertificatePDF(${index})">Download PDF</button>
+        ${url ? `<a class="certBtn secondaryCert" href="${esc(url)}" target="_blank" download>Open Saved File</a>` : ``}
       </div>
     `;
   }).join("");
