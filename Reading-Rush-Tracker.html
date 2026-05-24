@@ -1336,16 +1336,6 @@ if(byId('miniLeaderboardGroup')){
 if(byId('miniLeaderboardPoints')){
   byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
 }
- const myGroup = String(currentUser.group || '');
-const myPoints = Number(s.scores?.[myGroup] || 0);
-
-if(byId('miniLeaderboardGroup')){
-  byId('miniLeaderboardGroup').innerText = 'G' + myGroup;
-}
-
-if(byId('miniLeaderboardPoints')){
-  byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
-}
 
   const d = currentPQ(s);
 
