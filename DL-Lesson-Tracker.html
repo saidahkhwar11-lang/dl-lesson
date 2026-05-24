@@ -1915,6 +1915,76 @@ async function saveDLPerformanceToTeacherControl(record){
 }
 
 
+/* ===== Secure Hub certificate link =====
+   Saves DL Lesson certificates by Student ID so they appear in Secure Hub.
+   It does not change the certificate design; it only saves a record.
+*/
+async function saveDLCertificateToSecureHub(options){
+  try{
+    if(!db || !currentStudent || !currentStudent.id) return;
+
+    options = options || {};
+
+    const sid = tcCleanKey(currentStudent.id);
+    if(!sid) return;
+
+    const found = await findTeacherControlStudent(sid);
+
+    const classId = tcCleanKey((found && found.classId) || options.classId || 'unknown_class');
+    const studentKey = tcCleanKey((found && found.studentKey) || sid);
+    const studentName =
+      (found && found.student && found.student.name) ||
+      currentStudent.name ||
+      options.studentName ||
+      'Student';
+
+    const lessonTitleText =
+      options.activityName ||
+      lessonMeta.lessonTitle ||
+      lessonKey ||
+      'DL Lesson';
+
+    const certificateType =
+      options.certificateType ||
+      'Achievement Certificate';
+
+    const certificateId =
+      'DL_' +
+      tcCleanKey(certificateType) +
+      '_' +
+      tcCleanKey(lessonKey || lessonTitleText);
+
+    const cert = {
+      certificateId: certificateId,
+      source: 'DL Lesson',
+      certificateTitle: certificateType,
+      reason: options.reason || 'Achievement in DL Lesson',
+      activityName: lessonTitleText,
+      studentId: studentKey,
+      studentName: studentName,
+      classId: classId,
+      className: (found && found.className) || options.className || '',
+      score: Number(options.score || 0),
+      total: Number(options.total || 0),
+      rankText: options.rankText || '',
+      sourceLessonKey: lessonKey || '',
+      issuedAt: Date.now(),
+      date: tcToday()
+    };
+
+    await dbRef(
+      'teacherControlCenter/certificates/' +
+      classId + '/' +
+      studentKey + '/' +
+      certificateId
+    ).set(cert);
+
+  }catch(err){
+    console.warn('DL certificate save skipped:', err);
+  }
+}
+
+
 function getStationById(id){
   return lessonStations.find(function(s){ return s.id === id; });
 }
@@ -4196,6 +4266,15 @@ const rankText = await getCurrentStudentRankText();
 </html>
 `;
 
+  await saveDLCertificateToSecureHub({
+    certificateType: 'Certificate of Achievement',
+    reason: 'Outstanding performance, active participation, and excellent achievement during the English lesson.',
+    activityName: lessonTitleText,
+    rankText: rankText || '',
+    score: Number((await getFreshCurrentStudentData()).total || 0),
+    total: getLessonMaxMark()
+  });
+
   const win = window.open('', '_blank');
 
   if(!win){
@@ -4396,6 +4475,14 @@ body{
 </body>
 </html>
 `;
+
+  await saveDLCertificateToSecureHub({
+    certificateType: 'Certificate of Progress',
+    reason: 'Completed all lesson stations successfully.',
+    activityName: lessonTitleText,
+    score: totalMark,
+    total: getLessonMaxMark()
+  });
 
   const win = window.open('', '_blank');
 
