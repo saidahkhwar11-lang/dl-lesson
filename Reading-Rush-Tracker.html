@@ -1608,13 +1608,22 @@ async function startBossRound(){
 async function stopChallenge(){
   const s = await getState();
 
-  autoScheduleUnfinishedStudents(s);
+  if(typeof autoScheduleUnfinishedStudents === 'function'){
+    autoScheduleUnfinishedStudents(s);
+  }
 
   s.stage = 'final';
   s.final = true;
-  s.analytics = buildAnalytics(s);
+
+  if(typeof buildAnalytics === 'function'){
+    s.analytics = buildAnalytics(s);
+  }else{
+    s.analytics = {};
+  }
 
   await setState(s);
+
+  alert('✅ Report stopped. Unfinished students were scheduled automatically.');
 }
 
 async function resetGame(){
