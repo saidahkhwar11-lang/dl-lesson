@@ -357,25 +357,8 @@
   <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
 </div>
 </div>
-
-
 <div class="studentInfoBar">
-<div id="scheduledCollectionsBox"
-     class="card"
-     style="margin-top:14px;display:none">
 
-  <h2>📚 Scheduled Collections</h2>
-
-  <div class="status bad">
-    These are unfinished collections you still need to complete.
-  </div>
-
-  <div id="scheduledCollectionsList"
-       class="list"
-       style="margin-top:10px">
-  </div>
-
-</div>
   <div class="studentInfoCard">
     <h3>🎯 Main Goal</h3>
     <p id="studentMainGoal">
@@ -383,6 +366,27 @@
     </p>
   </div>
 
+  <div class="studentInfoCard">
+    <h3>📌 Instructions</h3>
+    <p id="studentMainInstructions">
+      Read carefully, use context clues, answer one question at a time, and move through the collection.
+    </p>
+  </div>
+
+  <div class="studentInfoCard">
+    <h3>⏱️ Paragraph Progress</h3>
+    <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
+  </div>
+
+</div>
+
+<div id="scheduledCollectionsBox" class="card" style="margin-top:14px;display:none">
+  <h2>📚 Scheduled Collections</h2>
+  <div class="status bad">
+    These are unfinished collections you still need to complete.
+  </div>
+  <div id="scheduledCollectionsList" class="list" style="margin-top:10px"></div>
+</div>
   <div class="studentInfoCard">
     <h3>📌 Instructions</h3>
     <p id="studentMainInstructions">
@@ -1144,6 +1148,8 @@ function getStudentScheduledAssignments(s, classId, studentId){
 function autoScheduleUnfinishedStudents(s){
 
   const activeClass = s.activeClass || getActiveClass();
+  const activeClassKey = safeKey(activeClass);
+
   const colId = s.currentCollectionId;
   const col = s.collections?.[colId];
 
@@ -1151,37 +1157,44 @@ function autoScheduleUnfinishedStudents(s){
 
   s.scheduledCollections = s.scheduledCollections || {};
 
-  Object.values(s.students || {})
-    .filter(st => String(st.cls) === String(activeClass))
-    .forEach(st => {
+  Object.values(s.students || {}).forEach(st=>{
 
-      const pr = s.studentProgress?.[st.id];
-      const finished = pr?.done === true;
+    const stClassKey =
+      safeKey(st.cls || st.className || st.classId || '');
 
-      if(finished) return;
+    if(stClassKey !== activeClassKey) return;
 
-      const classId = safeKey(st.cls || activeClass);
-      const studentId = String(st.id || st.studentId || '');
+    const studentId =
+      String(st.id || st.studentId || '').trim();
 
-      if(!studentId) return;
+    if(!studentId) return;
 
-      s.scheduledCollections[classId] =
-        s.scheduledCollections[classId] || {};
+    const pr = s.studentProgress?.[studentId];
 
-      s.scheduledCollections[classId][studentId] =
-        s.scheduledCollections[classId][studentId] || {};
+    if(pr?.done === true) return;
 
-      s.scheduledCollections[classId][studentId][colId] = {
-        collectionId: colId,
-        title: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
-        assignedAt: Date.now(),
-        status: 'pending',
-        mode: 'recovery'
-      };
-    });
+    s.scheduledCollections[activeClassKey] =
+      s.scheduledCollections[activeClassKey] || {};
+
+    s.scheduledCollections[activeClassKey][studentId] =
+      s.scheduledCollections[activeClassKey][studentId] || {};
+
+    s.scheduledCollections[activeClassKey][studentId][colId] = {
+      collectionId: colId,
+      title:
+        col.title ||
+        s.currentCollectionTitle ||
+        'Reading Rush Collection',
+      assignedAt: Date.now(),
+      status: 'pending',
+      mode: 'recovery'
+    };
+
+  });
 
   return s;
 }
+ 
  function renderScheduledCollections(s){
 
   const wrap = byId('scheduledCollectionsBox');
@@ -1269,42 +1282,6 @@ function autoScheduleUnfinishedStudents(s){
   </div>
 
 `).join('');
-}
-function renderScheduledCollections(s){
-  const panel = byId('scheduledCollectionsPanel');
-  const list = byId('scheduledCollectionsList');
-  if(!panel || !list || !currentUser || currentUser.role !== 'student') return;
-
-  const classId = getCurrentStudentClassKey();
-  const studentId = currentUser.id;
-  const assignments = getStudentScheduledAssignments(s, classId, studentId);
-  const items = Object.values(assignments)
-    .filter(a => a && a.collectionId && s.collections?.[a.collectionId])
-    .sort((a,b)=>Number(a.assignedAt||0)-Number(b.assignedAt||0));
-
-  if(!items.length){
-    panel.classList.add('hidden');
-    list.innerHTML = '';
-    return;
-  }
-
-  panel.classList.remove('hidden');
-  list.innerHTML = items.map(a=>{
-    const col = s.collections?.[a.collectionId];
-    const totalQ = (col?.paragraphs || []).reduce((sum,p)=>sum + ((p.questions || []).length),0);
-    const done = a.status === 'completed';
-    return `
-      <div class="scheduledCollectionCard">
-        <div>
-          <b>${esc(a.title || col?.title || 'Reading Rush Collection')}</b>
-          <div class="mini">${(col?.paragraphs || []).length} paragraphs • ${totalQ} questions • Recovery mode</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end">
-          <span class="${done ? 'scheduledStatusDone' : 'scheduledStatusPending'}">${done ? '✅ Completed' : '⏳ Pending'}</span>
-          ${done ? '' : `<button class="success" onclick="startScheduledCollection('${a.collectionId}')">Continue</button>`}
-        </div>
-      </div>`;
-  }).join('');
 }
 
 async function startScheduledCollection(collectionId){
