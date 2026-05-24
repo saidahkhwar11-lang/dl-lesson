@@ -191,6 +191,45 @@
   box-shadow:0 5px 12px rgba(255,193,7,.18);
   white-space:nowrap;
 }
+ .collectionParaDetails{
+  background:#f8fbff;
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+  margin-bottom:10px;
+}
+
+.collectionParaDetails summary{
+  cursor:pointer;
+  font-family:Quicksand,sans-serif;
+  font-weight:900;
+  color:#203a78;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.paragraphPreviewBox{
+  margin-top:12px;
+  background:white;
+  border:1px solid #dfe8ff;
+  border-radius:16px;
+  padding:12px;
+}
+
+.paragraphPreviewBox p{
+  margin-top:8px;
+  line-height:1.6;
+  white-space:pre-wrap;
+  color:#20345f;
+}
+
+.questionPreviewList{
+  margin-top:10px;
+  display:grid;
+  gap:8px;
+}
 </style>
 </head>
 <body>
@@ -862,43 +901,93 @@ function renderEditCollection(){
   if(!select || !box) return;
 
   const s = stateCache || {};
-  const id = select.value;
+  const id = s.currentCollectionId || select.value;
 
   const col = s.collections?.[id];
 
   if(!id || !col){
-    box.innerHTML = '<div class="status">Select a collection to view details.</div>';
+    box.innerHTML = '<div class="status">Choose Use Collection to show details.</div>';
     return;
   }
 
   const paragraphs = col.paragraphs || [];
 
-  box.innerHTML = paragraphs.length
-    ? paragraphs.map((p,i)=>`
-      <div class="card" style="margin-bottom:10px">
-
-  <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
-  ">
-
-    <div style="font-weight:700">
-      📄 Paragraph ${i+1}
+  box.innerHTML = `
+    <div class="status good">
+      Showing details for:
+      <b>${esc(col.title)}</b>
     </div>
 
-    <div class="tinyPill">
-      ${(p.questions || []).length} Questions
-    </div>
+    ${
+      paragraphs.length
+      ? paragraphs.map((p,i)=>`
 
-  </div>
+        <details class="collectionParaDetails">
 
-</div>
-    `).join('')
-    : '<div class="status">No paragraphs yet.</div>';
+          <summary>
+            📄 Paragraph ${i+1}
+
+            <span class="tinyPill">
+              ${(p.questions || []).length} Questions
+            </span>
+          </summary>
+
+          <div class="paragraphPreviewBox">
+
+            <h3>
+              ${esc(p.title || 'Paragraph ' + (i+1))}
+            </h3>
+
+            <p>
+              ${esc(p.text || '')}
+            </p>
+
+          </div>
+
+          <div class="questionPreviewList">
+
+            ${(p.questions || []).map((q,qi)=>`
+
+              <div class="card" style="padding:10px;margin-top:8px">
+
+                <b>
+                  Q${qi+1}. ${esc(q.text || '')}
+                </b>
+
+                <div class="mini" style="margin-top:6px">
+
+                  A) ${esc(q.options?.A || '')}<br>
+                  B) ${esc(q.options?.B || '')}<br>
+                  C) ${esc(q.options?.C || '')}<br>
+
+                  ${
+                    q.options?.D
+                    ? 'D) ' + esc(q.options.D) + '<br>'
+                    : ''
+                  }
+
+                  <b>
+                    Answer:
+                    ${esc(q.correct || '')}
+                  </b>
+
+                </div>
+
+              </div>
+
+            `).join('')}
+
+          </div>
+
+        </details>
+
+      `).join('')
+      : '<div class="status">No paragraphs yet.</div>'
+    }
+  `;
 }
-async function selectCollection(id){
+ 
+ async function selectCollection(id){
   event?.stopPropagation?.();
 
   const s = await getState();
