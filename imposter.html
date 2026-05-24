@@ -1650,21 +1650,39 @@ input,select,textarea{
     </div>
 
     <div class="grid">
-      <div id="studentLogin" class="card studentOnly">
-        <h2>Student Login</h2>
-        <label>Your Name</label>
-        <input id="studentName" placeholder="Write your name">
-        <label>Class</label>
-        <select id="studentClass">
-          <option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option>
-        </select>
-        <label>Group</label>
-        <select id="studentGroup">
-          <option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option>
-          <option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option>
-        </select>
-        <button onclick="studentJoin()">Join Game</button>
-      </div>
+     <div id="studentLogin" class="card studentOnly">
+  <h2>Student Login</h2>
+
+  <div class="status good">
+    🔐 Student information is connected automatically from Secure Hub.
+  </div>
+
+  <label>Your Name</label>
+  <input id="studentName" placeholder="Connected from Secure Hub" readonly>
+
+  <label>Student ID</label>
+  <input id="studentId" placeholder="Connected automatically" readonly>
+
+  <label>Class</label>
+  <select id="studentClass" disabled>
+    <option>9/1</option>
+    <option>9/2</option>
+    <option>9/3</option>
+    <option>9/4</option>
+  </select>
+
+  <label>Choose Your Group</label>
+  <select id="studentGroup">
+    <option value="1">Group 1</option>
+    <option value="2">Group 2</option>
+    <option value="3">Group 3</option>
+    <option value="4">Group 4</option>
+    <option value="5">Group 5</option>
+    <option value="6">Group 6</option>
+  </select>
+
+  <button onclick="studentJoin()">Join Game</button>
+</div>
 
       <div id="teacherLogin" class="card teacherOnly hidden">
         <h2>Teacher Login</h2>
@@ -2169,8 +2187,22 @@ function restoreSession(){
 
 function openGame(){hide('hubPage');show('loginPage')}
 function backToHub(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage')}
-function showLogin(t){t==='student'?(show('studentLogin'),hide('teacherLogin')):(show('teacherLogin'),hide('studentLogin'))}
+function showLogin(t){
 
+  if(t === 'student'){
+
+    show('studentLogin');
+    hide('teacherLogin');
+
+    loadSecureHubStudent();
+
+  }else{
+
+    show('teacherLogin');
+    hide('studentLogin');
+
+  }
+}
 function activeGroups(s){
   return [...new Set(Object.values(s.students||{}).map(x=>x.group))].sort((a,b)=>Number(a)-Number(b));
 }
@@ -2210,6 +2242,29 @@ function stepTitle(st){
   if(st==='vote') return '🗳️ Vote for the imposter in your group. Wait for teacher results.';
   if(st==='results') return '🏆 Results are released.';
   return '🎭 Waiting for teacher to start.';
+}
+  function loadSecureHubStudent(){
+
+  const secure = getSecureHubStudent?.();
+
+  if(!secure) return;
+
+  if(byId('studentName')){
+    byId('studentName').value =
+      secure.name || '';
+  }
+
+  if(byId('studentId')){
+    byId('studentId').value =
+      secure.studentId ||
+      secure.password ||
+      '';
+  }
+
+  if(byId('studentClass')){
+    byId('studentClass').value =
+      secure.className || '9/1';
+  }
 }
 
 async function studentJoin(){
