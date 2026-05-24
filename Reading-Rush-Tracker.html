@@ -96,55 +96,6 @@
     font-size:21px!important;
   }
 }
- .cleanQuestionHeader{
-  display:flex!important;
-  justify-content:space-between!important;
-  align-items:flex-start!important;
-  gap:12px!important;
-  margin-bottom:12px!important;
-}
-
-.cleanQuestionHeader h2{
-  font-size:24px!important;
-  line-height:1.15!important;
-  margin:0!important;
-}
-
-.questionMiniTools{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;
-  gap:8px;
-  flex-wrap:wrap;
-}
-
-.miniQuestionBadge{
-  background:#f4f0ff;
-  border:1px solid #d9cdfd;
-  color:#4d35a5;
-  border-radius:999px;
-  padding:6px 10px;
-  font-size:11px;
-  font-weight:900;
-  white-space:nowrap;
-}
-
-.magicQuestionIcon{
-  background:linear-gradient(135deg,#fff7d6,#ffe8a3);
-  border:1px solid #ffd56b;
-  color:#7a5200;
-  border-radius:999px;
-  padding:6px 10px;
-  font-size:11px;
-  font-weight:900;
-  white-space:nowrap;
-}
-
-.questionNumberPill{
-  font-size:12px!important;
-  padding:7px 12px!important;
-  white-space:nowrap;
-}
 
 .studentInfoCard{
   background:linear-gradient(135deg,#ffffff,#f8fbff);
@@ -325,27 +276,54 @@
     <div class="card questionSide">
       <div id="bossNotice" class="hidden status bad">👑 Boss Round: rewards are doubled!</div>
       <div id="questionBox" class="questionBox hidden">
-       <div class="questionHeader cleanQuestionHeader">
+        <div class="questionHeader">
 
   <h2>❓ Your Question</h2>
 
-  <div class="questionMiniTools">
+  <div style="
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  ">
 
-    <div id="miniLeaderboardBox" class="miniQuestionBadge">
+    <div id="magicStealBox" style="
+      display:none;
+      background:linear-gradient(135deg,#fff3d4,#ffe7a3);
+      border:1px solid #ffd25c;
+      color:#7a5200;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      box-shadow:0 4px 10px rgba(255,193,7,.18);
+    ">
+      ✨ MAGIC
+    </div>
+
+    <div id="miniLeaderboardBox" style="
+      display:flex;
+      align-items:center;
+      gap:6px;
+      background:#f4f0ff;
+      border:1px solid #d9cdfd;
+      color:#4d35a5;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+    ">
       🏆
       <span id="miniLeaderboardGroup">G5</span>
       •
       <span id="miniLeaderboardPoints">0 pts</span>
     </div>
+   
+   <span id="magicQuestionIcon" class="magicQuestionIcon hidden" title="Magic question used">
+  🪄 Used
+</span>
 
-    <span id="magicQuestionIcon"
-          class="magicQuestionIcon"
-          title="Magic question">
-      🪄 Magic
-    </span>
-
-    <span id="questionNumberPill"
-          class="questionNumberPill">
+    <span id="questionNumberPill" class="questionNumberPill">
       Question
     </span>
 
@@ -421,32 +399,20 @@ function assignMagicQuestionForStudent(s, studentId){
  function showMagicStealPopup(s){
 
   const box = byId('magicGroupButtons');
+
   if(!box) return;
 
   const groups =
     activeGroups(s).filter(g => String(g) !== String(currentUser.group));
 
-  if(!groups.length){
-    box.innerHTML = `
-      <div class="status" style="width:100%;text-align:center">
-        ℹ️ No groups available.<br>
-        You will continue normally.
-      </div>
-
-      <button onclick="closeMagicStealPopup()">
-        Continue
+  box.innerHTML = groups.length
+    ? groups.map(g => `
+      <button class="danger"
+        onclick="magicStealFromGroup('${g}')">
+        Steal From G${g}
       </button>
-    `;
-
-    show('magicStealPopup');
-    return;
-  }
-
-  box.innerHTML = groups.map(g => `
-    <button class="danger" onclick="magicStealFromGroup('${g}')">
-      Steal From G${g}
-    </button>
-  `).join('');
+    `).join('')
+    : `<div class="status">No groups available.</div>`;
 
   show('magicStealPopup');
 }
@@ -1299,16 +1265,6 @@ function studentRefresh(){
     s.currentCollectionTitle || 'Current Collection';
 
   renderLeaderboard('studentLeaderboard', s);
- const myGroup = String(currentUser.group || '');
-const myPoints = Number(s.scores?.[myGroup] || 0);
-
-if(byId('miniLeaderboardGroup')){
-  byId('miniLeaderboardGroup').innerText = 'G' + myGroup;
-}
-
-if(byId('miniLeaderboardPoints')){
-  byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
-}
  const myGroup = String(currentUser.group || '');
 const myPoints = Number(s.scores?.[myGroup] || 0);
 
