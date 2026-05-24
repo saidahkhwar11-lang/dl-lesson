@@ -361,50 +361,7 @@
   </div>
 </div>
 </div>
-<div id="rewardPopup" class="rewardPopup hidden">
-  <div class="rewardCard">
-    <div id="rewardEmoji" class="rewardEmoji">🎰</div>
-    <div id="rewardTitle" class="rewardTitle">Reward</div>
-    <div id="rewardText" class="rewardText">Loading...</div>
-    <button onclick="closeReward()">OK</button>
-  </div>
-</div>
-
-<div id="magicStealPopup" class="rewardPopup hidden">
-  <div class="rewardCard">
-    <div class="rewardEmoji">🪄</div>
-    <div class="rewardTitle">Magic Question!</div>
-    <div class="rewardText">Choose a group to steal points from.</div>
-    <div id="magicGroupButtons" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center"></div>
-  </div>
-</div>
-<div id="magicStealPopup" class="rewardPopup hidden">
-
-  <div class="rewardCard">
-
-    <div class="rewardEmoji">🪄</div>
-
-    <div class="rewardTitle">
-      Magic Question!
-    </div>
-
-    <div class="rewardText">
-      Choose a group to steal points from.
-    </div>
-
-    <div id="magicGroupButtons"
-         style="
-           margin-top:14px;
-           display:flex;
-           gap:10px;
-           flex-wrap:wrap;
-           justify-content:center;
-         ">
-    </div>
-
-  </div>
-
-</div>
+<div id="rewardPopup" class="rewardPopup hidden"><div class="rewardCard"><div id="rewardEmoji" class="rewardEmoji">🎰</div><div id="rewardTitle" class="rewardTitle">Reward</div><div id="rewardText" class="rewardText">Loading...</div><button onclick="closeReward()">OK</button></div></div>
 <script>
   let collectionUIBusy = false;
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
@@ -1683,8 +1640,39 @@ async function saveReadingRushToTeacherControl(s){
     console.warn('Reading Rush tracker save skipped:', err);
   }
 }
- 
-initFirebase();
- </script>
+</script>
+
+<script>
+window.addEventListener('load', function(){
+  setTimeout(syncSecureHubLoginToReadingRush, 1000);
+});
+</script>
+ <div id="magicStealPopup" class="rewardPopup hidden">
+
+  <div class="rewardCard">
+
+    <div class="rewardEmoji">🪄</div>
+
+    <div class="rewardTitle">
+      Magic Question!
+    </div>
+
+    <div class="rewardText">
+      Choose a group to steal points from.
+    </div>
+
+    <div id="magicGroupButtons"
+         style="
+           margin-top:14px;
+           display:flex;
+           gap:10px;
+           flex-wrap:wrap;
+           justify-content:center;
+         ">
+    </div>
+
+  </div>
+
+</div>
 </body>
 </html>
