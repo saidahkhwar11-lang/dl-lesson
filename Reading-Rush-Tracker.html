@@ -131,6 +131,17 @@
     grid-template-columns:1fr;
   }
 }
+ .magicQuestionIcon{
+  background:linear-gradient(135deg,#fff7d6,#ffe8a3);
+  border:1px solid #ffd56b;
+  color:#7a5200;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:11px;
+  font-weight:900;
+  box-shadow:0 5px 12px rgba(255,193,7,.18);
+  white-space:nowrap;
+}
 </style>
 </head>
 <body>
@@ -216,10 +227,9 @@
     <div id="studentProgress" class="progressPill">Progress will appear here.</div>
   </div>
 
-  <div>
-    <h3>🏆 Leaderboard</h3>
-    <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
-  </div>
+  <div style="display:none">
+  <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
+</div>
 </div>
 
 
@@ -258,9 +268,59 @@
       <div id="bossNotice" class="hidden status bad">👑 Boss Round: rewards are doubled!</div>
       <div id="questionBox" class="questionBox hidden">
         <div class="questionHeader">
-          <h2>❓ Your Question</h2>
-          <span id="questionNumberPill" class="questionNumberPill">Question</span>
-        </div>
+
+  <h2>❓ Your Question</h2>
+
+  <div style="
+    margin-left:auto;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  ">
+
+    <div id="magicStealBox" style="
+      display:none;
+      background:linear-gradient(135deg,#fff3d4,#ffe7a3);
+      border:1px solid #ffd25c;
+      color:#7a5200;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      box-shadow:0 4px 10px rgba(255,193,7,.18);
+    ">
+      ✨ MAGIC
+    </div>
+
+    <div id="miniLeaderboardBox" style="
+      display:flex;
+      align-items:center;
+      gap:6px;
+      background:#f4f0ff;
+      border:1px solid #d9cdfd;
+      color:#4d35a5;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+    ">
+      🏆
+      <span id="miniLeaderboardGroup">G5</span>
+      •
+      <span id="miniLeaderboardPoints">0 pts</span>
+    </div>
+   
+   <span id="magicQuestionIcon" class="magicQuestionIcon hidden" title="Magic question used">
+  🪄 Used
+</span>
+
+    <span id="questionNumberPill" class="questionNumberPill">
+      Question
+    </span>
+
+  </div>
+
+</div>
         <div id="studentQuestion"></div>
         <div id="studentOptions"></div>
         <button id="submitAnswerBtn" onclick="submitAnswer()">Submit Answer</button>
@@ -287,7 +347,101 @@ async function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){al
 function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));(s.events||[]).forEach(e=>e.group&&set.add(String(e.group)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
 function getSelectedCollectionId(){return byId('editCollectionSelect')?.value||''}
 function toggleBuilder(){const el=byId('builderShell'); if(el) el.classList.toggle('hiddenBuilder');}
+function assignMagicQuestionForStudent(s, studentId){
 
+  s.magicQuestions = s.magicQuestions || {};
+
+  if(s.magicQuestions[studentId]){
+    return s.magicQuestions[studentId];
+  }
+
+  const col = s.collections?.[s.currentCollectionId];
+  const paragraphs = col?.paragraphs || [];
+
+  const allQuestions = [];
+
+  paragraphs.forEach((p, pi)=>{
+    (p.questions || []).forEach((q, qi)=>{
+      allQuestions.push({
+        paraIndex: pi,
+        qIndex: qi
+      });
+    });
+  });
+
+  if(!allQuestions.length) return null;
+
+  const chosen =
+    allQuestions[Math.floor(Math.random() * allQuestions.length)];
+
+  s.magicQuestions[studentId] = chosen;
+
+  return chosen;
+}
+ function showMagicStealPopup(s){
+
+  const box = byId('magicGroupButtons');
+
+  if(!box) return;
+
+  const groups =
+    activeGroups(s).filter(g => String(g) !== String(currentUser.group));
+
+  box.innerHTML = groups.length
+    ? groups.map(g => `
+      <button class="danger"
+        onclick="magicStealFromGroup('${g}')">
+        Steal From G${g}
+      </button>
+    `).join('')
+    : `<div class="status">No groups available.</div>`;
+
+  show('magicStealPopup');
+}
+
+function closeMagicStealPopup(){
+  hide('magicStealPopup');
+}
+
+async function magicStealFromGroup(targetGroup){
+
+  const s = await getState();
+
+  const myGroup = String(currentUser.group || '');
+  const stealPoints = 5;
+
+  s.scores = s.scores || {};
+  s.events = s.events || [];
+
+  s.scores[targetGroup] =
+    Number(s.scores[targetGroup] || 0) - stealPoints;
+
+  s.scores[myGroup] =
+    Number(s.scores[myGroup] || 0) + stealPoints;
+
+  s.events.push({
+    studentId: currentUser.id,
+    student: currentUser.name,
+    group: myGroup,
+    paraIndex:-1,
+    qIndex:-1,
+    pointsDelta:stealPoints,
+    text:`🪄 Group ${myGroup} stole ${stealPoints} points from Group ${targetGroup}`,
+    time:Date.now(),
+    correct:true,
+    skill:'magic'
+  });
+
+  await setState(s);
+
+  closeMagicStealPopup();
+
+  showReward(
+    '🪄',
+    'Magic Steal!',
+    `You stole ${stealPoints} points from Group ${targetGroup}!`
+  );
+}
 
 function splitParagraphsAI(text){return text.split(/\n\s*\n|(?<=\.)\s*\n/).map(p=>p.trim()).filter(p=>p.length>40)}
 function getWordsAI(text){return text.replace(/[^\w\s'-]/g,' ').split(/\s+/).filter(w=>w.length>3)}
@@ -705,7 +859,70 @@ async function selectCollection(id){
   renderCollections(s);
 }
 function getInitialParaIndex(s,student){const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||1;const mates=Object.values(s.students||{}).filter(st=>st.group===student.group).sort((a,b)=>a.name.localeCompare(b.name));const idx=Math.max(0,mates.findIndex(st=>st.id===student.id));return idx%total}
-async function startCollectionChallenge(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select a collection first.');return}if(!col.paragraphs||!col.paragraphs.length){alert('Collection needs paragraphs.');return}s.stage='playing';s.roundStartTime=Date.now();s.answers={};s.events=[];s.studentProgress={};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:getInitialParaIndex(s,st),qIndex:0,done:false}});s.final=false;await setState(s)}async function startBossRound(){const s=await getState();const col=s.collections?.[s.currentCollectionId];if(!col){alert('Select collection first.');return}const last=(col.paragraphs||[]).length-1;if(last<0)return;s.stage='boss';s.roundStartTime=Date.now();s.boss=true;s.studentProgress=s.studentProgress||{};Object.values(s.students||{}).forEach(st=>{s.studentProgress[st.id]={paraIndex:last,qIndex:0,done:false}});await setState(s)}
+async function startCollectionChallenge(){
+  const s = await getState();
+  const col = s.collections?.[s.currentCollectionId];
+
+  if(!col){
+    alert('Select a collection first.');
+    return;
+  }
+
+  if(!col.paragraphs || !col.paragraphs.length){
+    alert('Collection needs paragraphs.');
+    return;
+  }
+
+  s.stage = 'playing';
+  s.roundStartTime = Date.now();
+  s.answers = {};
+  s.events = [];
+  s.studentProgress = {};
+  s.magicQuestions = {};
+  s.magicUsed = {};
+
+  Object.values(s.students || {}).forEach(st=>{
+    s.studentProgress[st.id] = {
+      paraIndex: getInitialParaIndex(s, st),
+      qIndex: 0,
+      done: false
+    };
+
+    assignMagicQuestionForStudent(s, st.id);
+  });
+
+  s.final = false;
+
+  await setState(s);
+}
+
+async function startBossRound(){
+  const s = await getState();
+  const col = s.collections?.[s.currentCollectionId];
+
+  if(!col){
+    alert('Select collection first.');
+    return;
+  }
+
+  const last = (col.paragraphs || []).length - 1;
+  if(last < 0) return;
+
+  s.stage = 'boss';
+  s.roundStartTime = Date.now();
+  s.boss = true;
+  s.studentProgress = s.studentProgress || {};
+
+  Object.values(s.students || {}).forEach(st=>{
+    s.studentProgress[st.id] = {
+      paraIndex: last,
+      qIndex: 0,
+      done: false
+    };
+  });
+
+  await setState(s);
+}
 async function stopChallenge(){const s=await getState();s.stage='final';s.final=true;s.analytics=buildAnalytics(s);await setState(s)}
 
 async function resetGame(){
@@ -972,6 +1189,16 @@ function studentRefresh(){
     s.currentCollectionTitle || 'Current Collection';
 
   renderLeaderboard('studentLeaderboard', s);
+ const myGroup = String(currentUser.group || '');
+const myPoints = Number(s.scores?.[myGroup] || 0);
+
+if(byId('miniLeaderboardGroup')){
+  byId('miniLeaderboardGroup').innerText = 'G' + myGroup;
+}
+
+if(byId('miniLeaderboardPoints')){
+  byId('miniLeaderboardPoints').innerText = myPoints + ' pts';
+}
 
   const d = currentPQ(s);
 
@@ -1019,12 +1246,173 @@ function studentRefresh(){
   }
 
   byId('questionNumberPill').innerText=`Question ${d.pr.qIndex+1} / ${(d.p.questions||[]).length}`;
+   const magicIcon = byId('magicQuestionIcon');
+
+if(magicIcon){
+
+  const used = s.magicUsed?.[currentUser.id];
+
+  magicIcon.classList.remove('hidden');
+
+  if(!used){
+
+    magicIcon.innerText = '🪄 Magic';
+    magicIcon.style.background = 'linear-gradient(135deg,#fff7d6,#ffe8a3)';
+    magicIcon.style.border = '1px solid #ffd56b';
+    magicIcon.style.color = '#7a5200';
+
+  }else if(used.correct){
+
+    magicIcon.innerText = '🪄 Used';
+    magicIcon.style.background = 'linear-gradient(135deg,#dcffe7,#b7ffd0)';
+    magicIcon.style.border = '1px solid #63d98a';
+    magicIcon.style.color = '#137333';
+
+  }else{
+
+    magicIcon.innerText = '🪄 Missed';
+    magicIcon.style.background = 'linear-gradient(135deg,#ffe0e0,#ffc4c4)';
+    magicIcon.style.border = '1px solid #ff8b8b';
+    magicIcon.style.color = '#a11d1d';
+  }
+}
   box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;
   opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');
   byId('submitAnswerBtn').disabled=false;
 }
 function chooseAnswer(k){selectedAnswer=k;studentRefresh()}function randomGoodEvent(){return[{emoji:'💰',title:'Steal Points',points:5,type:'steal'},{emoji:'🎁',title:'Bonus Points',points:6,type:'bonus'},{emoji:'✨',title:'Double Points',points:10,type:'bonus'},{emoji:'🛡️',title:'Shield Bonus',points:4,type:'bonus'},{emoji:'❄️',title:'Freeze Attack',points:6,type:'attack'},{emoji:'👑',title:'Crown Bonus',points:8,type:'bonus'}][Math.floor(Math.random()*6)]}function randomBadEvent(){return[{emoji:'💣',title:'Lose Points',points:-4,type:'lose'},{emoji:'❌',title:'No Reward',points:0,type:'none'},{emoji:'🔄',title:'Give Away Points',points:-3,type:'lose'},{emoji:'🕳️',title:'Trap Card',points:-5,type:'lose'}][Math.floor(Math.random()*4)]}
-async function submitAnswer(){if(!selectedAnswer){alert('Choose an answer.');return}const s=await getState();const d=currentPQ(s);const q=d.q;if(!q)return;s.scores=s.scores||{};s.events=s.events||[];s.studentProgress=s.studentProgress||{};if(typeof s.scores[currentUser.group]==='undefined')s.scores[currentUser.group]=0;const correct=selectedAnswer===q.correct;const ev=correct?randomGoodEvent():randomBadEvent();let eventText='';let pts=Number(ev.points||0);if(s.stage==='boss')pts=pts*2;let ownDelta=0;if(correct){if(ev.type==='steal'||ev.type==='attack'){const groups=activeGroups(s).filter(g=>g!==currentUser.group);const target=groups[Math.floor(Math.random()*groups.length)];if(target){ownDelta=Math.abs(pts);s.scores[target]=Number(s.scores[target]||0)-Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} took ${ownDelta} points from Group ${target}.`}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=Math.abs(pts);s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=`${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`}}else{ownDelta=pts;s.scores[currentUser.group]=Number(s.scores[currentUser.group]||0)+ownDelta;eventText=ownDelta<0?`${ev.title}: Group ${currentUser.group} lost ${Math.abs(ownDelta)} points.`:`${ev.title}: No points.`}const pr=s.studentProgress[currentUser.id]||{paraIndex:0,qIndex:0,done:false};const answerParaIndex=Number(pr.paraIndex||0);const answerQIndex=Number(pr.qIndex||0);const col=s.collections?.[s.currentCollectionId];const p=(col?.paragraphs||[])[pr.paraIndex];const qTotal=(p?.questions||[]).length;pr.qIndex++;if(pr.qIndex>=qTotal){pr.qIndex=0;pr.paraIndex++;if(pr.paraIndex>=(col?.paragraphs||[]).length){pr.done=true;pr.paraIndex=(col?.paragraphs||[]).length-1;pr.qIndex=qTotal}}s.studentProgress[currentUser.id]=pr;s.events.push({studentId:currentUser.id,student:currentUser.name,group:currentUser.group,paraIndex:answerParaIndex,qIndex:answerQIndex,pointsDelta:ownDelta,text:(correct?'✅ Correct — ':'❌ Wrong — ')+eventText,time:Date.now(),correct,skill:q.skill||'unknown'});await setState(s);await saveReadingRushToTeacherControl(s);selectedAnswer='';showReward(ev.emoji,ev.title,eventText)}
+async function submitAnswer(){
+  if(!selectedAnswer){
+    alert('Choose an answer.');
+    return;
+  }
+
+  const s = await getState();
+  const d = currentPQ(s);
+  const q = d.q;
+  if(!q) return;
+
+  s.scores = s.scores || {};
+  s.events = s.events || [];
+  s.studentProgress = s.studentProgress || {};
+  s.magicQuestions = s.magicQuestions || {};
+  s.magicUsed = s.magicUsed || {};
+
+  if(typeof s.scores[currentUser.group] === 'undefined'){
+    s.scores[currentUser.group] = 0;
+  }
+
+  const pr = s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false};
+  const answerParaIndex = Number(pr.paraIndex || 0);
+  const answerQIndex = Number(pr.qIndex || 0);
+
+  const correct = selectedAnswer === q.correct;
+
+  // MAGIC QUESTION CHECK
+  const magic = s.magicQuestions?.[currentUser.id];
+  const isMagicQuestion =
+    magic &&
+    Number(magic.paraIndex) === answerParaIndex &&
+    Number(magic.qIndex) === answerQIndex &&
+    !s.magicUsed?.[currentUser.id];
+
+  const ev = correct ? randomGoodEvent() : randomBadEvent();
+
+  let eventText = '';
+  let pts = Number(ev.points || 0);
+  if(s.stage === 'boss') pts = pts * 2;
+
+  let ownDelta = 0;
+
+  if(correct){
+    if(ev.type === 'steal' || ev.type === 'attack'){
+      const groups = activeGroups(s).filter(g => g !== currentUser.group);
+      const target = groups[Math.floor(Math.random() * groups.length)];
+
+      if(target){
+        ownDelta = Math.abs(pts);
+        s.scores[target] = Number(s.scores[target] || 0) - ownDelta;
+        s.scores[currentUser.group] = Number(s.scores[currentUser.group] || 0) + ownDelta;
+        eventText = `${ev.title}: Group ${currentUser.group} took ${ownDelta} points from Group ${target}.`;
+      }else{
+        ownDelta = Math.abs(pts);
+        s.scores[currentUser.group] = Number(s.scores[currentUser.group] || 0) + ownDelta;
+        eventText = `${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`;
+      }
+
+    }else{
+      ownDelta = Math.abs(pts);
+      s.scores[currentUser.group] = Number(s.scores[currentUser.group] || 0) + ownDelta;
+      eventText = `${ev.title}: Group ${currentUser.group} gained ${ownDelta} points.`;
+    }
+
+  }else{
+    ownDelta = pts;
+    s.scores[currentUser.group] = Number(s.scores[currentUser.group] || 0) + ownDelta;
+    eventText = ownDelta < 0
+      ? `${ev.title}: Group ${currentUser.group} lost ${Math.abs(ownDelta)} points.`
+      : `${ev.title}: No points.`;
+  }
+
+  const col = s.collections?.[s.currentCollectionId];
+  const p = (col?.paragraphs || [])[pr.paraIndex];
+  const qTotal = (p?.questions || []).length;
+
+  pr.qIndex++;
+
+  if(pr.qIndex >= qTotal){
+    pr.qIndex = 0;
+    pr.paraIndex++;
+
+    if(pr.paraIndex >= (col?.paragraphs || []).length){
+      pr.done = true;
+      pr.paraIndex = (col?.paragraphs || []).length - 1;
+      pr.qIndex = qTotal;
+    }
+  }
+
+  s.studentProgress[currentUser.id] = pr;
+
+  s.events.push({
+    studentId: currentUser.id,
+    student: currentUser.name,
+    group: currentUser.group,
+    paraIndex: answerParaIndex,
+    qIndex: answerQIndex,
+    pointsDelta: ownDelta,
+    text: (correct ? '✅ Correct — ' : '❌ Wrong — ') + eventText,
+    time: Date.now(),
+    correct,
+    skill: q.skill || 'unknown'
+  });
+
+  // MAGIC RESULT
+  if(isMagicQuestion){
+    s.magicUsed[currentUser.id] = {
+      used:true,
+      correct:correct,
+      time:Date.now()
+    };
+
+    await setState(s);
+    await saveReadingRushToTeacherControl(s);
+    selectedAnswer = '';
+
+    if(correct){
+      showMagicStealPopup(s);
+      return;
+    }else{
+      showReward('🪄','Magic Missed!','You found your magic question, but the answer was wrong. No stealing this time.');
+      return;
+    }
+  }
+
+  await setState(s);
+  await saveReadingRushToTeacherControl(s);
+
+  selectedAnswer = '';
+  showReward(ev.emoji, ev.title, eventText);
+}
 function showReward(emoji,title,text){byId('rewardEmoji').innerText=emoji;byId('rewardTitle').innerText=title;byId('rewardText').innerText=text;show('rewardPopup')}function closeReward(){hide('rewardPopup')}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 
 function safeKey(value){
@@ -1139,5 +1527,32 @@ window.addEventListener('load', function(){
   setTimeout(syncSecureHubLoginToReadingRush, 1000);
 });
 </script>
+ <div id="magicStealPopup" class="rewardPopup hidden">
+
+  <div class="rewardCard">
+
+    <div class="rewardEmoji">🪄</div>
+
+    <div class="rewardTitle">
+      Magic Question!
+    </div>
+
+    <div class="rewardText">
+      Choose a group to steal points from.
+    </div>
+
+    <div id="magicGroupButtons"
+         style="
+           margin-top:14px;
+           display:flex;
+           gap:10px;
+           flex-wrap:wrap;
+           justify-content:center;
+         ">
+    </div>
+
+  </div>
+
+</div>
 </body>
 </html>
