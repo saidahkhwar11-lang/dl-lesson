@@ -900,6 +900,12 @@ function renderEditCollection(){
 
   if(!select || !box) return;
 
+ const openParagraphs = Array.from(
+  box.querySelectorAll('details[data-para-id]')
+)
+.filter(d => d.open)
+.map(d => d.dataset.paraId);
+
   const s = stateCache || {};
   const id = s.currentCollectionId || select.value;
 
@@ -922,8 +928,7 @@ function renderEditCollection(){
       paragraphs.length
       ? paragraphs.map((p,i)=>`
 
-        <details class="collectionParaDetails">
-
+<details class="collectionParaDetails" data-para-id="${p.id || ('p_' + i)}" ${openParagraphs.includes(String(p.id || ('p_' + i))) ? 'open' : ''}>
           <summary>
             📄 Paragraph ${i+1}
 
