@@ -360,7 +360,22 @@
 
 
 <div class="studentInfoBar">
+<div id="scheduledCollectionsBox"
+     class="card"
+     style="margin-top:14px;display:none">
 
+  <h2>📚 Scheduled Collections</h2>
+
+  <div class="status bad">
+    These are unfinished collections you still need to complete.
+  </div>
+
+  <div id="scheduledCollectionsList"
+       class="list"
+       style="margin-top:10px">
+  </div>
+
+</div>
   <div class="studentInfoCard">
     <h3>🎯 Main Goal</h3>
     <p id="studentMainGoal">
@@ -1175,6 +1190,76 @@ function autoScheduleUnfinishedStudents(s){
   return s;
 }
 
+ function renderScheduledCollections(s){
+
+  const wrap = byId('scheduledCollectionsBox');
+  const list = byId('scheduledCollectionsList');
+
+  if(!wrap || !list || !currentUser) return;
+
+  const classId =
+    currentUser.classId ||
+    safeKey(currentUser.cls || '');
+
+  const studentId = currentUser.id;
+
+  const scheduled =
+    s.scheduledCollections?.[classId]?.[studentId] || {};
+
+  const pending = Object.values(scheduled);
+
+  if(!pending.length){
+    wrap.style.display = 'none';
+    return;
+  }
+
+  wrap.style.display = 'block';
+
+  list.innerHTML = pending.map(item=>`
+
+    <div class="row">
+
+      <div style="
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+      ">
+
+        <div>
+          <b>📖 ${esc(item.title || 'Collection')}</b>
+
+          <div class="mini">
+            ${
+              item.status === 'completed'
+              ? '✅ Completed'
+              : '🕓 Pending'
+            }
+          </div>
+        </div>
+
+        ${
+          item.status === 'completed'
+          ? `
+            <button disabled>
+              Completed
+            </button>
+          `
+          : `
+            <button onclick="openScheduledCollection('${item.collectionId}')">
+              Open Collection
+            </button>
+          `
+        }
+
+      </div>
+
+    </div>
+
+  `).join('');
+}
+
 function renderScheduledCollections(s){
   const panel = byId('scheduledCollectionsPanel');
   const list = byId('scheduledCollectionsList');
@@ -1804,7 +1889,35 @@ function lessonPlanHTML(plan, forDownload=false){
 async function updateLessonPlanFromActiveCollection(){const s=await getState();const plan=buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}s.lessonPlan=plan;await setState(s);renderLessonPlanPreview(s);alert('Lesson plan updated from the active collection.');}
 function renderLessonPlanPreview(s){const box=byId('lessonPlanPreview');if(!box)return;const plan=s.lessonPlan||buildLessonPlanObject(s);box.innerHTML=lessonPlanHTML(plan).replace(/<!DOCTYPE[\s\S]*?<body>/i,'').replace(/<\/body><\/html>/i,'');}
 async function downloadLessonPlan(){const s=await getState();let plan=s.lessonPlan||buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}const html=lessonPlanHTML(plan,true);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(plan.lessonTitle||'Reading_Rush_Lesson_Plan').replace(/[^a-z0-9]+/gi,'_')+'_Lesson_Plan.doc';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+async function openScheduledCollection(collectionId){
 
+  const s = await getState();
+
+  const col = s.collections?.[collectionId];
+
+  if(!col){
+    alert('Collection was not found.');
+    return;
+  }
+
+  s.currentCollectionId = collectionId;
+  s.currentCollectionTitle = col.title;
+
+  s.stage = 'playing';
+
+  s.studentProgress = s.studentProgress || {};
+
+  s.studentProgress[currentUser.id] = {
+    paraIndex:0,
+    qIndex:0,
+    done:false,
+    recoveryMode:true
+  };
+
+  await setState(s);
+
+  studentRefresh();
+}
 function buildAnalytics(s){const ev=s.events||[];const total=ev.length,correct=ev.filter(e=>e.correct).length;const skills={};ev.forEach(e=>{const k=e.skill||'unknown';skills[k]=skills[k]||{total:0,correct:0};skills[k].total++;if(e.correct)skills[k].correct++});let weakest='Not enough data';Object.keys(skills).forEach(k=>{const rate=skills[k].correct/skills[k].total;if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/skills[weakest]?.total||1))weakest=k});return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills}}
 function renderAnalytics(s){const box=byId('analyticsBox');if(!box)return;if(s.stage!=='final'){box.classList.add('hidden');return}const a=s.analytics||buildAnalytics(s);box.classList.remove('hidden');box.innerHTML=`<h2>📊 Teacher Report</h2><div class="analyticsGrid"><div class="analyticsCard"><b>Total Answers</b><br>${a.total||0}</div><div class="analyticsCard"><b>Accuracy</b><br>${a.accuracy||0}%</div><div class="analyticsCard"><b>Correct Answers</b><br>${a.correct||0}</div><div class="analyticsCard"><b>Needs Practice</b><br>${esc(a.weakest||'Not enough data')}</div></div>`}
 
