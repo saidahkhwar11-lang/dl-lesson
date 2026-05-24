@@ -2404,6 +2404,39 @@ async function saveReadingRushCertificatesForFinalists(s){
   }
 }
 
+ async function saveReadingRushExcellentCertificate(record){
+
+  if(!db || !record) return;
+
+  if(Number(record.correct) !== Number(record.questionsTotal)) return;
+  if(Number(record.questionsTotal) <= 0) return;
+
+  const certificateId =
+    'Reading_Rush_Excellent_' + safeKey(record.activityName || 'Collection');
+
+  const cert = {
+    certificateId,
+    source: 'Reading Rush',
+    certificateTitle: 'Certificate of Appreciation',
+    reason: 'Excellent Performance - 100% correct answers',
+    activityName: record.activityName || 'Reading Rush Collection',
+    studentId: record.studentId,
+    studentName: record.studentName,
+    classId: record.classId,
+    className: record.className,
+    correct: record.correct,
+    questionsTotal: record.questionsTotal,
+    percentage: 100,
+    issuedAt: Date.now()
+  };
+
+  await db.ref(
+    'teacherControlCenter/certificates/' +
+    record.classId + '/' +
+    record.studentId + '/' +
+    certificateId
+  ).set(cert);
+}
 async function saveReadingRushToTeacherControl(s){
   try{
     const secure = getSecureHubStudent();
@@ -2449,6 +2482,9 @@ async function saveReadingRushToTeacherControl(s){
 
     await db.ref('teacherControlCenter/performance/' + record.classId + '/' + id + '/Reading_Rush').set(record);
     await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + record.classId + '/' + id).set(record);
+   
+   await saveReadingRushExcellentCertificate(record);
+   
   }catch(err){
     console.warn('Reading Rush tracker save skipped:', err);
   }
