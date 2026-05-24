@@ -1670,6 +1670,10 @@ async function stopChallenge(){
     s.analytics = {};
   }
 
+  if(typeof saveReadingRushCertificatesForFinalists === 'function'){
+    await saveReadingRushCertificatesForFinalists(s);
+  }
+
   await setState(s);
 
   alert('✅ Report stopped. Unfinished students were scheduled automatically.');
@@ -2325,6 +2329,81 @@ window.addEventListener('load', function(){
   setTimeout(syncSecureHubLoginToReadingRush, 500);
 });
   
+
+async function saveReadingRushCertificateRecord(record){
+  try{
+    if(!db || !record || !record.classId || !record.studentId || !record.certificateId) return;
+
+    await db.ref(
+      'teacherControlCenter/certificates/' +
+      record.classId + '/' +
+      record.studentId + '/' +
+      record.certificateId
+    ).set(record);
+  }catch(err){
+    console.warn('Reading Rush certificate save skipped:', err);
+  }
+}
+
+async function saveReadingRushCertificatesForFinalists(s){
+  try{
+    if(!db || !s) return;
+
+    const colId = s.currentCollectionId || 'reading_rush_collection';
+    const col = s.collections?.[colId] || {};
+    const activityName = col.title || s.currentCollectionTitle || 'Reading Rush Collection';
+    const rows = typeof leaderboardRows === 'function' ? leaderboardRows(s).slice(0,3) : [];
+    const topGroups = rows.map(r => String(r.g));
+
+    if(!topGroups.length) return;
+
+    const rankLabel = {
+      1:'🥇 First Place Group',
+      2:'🥈 Second Place Group',
+      3:'🥉 Third Place Group'
+    };
+
+    const students = Object.values(s.students || {})
+      .filter(st => topGroups.includes(String(st.group)));
+
+    for(const st of students){
+      const group = String(st.group || '');
+      const rankIndex = topGroups.indexOf(group) + 1;
+      const classId = st.classId || safeKey(st.cls || st.className || '');
+      const studentId = String(st.id || st.studentId || '').trim();
+
+      if(!classId || !studentId) continue;
+
+      const certificateId = safeKey('Reading_Rush_' + colId + '_' + studentId);
+
+      const record = {
+        certificateId,
+        source:'Reading Rush',
+        activityType:'Reading Rush',
+        activityName,
+        certificateTitle:'Reading Rush Achievement Certificate',
+        certificateText:'Awarded for outstanding participation and achievement in Reading Rush.',
+        rank:rankIndex,
+        rankLabel:rankLabel[rankIndex] || 'Reading Rush Finalist',
+        group,
+        groupScore:Number(s.scores?.[group] || 0),
+        studentId,
+        studentName:st.name || '',
+        classId,
+        className:st.cls || st.className || '',
+        issuedAt:Date.now(),
+        downloadType:'generated_pdf',
+        pdfUrl:'',
+        status:'issued'
+      };
+
+      await saveReadingRushCertificateRecord(record);
+    }
+  }catch(err){
+    console.warn('Reading Rush finalist certificate save skipped:', err);
+  }
+}
+
 async function saveReadingRushToTeacherControl(s){
   try{
     const secure = getSecureHubStudent();
