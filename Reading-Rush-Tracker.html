@@ -151,6 +151,15 @@
 <div id="hubPage"><div class="grid"><div class="card"><h2>📚 Collection Mode</h2><p class="status good">Teacher creates a collection with many paragraphs. Each group member gets a different paragraph one at a time.</p><button onclick="openLogin()">Open Game</button><button class="secondary" onclick="location.href='secure-hub.html'">🏠 Back to Main Page</button></div><div class="card"><h2>🎮 Flow</h2><div class="stepsGrid"><div class="stepCard"><span>📦</span><b>Collection</b><small>Teacher selects one set.</small></div><div class="stepCard"><span>📖</span><b>Paragraph</b><small>Students get different paragraphs.</small></div><div class="stepCard"><span>❓</span><b>Questions</b><small>Finish all assigned questions.</small></div><div class="stepCard"><span>🏆</span><b>Top 3</b><small>Teacher stops challenge.</small></div></div></div></div></div>
 <div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><div class="status good">If you entered from Secure Hub, your name and ID appear automatically. Choose your group, then join.</div><label>Name</label><input id="studentName" placeholder="Your name appears from hub" readonly><label>Student ID</label><input id="studentId" placeholder="Your ID appears from hub" readonly><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Reading Rush</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button></div><div class="card"><h2>📌 Rule</h2><div class="status">Correct answers = good events.</div><div class="status bad">Wrong answers = bad events.</div><div class="status good">Students move to next paragraph after finishing current paragraph questions.</div></div></div></div>
 <div id="teacherPage" class="hidden">
+ <label style="max-width:220px">
+  Active Class
+  <select id="activeClassSelect" onchange="saveActiveClass()">
+    <option value="9/1">9/1</option>
+    <option value="9/2">9/2</option>
+    <option value="9/3">9/3</option>
+    <option value="9/4">9/4</option>
+  </select>
+</label>
   <div class="teacherTopActions">
     <button class="purple" onclick="toggleBuilder()">📝 Show / Hide Collection Builder</button>
     <button class="secondary" onclick="toggleLessonPlanPanel()">📄 Lesson Plan Creator</button>
@@ -346,6 +355,15 @@ async function studentJoin(){const secure=getSecureHubStudent();const name=(secu
 async function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
 function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));(s.events||[]).forEach(e=>e.group&&set.add(String(e.group)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
 function getSelectedCollectionId(){return byId('editCollectionSelect')?.value||''}
+ function getActiveClass(){
+  return byId('activeClassSelect')?.value || '9/1';
+}
+
+async function saveActiveClass(){
+  const s = await getState();
+  s.activeClass = getActiveClass();
+  await setState(s);
+}
 function toggleBuilder(){const el=byId('builderShell'); if(el) el.classList.toggle('hiddenBuilder');}
 function assignMagicQuestionForStudent(s, studentId){
 
@@ -858,8 +876,30 @@ async function selectCollection(id){
 
   renderCollections(s);
 }
-function getInitialParaIndex(s,student){const col=s.collections?.[s.currentCollectionId];const total=(col?.paragraphs||[]).length||1;const mates=Object.values(s.students||{}).filter(st=>st.group===student.group).sort((a,b)=>a.name.localeCompare(b.name));const idx=Math.max(0,mates.findIndex(st=>st.id===student.id));return idx%total}
-async function startCollectionChallenge(){
+
+ function getInitialParaIndex(s, student){
+
+  const col = s.collections?.[s.currentCollectionId];
+  const total = (col?.paragraphs || []).length || 1;
+
+  const activeClass = s.activeClass || getActiveClass();
+
+  const mates = Object.values(s.students || {})
+    .filter(st =>
+      String(st.group) === String(student.group) &&
+      String(st.cls) === String(activeClass)
+    )
+    .sort((a,b)=>a.name.localeCompare(b.name));
+
+  const idx = Math.max(
+    0,
+    mates.findIndex(st => st.id === student.id)
+  );
+
+  return idx % total;
+}
+ 
+ async function startCollectionChallenge(){
   const s = await getState();
   const col = s.collections?.[s.currentCollectionId];
 
@@ -881,8 +921,12 @@ async function startCollectionChallenge(){
   s.magicQuestions = {};
   s.magicUsed = {};
 
-  Object.values(s.students || {}).forEach(st=>{
-    s.studentProgress[st.id] = {
+const activeClass = s.activeClass || getActiveClass();
+
+Object.values(s.students || {})
+  .filter(st => String(st.cls) === String(activeClass))
+  .forEach(st=>{
+ s.studentProgress[st.id] = {
       paraIndex: getInitialParaIndex(s, st),
       qIndex: 0,
       done: false
@@ -913,13 +957,19 @@ async function startBossRound(){
   s.boss = true;
   s.studentProgress = s.studentProgress || {};
 
-  Object.values(s.students || {}).forEach(st=>{
-    s.studentProgress[st.id] = {
-      paraIndex: last,
-      qIndex: 0,
-      done: false
-    };
-  });
+  const activeClass = s.activeClass || getActiveClass();
+
+  Object.values(s.students || {})
+    .filter(st => String(st.cls) === String(activeClass))
+    .forEach(st=>{
+
+      s.studentProgress[st.id] = {
+        paraIndex: last,
+        qIndex: 0,
+        done: false
+      };
+
+    });
 
   await setState(s);
 }
@@ -1053,8 +1103,20 @@ function leaderboardRows(s){return activeGroups(s).map(g=>({g,pts:Number(s.score
 function eventDeltaForStudentParagraph(s,studentId,paraIndex){return (s.events||[]).filter(e=>e.studentId===studentId && Number(e.paraIndex)===Number(paraIndex)).reduce((sum,e)=>sum+Number(e.pointsDelta||0),0)}
 function eventCountForStudentParagraph(s,studentId,paraIndex){return (s.events||[]).filter(e=>e.studentId===studentId && Number(e.paraIndex)===Number(paraIndex)).length}
 function renderStudents(s){
- const box=byId('teacherStudents'); const students=Object.values(s.students||{}).sort((a,b)=>Number(a.group)-Number(b.group)||String(a.name).localeCompare(String(b.name)));
- const col=s.collections?.[s.currentCollectionId]; const paragraphs=col?.paragraphs||[];
+
+ const box = byId('teacherStudents');
+
+ const activeClass = s.activeClass || getActiveClass();
+
+ const students = Object.values(s.students || {})
+   .filter(st => String(st.cls) === String(activeClass))
+   .sort((a,b)=>
+      Number(a.group)-Number(b.group) ||
+      String(a.name).localeCompare(String(b.name))
+   );
+
+ const col = s.collections?.[s.currentCollectionId];
+ const paragraphs = col?.paragraphs || [];
  if(!students.length){box.innerHTML='<div class="status">No students joined.</div>';return}
  const headerParas=paragraphs.map((p,i)=>`<th>P${i+1}</th>`).join('');
  const rows=students.map(st=>{
@@ -1069,8 +1131,22 @@ function renderStudents(s){
  }).join('');
  box.innerHTML=`<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Now</th>${headerParas}<th>Group Total</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
-function teacherRefresh(){const s=stateCache||defaultState();renderTeacherInfo(s);renderStages('teacherStages',s.stage);renderCollections(s);renderLeaderboard('leaderboard',s);renderStudents(s);renderFinalWinners(s);renderAnalytics(s);renderLessonPlanPreview(s)}function renderFinalWinners(s){const box=byId('finalWinnersBox');if(s.stage!=='final'){box.classList.add('hidden');return}const rows=leaderboardRows(s).slice(0,3);box.classList.remove('hidden');box.innerHTML=`<div class="winnerBig">🏆 Final Top 3 Groups</div>`+rows.map((r,i)=>`<div style="font-size:22px;margin-top:8px">${i===0?'🥇':i===1?'🥈':'🥉'} Group ${esc(r.g)} — ${r.pts} pts</div>`).join('')}
+function teacherRefresh(){
+  const s = stateCache || defaultState();
 
+  if(byId('activeClassSelect') && s.activeClass){
+    byId('activeClassSelect').value = s.activeClass;
+  }
+
+  renderTeacherInfo(s);
+  renderStages('teacherStages', s.stage);
+  renderCollections(s);
+  renderLeaderboard('leaderboard', s);
+  renderStudents(s);
+  renderFinalWinners(s);
+  renderAnalytics(s);
+  renderLessonPlanPreview(s);
+}
 
 function toggleLessonPlanPanel(){const el=byId('lessonPlanShell'); if(el) el.classList.toggle('hiddenLessonPlan'); renderLessonPlanPreview(stateCache||defaultState());}
 function collectionKeywords(col){const set=new Set();(col?.paragraphs||[]).forEach(p=>{(p.keywords||[]).forEach(k=>String(k).trim()&&set.add(String(k).trim()));(p.questions||[]).forEach(q=>{const sk=q.skill||''; if(sk) set.add(sk);});});return [...set].slice(0,24)}
