@@ -1142,54 +1142,46 @@ function getStudentScheduledAssignments(s, classId, studentId){
 }
 
 function autoScheduleUnfinishedStudents(s){
+
   const activeClass = s.activeClass || getActiveClass();
-  const classId = classKeyFromValue(activeClass);
   const colId = s.currentCollectionId;
   const col = s.collections?.[colId];
 
-  if(!classId || !colId || !col) return s;
+  if(!colId || !col) return s;
 
   s.scheduledCollections = s.scheduledCollections || {};
-  s.scheduledCollections[classId] = s.scheduledCollections[classId] || {};
-  s.scheduledCollections[classId]._classAssignments = s.scheduledCollections[classId]._classAssignments || {};
-
-  const completedLiveStudents = {};
 
   Object.values(s.students || {})
-    .filter(st => classKeyFromValue(st.cls || st.className) === classId || String(st.cls) === String(activeClass))
+    .filter(st => String(st.cls) === String(activeClass))
     .forEach(st => {
+
       const pr = s.studentProgress?.[st.id];
       const finished = pr?.done === true;
 
-      if(finished){
-        completedLiveStudents[st.id] = true;
-        return;
-      }
+      if(finished) return;
 
-      const bucket = ensureStudentScheduleBucket(s, classId, st.id);
-      const old = bucket[colId] || {};
-      bucket[colId] = {
+      const classId = safeKey(st.cls || activeClass);
+      const studentId = String(st.id || st.studentId || '');
+
+      if(!studentId) return;
+
+      s.scheduledCollections[classId] =
+        s.scheduledCollections[classId] || {};
+
+      s.scheduledCollections[classId][studentId] =
+        s.scheduledCollections[classId][studentId] || {};
+
+      s.scheduledCollections[classId][studentId][colId] = {
         collectionId: colId,
         title: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
-        assignedAt: old.assignedAt || Date.now(),
-        status: old.status === 'completed' ? 'completed' : 'pending',
-        mode: 'recovery',
-        progress: old.progress || {paraIndex:0,qIndex:0,done:false},
-        answers: old.answers || []
+        assignedAt: Date.now(),
+        status: 'pending',
+        mode: 'recovery'
       };
     });
 
-  s.scheduledCollections[classId]._classAssignments[colId] = {
-    collectionId: colId,
-    title: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
-    assignedAt: Date.now(),
-    mode: 'recovery',
-    completedLiveStudents
-  };
-
   return s;
 }
-
  function renderScheduledCollections(s){
 
   const wrap = byId('scheduledCollectionsBox');
@@ -1197,11 +1189,9 @@ function autoScheduleUnfinishedStudents(s){
 
   if(!wrap || !list || !currentUser) return;
 
-  const classId =
-    currentUser.classId ||
-    safeKey(currentUser.cls || '');
-
-  const studentId = currentUser.id;
+  const classId = safeKey(currentUser.cls || '');
+  const studentId =
+    String(currentUser.id || currentUser.studentId || '');
 
   const scheduled =
     s.scheduledCollections?.[classId]?.[studentId] || {};
@@ -1210,11 +1200,12 @@ function autoScheduleUnfinishedStudents(s){
 
   if(!pending.length){
     wrap.style.display = 'none';
+    list.innerHTML = '';
     return;
   }
 
   wrap.style.display = 'block';
-
+  
   list.innerHTML = pending.map(item=>`
 
     <div class="row">
@@ -1606,14 +1597,15 @@ async function startBossRound(){
   await setState(s);
 }
 async function stopChallenge(){
+
   const s = await getState();
 
-  if(typeof autoScheduleUnfinishedStudents === 'function'){
-    autoScheduleUnfinishedStudents(s);
-  }
+  autoScheduleUnfinishedStudents(s);
 
   s.stage = 'final';
   s.final = true;
+  s.boss = false;
+  s.roundStartTime = null;
 
   if(typeof buildAnalytics === 'function'){
     s.analytics = buildAnalytics(s);
