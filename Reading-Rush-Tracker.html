@@ -464,9 +464,16 @@ function assignMagicQuestionForStudent(s, studentId){
   const col = s.collections?.[s.currentCollectionId];
   const paragraphs = col?.paragraphs || [];
 
+  if(!paragraphs.length) return null;
+
+  // Magic question only from the last 2 paragraphs.
+  const startIndex = Math.max(0, paragraphs.length - 2);
+
   const allQuestions = [];
 
   paragraphs.forEach((p, pi)=>{
+    if(pi < startIndex) return;
+
     (p.questions || []).forEach((q, qi)=>{
       allQuestions.push({
         paraIndex: pi,
