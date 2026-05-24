@@ -335,6 +335,7 @@
   <div id="finalWinnersBox" class="hidden finalWinners" style="margin-top:14px"></div><div id="analyticsBox" class="card hidden" style="margin-top:14px"></div>
 </div>
 <div id="studentPage" class="hidden">
+
   <div class="tabs">
     <button class="secondary" onclick="leaveGame()">🚪 Leave Game</button>
     <button class="secondary" onclick="location.href='secure-hub.html'">🏠 Back to Main Page</button>
@@ -343,71 +344,54 @@
   </div>
 
   <div class="card studentTopBar">
-  <div>
-    <h2 id="studentWelcome">Welcome</h2>
-    <div class="stageBar" id="studentStages"></div>
+    <div>
+      <h2 id="studentWelcome">Welcome</h2>
+      <div class="stageBar" id="studentStages"></div>
+    </div>
+
+    <div>
+      <div id="studentInstruction" class="status">Waiting...</div>
+      <div id="studentProgress" class="progressPill">Progress will appear here.</div>
+    </div>
+
+    <div style="display:none">
+      <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
+    </div>
   </div>
 
-  <div>
-    <div id="studentInstruction" class="status">Waiting...</div>
-    <div id="studentProgress" class="progressPill">Progress will appear here.</div>
+  <div class="studentInfoBar">
+
+    <div class="studentInfoCard">
+      <h3>🎯 Main Goal</h3>
+      <p id="studentMainGoal">
+        Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.
+      </p>
+    </div>
+
+    <div class="studentInfoCard">
+      <h3>📌 Instructions</h3>
+      <p id="studentMainInstructions">
+        Read carefully, use context clues, answer one question at a time, and move through the collection.
+      </p>
+    </div>
+
+    <div class="studentInfoCard">
+      <h3>⏱️ Paragraph Progress</h3>
+      <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
+    </div>
+
   </div>
 
-  <div style="display:none">
-  <div id="studentLeaderboard" class="leaderboard studentLeaderboardMini"></div>
-</div>
-</div>
-<div class="studentInfoBar">
-
-  <div class="studentInfoCard">
-    <h3>🎯 Main Goal</h3>
-    <p id="studentMainGoal">
-      Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.
-    </p>
+  <div id="scheduledCollectionsBox" class="card" style="margin-top:14px;display:none">
+    <h2>📚 Scheduled Collections</h2>
+    <div class="status bad">
+      These are unfinished collections you still need to complete.
+    </div>
+    <div id="scheduledCollectionsList" class="list" style="margin-top:10px"></div>
   </div>
-
-  <div class="studentInfoCard">
-    <h3>📌 Instructions</h3>
-    <p id="studentMainInstructions">
-      Read carefully, use context clues, answer one question at a time, and move through the collection.
-    </p>
-  </div>
-
-  <div class="studentInfoCard">
-    <h3>⏱️ Paragraph Progress</h3>
-    <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
-  </div>
-
-</div>
-
-<div id="scheduledCollectionsBox" class="card" style="margin-top:14px;display:none">
-  <h2>📚 Scheduled Collections</h2>
-  <div class="status bad">
-    These are unfinished collections you still need to complete.
-  </div>
-  <div id="scheduledCollectionsList" class="list" style="margin-top:10px"></div>
-</div>
-  <div class="studentInfoCard">
-    <h3>📌 Instructions</h3>
-    <p id="studentMainInstructions">
-      Read carefully, use context clues, answer one question at a time, and move through the collection.
-    </p>
-  </div>
-
-  <div class="studentInfoCard">
-    <h3>⏱️ Paragraph Progress</h3>
-    <div id="studentParagraphTimers" class="paragraphTimerGrid"></div>
-  </div>
-
-</div>
-
-<div id="scheduledCollectionsPanel" class="scheduledCollectionsPanel hidden">
-  <h3>📚 Scheduled Collections</h3>
-  <div class="mini">Unfinished live collections appear here automatically. Complete them without game events or magic questions.</div>
-  <div id="scheduledCollectionsList"></div>
-</div>
 
   <div class="studentGameGrid">
+
     <div class="card readingSide">
       <div class="readingMeta">
         <h2 id="studentRoundTitle">Current Collection</h2>
@@ -418,42 +402,39 @@
 
     <div class="card questionSide">
       <div id="bossNotice" class="hidden status bad">👑 Boss Round: rewards are doubled!</div>
+
       <div id="questionBox" class="questionBox hidden">
-       <div class="questionHeader cleanQuestionHeader">
 
-  <h2>❓ Your Question</h2>
+        <div class="questionHeader cleanQuestionHeader">
+          <h2>❓ Your Question</h2>
 
-  <div class="questionMiniTools">
+          <div class="questionMiniTools">
+            <div id="miniLeaderboardBox" class="miniQuestionBadge">
+              🏆 <span id="miniLeaderboardGroup">G</span> •
+              <span id="miniLeaderboardPoints">0 pts</span>
+            </div>
 
-    <div id="miniLeaderboardBox" class="miniQuestionBadge">
-      🏆
-      <span id="miniLeaderboardGroup">G5</span>
-      •
-      <span id="miniLeaderboardPoints">0 pts</span>
-    </div>
+            <span id="magicQuestionIcon" class="magicQuestionIcon" title="Magic question">
+              🪄 Magic
+            </span>
 
-    <span id="magicQuestionIcon"
-          class="magicQuestionIcon"
-          title="Magic question">
-      🪄 Magic
-    </span>
+            <span id="questionNumberPill" class="questionNumberPill">
+              Question
+            </span>
+          </div>
+        </div>
 
-    <span id="questionNumberPill"
-          class="questionNumberPill">
-      Question
-    </span>
-
-  </div>
-
-</div>
         <div id="studentQuestion"></div>
         <div id="studentOptions"></div>
         <button id="submitAnswerBtn" onclick="submitAnswer()">Submit Answer</button>
+
       </div>
+
       <div id="studentResultBox"></div>
     </div>
+
   </div>
-</div>
+
 </div>
 <div id="rewardPopup" class="rewardPopup hidden"><div class="rewardCard"><div id="rewardEmoji" class="rewardEmoji">🎰</div><div id="rewardTitle" class="rewardTitle">Reward</div><div id="rewardText" class="rewardText">Loading...</div><button onclick="closeReward()">OK</button></div></div>
   <div id="magicStealPopup" class="rewardPopup hidden">
