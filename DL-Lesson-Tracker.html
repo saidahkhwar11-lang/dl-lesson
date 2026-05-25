@@ -685,7 +685,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
   <div id="studentView" class="hidden">
   <div class="btns" style="margin:0 0 12px 0;">
-    <button class="muted" onclick="backToHome()">Back Home</button>
+<button class="muted"
+        onclick="location.href='Secure-Hub.html'">
+  🏠 Main Page
+</button>
   </div>
 <div class="card" style="margin-bottom:12px;">
   <div style="
@@ -754,7 +757,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <div id="teacherView" class="hidden">
 
   <div class="btns" style="margin:0 0 12px 0;">
-    <button class="muted" onclick="backToHome()">Back Home</button>
+<button class="muted"
+        onclick="location.href='Secure-Hub.html'">
+  🏠 Main Page
+</button>
   </div>
 
   <div class="card" style="margin-bottom:12px;">
@@ -2116,6 +2122,10 @@ function showOnly(viewId){
 }
   
 window.backToHome = function(){
+  
+  location.href='Secure-Hub.html';
+return;
+  
   sessionStorage.removeItem('dl_role');
   sessionStorage.removeItem('dl_student_name');
   sessionStorage.removeItem('dl_student_id');
@@ -4261,7 +4271,48 @@ const rankText = await getCurrentStudentRankText();
 
     </div>
   </div>
+<button id="globalHomeBtn"
+        onclick="location.href='Secure-Hub.html'">
+  🏠 Main Page
+</button>
 
+<style>
+#globalHomeBtn{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:999999;
+
+  background:linear-gradient(135deg,#5b7cff,#7d4dff);
+  color:white;
+  border:none;
+
+  padding:12px 18px;
+  border-radius:18px;
+
+  font-weight:800;
+  font-size:14px;
+
+  cursor:pointer;
+
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+
+  transition:.2s;
+}
+
+#globalHomeBtn:hover{
+  transform:translateY(-2px) scale(1.03);
+}
+
+@media(max-width:700px){
+  #globalHomeBtn{
+    right:12px;
+    bottom:12px;
+    padding:10px 14px;
+    font-size:13px;
+  }
+}
+</style>
 </body>
 </html>
 `;
