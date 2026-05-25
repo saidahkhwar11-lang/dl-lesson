@@ -1153,46 +1153,44 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
 };
 
   async function importOldLessonKeyToLibrary(){
+
   if(!db){
-    alert('Firebase is not connected. Click Save Config first.');
+    alert('Firebase is not connected.');
     return;
   }
 
-  const oldKey = byId('lessonKey').value.trim();
+  const oldKey = byId('oldLessonKeyInput').value.trim();
 
   if(!oldKey){
-    alert('Write the old lesson key first.');
+    alert('Please type the old lesson key first.');
     return;
   }
 
-  lessonKey = sanitizeKey(oldKey);
+  const cleanOldKey = oldKey.trim();
 
-  const configSnap = await dbRef(configPath()).once('value');
+  if(!confirm('Import this exact old lesson key?\n\n' + cleanOldKey)){
+    return;
+  }
 
-const contentSnap = await dbRef(contentPath()).once('value');
-
-const metaSnap = await dbRef(lessonBase() + '/lessonMeta').once('value');
+  const configSnap = await dbRef('lessons/' + cleanOldKey + '/config').once('value');
+  const contentSnap = await dbRef('lessons/' + cleanOldKey + '/content').once('value');
+  const metaSnap = await dbRef('lessons/' + cleanOldKey + '/lessonMeta').once('value');
 
   const oldStations = configSnap.val();
   const oldContent = contentSnap.val();
   const oldMeta = metaSnap.val() || {};
 
-    if(!oldStations){
-  alert('Stations not found for: ' + cleanOldKey);
-  return;
-}
-
-if(!oldContent){
-  alert('Content not found for: ' + cleanOldKey);
-  return;
-}
-
-  if(!oldStations || !oldContent){
-    alert('No old lesson found with this lesson key.');
+  if(!oldStations){
+    alert('Stations not found for: ' + cleanOldKey);
     return;
   }
 
-  const title = oldMeta.lessonTitle || oldKey;
+  if(!oldContent){
+    alert('Content not found for: ' + cleanOldKey);
+    return;
+  }
+
+  const title = oldMeta.lessonTitle || cleanOldKey;
   const lessonId = sanitizeKey(title + '_' + Date.now());
 
   await dbRef('lessonLibrary/' + lessonId).set({
@@ -1202,6 +1200,7 @@ if(!oldContent){
     createdAt: Date.now(),
     locked: false,
     visible: true,
+    importedFromOldKey: cleanOldKey,
     lessonMeta: oldMeta,
     stations: oldStations,
     content: oldContent
@@ -1212,7 +1211,6 @@ if(!oldContent){
   loadLessonLibrary();
   loadHomeLessonList();
 }
-
   window.moveCurrentStationUp = async function(){
   const select = byId('creatorStationSelect');
   if(!select) return;
