@@ -2219,7 +2219,7 @@ function bindButtons(){
 }
 
 function showOnly(viewId){
-  ['homeRow','studentView','teacherView'].forEach(function(id){
+  ['homeRow','studentView','teacherView','setupCard'].forEach(function(id){
     const el = byId(id);
     if(el) el.classList.add('hidden');
   });
@@ -2680,7 +2680,6 @@ window.openTeacherView = async function(){
     }
 
     if(!requireConnection()){
-      byId('setupCard').classList.remove('hidden');
       showNotice('teacherNotice','Please click Save Config first.','bad');
       return;
     }
