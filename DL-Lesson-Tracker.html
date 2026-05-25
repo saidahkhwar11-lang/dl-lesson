@@ -1058,11 +1058,6 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     </button>
 
     <button class="secondary"
-  onclick="toggleOldLessonImportBox()">
-  📥 Import Old Lesson
-</button>
-
-    <button class="secondary"
   onclick="importOldLessonKeyToLibrary()">
   📥 Import Old Lesson Key
 </button>
@@ -6858,8 +6853,15 @@ async function loadLessonLibrary(){
   const snap = await dbRef(lessonLibraryPath()).once('value');
   const lessons = snap.val() || {};
 
-  const list = Object.values(lessons);
-
+const list = Object.values(lessons).map(function(l){
+  return {
+    id: l.id,
+    title: l.title,
+    date: l.date,
+    locked: l.locked,
+    visible: l.visible
+  };
+});
   if(!list.length){
     box.innerHTML = '<div class="small">No saved lessons yet.</div>';
     return;
