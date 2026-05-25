@@ -1058,11 +1058,29 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     </button>
 
     <button class="secondary"
+  onclick="toggleOldLessonImportBox()">
+  📥 Import Old Lesson
+</button>
+
+    <button class="secondary"
   onclick="importOldLessonKeyToLibrary()">
   📥 Import Old Lesson Key
 </button>
 
   </div>
+
+  <div id="oldLessonImportBox" class="card hidden" style="margin-top:12px;background:#f8fbff;">
+
+  <h3>📥 Import Old Lesson Key</h3>
+
+  <label>Old Lesson Key</label>
+  <input id="oldLessonKeyInput" placeholder="Type old lesson key here">
+
+  <button class="secondary" onclick="importOldLessonKeyToLibrary()">
+    📥 Import This Old Lesson
+  </button>
+
+</div>
 
   <div id="lessonLibraryNotice"
        class="notice good hidden">
@@ -6680,6 +6698,62 @@ async function saveCurrentLessonToLibrary(){
   await dbRef(lessonLibraryPath() + '/' + lessonId).set(data);
 
   alert('✅ Lesson saved to library!');
+  loadLessonLibrary();
+  loadHomeLessonList();
+}
+
+      function toggleOldLessonImportBox(){
+  const box = byId('oldLessonImportBox');
+  if(box) box.classList.toggle('hidden');
+}
+
+async function importOldLessonKeyToLibrary(){
+
+  if(!db){
+    alert('Firebase is not connected.');
+    return;
+  }
+
+  const oldKey = byId('oldLessonKeyInput').value.trim();
+
+  if(!oldKey){
+    alert('Please type the old lesson key first.');
+    return;
+  }
+
+  const cleanOldKey = sanitizeKey(oldKey);
+
+  const configSnap = await dbRef('lessons/' + cleanOldKey + '/config').once('value');
+  const contentSnap = await dbRef('lessons/' + cleanOldKey + '/content').once('value');
+  const metaSnap = await dbRef('lessons/' + cleanOldKey + '/lessonMeta').once('value');
+
+  const oldStations = configSnap.val();
+  const oldContent = contentSnap.val();
+  const oldMeta = metaSnap.val() || {};
+
+  if(!oldStations || !oldContent){
+    alert('No old lesson found for this key: ' + cleanOldKey);
+    return;
+  }
+
+  const title = oldMeta.lessonTitle || oldKey;
+  const lessonId = sanitizeKey(title + '_' + Date.now());
+
+  await dbRef('lessonLibrary/' + lessonId).set({
+    id: lessonId,
+    title: title,
+    date: new Date().toLocaleDateString('en-GB'),
+    createdAt: Date.now(),
+    locked: false,
+    visible: true,
+    importedFromOldKey: cleanOldKey,
+    lessonMeta: oldMeta,
+    stations: oldStations,
+    content: oldContent
+  });
+
+  alert('✅ Old lesson imported: ' + title);
+
   loadLessonLibrary();
   loadHomeLessonList();
 }
