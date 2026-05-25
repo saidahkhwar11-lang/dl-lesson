@@ -1149,9 +1149,11 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
 
   lessonKey = sanitizeKey(oldKey);
 
-  const configSnap = await dbRef('lessons/' + lessonKey + '/config').once('value');
-  const contentSnap = await dbRef('lessons/' + lessonKey + '/content').once('value');
-  const metaSnap = await dbRef('lessons/' + lessonKey + '/lessonMeta').once('value');
+  const configSnap = await dbRef(configPath()).once('value');
+
+const contentSnap = await dbRef(contentPath()).once('value');
+
+const metaSnap = await dbRef(lessonBase() + '/lessonMeta').once('value');
 
   const oldStations = configSnap.val();
   const oldContent = contentSnap.val();
