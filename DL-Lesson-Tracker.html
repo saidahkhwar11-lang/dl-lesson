@@ -704,31 +704,12 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       <div class="small" id="studentHeaderInfo">Student session</div>
     </div>
 
-    <button onclick="checkMyAchievement()" style="
-  background:#f39a2d;
-  color:white;
-  border:none;
-  border-radius:12px;
-  padding:10px 14px;
-  font-weight:bold;
-  cursor:pointer;
-  width:auto;
-  white-space:nowrap;
-">
-  🏆 Check My Achievement
-</button>
-
   </div>
 
 <div style="
   display:flex;
   justify-content:flex-end;
 ">
-  <div id="achievementMsg" class="small" style="
-    margin-top:6px;
-    text-align:right;
-    max-width:320px;
-  "></div>
 </div>
   <div id="studentProgressBox" style="
     margin-top:12px;
@@ -3856,43 +3837,32 @@ async function hasCompletedAllOpenedStations(){
 
 async function getAchievementStatus(){
 
-  if(achievementUnlocked !== true){
-    return 'locked';
-  }
-
   const finished = await hasCompletedAllOpenedStations();
 
   if(!finished){
     return 'unfinished';
   }
 
-const allowed = await window.isCurrentStudentQualified();
+  const allowed = await window.isCurrentStudentQualified();
   
-if(allowed === true){
-  return 'qualified';
-}
+  if(allowed === true){
+    return 'qualified';
+  }
 
-return 'not_qualified';
+  return 'not_qualified';
 }
-
   window.isCurrentStudentQualified = async function(){
 
   if(!currentStudent || !currentStudent.id){
     return false;
   }
 
-  const minSnap = await getSnap(lessonBase() + '/settings/certificateMinScore');
-
-  const minScore = Number(minSnap.val() || 0);
-
   const student = await getFreshCurrentStudentData();
 
-  const bonus = Number(((liveBonus[currentStudent.id] || {}).points) || 0);
+  const studentFinalMark = Number(student.total || currentStudent.total || 0);
+  const lessonTotalMark = Number(getLessonMaxMark() || 0);
 
-  const total =
-    Number(student.total || currentStudent.total || 0) + bonus;
-
-  return total >= minScore;
+  return lessonTotalMark > 0 && studentFinalMark >= lessonTotalMark;
 
 };
 window.checkMyAchievement = async function(){
@@ -3995,7 +3965,7 @@ if(status === 'not_qualified'){
             border:1px solid #f3d38b;
           ">
 
-🌟 Great effort! Keep going — your hard work matters. Try again next lesson to reach the certificate score.
+🌟 Great effort! You need full marks to download the certificate.
           </div>
         `;
       }
