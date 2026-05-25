@@ -1635,6 +1635,23 @@ input,select,textarea{
 #saveHintBtn.savedPulse{animation:savedPulse .7s ease;}
 @keyframes savedPulse{0%{transform:scale(1)}50%{transform:scale(1.04)}100%{transform:scale(1)}}
 
+
+
+/* ===== QUIZ BATTLE FUN MODE ===== */
+.quizArenaHero{background:linear-gradient(135deg,#fff8ed,#f4f7ff)!important;border:1px solid #f3d49c!important}
+.quizBuilderGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.quizQuestionCard{background:#fff;border:1px solid #dfe8ff;border-radius:16px;padding:12px;margin-top:8px}
+.quizLiveGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.quizLeaderboardRow{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(135deg,#fff,#f8fbff);border:1px solid #dfe8ff;border-radius:16px;padding:12px;margin-bottom:8px}
+.quizRank{font-weight:900;color:#203a78}.quizPts{background:#eef4ff;color:#294a99;border-radius:999px;padding:7px 11px;font-weight:900}
+.quizQuestionBox{background:linear-gradient(135deg,#fff7ed,#ffffff);border:2px solid #fed7aa;border-radius:22px;padding:18px;margin-top:12px}
+.quizOptionBtn{display:block;width:100%;text-align:left;background:#fff!important;color:#20345f!important;border:1px solid #d7e3ff!important;box-shadow:none!important;margin:8px 0!important;border-radius:14px!important;padding:12px!important}
+.quizOptionBtn:hover{background:#eef6ff!important}.quizOptionBtn.selected{background:#4267c7!important;color:white!important}
+.quizTimerPill{display:inline-flex;align-items:center;justify-content:center;background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:999px;padding:8px 12px;font-weight:900;margin:4px}
+.quizFinalPodium{background:linear-gradient(135deg,#fff8df,#f4f7ff);border:2px solid #f2d98a;border-radius:24px;padding:18px;text-align:center}
+.quizGroupLock{background:#fff0f3;border:1px solid #ffc5cf;color:#8c2638;border-radius:14px;padding:10px;margin-top:8px;font-weight:800}
+@media(max-width:850px){.quizBuilderGrid,.quizLiveGrid{grid-template-columns:1fr}}
+
 </style>
 </head>
 
@@ -1683,8 +1700,20 @@ input,select,textarea{
       </div>
       <div class="card">
         <h2>🧠 Quiz Battle</h2>
-        <p class="mini">Coming soon.</p>
-        <button class="secondary" disabled>Coming Soon</button>
+        <div class="secretCard" style="background:linear-gradient(135deg,#fff8f0,#fffdf8);border:2px dashed #ffb84d;">
+          <div class="bigEmoji">⚡</div>
+          <div class="word" style="font-size:30px;color:#d97706;">Fastest Group Wins</div>
+          <div class="mini" style="max-width:420px;margin:auto;">
+            One device per group. Answer questions live, earn speed bonuses, and climb the leaderboard.
+          </div>
+          <div class="funBanner" style="justify-content:center;margin-top:12px;">
+            <span class="funBadge">✅ Correct +1</span>
+            <span class="funBadge">⚡ Fastest +3</span>
+            <span class="funBadge">🔥 Streak +2</span>
+            <span class="funBadge">❌ Wrong -1</span>
+          </div>
+        </div>
+        <button onclick="openQuizBattle()">Open Quiz Battle</button>
       </div>
     </div>
   </div>
@@ -1922,6 +1951,134 @@ input,select,textarea{
     </div>
   </div>
 
+
+
+  <!-- ================= QUIZ BATTLE PAGES ================= -->
+  <div id="quizLoginPage" class="hidden">
+    <div class="tabs">
+      <button onclick="showQuizLogin('student')">👨‍🎓 Group Login</button>
+      <button class="purple" onclick="showQuizLogin('teacher')">👩‍🏫 Teacher Login</button>
+      <button class="secondary" onclick="backToQuizHub()">🏠 Games Hub</button>
+    </div>
+
+    <div class="grid">
+      <div id="quizStudentLogin" class="card studentOnly">
+        <h2>🧠 Quiz Battle Group Login</h2>
+        <div class="status good">One device only for each group. Choose your group and join the battle.</div>
+        <label>Your Name</label>
+        <input id="quizStudentName" placeholder="Connected from Secure Hub" readonly>
+        <label>Student ID</label>
+        <input id="quizStudentId" placeholder="Connected automatically" readonly>
+        <label>Class</label>
+        <select id="quizStudentClass" disabled>
+          <option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option>
+        </select>
+        <label>Choose Group</label>
+        <select id="quizStudentGroup">
+          <option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option>
+          <option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option>
+        </select>
+        <button onclick="quizStudentJoin()">Join Quiz Battle</button>
+        <div id="quizJoinMsg"></div>
+      </div>
+
+      <div id="quizTeacherLogin" class="card teacherOnly hidden">
+        <h2>👩‍🏫 Quiz Battle Teacher Login</h2>
+        <label>Password</label>
+        <input id="quizTeacherPass" type="password" placeholder="Teacher password">
+        <button class="purple" onclick="quizTeacherJoin()">Open Quiz Dashboard</button>
+        <div class="status">Default password: <b>1234</b></div>
+      </div>
+
+      <div class="card quizArenaHero">
+        <h2>⚡ Rules</h2>
+        <p class="pill">Correct answer = +1</p>
+        <p class="pill">Fastest correct = +3</p>
+        <p class="pill">3 correct in a row = +2</p>
+        <p class="pill">Wrong answer = -1 and retry</p>
+        <p class="pill">Time up = move to next question</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizTeacherPage" class="hidden">
+    <div class="tabs">
+      <button class="secondary" onclick="backToQuizHub()">🏠 Games Hub</button>
+      <button class="musicBtn" onclick="toggleMusic()">🎵 Music</button>
+      <button onclick="quizStartChallenge()">▶️ Start Challenge</button>
+      <button class="success" onclick="quizFinishChallenge()">🏆 Show Results</button>
+      <button class="danger" onclick="quizResetSession()">🧹 Reset Session</button>
+    </div>
+
+    <div class="quizLiveGrid">
+      <div class="card teacherOnly">
+        <h2>🧩 Quiz Challenge Builder</h2>
+        <label>Challenge Title</label>
+        <input id="quizChallengeTitle" placeholder="Example: Dreams Vocabulary Battle">
+        <div class="quizBuilderGrid">
+          <div><label>Question</label><textarea id="quizQText" placeholder="Write question"></textarea></div>
+          <div>
+            <label>Correct Answer</label>
+            <select id="quizQCorrect"><option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option></select>
+            <label>Option A</label><input id="quizQA" placeholder="Option A">
+            <label>Option B</label><input id="quizQB" placeholder="Option B">
+            <label>Option C</label><input id="quizQC" placeholder="Option C">
+            <label>Option D</label><input id="quizQD" placeholder="Option D">
+          </div>
+        </div>
+        <button onclick="quizAddDraftQuestion()">➕ Add Question</button>
+        <button class="success" onclick="quizSaveChallenge()">💾 Save Challenge</button>
+        <button class="secondary" onclick="quizClearDraft()">Clear Draft</button>
+        <div id="quizDraftList" class="resultList"></div>
+      </div>
+
+      <div class="card">
+        <h2>📚 Saved Challenges</h2>
+        <label>Select Saved Challenge</label>
+        <select id="quizChallengeSelect" onchange="quizSelectChallenge()"></select>
+        <label>Seconds per question</label>
+        <input id="quizSecondsInput" type="number" min="5" value="30">
+        <div id="quizSelectedInfo" class="status">Choose a saved challenge.</div>
+        <button onclick="quizUseSelectedChallenge()">✅ Use This Challenge</button>
+        <button class="danger" onclick="quizDeleteChallenge()">🗑 Delete Challenge</button>
+      </div>
+    </div>
+
+    <div class="quizLiveGrid" style="margin-top:14px">
+      <div class="card">
+        <h2>📊 Live Leaderboard</h2>
+        <div id="quizTeacherLeaderboard"></div>
+      </div>
+      <div class="card">
+        <h2>👥 Joined Groups + Progress</h2>
+        <div id="quizTeacherGroups"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizStudentPage" class="hidden">
+    <div class="tabs">
+      <button class="secondary" onclick="quizLeaveGame()">🚪 Leave Game</button>
+      <button class="secondary" onclick="backToQuizHub()">🏠 Games Hub</button>
+      <button class="musicBtn" onclick="toggleMusic()">🎵 Music</button>
+      <button onclick="quizStudentRefresh()">🔄 Refresh</button>
+    </div>
+
+    <div class="quizLiveGrid">
+      <div class="card studentOnly">
+        <h2 id="quizStudentWelcome">Quiz Battle</h2>
+        <div id="quizStudentStatus" class="status">Waiting for teacher...</div>
+        <div id="quizStudentTimer" class="timerBig">--</div>
+        <div id="quizStudentProgress" class="progressPill status good">Progress will appear here.</div>
+        <div id="quizStudentMiniBoard" class="resultList"></div>
+      </div>
+
+      <div class="card">
+        <h2>❓ Current Question</h2>
+        <div id="quizStudentQuestionArea" class="quizQuestionBox">Wait for the teacher to start the challenge.</div>
+      </div>
+    </div>
+  </div>
   <div class="footerNote">Save this file as Skill-Clash-Games.html — live Firebase per-group Imposter game.</div>
 </div>
 
@@ -2976,6 +3133,340 @@ async function leaveGame(){
   currentUser=null;
   backToHub();
 }
+
+
+
+/* ================= QUIZ BATTLE FUN MODE ================= */
+const QUIZ_KEY = 'quiz_battle_fun_v1';
+const QUIZ_SESSION_KEY = 'quiz_battle_session_v1';
+let quizRef = null;
+let quizCache = null;
+let quizUser = null;
+let quizDraftQuestions = [];
+let quizSelectedAnswer = '';
+let quizTimerInterval = null;
+
+function quizPath(path=''){
+  return path ? `games/${QUIZ_KEY}/${path}` : `games/${QUIZ_KEY}`;
+}
+function quizDefaultState(){
+  return {
+    stage:'waiting',
+    activeChallengeId:null,
+    activeChallengeTitle:'',
+    secondsPerQuestion:30,
+    challenges:{},
+    groups:{},
+    fastestByQuestion:{},
+    startedAt:0,
+    final:false
+  };
+}
+async function quizEnsureRef(){
+  if(!db) return null;
+  if(!quizRef){
+    quizRef = db.ref(quizPath('state'));
+    quizRef.on('value', snap=>{
+      quizCache = snap.exists() ? snap.val() : quizDefaultState();
+      if(quizUser?.role === 'teacher') quizTeacherRefresh();
+      if(quizUser?.role === 'student') quizStudentRefresh(false);
+    });
+    const snap = await quizRef.get();
+    if(!snap.exists()) await quizRef.set(quizDefaultState());
+  }
+  return quizRef;
+}
+async function quizGetState(){
+  await quizEnsureRef();
+  if(quizCache) return JSON.parse(JSON.stringify(quizCache));
+  const snap = await quizRef.get();
+  return snap.exists() ? snap.val() : quizDefaultState();
+}
+async function quizSetState(s){
+  await quizEnsureRef();
+  quizCache = JSON.parse(JSON.stringify(s));
+  await quizRef.set(s);
+}
+function quizHideAll(){
+  ['hubPage','loginPage','teacherPage','studentPage','quizLoginPage','quizTeacherPage','quizStudentPage'].forEach(id=>{
+    const el=byId(id); if(el) el.classList.add('hidden');
+  });
+}
+function openQuizBattle(){
+  quizEnsureRef();
+  quizHideAll();
+  show('quizLoginPage');
+  showQuizLogin('student');
+  setTimeout(loadQuizSecureStudent,100);
+}
+function backToQuizHub(){
+  quizUser = null;
+  localStorage.removeItem(QUIZ_SESSION_KEY);
+  quizHideAll();
+  show('hubPage');
+}
+function showQuizLogin(type){
+  if(type==='teacher'){
+    show('quizTeacherLogin'); hide('quizStudentLogin');
+  }else{
+    show('quizStudentLogin'); hide('quizTeacherLogin'); loadQuizSecureStudent();
+  }
+}
+function getSecureHubStudent(){
+  try{
+    return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+  }catch(e){return null;}
+}
+function loadQuizSecureStudent(){
+  const secure = getSecureHubStudent() || {};
+  if(byId('quizStudentName')) byId('quizStudentName').value = secure.name || secure.studentName || '';
+  if(byId('quizStudentId')) byId('quizStudentId').value = secure.studentId || secure.password || secure.id || '';
+  if(byId('quizStudentClass')) byId('quizStudentClass').value = secure.className || secure.cls || '9/1';
+}
+function quizSaveSession(){
+  if(quizUser?.role==='student') localStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(quizUser));
+}
+async function quizTeacherJoin(){
+  if(byId('quizTeacherPass').value !== TEACHER_PASSWORD){ alert('Incorrect password.'); return; }
+  await quizEnsureRef();
+  quizUser = {role:'teacher'};
+  quizHideAll(); show('quizTeacherPage'); quizTeacherRefresh();
+}
+async function quizStudentJoin(){
+  await quizEnsureRef();
+  const name = (byId('quizStudentName').value || '').trim();
+  const id = (byId('quizStudentId').value || '').trim();
+  const cls = byId('quizStudentClass').value || '9/1';
+  const group = String(byId('quizStudentGroup').value || '1');
+  if(!name || !id){ alert('Login from Secure Hub first so your name and ID appear.'); return; }
+  const s = await quizGetState();
+  s.groups = s.groups || {};
+  const current = s.groups[group] || {};
+  if(current.activePlayerId && String(current.activePlayerId) !== String(id)){
+    byId('quizJoinMsg').innerHTML = '<div class="quizGroupLock">This group already has a player. Ask her to click Leave Game first.</div>';
+    return;
+  }
+  s.groups[group] = Object.assign({score:0,qIndex:0,streak:0,done:false,answers:{}}, current, {
+    group, activePlayerId:id, playerName:name, className:cls, joinedAt:Date.now(), lastSeen:Date.now()
+  });
+  if(s.stage === 'playing' && !s.groups[group].deadline){
+    s.groups[group].deadline = Date.now() + Number(s.secondsPerQuestion || 30) * 1000;
+  }
+  await quizSetState(s);
+  quizUser = {role:'student', id, name, cls, group};
+  quizSaveSession();
+  quizHideAll(); show('quizStudentPage'); quizStudentRefresh();
+}
+function quizCurrentChallenge(s){ return s.challenges?.[s.activeChallengeId] || null; }
+function quizQuestionCount(s){ return (quizCurrentChallenge(s)?.questions || []).length; }
+function quizRows(s){
+  return Object.values(s.groups || {}).sort((a,b)=> Number(b.score||0)-Number(a.score||0) || Number(b.qIndex||0)-Number(a.qIndex||0));
+}
+function quizRenderDraft(){
+  const box=byId('quizDraftList'); if(!box) return;
+  box.innerHTML = quizDraftQuestions.length ? quizDraftQuestions.map((q,i)=>`<div class="quizQuestionCard"><b>Q${i+1}. ${esc(q.text)}</b><div class="mini">Answer: ${esc(q.correct)} | ${esc(q.options?.[q.correct]||'')}</div></div>`).join('') : '<div class="status">No questions added yet.</div>';
+}
+function quizAddDraftQuestion(){
+  const q = {
+    id:'q_'+Date.now()+'_'+Math.floor(Math.random()*999),
+    text:byId('quizQText').value.trim(),
+    options:{A:byId('quizQA').value.trim(),B:byId('quizQB').value.trim(),C:byId('quizQC').value.trim(),D:byId('quizQD').value.trim()},
+    correct:byId('quizQCorrect').value
+  };
+  if(!q.text || !q.options.A || !q.options.B){ alert('Add question and at least A/B options.'); return; }
+  quizDraftQuestions.push(q);
+  ['quizQText','quizQA','quizQB','quizQC','quizQD'].forEach(id=>byId(id).value='');
+  quizRenderDraft();
+}
+function quizClearDraft(){ quizDraftQuestions=[]; quizRenderDraft(); }
+async function quizSaveChallenge(){
+  const title = byId('quizChallengeTitle').value.trim() || 'Quiz Battle Challenge';
+  if(!quizDraftQuestions.length){ alert('Add questions first.'); return; }
+  const s = await quizGetState();
+  s.challenges = s.challenges || {};
+  const id='quiz_'+Date.now();
+  s.challenges[id] = {id,title,questions:quizDraftQuestions,createdAt:Date.now()};
+  quizDraftQuestions=[]; byId('quizChallengeTitle').value=''; quizRenderDraft();
+  await quizSetState(s);
+  alert('✅ Challenge saved. It will stay safe after reset.');
+}
+async function quizDeleteChallenge(){
+  const id = byId('quizChallengeSelect').value;
+  if(!id) return;
+  if(!confirm('Delete this saved challenge?')) return;
+  const s=await quizGetState();
+  delete s.challenges[id];
+  if(s.activeChallengeId===id){s.activeChallengeId=null;s.activeChallengeTitle='';}
+  await quizSetState(s);
+}
+async function quizUseSelectedChallenge(){
+  const id=byId('quizChallengeSelect').value;
+  const s=await quizGetState();
+  const col=s.challenges?.[id];
+  if(!id || !col){ alert('Choose a saved challenge first.'); return; }
+  s.activeChallengeId=id;
+  s.activeChallengeTitle=col.title;
+  s.secondsPerQuestion=Math.max(5,Number(byId('quizSecondsInput').value||30));
+  s.stage='waiting';
+  s.final=false;
+  await quizSetState(s);
+  alert('✅ Challenge is ready. Click Start Challenge when students join.');
+}
+function quizSelectChallenge(){
+  const id=byId('quizChallengeSelect').value;
+  const s=quizCache || quizDefaultState();
+  const c=s.challenges?.[id];
+  byId('quizSelectedInfo').innerHTML = c ? `<b>${esc(c.title)}</b><br>${(c.questions||[]).length} questions saved.` : 'Choose a saved challenge.';
+}
+async function quizStartChallenge(){
+  const s=await quizGetState();
+  const c=quizCurrentChallenge(s);
+  if(!c){ alert('Choose and use a challenge first.'); return; }
+  const now=Date.now();
+  s.stage='playing'; s.final=false; s.startedAt=now; s.fastestByQuestion={};
+  Object.keys(s.groups||{}).forEach(g=>{
+    s.groups[g].score=0; s.groups[g].qIndex=0; s.groups[g].streak=0; s.groups[g].done=false; s.groups[g].answers={}; s.groups[g].deadline=now+Number(s.secondsPerQuestion||30)*1000;
+  });
+  await quizSetState(s);
+}
+async function quizResetSession(){
+  if(!confirm('Reset joined groups, leaderboard, active challenge, and results only? Saved challenges will stay.')) return;
+  const s=await quizGetState();
+  const fresh=quizDefaultState();
+  fresh.challenges=s.challenges || {};
+  await quizSetState(fresh);
+}
+async function quizFinishChallenge(){
+  const s=await quizGetState();
+  s.stage='final'; s.final=true;
+  await quizSetState(s);
+}
+function quizRenderTeacherSelectors(s){
+  const sel=byId('quizChallengeSelect'); if(!sel) return;
+  const old=sel.value;
+  const cols=Object.values(s.challenges||{});
+  sel.innerHTML='<option value="">Choose challenge</option>'+cols.map(c=>`<option value="${esc(c.id)}">${esc(c.title)}</option>`).join('');
+  if(old) sel.value=old; else if(s.activeChallengeId) sel.value=s.activeChallengeId;
+  quizSelectChallenge();
+}
+function quizTeacherRefresh(){
+  const s=quizCache || quizDefaultState();
+  quizRenderTeacherSelectors(s); quizRenderDraft();
+  const c=quizCurrentChallenge(s); const total=quizQuestionCount(s);
+  const lb=byId('quizTeacherLeaderboard');
+  if(lb){
+    const rows=quizRows(s);
+    lb.innerHTML = rows.length ? rows.map((r,i)=>`<div class="quizLeaderboardRow"><div><span class="quizRank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${esc(r.group)}</span><div class="mini">${esc(r.playerName||'')} • Q ${Math.min(Number(r.qIndex||0)+1,total)} / ${total} • Streak ${Number(r.streak||0)}</div></div><div class="quizPts">${Number(r.score||0)} pts</div></div>`).join('') : '<div class="status">No groups joined yet.</div>';
+  }
+  const gs=byId('quizTeacherGroups');
+  if(gs){
+    const rows=Object.values(s.groups||{}).sort((a,b)=>Number(a.group)-Number(b.group));
+    gs.innerHTML = `<div class="status good"><b>Active:</b> ${esc(s.activeChallengeTitle||'No challenge')} • <b>Stage:</b> ${esc(s.stage)} • <b>Timer:</b> ${Number(s.secondsPerQuestion||30)}s</div>` + (rows.length?rows.map(g=>`<div class="resultRow"><div><b>Group ${esc(g.group)}</b><div class="mini">Player: ${esc(g.playerName||'-')}<br>Progress: ${Number(g.qIndex||0)} / ${total} ${g.done?'✅ Done':''}</div></div><span class="score">${Number(g.score||0)}</span></div>`).join(''):'<div class="status">Waiting for groups to join.</div>');
+  }
+}
+function quizTimeLeftForGroup(s,g){
+  const gr=s.groups?.[g]; if(!gr || !gr.deadline || s.stage!=='playing') return 0;
+  return Math.max(0, Math.ceil((Number(gr.deadline)-Date.now())/1000));
+}
+async function quizSyncMyTimer(s){
+  if(!quizUser || s.stage!=='playing') return s;
+  const g=quizUser.group; const gr=s.groups?.[g]; const c=quizCurrentChallenge(s); if(!gr || !c) return s;
+  const total=(c.questions||[]).length;
+  if(gr.done) return s;
+  let changed=false; const now=Date.now();
+  while(!gr.done && Number(gr.deadline||0) <= now){
+    gr.answers=gr.answers||{};
+    gr.answers[gr.qIndex]=Object.assign({},gr.answers[gr.qIndex]||{},{timeout:true,answeredAt:now});
+    gr.qIndex=Number(gr.qIndex||0)+1;
+    gr.streak=0;
+    if(gr.qIndex>=total){ gr.done=true; break; }
+    gr.deadline=Number(gr.deadline||now)+Number(s.secondsPerQuestion||30)*1000;
+    changed=true;
+  }
+  if(changed){ await quizSetState(s); return await quizGetState(); }
+  return s;
+}
+function quizRenderMiniBoard(s){
+  const box=byId('quizStudentMiniBoard'); if(!box) return;
+  box.innerHTML=quizRows(s).slice(0,6).map((r,i)=>`<div class="quizLeaderboardRow"><span>${i+1}. G${esc(r.group)}</span><b>${Number(r.score||0)} pts</b></div>`).join('') || '<div class="mini">Leaderboard appears after groups join.</div>';
+}
+async function quizStudentRefresh(sync=true){
+  if(!quizUser) return;
+  let s=await quizGetState();
+  if(sync) s=await quizSyncMyTimer(s);
+  const g=quizUser.group; const gr=s.groups?.[g]; const c=quizCurrentChallenge(s); const total=quizQuestionCount(s);
+  byId('quizStudentWelcome').innerText=`Group ${g} Quiz Battle`;
+  quizRenderMiniBoard(s);
+  if(!c){ byId('quizStudentStatus').innerHTML='Waiting for teacher to choose a challenge.'; byId('quizStudentQuestionArea').innerHTML='No active challenge yet.'; return; }
+  if(s.stage==='final'){
+    byId('quizStudentStatus').innerHTML='🏆 Final results are ready!'; byId('quizStudentTimer').innerText='Done';
+    byId('quizStudentProgress').innerHTML=`Your score: <b>${Number(gr?.score||0)}</b> pts`;
+    const rows=quizRows(s).slice(0,3);
+    byId('quizStudentQuestionArea').innerHTML=`<div class="quizFinalPodium"><h2>🏆 Top 3 Groups</h2>${rows.map((r,i)=>`<div style="font-size:22px;margin-top:8px">${i===0?'🥇':i===1?'🥈':'🥉'} Group ${esc(r.group)} — ${Number(r.score||0)} pts</div>`).join('') || 'No results yet.'}</div>`;
+    return;
+  }
+  if(s.stage!=='playing'){
+    byId('quizStudentStatus').innerHTML=`Ready: <b>${esc(c.title)}</b>. Wait for teacher to start.`;
+    byId('quizStudentTimer').innerText='--'; byId('quizStudentProgress').innerHTML='Waiting to start.';
+    byId('quizStudentQuestionArea').innerHTML='Teacher will start the challenge soon.'; return;
+  }
+  if(!gr){ byId('quizStudentQuestionArea').innerHTML='Please rejoin the quiz.'; return; }
+  if(gr.done){
+    byId('quizStudentStatus').innerHTML='✅ You finished. Wait for teacher to show final results.';
+    byId('quizStudentTimer').innerText='Done'; byId('quizStudentProgress').innerHTML=`Finished ${total}/${total} • Score: <b>${Number(gr.score||0)}</b>`;
+    byId('quizStudentQuestionArea').innerHTML='<div class="status good">Great job! Your group finished all questions.</div>'; return;
+  }
+  const q=(c.questions||[])[Number(gr.qIndex||0)];
+  const left=quizTimeLeftForGroup(s,g);
+  byId('quizStudentTimer').innerText=left+'s';
+  byId('quizStudentStatus').innerHTML=`⚡ Answer before time is up. Wrong answer = -1 and try again.`;
+  byId('quizStudentProgress').innerHTML=`Question <b>${Number(gr.qIndex||0)+1}</b> / ${total} • Score: <b>${Number(gr.score||0)}</b> • Streak: <b>${Number(gr.streak||0)}</b>`;
+  byId('quizStudentQuestionArea').innerHTML=`<div class="quizTimerPill">⏱️ ${left}s left</div><h2>Q${Number(gr.qIndex||0)+1}. ${esc(q.text)}</h2>${['A','B','C','D'].filter(k=>q.options?.[k]).map(k=>`<button class="quizOptionBtn" onclick="quizSubmitAnswer('${k}')"><b>${k})</b> ${esc(q.options[k])}</button>`).join('')}<div id="quizAnswerFeedback"></div>`;
+}
+async function quizSubmitAnswer(ans){
+  let s=await quizGetState();
+  s=await quizSyncMyTimer(s);
+  if(s.stage!=='playing') return;
+  const g=quizUser.group; const gr=s.groups?.[g]; const c=quizCurrentChallenge(s); if(!gr || !c || gr.done) return;
+  const qIndex=Number(gr.qIndex||0); const q=(c.questions||[])[qIndex]; if(!q) return;
+  const correct=String(ans)===String(q.correct);
+  gr.answers=gr.answers||{};
+  gr.answers[qIndex]=gr.answers[qIndex]||{attempts:0};
+  gr.answers[qIndex].attempts=Number(gr.answers[qIndex].attempts||0)+1;
+  gr.answers[qIndex].lastAnswer=ans;
+  gr.answers[qIndex].answeredAt=Date.now();
+  if(correct){
+    let gained=1;
+    s.fastestByQuestion=s.fastestByQuestion||{};
+    if(!s.fastestByQuestion[qIndex]){ s.fastestByQuestion[qIndex]={group:g,time:Date.now()}; gained+=3; gr.answers[qIndex].fastest=true; }
+    gr.streak=Number(gr.streak||0)+1;
+    if(gr.streak>0 && gr.streak%3===0){ gained+=2; gr.answers[qIndex].streakBonus=true; }
+    gr.score=Number(gr.score||0)+gained;
+    gr.answers[qIndex].correct=true; gr.answers[qIndex].points=gained;
+    const carry=Math.max(0,Number(gr.deadline||Date.now())-Date.now());
+    gr.qIndex=qIndex+1;
+    if(gr.qIndex >= (c.questions||[]).length){ gr.done=true; }
+    else gr.deadline=Date.now()+carry+Number(s.secondsPerQuestion||30)*1000;
+    await quizSetState(s); beep(820,.12); quizStudentRefresh();
+  }else{
+    gr.score=Number(gr.score||0)-1; gr.streak=0; gr.answers[qIndex].correct=false;
+    await quizSetState(s); beep(180,.12);
+    const fb=byId('quizAnswerFeedback'); if(fb) fb.innerHTML='<div class="status bad">❌ Wrong answer. -1 point. Try the same question again before time ends.</div>';
+    setTimeout(()=>quizStudentRefresh(),700);
+  }
+}
+async function quizLeaveGame(){
+  if(!quizUser) return backToQuizHub();
+  const s=await quizGetState();
+  const g=quizUser.group;
+  if(s.groups?.[g]?.activePlayerId===quizUser.id){ delete s.groups[g]; }
+  await quizSetState(s);
+  quizUser=null; localStorage.removeItem(QUIZ_SESSION_KEY); backToQuizHub();
+}
+setInterval(()=>{
+  if(quizUser?.role==='teacher') quizTeacherRefresh();
+  if(quizUser?.role==='student') quizStudentRefresh();
+},1000);
 
 setInterval(()=>{
   if(currentUser?.role==='teacher') teacherRefresh();
