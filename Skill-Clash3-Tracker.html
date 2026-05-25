@@ -2658,9 +2658,14 @@ button:hover{filter:brightness(.96)}
   <div id="workPage" class="hidden">
     <div class="groupHeader">
       <div class="titleLine">
-        <h1 id="workTitle">Group Work</h1>
-        <span class="statusBadge" id="statusBadge">✍️ In Progress</span>
-      </div>
+  <h1 id="workTitle">Group Work</h1>
+  <span class="statusBadge" id="statusBadge">✍️ In Progress</span>
+
+  <button onclick="location.href='Secure-Hub.html'"
+          style="width:auto;background:#eef4ff;color:#294a99">
+    🏠 Back to Main Page
+  </button>
+</div>
       <div id="studentHeaderTimer" class="studentHeaderTimer">
         <div class="timerIcon">⏱️</div>
         <span id="studentTimer" class="timerText">Not started</span>
@@ -5307,7 +5312,50 @@ function downloadCertificate(info){
       </div>
       <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
-  </div></body></html>`;
+  </div>
+  <button id="globalHomeBtn"
+        onclick="location.href='Secure-Hub.html'">
+  🏠 Main Page
+</button>
+
+<style>
+#globalHomeBtn{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  z-index:999999;
+
+  background:linear-gradient(135deg,#5b7cff,#7d4dff);
+  color:white;
+  border:none;
+
+  padding:12px 18px;
+  border-radius:18px;
+
+  font-weight:800;
+  font-size:14px;
+
+  cursor:pointer;
+
+  box-shadow:0 10px 25px rgba(0,0,0,.18);
+
+  transition:.2s;
+}
+
+#globalHomeBtn:hover{
+  transform:translateY(-2px) scale(1.03);
+}
+
+@media(max-width:700px){
+  #globalHomeBtn{
+    right:12px;
+    bottom:12px;
+    padding:10px 14px;
+    font-size:13px;
+  }
+}
+</style>
+  </body></html>`;
 
   if(typeof saveSkillClashCertificateToSecureHub === 'function'){
     saveSkillClashCertificateToSecureHub(info);
