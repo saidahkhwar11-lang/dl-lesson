@@ -115,6 +115,30 @@ body{
   font-size:24px;
   font-weight:800;
 }
+  #topSecureHubBtn{
+  position:absolute!important;
+  right:14px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  width:auto!important;
+  background:#eef4ff!important;
+  color:#294a99!important;
+  border:1px solid #cfe0f7!important;
+  padding:8px 14px!important;
+  border-radius:14px!important;
+  font-weight:900!important;
+  font-size:13px!important;
+  box-shadow:0 4px 12px rgba(0,0,0,.12)!important;
+}
+
+@media(max-width:700px){
+  #topSecureHubBtn{
+    position:static!important;
+    transform:none!important;
+    display:block!important;
+    margin:8px auto 0!important;
+  }
+}
 .container{
   max-width:1180px;
   margin:auto;
@@ -2582,7 +2606,14 @@ button:hover{filter:brightness(.96)}
 </head>
 
 <body>
-<div class="topbar">⚔️ Skill Clash Hub</div>
+<div class="topbar" style="position:relative;">
+  ⚔️ Skill Clash Hub
+
+  <button id="topSecureHubBtn"
+          onclick="location.href='secure-hub.html'">
+    🏠 Main Page
+  </button>
+</div>
 
 <div class="container">
 
@@ -5277,6 +5308,7 @@ function downloadCertificate(info){
     @media print{
       body{background:white;padding:0;display:block}.printBtn{display:none}.cert{width:100%;min-height:100vh;box-shadow:none;border-radius:0;border-width:8px}.cert:after{print-color-adjust:exact;-webkit-print-color-adjust:exact}
     }
+
   </style></head><body>
   <button class="printBtn" onclick="window.print()">Print / Save PDF</button>
   <div class="cert">
