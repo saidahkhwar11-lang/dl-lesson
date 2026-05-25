@@ -602,8 +602,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   ">
     <h2>Student Login</h2>
 
-    <label>Student Name</label>
-    <input id="studentName" placeholder="Enter student name" />
     <input
   id="studentCode"
   type="text"
@@ -618,6 +616,16 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   "
 >
 
+  <label style="display:block;margin-top:12px;">
+  Choose Lesson
+</label>  
+  <select id="studentLessonSelect">
+  <option value="">Loading lessons...</option>
+</select>
+
+<button type="button" class="secondary" onclick="loadHomeLessonList()">
+  🔄 Refresh Lessons
+</button>
     <button id="studentStartBtn" onclick="startStudentSession()">
       Start Student Session
     </button>
@@ -668,10 +676,23 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
       opacity:0.05;
     ">B</div>
 
-    <h2>Teacher View</h2>
-    <label>Teacher Password</label>
-    <input id="teacherPassword" type="password" placeholder="Enter password" />
-    <button id="teacherOpenBtn" onclick="openTeacherView()">Open Teacher View</button>
+   <h2>Teacher View</h2>
+
+<label>Teacher Password</label>
+<input id="teacherPassword" type="password" placeholder="Enter password" />
+
+<label style="display:block;margin-top:12px;">Choose Lesson</label>
+<select id="teacherLessonSelect">
+  <option value="">Loading lessons...</option>
+</select>
+
+<button type="button" class="secondary" onclick="loadHomeLessonList()">
+  🔄 Refresh Lessons
+</button>
+
+<button id="teacherOpenBtn" onclick="openTeacherView()">
+  Open Teacher View
+</button>
     <div id="teacherNotice" class="notice bad hidden"></div>
   </div>
 
@@ -1036,6 +1057,11 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       🔄 Refresh Library
     </button>
 
+    <button class="secondary"
+  onclick="importOldLessonKeyToLibrary()">
+  📥 Import Old Lesson Key
+</button>
+
   </div>
 
   <div id="lessonLibraryNotice"
@@ -1107,6 +1133,55 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
   sessionStorage.clear();
   alert('Old lesson cleared. Reload now.');
 };
+
+  async function importOldLessonKeyToLibrary(){
+  if(!db){
+    alert('Firebase is not connected. Click Save Config first.');
+    return;
+  }
+
+  const oldKey = byId('lessonKey').value.trim();
+
+  if(!oldKey){
+    alert('Write the old lesson key first.');
+    return;
+  }
+
+  lessonKey = sanitizeKey(oldKey);
+
+  const configSnap = await dbRef('lessons/' + lessonKey + '/config').once('value');
+  const contentSnap = await dbRef('lessons/' + lessonKey + '/content').once('value');
+  const metaSnap = await dbRef('lessons/' + lessonKey + '/lessonMeta').once('value');
+
+  const oldStations = configSnap.val();
+  const oldContent = contentSnap.val();
+  const oldMeta = metaSnap.val() || {};
+
+  if(!oldStations || !oldContent){
+    alert('No old lesson found with this lesson key.');
+    return;
+  }
+
+  const title = oldMeta.lessonTitle || oldKey;
+  const lessonId = sanitizeKey(title + '_' + Date.now());
+
+  await dbRef('lessonLibrary/' + lessonId).set({
+    id: lessonId,
+    title: title,
+    date: new Date().toLocaleDateString('en-GB'),
+    createdAt: Date.now(),
+    locked: false,
+    visible: true,
+    lessonMeta: oldMeta,
+    stations: oldStations,
+    content: oldContent
+  });
+
+  alert('✅ Old lesson imported to library: ' + title);
+
+  loadLessonLibrary();
+  loadHomeLessonList();
+}
 
   window.moveCurrentStationUp = async function(){
   const select = byId('creatorStationSelect');
@@ -2370,50 +2445,89 @@ window.startStudentSession = async function(){
 
     showNotice('studentNotice','Starting student session...','warn');
 
-   if(!requireConnection()) return;
+    if(!requireConnection()) return;
 
-const name = byId('studentName').value.trim();
-const studentCode = byId('studentCode').value.trim();
-    let id = sanitizeKey(studentCode);
+    const studentCode = byId('studentCode').value.trim();
+    const lessonSelect = byId('studentLessonSelect');
+    const selectedLessonId = lessonSelect ? lessonSelect.value : '';
+
+    if(!studentCode){
+      showNotice('studentNotice','Please enter your Student ID.','bad');
+      return;
+    }
+
+    if(!selectedLessonId){
+      showNotice('studentNotice','Please choose a lesson first.','bad');
+      return;
+    }
+
+    const id = sanitizeKey(studentCode);
     const oldId = sessionStorage.getItem('dl_student_id');
 
-if(oldId && oldId !== id){
-  sessionStorage.removeItem('dl_student_name');
-  sessionStorage.removeItem('dl_student_id');
-    delete liveStudents[oldId];
+    if(oldId && oldId !== id){
+      sessionStorage.removeItem('dl_student_name');
+      sessionStorage.removeItem('dl_student_id');
+      sessionStorage.removeItem('dl_selected_lesson_id');
 
-  currentStudent = null;
-  currentOpenStation = '';
-  studentQuestionStage = 0;
-  studentStageAnswers = {};
-}
+      delete liveStudents[oldId];
 
-if(!name){
-  showNotice('studentNotice','Please enter student name.','bad');
-  return;
-}
+      currentStudent = null;
+      currentOpenStation = '';
+      studentQuestionStage = 0;
+      studentStageAnswers = {};
+    }
 
-if(!studentCode){
-  showNotice('studentNotice','Please enter Student ID / Class ID.','bad');
-  return;
-}
+    const lessonSnap = await dbRef('lessonLibrary/' + selectedLessonId).once('value');
 
+    if(!lessonSnap.exists()){
+      showNotice('studentNotice','This lesson was not found. Please refresh.','bad');
+      return;
+    }
+
+    const chosenLesson = lessonSnap.val();
+
+    if(chosenLesson.visible !== true || chosenLesson.locked === true){
+      showNotice('studentNotice','This lesson is not available now.','bad');
+      return;
+    }
+
+    lessonMeta = chosenLesson.lessonMeta || {
+      lessonTitle: chosenLesson.title || '',
+      lessonObjectives: '',
+      lessonKeywords: ''
+    };
+
+    lessonStations = chosenLesson.stations || [];
+    lessonContent = chosenLesson.content || {};
+
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+    studentQuestionStage = 0;
+    studentStageAnswers = {};
+
+    const studentName = 'Student ' + id;
 
     hideNotice('studentNotice');
 
-    currentStudent = {name:name, id:id};
+    currentStudent = {
+      name: studentName,
+      id: id,
+      selectedLessonId: selectedLessonId
+    };
 
     sessionStorage.setItem('dl_role', 'student');
-    sessionStorage.setItem('dl_student_name', name);
+    sessionStorage.setItem('dl_student_name', studentName);
     sessionStorage.setItem('dl_student_id', id);
+    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
 
     const initial = {
-      name:name,
-      id:id,
+      name: studentName,
+      id: id,
+      selectedLessonId: selectedLessonId,
+      lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
       scores:{},
       total:0,
       startedAt:Date.now(),
-      currentStation:'starter',
+      currentStation:currentOpenStation,
       stationResults:{},
       stationAnswers:{},
       submittedStations:{},
@@ -2426,19 +2540,24 @@ if(!studentCode){
       await dbRef(studentPath(id)).set(initial);
     } else {
       await dbRef(studentPath(id)).update({
-        name:name,
+        name: studentName,
         id:id,
+        selectedLessonId:selectedLessonId,
+        lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
         lastLoginAt:Date.now()
       });
     }
 
     if(!liveStudents[id]) liveStudents[id] = {};
-    liveStudents[id].name = name;
+    liveStudents[id].name = studentName;
     liveStudents[id].id = id;
+    liveStudents[id].selectedLessonId = selectedLessonId;
 
     await dbRef(attendancePath(id)).set({
-      name:name,
+      name:studentName,
       id:id,
+      selectedLessonId:selectedLessonId,
+      lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
       startedAt:Date.now(),
       present:true
     });
@@ -2446,14 +2565,7 @@ if(!studentCode){
     showOnly('studentView');
 
     renderStudentNav();
-    loadStudentLessonLibrary();
     listenStudentLive();
-
-    const unlockSnap = await getSnap(lessonBase() + '/settings/achievementUnlocked');
-    achievementUnlocked = unlockSnap.val() === true;
-
-    listenAchievementUnlock();
-
     updateStudentProgress();
 
     const displayedStation = lessonStations.find(function(s){
@@ -2465,7 +2577,7 @@ if(!studentCode){
     if(displayedStation){
       openStation(displayedStation.id);
     } else {
-      byId('stationContent').innerHTML = '<div class="notice warn">No stations are available yet. Please wait for your teacher.</div>';
+      byId('stationContent').innerHTML = '<div class="notice warn">No stations are available yet.</div>';
     }
 
   }catch(err){
@@ -2517,20 +2629,30 @@ function showClassSummary(){
   );
 }
 window.openTeacherView = async function(){
+
   try{
+
     if(typeof firebase === 'undefined'){
       showNotice('teacherNotice','Login failed: Please refresh and try again.','bad');
       return;
     }
 
     initFirebaseFromInputs();
-    await ensureLessonDefaults();
 
     showNotice('teacherNotice','Opening teacher view...','warn');
 
     const pw = byId('teacherPassword').value;
+
     if(pw !== TEACHER_PASSWORD){
       showNotice('teacherNotice','Incorrect password.','bad');
+      return;
+    }
+
+    const lessonSelect = byId('teacherLessonSelect');
+    const selectedLessonId = lessonSelect ? lessonSelect.value : '';
+
+    if(!selectedLessonId){
+      showNotice('teacherNotice','Please choose a lesson first.','bad');
       return;
     }
 
@@ -2540,33 +2662,93 @@ window.openTeacherView = async function(){
       return;
     }
 
-    hideNotice('teacherNotice');
+    const lessonSnap = await dbRef('lessonLibrary/' + selectedLessonId).once('value');
+
+    if(!lessonSnap.exists()){
+      showNotice('teacherNotice','Lesson not found.','bad');
+      return;
+    }
+
+    const chosenLesson = lessonSnap.val();
+
+    lessonMeta = chosenLesson.lessonMeta || {
+      lessonTitle: chosenLesson.title || '',
+      lessonObjectives:'',
+      lessonKeywords:''
+    };
+
+    lessonStations = chosenLesson.stations || [];
+    lessonContent = chosenLesson.content || {};
+
+    currentOpenStation =
+      (lessonStations[0] && lessonStations[0].id) || 'starter';
+
+    studentQuestionStage = 0;
+    studentStageAnswers = {};
+
     sessionStorage.setItem('dl_role', 'teacher');
+    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
+
+    hideNotice('teacherNotice');
+
     byId('setupCard').classList.remove('hidden');
+
     showOnly('teacherView');
-    await dbRef(lessonBase() + '/settings/achievementUnlocked').set(false);
-achievementUnlocked = false;
-    
+
     renderTeacherTimer();
+
     fillTeacherSelects();
+
     loadCreatorStation();
+
     renderTeacherOverview();
-    openTeacherStationPreview('starter');
+
+    openTeacherStationPreview(currentOpenStation);
+
     renderControlStatus();
+
     renderTeacherTracker();
+
     showTeacherSection('teacherTrackerCard');
+
     startTeacherListeners();
 
-    if(typeof renderBonusBox === 'function') renderBonusBox();
+    if(typeof renderBonusBox === 'function'){
+      renderBonusBox();
+    }
+
+    if(byId('lessonTitleInput')){
+      byId('lessonTitleInput').value =
+        lessonMeta.lessonTitle || '';
+    }
+
+    if(byId('lessonObjectivesInput')){
+      byId('lessonObjectivesInput').value =
+        lessonMeta.lessonObjectives || '';
+    }
+
+    if(byId('lessonKeywordsInput')){
+      byId('lessonKeywordsInput').value =
+        lessonMeta.lessonKeywords || '';
+    }
 
   }catch(err){
+
     console.error('Teacher view error:', err);
-    showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
+
+    showNotice(
+      'teacherNotice',
+      'Teacher view failed: ' +
+      (err && err.message ? err.message : err),
+      'bad'
+    );
+
     byId('teacherView').classList.add('hidden');
+
     byId('homeRow').classList.remove('hidden');
   }
 };
-
+  
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
   function stationHasWrittenQuestion(stationId){
 
@@ -6497,8 +6679,81 @@ async function saveCurrentLessonToLibrary(){
 
   alert('✅ Lesson saved to library!');
   loadLessonLibrary();
+  loadHomeLessonList();
 }
+async function loadHomeLessonList(){
 
+  if(!db){
+    initFirebaseFromInputs();
+  }
+
+  if(!requireConnection()) return;
+
+  const studentSelect = byId('studentLessonSelect');
+  const teacherSelect = byId('teacherLessonSelect');
+
+  if(studentSelect){
+    studentSelect.innerHTML =
+      '<option value="">Loading lessons...</option>';
+  }
+
+  if(teacherSelect){
+    teacherSelect.innerHTML =
+      '<option value="">Loading lessons...</option>';
+  }
+
+  const snap = await dbRef('lessonLibrary').once('value');
+
+  const lessons = snap.val() || {};
+
+  const list = Object.values(lessons).filter(function(l){
+    return l && l.visible === true;
+  });
+
+  if(!list.length){
+
+    const emptyHtml =
+      '<option value="">No available lessons</option>';
+
+    if(studentSelect){
+      studentSelect.innerHTML = emptyHtml;
+    }
+
+    if(teacherSelect){
+      teacherSelect.innerHTML = emptyHtml;
+    }
+
+    return;
+  }
+
+  const studentHtml =
+    '<option value="">Choose a lesson</option>' +
+    list
+      .filter(function(l){
+        return l.locked !== true;
+      })
+      .map(function(l){
+        return '<option value="' + escapeHtml(l.id) + '">' +
+          escapeHtml(l.title || 'Untitled Lesson') +
+        '</option>';
+      }).join('');
+
+  const teacherHtml =
+    '<option value="">Choose a lesson</option>' +
+    list.map(function(l){
+      return '<option value="' + escapeHtml(l.id) + '">' +
+        escapeHtml(l.title || 'Untitled Lesson') +
+      '</option>';
+    }).join('');
+
+  if(studentSelect){
+    studentSelect.innerHTML = studentHtml;
+  }
+
+  if(teacherSelect){
+    teacherSelect.innerHTML = teacherHtml;
+  }
+}
 async function loadLessonLibrary(){
   if(!db){
     alert('Firebase is not connected. Click Save Config first.');
@@ -6592,18 +6847,26 @@ async function openSavedLesson(lessonId){
 
 async function toggleSavedLessonLock(lessonId, value){
   await dbRef(lessonLibraryPath() + '/' + lessonId + '/locked').set(value);
+
   loadLessonLibrary();
+  loadHomeLessonList();
 }
 
 async function toggleSavedLessonVisible(lessonId, value){
   await dbRef(lessonLibraryPath() + '/' + lessonId + '/visible').set(value);
+
   loadLessonLibrary();
+  loadHomeLessonList();
 }
 
 async function deleteSavedLesson(lessonId){
+
   if(!confirm('Delete this saved lesson from library?')) return;
+
   await dbRef(lessonLibraryPath() + '/' + lessonId).remove();
+
   loadLessonLibrary();
+  loadHomeLessonList();
 }
       async function loadStudentLessonLibrary(){
   if(!db){
