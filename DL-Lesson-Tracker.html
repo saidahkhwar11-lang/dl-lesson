@@ -1177,6 +1177,16 @@ const metaSnap = await dbRef(lessonBase() + '/lessonMeta').once('value');
   const oldContent = contentSnap.val();
   const oldMeta = metaSnap.val() || {};
 
+    if(!oldStations){
+  alert('Stations not found for: ' + cleanOldKey);
+  return;
+}
+
+if(!oldContent){
+  alert('Content not found for: ' + cleanOldKey);
+  return;
+}
+
   if(!oldStations || !oldContent){
     alert('No old lesson found with this lesson key.');
     return;
