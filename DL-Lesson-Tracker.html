@@ -6485,6 +6485,148 @@ window.addEventListener('load', function(){
   }, 1200);
 
 });
+      function lessonLibraryPath(){
+  return 'lessonLibrary';
+}
+
+async function saveCurrentLessonToLibrary(){
+  if(!db){
+    alert('Firebase is not connected. Click Save Config first.');
+    return;
+  }
+
+  const title =
+    (lessonMeta.lessonTitle ||
+    document.getElementById('lessonTitleInput')?.value ||
+    lessonKey ||
+    'Saved Lesson').trim();
+
+  const lessonId = sanitizeKey(title + '_' + Date.now());
+
+  const data = {
+    id: lessonId,
+    title: title,
+    date: new Date().toLocaleDateString('en-GB'),
+    createdAt: Date.now(),
+    locked: false,
+    visible: true,
+    lessonMeta: lessonMeta,
+    stations: lessonStations,
+    content: lessonContent
+  };
+
+  await dbRef(lessonLibraryPath() + '/' + lessonId).set(data);
+
+  alert('✅ Lesson saved to library!');
+  loadLessonLibrary();
+}
+
+async function loadLessonLibrary(){
+  if(!db){
+    alert('Firebase is not connected. Click Save Config first.');
+    return;
+  }
+
+  const box = document.getElementById('teacherLessonLibraryList');
+  if(!box){
+    alert('Library box not found.');
+    return;
+  }
+
+  box.innerHTML = 'Loading lessons...';
+
+  const snap = await dbRef(lessonLibraryPath()).once('value');
+  const lessons = snap.val() || {};
+
+  const list = Object.values(lessons);
+
+  if(!list.length){
+    box.innerHTML = '<div class="small">No saved lessons yet.</div>';
+    return;
+  }
+
+  box.innerHTML = list.map(function(l){
+    return `
+      <div class="card" style="margin-bottom:10px; padding:12px;">
+        <h3 style="margin:0 0 4px 0;">${escapeHtml(l.title || 'Untitled Lesson')}</h3>
+        <div class="small">
+          Date: ${escapeHtml(l.date || '')}
+          | ${l.locked ? '🔒 Locked' : '✅ Unlocked'}
+          | ${l.visible ? '👁 Visible' : '🙈 Hidden'}
+        </div>
+
+        <div class="btns" style="margin-top:10px;">
+          <button onclick="openSavedLesson('${escapeJs(l.id)}')">📂 Open</button>
+          <button class="secondary" onclick="toggleSavedLessonLock('${escapeJs(l.id)}', ${l.locked ? 'false' : 'true'})">
+            ${l.locked ? '🔓 Unlock' : '🔒 Lock'}
+          </button>
+          <button class="secondary" onclick="toggleSavedLessonVisible('${escapeJs(l.id)}', ${l.visible ? 'false' : 'true'})">
+            ${l.visible ? '🙈 Hide' : '👁 Show'}
+          </button>
+          <button class="warnbtn" onclick="deleteSavedLesson('${escapeJs(l.id)}')">🗑 Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function openSavedLesson(lessonId){
+  const snap = await dbRef(lessonLibraryPath() + '/' + lessonId).once('value');
+
+  if(!snap.exists()){
+    alert('Lesson not found.');
+    return;
+  }
+
+  const l = snap.val();
+
+  lessonMeta = l.lessonMeta || {
+    lessonTitle: l.title || '',
+    lessonObjectives: '',
+    lessonKeywords: ''
+  };
+
+  lessonStations = l.stations || [];
+  lessonContent = l.content || {};
+
+  await dbRef(configPath()).set(lessonStations);
+  await dbRef(contentPath()).set(lessonContent);
+  await dbRef(lessonBase() + '/lessonMeta').set(lessonMeta);
+
+  if(document.getElementById('lessonTitleInput')){
+    document.getElementById('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+  }
+  if(document.getElementById('lessonObjectivesInput')){
+    document.getElementById('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
+  }
+  if(document.getElementById('lessonKeywordsInput')){
+    document.getElementById('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+  }
+
+  if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+  if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+  if(typeof renderControlStatus === 'function') renderControlStatus();
+  if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+  if(typeof renderStudentNav === 'function') renderStudentNav();
+
+  alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
+}
+
+async function toggleSavedLessonLock(lessonId, value){
+  await dbRef(lessonLibraryPath() + '/' + lessonId + '/locked').set(value);
+  loadLessonLibrary();
+}
+
+async function toggleSavedLessonVisible(lessonId, value){
+  await dbRef(lessonLibraryPath() + '/' + lessonId + '/visible').set(value);
+  loadLessonLibrary();
+}
+
+async function deleteSavedLesson(lessonId){
+  if(!confirm('Delete this saved lesson from library?')) return;
+  await dbRef(lessonLibraryPath() + '/' + lessonId).remove();
+  loadLessonLibrary();
+}
     </script>
 </body>
 </html>
