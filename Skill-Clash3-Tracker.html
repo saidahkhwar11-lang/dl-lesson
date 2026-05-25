@@ -2674,7 +2674,14 @@ button:hover{filter:brightness(.96)}
         <span id="infoVotes"></span>
       </div>
       <div class="memberLine" id="infoMembers"></div>
-      <button class="refreshStudentBtn" onclick="studentRefreshPage()">🔄 Refresh Student Page</button><span id="studentRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
+      <button class="refreshStudentBtn" onclick="studentRefreshPage()">
+  🔄 Refresh Student Page
+</button>
+
+<button onclick="location.href='Secure-Hub.html'">
+  🏠 Back to Main Page
+</button>
+<span id="studentRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
     </div>
 
     <div id="readingMainWorkBox" class="card hidden"></div>
@@ -2845,6 +2852,9 @@ button:hover{filter:brightness(.96)}
         <button class="purple" onclick="toggleActivationPanel()">🚀 Activate Activity</button>
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
+        <button onclick="location.href='Secure-Hub.html'">
+  🏠 Back to Main Page
+</button>
         <button class="red" onclick="leaveTeacher()">🚪 Leave Dashboard</button>
         <button class="refreshTeacherBtn" onclick="refreshTeacherPage()">🔄 Refresh Teacher Page</button><span id="teacherRefreshMsg" class="smallNote" style="margin-left:8px;font-weight:900"></span>
       </div>
