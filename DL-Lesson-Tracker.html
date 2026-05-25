@@ -6691,8 +6691,11 @@ async function saveCurrentLessonToLibrary(){
     lessonKey ||
     'Saved Lesson').trim();
 
-  const lessonId = sanitizeKey(title + '_' + Date.now());
+let lessonId = sessionStorage.getItem('dl_selected_lesson_id');
 
+if(!lessonId){
+  lessonId = sanitizeKey(title + '_' + Date.now());
+}
   const data = {
     id: lessonId,
     title: title,
@@ -6707,7 +6710,7 @@ async function saveCurrentLessonToLibrary(){
 
   await dbRef(lessonLibraryPath() + '/' + lessonId).set(data);
 
-  alert('✅ Lesson saved to library!');
+alert('✅ Lesson saved/updated in library!');
   loadLessonLibrary();
   loadHomeLessonList();
 }
@@ -6907,6 +6910,7 @@ async function openSavedLesson(lessonId){
 
   lessonStations = l.stations || [];
   lessonContent = l.content || {};
+  sessionStorage.setItem('dl_selected_lesson_id', lessonId);
 
   await dbRef(configPath()).set(lessonStations);
   await dbRef(contentPath()).set(lessonContent);
