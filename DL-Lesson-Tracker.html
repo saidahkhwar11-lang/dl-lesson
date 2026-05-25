@@ -833,12 +833,18 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
-        <div class="btns">
+       <div class="btns">
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-  <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
 
+  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
+
+  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
+
+  <button class="secondary" style="width:auto" onclick="showTeacherSection('teacherLibraryCard')">
+    📚 Library
+  </button>
+
+  <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
@@ -1026,7 +1032,33 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     </div>
   </div>
 </div>
+<div id="teacherLibraryCard" class="card hidden">
 
+  <h2>📚 Saved Lessons Library</h2>
+
+  <div class="btns">
+
+    <button class="goodbtn"
+      onclick="saveCurrentLessonToLibrary()">
+      💾 Save Current Lesson
+    </button>
+
+    <button class="secondary"
+      onclick="loadLessonLibrary()">
+      🔄 Refresh Library
+    </button>
+
+  </div>
+
+  <div id="lessonLibraryNotice"
+       class="notice good hidden">
+  </div>
+
+  <div id="teacherLessonLibraryList"
+       style="margin-top:12px;">
+  </div>
+
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.11.0/firebase-database-compat.js"></script>
