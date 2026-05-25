@@ -5310,52 +5310,11 @@ function downloadCertificate(info){
           <div class="role">English Teacher</div>
         </div>
       </div>
-      <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
+           <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
   </div>
-  <button id="globalHomeBtn"
-        onclick="location.href='Secure-Hub.html'">
-  🏠 Main Page
-</button>
-
-<style>
-#globalHomeBtn{
-  position:fixed;
-  right:18px;
-  bottom:18px;
-  z-index:999999;
-
-  background:linear-gradient(135deg,#5b7cff,#7d4dff);
-  color:white;
-  border:none;
-
-  padding:12px 18px;
-  border-radius:18px;
-
-  font-weight:800;
-  font-size:14px;
-
-  cursor:pointer;
-
-  box-shadow:0 10px 25px rgba(0,0,0,.18);
-
-  transition:.2s;
-}
-
-#globalHomeBtn:hover{
-  transform:translateY(-2px) scale(1.03);
-}
-
-@media(max-width:700px){
-  #globalHomeBtn{
-    right:12px;
-    bottom:12px;
-    padding:10px 14px;
-    font-size:13px;
-  }
-}
-</style>
-  </body></html>`;
+</body>
+</html>`;
 
   if(typeof saveSkillClashCertificateToSecureHub === 'function'){
     saveSkillClashCertificateToSecureHub(info);
@@ -9275,7 +9234,30 @@ window.addEventListener('load', function(){
   }
 
 })();
+  
 </script>
+
+<button id="globalHomeBtn"
+onclick="location.href='secure-hub.html'">
+🏠 Main Page
+</button>
+
+<style>
+#globalHomeBtn{
+position:fixed;
+right:18px;
+bottom:18px;
+z-index:999999999;
+background:#5b7cff;
+color:white;
+border:none;
+padding:12px 18px;
+border-radius:18px;
+font-weight:800;
+cursor:pointer;
+box-shadow:0 10px 25px rgba(0,0,0,.2);
+}
+</style>
 
 </body>
 </html>
