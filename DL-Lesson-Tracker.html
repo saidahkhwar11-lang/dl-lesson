@@ -6728,6 +6728,7 @@ async function createNewBlankLesson(){
     
     lessonKey = lessonId;
     localStorage.setItem('DL_lesson_key', lessonKey);
+    sessionStorage.setItem('dl_selected_lesson_id', lessonId);
 
     lessonMeta = {
       lessonTitle: title,
@@ -6816,56 +6817,71 @@ async function createNewBlankLesson(){
 window.createNewBlankLesson = createNewBlankLesson;
 
 async function saveCurrentLessonToLibrary(){
+
   if(!db){
-    alert('Firebase is not connected. Click Save Config first.');
+    alert('Firebase is not connected.');
     return;
   }
 
+  // save current open station first
   if(typeof saveCreatorStation === 'function'){
-    try{ await saveCreatorStation(); }catch(e){ console.warn(e); }
-  }
-
-  if(typeof saveLessonData === 'function'){
-    try{ await saveLessonData(); }catch(e){ console.warn(e); }
+    try{
+      await saveCreatorStation();
+    }catch(e){
+      console.warn('Station auto-save skipped:', e);
+    }
   }
 
   const lessonId =
     sessionStorage.getItem('dl_selected_lesson_id') ||
-    sanitizeKey((lessonMeta.lessonTitle || lessonKey || 'Saved Lesson') + '_' + Date.now());
+    lessonKey;
 
-  const baseSnap = await dbRef(lessonBase()).once('value');
-  const freshLesson = baseSnap.val() || {};
+  if(!lessonId){
+    alert('No active lesson found.');
+    return;
+  }
 
-  const latestStations = freshLesson.config || freshLesson.stations || lessonStations || {};
-  const latestContent = freshLesson.content || lessonContent || {};
-  const latestMeta = freshLesson.lessonMeta || lessonMeta || {};
+  // IMPORTANT: make active lesson key same as library lesson id
+  lessonKey = lessonId;
+  localStorage.setItem('DL_lesson_key', lessonKey);
 
-  const title =
-    latestMeta.lessonTitle ||
-    document.getElementById('lessonTitleInput')?.value ||
-    lessonKey ||
-    'Saved Lesson';
+  // limit objectives to 3
+  const objectivesText = (byId('lessonObjectivesInput')?.value || '')
+    .split('\n')
+    .filter(x => x.trim())
+    .slice(0, 3)
+    .join('\n');
+
+  lessonMeta = {
+    lessonTitle: byId('lessonTitleInput')?.value || lessonMeta.lessonTitle || 'New Lesson',
+    lessonObjectives: objectivesText,
+    lessonKeywords: byId('lessonKeywordsInput')?.value || ''
+  };
+
+  await dbRef(lessonBase() + '/lessonMeta').set(lessonMeta);
+
+  const configSnap = await dbRef(configPath()).once('value');
+  const contentSnap = await dbRef(contentPath()).once('value');
+
+  const latestStations = configSnap.val() || lessonStations;
+  const latestContent = contentSnap.val() || lessonContent;
 
   await dbRef(lessonLibraryPath() + '/' + lessonId).update({
     id: lessonId,
-    title: title,
-    lessonKey: lessonKey,
+    title: lessonMeta.lessonTitle,
     date: new Date().toLocaleDateString('en-GB'),
     updatedAt: Date.now(),
     locked: false,
     visible: true,
-    lessonMeta: latestMeta,
+    lessonMeta: lessonMeta,
     stations: latestStations,
-    content: latestContent,
-    fullLesson: freshLesson
+    content: latestContent
   });
 
-  sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+  await loadHomeLessonList();
+  if(typeof loadLessonLibrary === 'function') loadLessonLibrary();
 
-  alert('✅ Lesson saved to library with your latest stations and questions.');
-
-  loadLessonLibrary();
-  loadHomeLessonList();
+  alert('✅ Current new lesson saved to library with stations and questions.');
 }
       function toggleOldLessonImportBox(){
   const box = byId('oldLessonImportBox');
