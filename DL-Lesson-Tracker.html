@@ -1169,8 +1169,16 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
     return;
   }
 
-  const oldKey = byId('oldLessonKeyInput').value.trim();
+let oldKey = '';
 
+const oldInput = byId('oldLessonKeyInput');
+if(oldInput && oldInput.value.trim()){
+  oldKey = oldInput.value.trim();
+} else {
+  oldKey = prompt('Type the old lesson key here:') || '';
+  oldKey = oldKey.trim();
+}
+    
   if(!oldKey){
     alert('Please type the old lesson key first.');
     return;
