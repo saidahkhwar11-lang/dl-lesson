@@ -1203,9 +1203,10 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
   const title = oldMeta.lessonTitle || cleanOldKey;
   const lessonId = sanitizeKey(title + '_' + Date.now());
 
-  await dbRef('lessonLibrary/' + lessonId).set({
+await dbRef(lessonLibraryPath() + '/' + lessonId).set({
     id: lessonId,
     title: title,
+   lessonKey: cleanOldKey,
     date: new Date().toLocaleDateString('en-GB'),
     createdAt: Date.now(),
     updatedAt: Date.now(),
