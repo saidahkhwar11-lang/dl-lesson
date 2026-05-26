@@ -2126,11 +2126,7 @@ input,select,textarea{
         <input id="quizSecondsInput" type="number" min="5" value="30">
         <div id="quizSelectedInfo" class="status">Choose a saved challenge.</div>
         <button onclick="quizUseSelectedChallenge()">✅ Use This Challenge</button>
-
-<button class="purple"
-        onclick="quizEditSelectedChallenge()">
-  ✏️ Edit Challenge
-</button>
+        <button class="purple" onclick="quizEditSelectedChallenge()">✏️ Edit Challenge</button>
 
 <button class="danger"
         onclick="quizDeleteChallenge()">
@@ -3288,31 +3284,57 @@ async function quizEnsureRef(){
   return quizRef;
 }
 
-  async function quizEditSelectedChallenge(){
+ async function quizEditSelectedChallenge(){
 
-  const s = stateCache || await getState?.() || {};
-  const id = byId('quizChallengeSelect').value;
+  const s = stateCache || {};
+  const select = byId('quizChallengeSelect');
 
-  if(!id || !s.quizChallenges || !s.quizChallenges[id]){
+  if(!select){
+    alert('Saved challenge list not found.');
+    return;
+  }
+
+  let id = select.value;
+  let c = s.quizChallenges?.[id];
+
+  // fallback: find by selected title text
+  if(!c){
+    const selectedTitle =
+      select.options[select.selectedIndex]?.textContent?.trim();
+
+    const found = Object.entries(s.quizChallenges || {}).find(([key, item])=>{
+      return String(item?.title || '').trim() === selectedTitle;
+    });
+
+    if(found){
+      id = found[0];
+      c = found[1];
+    }
+  }
+
+  if(!c){
     alert('Choose a saved challenge first.');
     return;
   }
 
-  const c = s.quizChallenges[id];
-
   byId('quizChallengeTitle').value = c.title || '';
 
-  quizDraftQuestions = JSON.parse(JSON.stringify(c.questions || []));
+  window.quizDraftQuestions = JSON.parse(
+    JSON.stringify(c.questions || [])
+  );
+
+  quizDraftQuestions = window.quizDraftQuestions;
 
   renderQuizDraftQuestions();
 
-  const builder = byId('quizChallengeTitle');
-  if(builder){
-    builder.scrollIntoView({behavior:'smooth', block:'start'});
-    builder.focus();
-  }
+  byId('quizChallengeTitle').scrollIntoView({
+    behavior:'smooth',
+    block:'start'
+  });
 
-  alert('✅ Challenge loaded into the builder. Edit it, then click Save Challenge.');
+  byId('quizChallengeTitle').focus();
+
+  alert('✅ Challenge loaded. Edit the questions, then click Save Challenge.');
 }
 async function quizGetState(){
   await quizEnsureRef();
