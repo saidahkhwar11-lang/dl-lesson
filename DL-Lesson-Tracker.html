@@ -690,6 +690,10 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   🔄 Refresh Lessons
 </button>
 
+<button type="button" class="goodbtn" onclick="createNewBlankLesson()">
+  ➕ Create New Blank Lesson
+</button>
+
 <button id="teacherOpenBtn" onclick="openTeacherView()">
   Open Teacher View
 </button>
@@ -1052,6 +1056,11 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       💾 Save Current Lesson
     </button>
 
+    <button class="goodbtn"
+      onclick="createNewBlankLesson()">
+      ➕ Create New Blank Lesson
+    </button>
+
     <button class="secondary"
       onclick="loadLessonLibrary()">
       🔄 Refresh Library
@@ -1193,6 +1202,7 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
     title: title,
     date: new Date().toLocaleDateString('en-GB'),
     createdAt: Date.now(),
+    updatedAt: Date.now(),
     locked: false,
     visible: true,
     importedFromOldKey: cleanOldKey,
@@ -6669,6 +6679,129 @@ window.addEventListener('load', function(){
 });
       function lessonLibraryPath(){
   return 'lessonLibrary';
+}
+
+function getBlankLessonStations(){
+  return JSON.parse(JSON.stringify(defaultStations || []));
+}
+
+function getBlankLessonContent(){
+  return JSON.parse(JSON.stringify(defaultContent || {}));
+}
+
+function updateLessonMetaInputs(){
+  if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+  if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
+  if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+}
+
+async function createNewBlankLesson(){
+  try{
+    if(!db){
+      initFirebaseFromInputs();
+    }
+
+    if(!requireConnection()) return;
+
+    const teacherViewIsOpen = byId('teacherView') && !byId('teacherView').classList.contains('hidden');
+    const teacherPasswordBox = byId('teacherPassword');
+
+    if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEACHER_PASSWORD){
+      alert('Please enter the teacher password first, then click Create New Blank Lesson.');
+      teacherPasswordBox.focus();
+      return;
+    }
+
+    const suggestedTitle = 'New Lesson ' + new Date().toLocaleDateString('en-GB');
+    const titleInput = prompt('Enter a title for the new blank lesson:', suggestedTitle);
+
+    if(titleInput === null) return;
+
+    const title = String(titleInput || '').trim() || suggestedTitle;
+    const lessonId = sanitizeKey(title + '_' + Date.now());
+
+    lessonMeta = {
+      lessonTitle: title,
+      lessonObjectives: '',
+      lessonKeywords: ''
+    };
+
+    lessonStations = getBlankLessonStations();
+    lessonContent = getBlankLessonContent();
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+    studentQuestionStage = 0;
+    studentStageAnswers = {};
+    liveStudents = {};
+    liveBonus = {};
+    achievementUnlocked = false;
+
+    const blankLesson = {
+      id: lessonId,
+      title: title,
+      date: new Date().toLocaleDateString('en-GB'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      locked: false,
+      visible: true,
+      blankCreated: true,
+      lessonMeta: lessonMeta,
+      stations: lessonStations,
+      content: lessonContent
+    };
+
+    await dbRef(lessonLibraryPath() + '/' + lessonId).set(blankLesson);
+
+    sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+    // Keep the active live lesson space empty too, so nothing old appears while editing.
+    await dbRef(configPath()).set(lessonStations);
+    await dbRef(contentPath()).set(lessonContent);
+    await dbRef(lessonBase() + '/lessonMeta').set(lessonMeta);
+    await dbRef(lessonBase() + '/students').remove();
+    await dbRef(lessonBase() + '/bonus').remove();
+    await dbRef(lessonBase() + '/attendance').remove();
+
+    updateLessonMetaInputs();
+
+    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+    if(typeof renderStudentNav === 'function') renderStudentNav();
+    if(typeof loadCreatorStation === 'function') loadCreatorStation();
+
+    await loadHomeLessonList();
+    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
+    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
+
+    if(typeof loadLessonLibrary === 'function'){
+      loadLessonLibrary();
+    }
+
+    if(teacherViewIsOpen){
+      if(typeof showTeacherSection === 'function'){
+        showTeacherSection('teacherCreatorCard');
+      }
+      const builder = byId('teacherCreatorCard');
+      if(builder) builder.scrollIntoView({behavior:'smooth', block:'start'});
+    }else{
+      // Open directly into the new blank lesson when the password is already correct.
+      await openTeacherView();
+      setTimeout(function(){
+        if(typeof showTeacherSection === 'function'){
+          showTeacherSection('teacherCreatorCard');
+        }
+        const builder = byId('teacherCreatorCard');
+        if(builder) builder.scrollIntoView({behavior:'smooth', block:'start'});
+      }, 500);
+    }
+
+    alert('✅ New blank lesson created. You can now build it safely without replacing old lessons.');
+
+  }catch(err){
+    console.error('Create new blank lesson failed:', err);
+    alert('Could not create new blank lesson: ' + (err && err.message ? err.message : err));
+  }
 }
 
 async function saveCurrentLessonToLibrary(){
