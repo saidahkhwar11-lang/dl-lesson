@@ -6825,17 +6825,20 @@ async function saveCurrentLessonToLibrary(){
     try{ await saveCreatorStation(); }catch(e){ console.warn(e); }
   }
 
+  if(typeof saveLessonData === 'function'){
+    try{ await saveLessonData(); }catch(e){ console.warn(e); }
+  }
+
   const lessonId =
     sessionStorage.getItem('dl_selected_lesson_id') ||
-    sanitizeKey((lessonMeta.lessonTitle || 'Saved Lesson') + '_' + Date.now());
+    sanitizeKey((lessonMeta.lessonTitle || lessonKey || 'Saved Lesson') + '_' + Date.now());
 
-  const configSnap = await dbRef(configPath()).once('value');
-  const contentSnap = await dbRef(contentPath()).once('value');
-  const metaSnap = await dbRef(lessonBase() + '/lessonMeta').once('value');
+  const baseSnap = await dbRef(lessonBase()).once('value');
+  const freshLesson = baseSnap.val() || {};
 
-  const latestStations = configSnap.val() || lessonStations;
-  const latestContent = contentSnap.val() || lessonContent;
-  const latestMeta = metaSnap.val() || lessonMeta;
+  const latestStations = freshLesson.config || freshLesson.stations || lessonStations || {};
+  const latestContent = freshLesson.content || lessonContent || {};
+  const latestMeta = freshLesson.lessonMeta || lessonMeta || {};
 
   const title =
     latestMeta.lessonTitle ||
@@ -6846,21 +6849,24 @@ async function saveCurrentLessonToLibrary(){
   await dbRef(lessonLibraryPath() + '/' + lessonId).update({
     id: lessonId,
     title: title,
+    lessonKey: lessonKey,
     date: new Date().toLocaleDateString('en-GB'),
     updatedAt: Date.now(),
     locked: false,
     visible: true,
     lessonMeta: latestMeta,
     stations: latestStations,
-    content: latestContent
+    content: latestContent,
+    fullLesson: freshLesson
   });
 
-  alert('✅ Lesson updated in library with your latest stations and questions.');
+  sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+  alert('✅ Lesson saved to library with your latest stations and questions.');
 
   loadLessonLibrary();
   loadHomeLessonList();
 }
-
       function toggleOldLessonImportBox(){
   const box = byId('oldLessonImportBox');
   if(box) box.classList.toggle('hidden');
