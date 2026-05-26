@@ -278,7 +278,7 @@ font-family:'Segoe UI', Arial, sans-serif;
   color:var(--text);
   font-size:14px;
 }
-.hidden{display:none!important}
+.hidden{display:none!ant}
 .wrap{max-width:1440px;margin:0 auto;padding:18px}
 .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(30,60,120,.08)}
 
@@ -438,7 +438,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 .pill{display:inline-block;padding:4px 10px;border-radius:999px;background:#fff3df;color:#9a6100;font-weight:bold;font-size:12px}
 .section-tabs{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}.section-tabs button{width:auto}
 .creator-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.teacher-station-card{cursor:pointer;text-align:left!important}
+.teacher-station-card{cursor:pointer;text-align:left!ant}
 .teacher-station-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(30,60,120,.12)}
 .teacher-preview{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .teacher-preview .preview-left,.teacher-preview .preview-right{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px}
@@ -866,7 +866,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
 </div>
       </div>
-      <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+      <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="LessonData(event)" />
       <div id="teacherOverviewStations" class="top-bar"></div>
 <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
   <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
@@ -897,7 +897,7 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 
   <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
 
-  <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
+  <button class="secondary" onclick="triggerLesson()">📂 Load Lesson Data</button>
 </div>
 
    <div id="rankingBoard" class="ranking-box">
@@ -1073,7 +1073,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
     </button>
 
     <button class="secondary"
-  onclick="importOldLessonKeyToLibrary()">
+  onclick="OldLessonKeyToLibrary()">
   📥 Import Old Lesson Key
 </button>
 
@@ -1169,22 +1169,14 @@ window.getLoggedStudent = window.getLoggedStudent || function(){
     return;
   }
 
-let oldKey = '';
+  const typedKey = prompt('Type the old lesson key here:');
 
-const oldInput = byId('oldLessonKeyInput');
-if(oldInput && oldInput.value.trim()){
-  oldKey = oldInput.value.trim();
-} else {
-  oldKey = prompt('Type the old lesson key here:') || '';
-  oldKey = oldKey.trim();
-}
-    
-  if(!oldKey){
+  const cleanOldKey = String(typedKey || '').trim();
+
+  if(!cleanOldKey){
     alert('Please type the old lesson key first.');
     return;
   }
-
-  const cleanOldKey = oldKey.trim();
 
   if(!confirm('Import this exact old lesson key?\n\n' + cleanOldKey)){
     return;
@@ -1211,10 +1203,10 @@ if(oldInput && oldInput.value.trim()){
   const title = oldMeta.lessonTitle || cleanOldKey;
   const lessonId = sanitizeKey(title + '_' + Date.now());
 
-await dbRef(lessonLibraryPath() + '/' + lessonId).set({
+  await dbRef(lessonLibraryPath() + '/' + lessonId).set({
     id: lessonId,
     title: title,
-   lessonKey: cleanOldKey,
+    lessonKey: cleanOldKey,
     date: new Date().toLocaleDateString('en-GB'),
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -6900,8 +6892,10 @@ async function importOldLessonKeyToLibrary(){
     return;
   }
 
-  const oldKey = byId('oldLessonKeyInput').value.trim();
-
+const oldKey = (
+  document.getElementById('oldLessonKeyInput')?.value || ''
+).trim();
+  
   if(!oldKey){
     alert('Please type the old lesson key first.');
     return;
