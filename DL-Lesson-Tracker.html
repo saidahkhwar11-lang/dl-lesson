@@ -6725,6 +6725,9 @@ async function createNewBlankLesson(){
 
     const title = String(titleInput || '').trim() || suggestedTitle;
     const lessonId = sanitizeKey(title + '_' + Date.now());
+    
+    lessonKey = lessonId;
+    localStorage.setItem('DL_lesson_key', lessonKey);
 
     lessonMeta = {
       lessonTitle: title,
