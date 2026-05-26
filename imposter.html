@@ -3288,13 +3288,13 @@ async function quizEnsureRef(){
   return quizRef;
 }
 
-  function quizEditSelectedChallenge(){
+  async function quizEditSelectedChallenge(){
 
-  const s = state;
+  const s = stateCache || await getState?.() || {};
   const id = byId('quizChallengeSelect').value;
 
-  if(!id || !s.quizChallenges?.[id]){
-    alert('Choose a challenge first.');
+  if(!id || !s.quizChallenges || !s.quizChallenges[id]){
+    alert('Choose a saved challenge first.');
     return;
   }
 
@@ -3302,15 +3302,18 @@ async function quizEnsureRef(){
 
   byId('quizChallengeTitle').value = c.title || '';
 
-  window.quizDraftQuestions = JSON.parse(
-    JSON.stringify(c.questions || [])
-  );
+  quizDraftQuestions = JSON.parse(JSON.stringify(c.questions || []));
 
   renderQuizDraftQuestions();
 
-  alert('Challenge loaded into builder. You can now edit questions and save again.');
+  const builder = byId('quizChallengeTitle');
+  if(builder){
+    builder.scrollIntoView({behavior:'smooth', block:'start'});
+    builder.focus();
+  }
+
+  alert('✅ Challenge loaded into the builder. Edit it, then click Save Challenge.');
 }
-  
 async function quizGetState(){
   await quizEnsureRef();
   if(quizCache) return JSON.parse(JSON.stringify(quizCache));
