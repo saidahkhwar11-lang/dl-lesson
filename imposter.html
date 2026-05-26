@@ -3816,7 +3816,7 @@ function quizRenderTeacherPopup(s){
 
     <div class="quizPopupQuestion">
       <h2>${esc(q.text || '')}</h2>
-      ${['A','B','C','D'].filter(k=>q.options?.[k]).map(k=>`<div class="quizPopupOption ${String(q.correct)===k?'correct':''}"><b>${k})</b> ${esc(q.options[k])}</div>`).join('')}
+      ${['A','B','C','D'].filter(k=>q.options?.[k]).map(k=>`<div class="quizPopupOption"><b>${k})</b> ${esc(q.options[k])}</div>`).join('')}
     </div>
 
     <h2>📊 Live Leaderboard</h2>
