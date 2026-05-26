@@ -3192,8 +3192,8 @@ function quizHideAll(){
     const el=byId(id); if(el) el.classList.add('hidden');
   });
 }
-function openQuizBattle(){
-  quizEnsureRef();
+async function openQuizBattle(){
+  await quizEnsureRef();
   quizHideAll();
   show('quizLoginPage');
   showQuizLogin('student');
@@ -3300,16 +3300,34 @@ async function quizDeleteChallenge(){
   await quizSetState(s);
 }
 async function quizUseSelectedChallenge(){
-  const id=byId('quizChallengeSelect').value;
-  const s=await quizGetState();
-  const col=s.challenges?.[id];
-  if(!id || !col){ alert('Choose a saved challenge first.'); return; }
-  s.activeChallengeId=id;
-  s.activeChallengeTitle=col.title;
-  s.secondsPerQuestion=Math.max(5,Number(byId('quizSecondsInput').value||30));
-  s.stage='waiting';
-  s.final=false;
+  const id = byId('quizChallengeSelect').value;
+  const s = await quizGetState();
+  const col = s.challenges?.[id];
+
+  if(!id || !col){
+    alert('Choose a saved challenge first.');
+    return;
+  }
+
+  s.activeChallengeId = id;
+  s.activeChallengeTitle = col.title;
+  s.secondsPerQuestion = Math.max(5, Number(byId('quizSecondsInput').value || 30));
+  s.stage = 'waiting';
+  s.final = false;
+
+  // Keep joined groups, but clear old quiz progress for this selected challenge.
+  s.fastestByQuestion = {};
+  Object.keys(s.groups || {}).forEach(g=>{
+    s.groups[g].score = 0;
+    s.groups[g].qIndex = 0;
+    s.groups[g].streak = 0;
+    s.groups[g].done = false;
+    s.groups[g].answers = {};
+    s.groups[g].deadline = 0;
+  });
+
   await quizSetState(s);
+  if(typeof quizTeacherRefresh === 'function') quizTeacherRefresh();
   alert('✅ Challenge is ready. Click Start Challenge when students join.');
 }
 function quizSelectChallenge(){
@@ -3319,15 +3337,46 @@ function quizSelectChallenge(){
   byId('quizSelectedInfo').innerHTML = c ? `<b>${esc(c.title)}</b><br>${(c.questions||[]).length} questions saved.` : 'Choose a saved challenge.';
 }
 async function quizStartChallenge(){
-  const s=await quizGetState();
-  const c=quizCurrentChallenge(s);
-  if(!c){ alert('Choose and use a challenge first.'); return; }
-  const now=Date.now();
-  s.stage='playing'; s.final=false; s.startedAt=now; s.fastestByQuestion={};
-  Object.keys(s.groups||{}).forEach(g=>{
-    s.groups[g].score=0; s.groups[g].qIndex=0; s.groups[g].streak=0; s.groups[g].done=false; s.groups[g].answers={}; s.groups[g].deadline=now+Number(s.secondsPerQuestion||30)*1000;
+  const s = await quizGetState();
+
+  // Strong fix: allow teacher to press Start directly after choosing from the dropdown.
+  const selectedId = byId('quizChallengeSelect') ? byId('quizChallengeSelect').value : '';
+  if((!s.activeChallengeId || !s.challenges?.[s.activeChallengeId]) && selectedId && s.challenges?.[selectedId]){
+    s.activeChallengeId = selectedId;
+    s.activeChallengeTitle = s.challenges[selectedId].title || 'Quiz Battle Challenge';
+  }
+
+  const c = quizCurrentChallenge(s);
+  if(!c || !(c.questions || []).length){
+    alert('Choose a saved challenge with questions first.');
+    return;
+  }
+
+  s.secondsPerQuestion = Math.max(5, Number(byId('quizSecondsInput')?.value || s.secondsPerQuestion || 30));
+
+  const now = Date.now();
+  s.stage = 'playing';
+  s.final = false;
+  s.startedAt = now;
+  s.fastestByQuestion = {};
+  s.activeChallengeTitle = c.title || s.activeChallengeTitle || 'Quiz Battle Challenge';
+
+  s.groups = s.groups || {};
+
+  Object.keys(s.groups).forEach(g=>{
+    s.groups[g].score = 0;
+    s.groups[g].qIndex = 0;
+    s.groups[g].streak = 0;
+    s.groups[g].done = false;
+    s.groups[g].answers = {};
+    s.groups[g].deadline = now + Number(s.secondsPerQuestion || 30) * 1000;
   });
+
   await quizSetState(s);
+
+  if(typeof quizTeacherRefresh === 'function') quizTeacherRefresh();
+
+  alert('✅ Quiz Battle started. Students can answer now.');
 }
 async function quizResetSession(){
   if(!confirm('Reset joined groups, leaderboard, active challenge, and results only? Saved challenges will stay.')) return;
@@ -3361,7 +3410,10 @@ function quizTeacherRefresh(){
   const gs=byId('quizTeacherGroups');
   if(gs){
     const rows=Object.values(s.groups||{}).sort((a,b)=>Number(a.group)-Number(b.group));
-    gs.innerHTML = `<div class="status good"><b>Active:</b> ${esc(s.activeChallengeTitle||'No challenge')} • <b>Stage:</b> ${esc(s.stage)} • <b>Timer:</b> ${Number(s.secondsPerQuestion||30)}s</div>` + (rows.length?rows.map(g=>`<div class="resultRow"><div><b>Group ${esc(g.group)}</b><div class="mini">Player: ${esc(g.playerName||'-')}<br>Progress: ${Number(g.qIndex||0)} / ${total} ${g.done?'✅ Done':''}</div></div><span class="score">${Number(g.score||0)}</span></div>`).join(''):'<div class="status">Waiting for groups to join.</div>');
+    const runningText = s.stage === 'playing'
+      ? ' 🟢 Running now — students should see Question ' + (rows.length ? (Math.min(...rows.map(x=>Number(x.qIndex||0))) + 1) : 1)
+      : '';
+    gs.innerHTML = `<div class="status good"><b>Active:</b> ${esc(s.activeChallengeTitle||'No challenge')} • <b>Stage:</b> ${esc(s.stage)} • <b>Timer:</b> ${Number(s.secondsPerQuestion||30)}s${runningText}</div>` + (rows.length?rows.map(g=>`<div class="resultRow"><div><b>Group ${esc(g.group)}</b><div class="mini">Player: ${esc(g.playerName||'-')}<br>Progress: ${Number(g.qIndex||0)} / ${total} ${g.done?'✅ Done':''}<br>${s.stage==='playing' && !g.done ? '⏱ Time left: '+quizTimeLeftForGroup(s,g.group)+'s' : ''}</div></div><span class="score">${Number(g.score||0)}</span></div>`).join(''):'<div class="status">Waiting for groups to join. You can start first; late groups will join the running challenge.</div>');
   }
 }
 function quizTimeLeftForGroup(s,g){
