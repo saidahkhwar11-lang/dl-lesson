@@ -6823,15 +6823,6 @@ async function saveCurrentLessonToLibrary(){
     return;
   }
 
-  // save current open station first
-  if(typeof saveCreatorStation === 'function'){
-    try{
-      await saveCreatorStation();
-    }catch(e){
-      console.warn('Station auto-save skipped:', e);
-    }
-  }
-
   const lessonId =
     sessionStorage.getItem('dl_selected_lesson_id') ||
     lessonKey;
@@ -6841,11 +6832,19 @@ async function saveCurrentLessonToLibrary(){
     return;
   }
 
-  // IMPORTANT: make active lesson key same as library lesson id
+  // ✅ Set active lesson FIRST before saving station
   lessonKey = lessonId;
   localStorage.setItem('DL_lesson_key', lessonKey);
 
-  // limit objectives to 3
+  // ✅ Now save current station to the correct new lesson
+  if(typeof saveCreatorStation === 'function'){
+    try{
+      await saveCreatorStation();
+    }catch(e){
+      console.warn('Station auto-save skipped:', e);
+    }
+  }
+
   const objectivesText = (byId('lessonObjectivesInput')?.value || '')
     .split('\n')
     .filter(x => x.trim())
@@ -6863,9 +6862,6 @@ async function saveCurrentLessonToLibrary(){
   const configSnap = await dbRef(configPath()).once('value');
   const contentSnap = await dbRef(contentPath()).once('value');
 
-  const latestStations = configSnap.val() || lessonStations;
-  const latestContent = contentSnap.val() || lessonContent;
-
   await dbRef(lessonLibraryPath() + '/' + lessonId).update({
     id: lessonId,
     title: lessonMeta.lessonTitle,
@@ -6874,14 +6870,14 @@ async function saveCurrentLessonToLibrary(){
     locked: false,
     visible: true,
     lessonMeta: lessonMeta,
-    stations: latestStations,
-    content: latestContent
+    stations: configSnap.val() || lessonStations,
+    content: contentSnap.val() || lessonContent
   });
 
   await loadHomeLessonList();
   if(typeof loadLessonLibrary === 'function') loadLessonLibrary();
 
-  alert('✅ Current new lesson saved to library with stations and questions.');
+  alert('✅ Lesson saved to library with latest stations and questions.');
 }
       function toggleOldLessonImportBox(){
   const box = byId('oldLessonImportBox');
