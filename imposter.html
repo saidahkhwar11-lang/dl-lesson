@@ -3912,5 +3912,268 @@ setInterval(()=>{
 
 initFirebase();
 </script>
+
+<script>
+/* ===== QUIZ BATTLE FINAL OVERRIDE: GLOBAL QUESTION POPUP + AUTO FLOW ===== */
+(function(){
+  function qEsc(t){ return String(t==null?'':t).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+  function qNow(){ return Date.now(); }
+  function qChallenge(s){ return s && s.challenges && s.activeChallengeId ? s.challenges[s.activeChallengeId] : null; }
+  function qQuestions(s){ return (qChallenge(s)?.questions || []); }
+  function qTotal(s){ return qQuestions(s).length; }
+  function qRows(s){ return Object.values((s && s.groups) || {}).sort((a,b)=>Number(b.score||0)-Number(a.score||0) || Number(a.group||0)-Number(b.group||0)); }
+  function qTop3Html(s){
+    const rows = qRows(s).slice(0,3);
+    if(!rows.length) return '<div class="status">No groups joined yet.</div>';
+    return rows.map((r,i)=>`<div class="resultRow"><div><b>${i===0?'🥇':i===1?'🥈':'🥉'} Group ${qEsc(r.group)}</b><div class="mini">${qEsc(r.playerName||'')} • ${Number(r.score||0)} pts</div></div><span class="score">${Number(r.score||0)}</span></div>`).join('');
+  }
+  function qResolveSelectedChallenge(s){
+    const sel = document.getElementById('quizChallengeSelect');
+    let id = sel ? sel.value : '';
+    if(id && s.challenges && s.challenges[id]) return {id, col:s.challenges[id]};
+    const title = sel && sel.options && sel.selectedIndex >= 0 ? (sel.options[sel.selectedIndex].text || '').trim() : '';
+    if(title && s.challenges){
+      const found = Object.values(s.challenges).find(c => String(c.title||'').trim() === title);
+      if(found) return {id:found.id, col:found};
+    }
+    const first = Object.values((s && s.challenges) || {})[0];
+    return first ? {id:first.id, col:first} : null;
+  }
+  async function qSave(s){
+    if(typeof quizSetState === 'function') return quizSetState(s);
+    const ref = await quizEnsureRef();
+    if(ref) await ref.set(s);
+  }
+  function qRenderSelectorsSafe(s){
+    const sel=document.getElementById('quizChallengeSelect');
+    if(!sel) return;
+    const old=sel.value || (s && s.activeChallengeId) || '';
+    const cols=Object.values((s && s.challenges) || {});
+    sel.innerHTML='<option value="">Choose challenge</option>'+cols.map(c=>`<option value="${qEsc(c.id)}">${qEsc(c.title)}</option>`).join('');
+    if(old && cols.some(c=>String(c.id)===String(old))) sel.value=old;
+    else if(s && s.activeChallengeId) sel.value=s.activeChallengeId;
+    const info=document.getElementById('quizSelectedInfo');
+    const chosen = cols.find(c=>String(c.id)===String(sel.value));
+    if(info) info.innerHTML = chosen ? `<b>${qEsc(chosen.title)}</b><br>${(chosen.questions||[]).length} questions saved.` : 'Choose a saved challenge.';
+  }
+  window.quizSelectChallenge = function(){
+    const s = quizCache || (typeof quizDefaultState === 'function' ? quizDefaultState() : {});
+    qRenderSelectorsSafe(s);
+  };
+  window.quizUseSelectedChallenge = async function(){
+    const s = await quizGetState();
+    s.challenges = s.challenges || {};
+    const pick = qResolveSelectedChallenge(s);
+    if(!pick || !pick.col || !(pick.col.questions || []).length){ alert('Choose a saved challenge with questions first.'); return; }
+    s.activeChallengeId = pick.id;
+    s.activeChallengeTitle = pick.col.title || 'Quiz Battle Challenge';
+    s.secondsPerQuestion = Math.max(5, Number(document.getElementById('quizSecondsInput')?.value || s.secondsPerQuestion || 30));
+    s.stage = 'waiting';
+    s.final = false;
+    s.currentQuestionIndex = 0;
+    s.questionStartedAt = 0;
+    s.questionDeadline = 0;
+    s.fastestByQuestion = {};
+    s.groups = s.groups || {};
+    Object.keys(s.groups).forEach(g=>{
+      s.groups[g] = Object.assign({}, s.groups[g], {score:0,qIndex:0,streak:0,done:false,answers:{},answeredCurrent:false,lastAnswerCorrect:false,deadline:0});
+    });
+    await qSave(s);
+    quizCache = JSON.parse(JSON.stringify(s));
+    qRenderSelectorsSafe(s);
+    if(typeof quizTeacherRefresh === 'function') quizTeacherRefresh();
+    alert('✅ Challenge is ready. Click Start Challenge.');
+  };
+  window.quizStartChallenge = async function(){
+    const s = await quizGetState();
+    const pick = qResolveSelectedChallenge(s);
+    if(!s.activeChallengeId && pick){ s.activeChallengeId = pick.id; s.activeChallengeTitle = pick.col.title || 'Quiz Battle Challenge'; }
+    if((!s.activeChallengeId || !s.challenges?.[s.activeChallengeId]) && pick){ s.activeChallengeId = pick.id; s.activeChallengeTitle = pick.col.title || 'Quiz Battle Challenge'; }
+    const c = qChallenge(s);
+    if(!c || !(c.questions || []).length){ alert('Choose a saved challenge with questions first.'); return; }
+    const now = qNow();
+    s.stage = 'playing';
+    s.final = false;
+    s.currentQuestionIndex = 0;
+    s.questionStartedAt = now;
+    s.secondsPerQuestion = Math.max(5, Number(document.getElementById('quizSecondsInput')?.value || s.secondsPerQuestion || 30));
+    s.questionDeadline = now + Number(s.secondsPerQuestion) * 1000;
+    s.fastestByQuestion = {};
+    s.activeChallengeTitle = c.title || s.activeChallengeTitle || 'Quiz Battle Challenge';
+    s.groups = s.groups || {};
+    Object.keys(s.groups).forEach(g=>{
+      s.groups[g] = Object.assign({}, s.groups[g], {score:0,qIndex:0,streak:0,done:false,answers:{},answeredCurrent:false,lastAnswerCorrect:false,deadline:s.questionDeadline});
+    });
+    await qSave(s);
+    quizCache = JSON.parse(JSON.stringify(s));
+    quizOpenTeacherPopup();
+    if(typeof quizTeacherRefresh === 'function') quizTeacherRefresh();
+  };
+  window.quizGetGlobalQuestionIndex = function(s){ return Math.max(0, Number((s||{}).currentQuestionIndex || 0)); };
+  window.quizGetPopupTimeLeft = function(s){
+    if(!s || s.stage !== 'playing') return 0;
+    return Math.max(0, Math.ceil((Number(s.questionDeadline || 0) - Date.now())/1000));
+  };
+  window.quizTeacherAutoAdvance = async function(){
+    if(!quizUser || quizUser.role !== 'teacher') return;
+    let s = await quizGetState();
+    if(s.stage !== 'playing') return;
+    const total = qTotal(s);
+    if(!total) return;
+    const now = qNow();
+    if(!s.questionDeadline){ s.questionDeadline = now + Number(s.secondsPerQuestion || 30) * 1000; await qSave(s); return; }
+    if(now < Number(s.questionDeadline)) return;
+    const qi = Number(s.currentQuestionIndex || 0);
+    s.groups = s.groups || {};
+    Object.keys(s.groups).forEach(g=>{
+      const gr = s.groups[g];
+      gr.answers = gr.answers || {};
+      if(!gr.answers[qi] || gr.answers[qi].correct !== true){
+        gr.answers[qi] = Object.assign({}, gr.answers[qi] || {}, {missed:true,timeout:true,points:0,answeredAt:now});
+        gr.streak = 0;
+      }
+      gr.qIndex = Math.min(qi + 1, total);
+      gr.answeredCurrent = false;
+      gr.lastAnswerCorrect = false;
+      gr.deadline = 0;
+      if(gr.qIndex >= total) gr.done = true;
+    });
+    if(qi + 1 >= total){
+      s.stage = 'final';
+      s.final = true;
+      s.questionDeadline = 0;
+    }else{
+      s.currentQuestionIndex = qi + 1;
+      s.questionStartedAt = now;
+      s.questionDeadline = now + Number(s.secondsPerQuestion || 30) * 1000;
+      Object.keys(s.groups).forEach(g=>{ if(!s.groups[g].done) s.groups[g].deadline = s.questionDeadline; });
+    }
+    await qSave(s);
+  };
+  window.quizRenderTeacherPopup = function(s){
+    const p = quizEnsureTeacherPopup();
+    const box = document.getElementById('quizTeacherPopupContent');
+    if(!box) return;
+    const c = qChallenge(s); const total = qTotal(s);
+    p.classList.remove('hidden');
+    if(!c){ box.innerHTML = `<div class="quizPopupTop"><h1>🧠 Quiz Battle</h1><button class="secondary" onclick="quizCloseTeacherPopup()">Close</button></div><div class="status">Choose a challenge first.</div>`; return; }
+    if(s.stage === 'final'){
+      box.innerHTML = `<div class="quizPopupTop"><h1>🏆 Final Top 3 Groups</h1><button class="secondary" onclick="quizCloseTeacherPopup()">Close</button></div><div>${qTop3Html(s)}</div>`;
+      return;
+    }
+    if(s.stage !== 'playing'){
+      box.innerHTML = `<div class="quizPopupTop"><h1>🧠 ${qEsc(c.title||'Quiz Battle')}</h1><button class="secondary" onclick="quizCloseTeacherPopup()">Close</button></div><div class="status good">Ready. Click Start Challenge.</div>`;
+      return;
+    }
+    const qi = Math.min(Number(s.currentQuestionIndex || 0), total-1);
+    const q = (c.questions||[])[qi];
+    const left = quizGetPopupTimeLeft(s);
+    box.innerHTML = `<div class="quizPopupTop"><div><h1>🧠 Question ${qi+1} / ${total}</h1><div class="mini">${qEsc(c.title)} • Auto moves when time is up.</div></div><div class="quizPopupTimer">⏱️ ${left}s</div></div>
+      <div class="quizPopupQuestion"><h2>${qEsc(q.text)}</h2>${['A','B','C','D'].filter(k=>q.options?.[k]).map(k=>`<div class="quizPopupOption ${String(q.correct)===k?'correct':''}"><b>${k})</b> ${qEsc(q.options[k])}</div>`).join('')}</div>
+      <h2>📊 Live Leaderboard</h2><div class="quizPopupBoard">${qRows(s).length?qRows(s).map((r,i)=>`<div class="quizPopupGroup"><b>${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${qEsc(r.group)}</b><div class="mini">${Number(r.score||0)} pts • ${r.answers?.[qi]?.correct?'✅ answered':'waiting'} • streak ${Number(r.streak||0)}</div></div>`).join(''):'<div class="status">No groups joined yet.</div>'}</div>`;
+  };
+  window.quizTeacherRefresh = function(){
+    const s = quizCache || quizDefaultState();
+    qRenderSelectorsSafe(s);
+    if(typeof quizRenderDraft === 'function') quizRenderDraft();
+    const c=qChallenge(s), total=qTotal(s), qi=Number(s.currentQuestionIndex||0);
+    const qNowBox=document.getElementById('quizTeacherQuestionNow');
+    if(qNowBox){
+      if(!c) qNowBox.innerHTML='<div class="status">Choose or save a challenge first.</div>';
+      else if(s.stage==='final') qNowBox.innerHTML='<h2>🏆 Final Results</h2>'+qTop3Html(s);
+      else if(s.stage!=='playing') qNowBox.innerHTML=`<div class="status good"><b>Ready:</b> ${qEsc(c.title)}</div><div class="mini">Click Start Challenge.</div>`;
+      else { const q=(c.questions||[])[qi]; qNowBox.innerHTML = q ? `<div class="quizTimerPill">🟢 Running now • ${quizGetPopupTimeLeft(s)}s</div><h2>Q${qi+1}. ${qEsc(q.text)}</h2><div class="mini">A) ${qEsc(q.options?.A||'')}<br>B) ${qEsc(q.options?.B||'')}<br>C) ${qEsc(q.options?.C||'')}<br>D) ${qEsc(q.options?.D||'')}<br><b>Answer:</b> ${qEsc(q.correct||'')}</div>` : '<div class="status good">Finishing...</div>'; }
+    }
+    const lb=document.getElementById('quizTeacherLeaderboard');
+    if(lb) lb.innerHTML = qRows(s).length ? qRows(s).map((r,i)=>`<div class="quizLeaderboardRow"><div><span class="quizRank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${qEsc(r.group)}</span><div class="mini">${qEsc(r.playerName||'')} • Q ${Math.min(Number(r.qIndex||0)+1,total)} / ${total} • Streak ${Number(r.streak||0)}</div></div><div class="quizPts">${Number(r.score||0)} pts</div></div>`).join('') : '<div class="status">No groups joined yet.</div>';
+    const gs=document.getElementById('quizTeacherGroups');
+    if(gs) gs.innerHTML = `<div class="status good"><b>Active:</b> ${qEsc(s.activeChallengeTitle||'No challenge')} • <b>Stage:</b> ${qEsc(s.stage||'waiting')} • <b>Timer:</b> ${Number(s.secondsPerQuestion||30)}s</div>` + (qRows(s).length?qRows(s).map(g=>`<div class="resultRow"><div><b>Group ${qEsc(g.group)}</b><div class="mini">Player: ${qEsc(g.playerName||'-')}<br>Progress: ${Number(g.qIndex||0)} / ${total} ${g.done?'✅ Done':''}</div></div><span class="score">${Number(g.score||0)}</span></div>`).join(''):'<div class="status">Waiting for groups to join.</div>');
+    const popup=document.getElementById('quizTeacherQuestionPopup');
+    if(quizUser?.role==='teacher' && s.stage==='playing') quizTeacherAutoAdvance();
+    if(popup && !popup.classList.contains('hidden')) quizRenderTeacherPopup(s);
+  };
+  window.quizStudentRefresh = async function(){
+    if(!quizUser) return;
+    let s = await quizGetState();
+    const g=quizUser.group;
+    s.groups=s.groups||{};
+    if(!s.groups[g]){
+      s.groups[g]={group:g,activePlayerId:quizUser.id,playerName:quizUser.name,score:0,qIndex:0,streak:0,done:false,answers:{},joinedAt:Date.now(),lastSeen:Date.now()};
+      await qSave(s);
+    }
+    const gr=s.groups[g], c=qChallenge(s), total=qTotal(s), qi=Number(s.currentQuestionIndex||0);
+    const welcome=document.getElementById('quizStudentWelcome'); if(welcome) welcome.textContent=`Group ${g} Quiz Battle`;
+    const status=document.getElementById('quizStudentStatus');
+    const timer=document.getElementById('quizStudentTimer');
+    const prog=document.getElementById('quizStudentProgress');
+    const area=document.getElementById('quizStudentQuestionArea');
+    if(timer) timer.textContent = s.stage==='playing' ? quizGetPopupTimeLeft(s)+'s' : '--';
+    if(prog) prog.innerHTML = `Progress: ${Math.min(Number(gr.qIndex||0),total)} / ${total} • Score: ${Number(gr.score||0)} pts • Streak ${Number(gr.streak||0)}`;
+    if(typeof quizRenderMiniBoard==='function') quizRenderMiniBoard(s);
+    if(!c){ if(status) status.textContent='Waiting for teacher to choose a challenge.'; if(area) area.innerHTML='<div class="status">No active challenge yet.</div>'; return; }
+    if(s.stage==='final'){
+      if(status) status.textContent='Challenge finished!';
+      if(area) area.innerHTML='<h2>🏆 Final Top 3 Groups</h2>'+qTop3Html(s);
+      return;
+    }
+    if(s.stage!=='playing'){
+      if(status) status.textContent='Waiting for teacher to start.';
+      if(area) area.innerHTML='<div class="status good">Get ready! Teacher will start the challenge.</div>';
+      return;
+    }
+    if(gr.answers && gr.answers[qi] && gr.answers[qi].correct){
+      if(status) status.textContent='Answered correctly. Wait for next question.';
+      if(area) area.innerHTML='<div class="status good">✅ Correct! Wait for the timer to move everyone to the next question.</div>';
+      return;
+    }
+    const q=(c.questions||[])[qi];
+    if(!q){ if(area) area.innerHTML='<div class="status good">Finishing...</div>'; return; }
+    if(status) status.textContent=`Question ${qi+1} / ${total}`;
+    if(area) area.innerHTML=`<h2>Q${qi+1}. ${qEsc(q.text)}</h2>${['A','B','C','D'].filter(k=>q.options?.[k]).map(k=>`<button class="quizAnswerBtn" onclick="quizSubmitAnswer('${k}')"><b>${k})</b> ${qEsc(q.options[k])}</button>`).join('')}<div id="quizAnswerFeedback"></div>`;
+  };
+  window.quizSubmitAnswer = async function(ans){
+    if(!quizUser) return;
+    const s=await quizGetState();
+    if(s.stage!=='playing') return;
+    const c=qChallenge(s); const q=(c?.questions||[])[Number(s.currentQuestionIndex||0)];
+    if(!q) return;
+    const g=quizUser.group; const gr=s.groups?.[g]; if(!gr || gr.done) return;
+    const qi=Number(s.currentQuestionIndex||0);
+    gr.answers=gr.answers||{};
+    if(gr.answers[qi]?.correct) return;
+    const correct=String(ans)===String(q.correct);
+    const now=qNow();
+    if(correct){
+      let pts=1;
+      s.fastestByQuestion=s.fastestByQuestion||{};
+      if(!s.fastestByQuestion[qi]){ s.fastestByQuestion[qi]=g; pts+=3; }
+      gr.streak=Number(gr.streak||0)+1;
+      if(gr.streak>0 && gr.streak%3===0) pts+=2;
+      gr.score=Number(gr.score||0)+pts;
+      gr.answers[qi]={answer:ans,correct:true,points:pts,answeredAt:now,fastest:s.fastestByQuestion[qi]===g};
+      gr.qIndex=Math.max(Number(gr.qIndex||0), qi+1);
+      gr.answeredCurrent=true;
+      if(gr.qIndex>=qTotal(s)) gr.done=true;
+      await qSave(s);
+      const fb=document.getElementById('quizAnswerFeedback'); if(fb) fb.innerHTML=`<div class="status good">✅ Correct! +${pts} points. Wait for the next question.</div>`;
+      setTimeout(()=>quizStudentRefresh(),500);
+    }else{
+      gr.score=Number(gr.score||0)-1;
+      gr.streak=0;
+      gr.answers[qi]=Object.assign({},gr.answers[qi]||{},{answer:ans,correct:false,points:-1,answeredAt:now});
+      await qSave(s);
+      const fb=document.getElementById('quizAnswerFeedback'); if(fb) fb.innerHTML='<div class="status bad">❌ Wrong. -1 point. Try again before time is up.</div>';
+    }
+  };
+  window.quizFinishChallenge = async function(){
+    const s=await quizGetState();
+    s.stage='final'; s.final=true; s.questionDeadline=0;
+    Object.keys(s.groups||{}).forEach(g=>{s.groups[g].done=true;});
+    await qSave(s);
+    if(quizUser?.role==='teacher'){ quizOpenTeacherPopup(); quizRenderTeacherPopup(s); }
+  };
+})();
+</script>
+
 </body>
 </html>
