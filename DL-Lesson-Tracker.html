@@ -6809,6 +6809,8 @@ async function createNewBlankLesson(){
     alert('Could not create new blank lesson: ' + (err && err.message ? err.message : err));
   }
 }
+      
+window.createNewBlankLesson = createNewBlankLesson;
 
 async function saveCurrentLessonToLibrary(){
   if(!db){
@@ -7176,94 +7178,7 @@ async function openStudentSavedLesson(lessonId){
 
   alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 }
-      window.createNewBlankLesson = async function(){
-
-  const lessonName = prompt('Enter new lesson name');
-
-  if(!lessonName) return;
-
-  const cleanKey =
-    sanitizeKey(lessonName + '_' + Date.now());
-
-  lessonKey = cleanKey;
-
-  localStorage.setItem('DL_lesson_key', lessonKey);
-
-  lessonStations = {
-    starter:{
-      title:'Starter',
-      objective:'',
-      details:'',
-      time:'5',
-      unlocked:true,
-      displayed:true
-    },
-    st1:{
-      title:'Station 1',
-      objective:'',
-      details:'',
-      time:'10',
-      unlocked:false,
-      displayed:false
-    },
-    st2:{
-      title:'Station 2',
-      objective:'',
-      details:'',
-      time:'10',
-      unlocked:false,
-      displayed:false
-    },
-    st3:{
-      title:'Station 3',
-      objective:'',
-      details:'',
-      time:'10',
-      unlocked:false,
-      displayed:false
-    },
-    exit:{
-      title:'Exit Ticket',
-      objective:'',
-      details:'',
-      time:'5',
-      unlocked:false,
-      displayed:false
-    }
-  };
-
-  lessonContent = {};
-
-  lessonMeta = {
-    lessonTitle: lessonName,
-    lessonObjectives: '',
-    lessonKeywords: ''
-  };
-
-  await dbRef(configPath()).set(lessonStations);
-  await dbRef(contentPath()).set(lessonContent);
-  await dbRef(lessonBase() + '/lessonMeta').set(lessonMeta);
-
-  fillTeacherSelects?.();
-  renderTeacherOverview?.();
-  renderControlStatus?.();
-  renderStudentNav?.();
-
-  if(byId('lessonTitleInput')){
-    byId('lessonTitleInput').value = lessonName;
-  }
-
-  if(byId('lessonObjectivesInput')){
-    byId('lessonObjectivesInput').value = '';
-  }
-
-  if(byId('lessonKeywordsInput')){
-    byId('lessonKeywordsInput').value = '';
-  }
-
-  alert('✅ New blank lesson created successfully');
-
-};
+     
     </script>
 </body>
 </html>
