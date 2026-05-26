@@ -6818,32 +6818,42 @@ async function saveCurrentLessonToLibrary(){
     return;
   }
 
+  if(typeof saveCreatorStation === 'function'){
+    try{ await saveCreatorStation(); }catch(e){ console.warn(e); }
+  }
+
+  const lessonId =
+    sessionStorage.getItem('dl_selected_lesson_id') ||
+    sanitizeKey((lessonMeta.lessonTitle || 'Saved Lesson') + '_' + Date.now());
+
+  const configSnap = await dbRef(configPath()).once('value');
+  const contentSnap = await dbRef(contentPath()).once('value');
+  const metaSnap = await dbRef(lessonBase() + '/lessonMeta').once('value');
+
+  const latestStations = configSnap.val() || lessonStations;
+  const latestContent = contentSnap.val() || lessonContent;
+  const latestMeta = metaSnap.val() || lessonMeta;
+
   const title =
-    (lessonMeta.lessonTitle ||
+    latestMeta.lessonTitle ||
     document.getElementById('lessonTitleInput')?.value ||
     lessonKey ||
-    'Saved Lesson').trim();
+    'Saved Lesson';
 
-let lessonId = sessionStorage.getItem('dl_selected_lesson_id');
-
-if(!lessonId){
-  lessonId = sanitizeKey(title + '_' + Date.now());
-}
-  const data = {
+  await dbRef(lessonLibraryPath() + '/' + lessonId).update({
     id: lessonId,
     title: title,
     date: new Date().toLocaleDateString('en-GB'),
-    createdAt: Date.now(),
+    updatedAt: Date.now(),
     locked: false,
     visible: true,
-    lessonMeta: lessonMeta,
-    stations: lessonStations,
-    content: lessonContent
-  };
+    lessonMeta: latestMeta,
+    stations: latestStations,
+    content: latestContent
+  });
 
-  await dbRef(lessonLibraryPath() + '/' + lessonId).set(data);
+  alert('✅ Lesson updated in library with your latest stations and questions.');
 
-alert('✅ Lesson saved/updated in library!');
   loadLessonLibrary();
   loadHomeLessonList();
 }
