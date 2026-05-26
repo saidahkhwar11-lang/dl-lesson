@@ -3798,6 +3798,8 @@ function quizRenderTeacherPopup(s){
     box.innerHTML = `<div class="quizPopupTop"><h1>Finishing...</h1><button class="secondary" onclick="quizCloseTeacherPopup()">Close</button></div><div class="status good">Waiting for final results...</div>`;
     return;
   }
+  
+const showAnswerNow = Number(left || 0) <= 3;
 
   box.innerHTML = `
     <div class="quizPopupTop">
@@ -3807,14 +3809,13 @@ function quizRenderTeacherPopup(s){
       </div>
       <div class="quizPopupTimer">⏱️ ${left}s</div>
     </div>
-
-    <div class="quizPopupQuestion">
+<div class="quizPopupQuestion">
   <h2>${esc(q.text || '')}</h2>
 
   ${['A','B','C','D']
     .filter(k=>q.options?.[k])
     .map(k=>`
-      <div class="quizPopupOption">
+      <div class="quizPopupOption ${showAnswerNow && String(q.correct)===k ? 'correct' : ''}">
         <b>${k})</b> ${esc(q.options[k])}
       </div>
     `).join('')}
