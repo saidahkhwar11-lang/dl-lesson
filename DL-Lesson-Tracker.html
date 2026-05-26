@@ -1072,8 +1072,8 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       🔄 Refresh Library
     </button>
 
-    <button class="secondary"
-  onclick="importOldLessonKeyToLibrary()">
+<button class="secondary"
+  onclick="document.getElementById('oldLessonImportBox').classList.toggle('hidden')">
   📥 Import Old Lesson Key
 </button>
 
@@ -6832,18 +6832,16 @@ async function saveCurrentLessonToLibrary(){
     return;
   }
 
-  const lessonId =
-    sessionStorage.getItem('dl_selected_lesson_id') ||
-    lessonKey;
+  const libraryId =
+  sessionStorage.getItem('dl_selected_lesson_id') ||
+  sanitizeKey((byId('lessonTitleInput')?.value || lessonKey || 'Saved Lesson') + '_' + Date.now());
 
-  if(!lessonId){
-    alert('No active lesson found.');
-    return;
-  }
+const activeLessonKey = lessonKey;
 
-  // ✅ Set active lesson FIRST before saving station
-  lessonKey = lessonId;
-  localStorage.setItem('DL_lesson_key', lessonKey);
+if(!activeLessonKey){
+  alert('No active lesson key found.');
+  return;
+}
 
   // ✅ Now save current station to the correct new lesson
   if(typeof saveCreatorStation === 'function'){
@@ -6871,8 +6869,9 @@ async function saveCurrentLessonToLibrary(){
   const configSnap = await dbRef(configPath()).once('value');
   const contentSnap = await dbRef(contentPath()).once('value');
 
-  await dbRef(lessonLibraryPath() + '/' + lessonId).update({
-    id: lessonId,
+  await dbRef(lessonLibraryPath() + '/' + libraryId).update({
+  id: libraryId,
+  lessonKey: activeLessonKey,
     title: lessonMeta.lessonTitle,
     date: new Date().toLocaleDateString('en-GB'),
     updatedAt: Date.now(),
@@ -6888,7 +6887,8 @@ async function saveCurrentLessonToLibrary(){
 
   alert('✅ Lesson saved to library with latest stations and questions.');
 }
-      function toggleOldLessonImportBox(){
+      
+  function toggleOldLessonImportBox(){
   const box = byId('oldLessonImportBox');
   if(box) box.classList.toggle('hidden');
 }
