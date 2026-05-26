@@ -7051,7 +7051,7 @@ const list = Object.values(lessons).map(function(l){
   }).join('');
 }
 
-async function openSavedLesson(lessonId){
+ async function openSavedLesson(lessonId){
   const snap = await dbRef(lessonLibraryPath() + '/' + lessonId).once('value');
 
   if(!snap.exists()){
@@ -7060,6 +7060,10 @@ async function openSavedLesson(lessonId){
   }
 
   const l = snap.val();
+
+  // IMPORTANT: switch active lesson key
+  lessonKey = l.lessonKey || lessonId;
+  localStorage.setItem('DL_lesson_key', lessonKey);
 
   lessonMeta = l.lessonMeta || {
     lessonTitle: l.title || '',
