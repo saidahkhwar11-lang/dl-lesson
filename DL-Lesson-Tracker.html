@@ -1189,10 +1189,12 @@ if(oldInput && oldInput.value.trim()){
   if(!confirm('Import this exact old lesson key?\n\n' + cleanOldKey)){
     return;
   }
-
-  const configSnap = await dbRef('lessons/' + cleanOldKey + '/config').once('value');
-  const contentSnap = await dbRef('lessons/' + cleanOldKey + '/content').once('value');
-  const metaSnap = await dbRef('lessons/' + cleanOldKey + '/lessonMeta').once('value');
+ 
+    console.log('IMPORTING:', cleanOldKey);
+    
+  const configSnap = await firebase.database().ref('lessons/' + cleanOldKey + '/config').once('value');
+  const contentSnap = await firebase.database().ref('lessons/' + cleanOldKey + '/content').once('value');
+  const metaSnap = await firebase.database().ref('lessons/' + cleanOldKey + '/lessonMeta').once('value');
 
   const oldStations = configSnap.val();
   const oldContent = contentSnap.val();
@@ -1211,7 +1213,7 @@ if(oldInput && oldInput.value.trim()){
   const title = oldMeta.lessonTitle || cleanOldKey;
   const lessonId = sanitizeKey(title + '_' + Date.now());
 
-await dbRef(lessonLibraryPath() + '/' + lessonId).set({
+await firebase.database().ref(lessonLibraryPath() + '/' + lessonId).set({
     id: lessonId,
     title: title,
    lessonKey: cleanOldKey,
