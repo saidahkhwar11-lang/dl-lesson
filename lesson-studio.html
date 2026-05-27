@@ -34,7 +34,49 @@ const defaultStations=[{id:'starter',title:'Starter',time:'5 min',objective:'',d
 function byId(id){return document.getElementById(id)}function safeKey(s){return String(s||'').trim().replace(/[^a-zA-Z0-9_-]/g,'_')}function esc(s){return String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}function clone(x){return JSON.parse(JSON.stringify(x))}function libraryPath(id){return id?'lessonLibrary/'+id:'lessonLibrary'}function livePath(key){return 'lessons/'+key}function notice(msg,type='good'){const n=byId('topNotice');n.className='topNotice status '+type;n.textContent=msg;n.style.display='block';setTimeout(()=>n.style.display='none',3000)}
 async function connectFirebase(){try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();storage=firebase.storage();byId('firebaseStatus').className='status good';byId('firebaseStatus').innerHTML='✅ Firebase connected';await loadLibrary(false)}catch(e){byId('firebaseStatus').className='status bad';byId('firebaseStatus').textContent='Firebase error: '+e.message}}
 function blankContent(){const content={};defaultStations.forEach(s=>{content[s.id]={imageUrl:'',audioUrl:'',videoUrl:'',links:[],linkUrl:'',linkTitle:'',sourceText:'',imageNotes:'',questions:[]}});return content}
-async function createLesson(){if(!db){alert('Firebase is not connected.');return}const title=(byId('newLessonTitle').value||'').trim()||prompt('Lesson title?');if(!title)return;const id=safeKey(title+'_'+Date.now());lesson={id,title,date:new Date().toLocaleDateString('en-GB'),createdAt:Date.now(),updatedAt:Date.now(),visible:true,locked:false,lessonMeta:{lessonTitle:title,lessonObjectives:'',lessonKeywords:''},stations:clone(defaultStations),content:blankContent()};currentLessonId=id;currentStationIndex=0;await saveLesson();renderAll();notice('✅ New lesson created. Start building stations.')}
+async function createLesson(){
+  if(!db){
+    alert('Firebase is not connected.');
+    return;
+  }
+
+  const title =
+    (byId('newLessonTitle').value || '').trim() ||
+    prompt('Lesson title?');
+
+  if(!title) return;
+
+  const id = safeKey(title + '_' + Date.now());
+
+  lesson = {
+    id,
+    title,
+    date: new Date().toLocaleDateString('en-GB'),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    visible: true,
+    locked: false,
+    lessonMeta: {
+      lessonTitle: title,
+      lessonObjectives: '',
+      lessonKeywords: ''
+    },
+    stations: clone(defaultStations),
+    content: blankContent()
+  };
+
+  currentLessonId = id;
+  currentStationIndex = 0;
+
+  await db.ref(libraryPath(id)).set(clone(lesson));
+
+  await openLesson(id);
+
+  byId('newLessonTitle').value = '';
+
+  notice('✅ New lesson created and opened in builder.');
+}
+  
 async function openLesson(id){const snap=await db.ref(libraryPath(id)).once('value');if(!snap.exists()){alert('Lesson not found.');return}lesson=snap.val();currentLessonId=id;currentStationIndex=0;normalizeLesson();renderAll();notice('✅ Lesson opened.')}
 function normalizeLesson(){lesson.lessonMeta=lesson.lessonMeta||{lessonTitle:lesson.title||'',lessonObjectives:'',lessonKeywords:''};lesson.stations=Array.isArray(lesson.stations)?lesson.stations:clone(defaultStations);lesson.content=lesson.content||{};lesson.stations.forEach(s=>{lesson.content[s.id]=lesson.content[s.id]||{imageUrl:'',audioUrl:'',videoUrl:'',links:[],sourceText:'',imageNotes:'',questions:[]};if(!Array.isArray(lesson.content[s.id].questions))lesson.content[s.id].questions=[]})}
 async function saveLesson(){if(!db||!lesson){alert('No lesson open.');return}saveStationToMemory(false);const objectives=(byId('lessonObjectives').value||lesson.lessonMeta.lessonObjectives||'').split('\n').filter(x=>x.trim()).slice(0,3).join('\n');lesson.lessonMeta={lessonTitle:byId('lessonTitle').value||lesson.lessonMeta.lessonTitle||lesson.title,lessonObjectives:objectives,lessonKeywords:byId('lessonKeywords').value||lesson.lessonMeta.lessonKeywords||''};lesson.title=lesson.lessonMeta.lessonTitle;lesson.updatedAt=Date.now();await db.ref(libraryPath(currentLessonId)).set(clone(lesson));await loadLibrary(false);renderAll();notice('✅ Lesson saved to library.')}
