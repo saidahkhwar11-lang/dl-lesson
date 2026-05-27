@@ -3,187 +3,402 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Lesson Studio - DL Builder</title>
+<title>DL Old Lesson Importer</title>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+
 <style>
-:root{--bg:#f5f7ff;--card:#ffffff;--line:#dfe7ff;--text:#21304f;--muted:#667697;--blue:#4267c7;--purple:#7d5cc6;--green:#1f9d64;--orange:#f39a2d;--red:#d95363}*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:linear-gradient(135deg,#eef6ff,#f8f3ff,#fff8fb);color:var(--text)}.hidden{display:none!important}.app{max-width:1240px;margin:auto;padding:18px}.hero{background:linear-gradient(135deg,#ffffff,#f8fbff);border:1px solid var(--line);border-radius:24px;padding:18px;box-shadow:0 10px 26px rgba(70,90,150,.10);position:relative}.hero h1{margin:0;color:#324b92;font-size:26px}.hero p{margin:6px 0 0;color:var(--muted);line-height:1.5}#homeBtn{position:absolute;right:16px;top:16px;width:auto;background:#eef4ff;color:#294a99;border:1px solid #cfe0f7}.grid{display:grid;grid-template-columns:330px 1fr;gap:14px;margin-top:14px}.card{background:rgba(255,255,255,.96);border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:0 8px 22px rgba(70,90,150,.08)}.card h2,.card h3{margin:0 0 12px;color:#253f83}label{display:block;margin:9px 0 5px;font-weight:800;font-size:13px;color:#34476d}input,select,textarea,button{width:100%;border:1px solid #cfd8ee;border-radius:13px;padding:10px 12px;font-size:14px;background:white}textarea{min-height:84px;resize:vertical}button{border:none;background:var(--blue);color:white;cursor:pointer;font-weight:800;margin:4px 4px 4px 0;box-shadow:0 7px 14px rgba(66,103,199,.16)}button.secondary{background:#ecf1ff;color:#2d4380;border:1px solid #cbd7ff;box-shadow:none}button.green{background:var(--green)}button.orange{background:var(--orange)}button.purple{background:var(--purple)}button.red{background:var(--red)}.btns{display:flex;gap:8px;flex-wrap:wrap}.btns button{width:auto}.status{padding:10px 12px;border-radius:14px;background:#fff8df;border:1px solid #f2d98a;color:#775704;font-weight:700;margin:8px 0;line-height:1.4}.status.good{background:#eafff3;border-color:#9fe3be;color:#166b45}.status.bad{background:#fff0f3;border-color:#ffc5cf;color:#8c2638}.mini{font-size:13px;color:var(--muted);line-height:1.5}.stationList{display:grid;gap:8px}.stationItem{display:grid;grid-template-columns:58px 1fr;gap:10px;align-items:center;padding:10px;border:1px solid var(--line);border-radius:16px;background:#f8fbff;cursor:pointer}.stationItem.active{background:linear-gradient(135deg,#4267c7,#6f67db);color:white}.stationItem.active .mini{color:rgba(255,255,255,.88)}.thumb{width:58px;height:58px;border-radius:13px;object-fit:cover;background:#eef4ff;border:1px solid #dce6ff}.editorGrid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.mediaPreview{border:1px solid var(--line);border-radius:18px;padding:12px;background:#f8fbff;margin-top:10px}.mediaPreview img{width:100%;max-height:260px;object-fit:contain;border-radius:14px;background:white;border:1px solid var(--line)}.mediaPreview audio,.mediaPreview video{width:100%;margin-top:8px;border-radius:12px}.qCard{border:1px solid var(--line);border-radius:16px;background:#ffffff;padding:12px;margin:8px 0}.qCard b{color:#243f83}.libraryItem{border:1px solid var(--line);background:#fff;border-radius:18px;padding:12px;margin-bottom:10px}.libraryItem h3{margin:0;color:#253f83}.topNotice{position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:99999;max-width:620px;width:calc(100vw - 32px);display:none}@media(max-width:900px){.grid,.editorGrid{grid-template-columns:1fr}#homeBtn{position:static;margin-top:10px}}
+:root{
+  --bg:#f5f7ff;
+  --card:#ffffff;
+  --line:#dfe7ff;
+  --text:#21304f;
+  --muted:#667697;
+  --blue:#4267c7;
+  --green:#1f9d64;
+  --orange:#f39a2d;
+  --red:#d95363;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:linear-gradient(135deg,#eef6ff,#f8f3ff,#fff8fb);
+  color:var(--text);
+}
+.app{
+  max-width:900px;
+  margin:auto;
+  padding:18px;
+}
+.hero{
+  background:white;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:18px;
+  box-shadow:0 10px 26px rgba(70,90,150,.10);
+  position:relative;
+  margin-bottom:14px;
+}
+.hero h1{
+  margin:0;
+  color:#28448a;
+  font-size:26px;
+}
+.hero p{
+  margin:8px 0 0;
+  color:var(--muted);
+  line-height:1.5;
+}
+#homeBtn{
+  position:absolute;
+  right:16px;
+  top:16px;
+  width:auto;
+  background:#eef4ff;
+  color:#294a99;
+  border:1px solid #cfe0f7;
+}
+.card{
+  background:rgba(255,255,255,.97);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:18px;
+  box-shadow:0 8px 22px rgba(70,90,150,.08);
+  margin-bottom:14px;
+}
+.card h2{
+  margin:0 0 12px;
+  color:#253f83;
+}
+label{
+  display:block;
+  margin:10px 0 6px;
+  font-size:13px;
+  font-weight:800;
+  color:#34476d;
+}
+input,textarea,button{
+  width:100%;
+  border:1px solid #cfd8ee;
+  border-radius:13px;
+  padding:11px 13px;
+  font-size:15px;
+  background:white;
+}
+button{
+  border:none;
+  background:var(--blue);
+  color:white;
+  font-weight:800;
+  cursor:pointer;
+  box-shadow:0 7px 14px rgba(66,103,199,.16);
+  margin-top:8px;
+}
+button.green{background:var(--green)}
+button.orange{background:var(--orange)}
+button.red{background:var(--red)}
+button.secondary{background:#ecf1ff;color:#2d4380;border:1px solid #cbd7ff;box-shadow:none}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+.btns button{width:auto}
+.status{
+  padding:11px 13px;
+  border-radius:15px;
+  background:#fff8df;
+  border:1px solid #f2d98a;
+  color:#775704;
+  font-weight:700;
+  margin:10px 0;
+  line-height:1.5;
+}
+.status.good{background:#eafff3;border-color:#9fe3be;color:#166b45}
+.status.bad{background:#fff0f3;border-color:#ffc5cf;color:#8c2638}
+.mini{
+  font-size:13px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.lessonList{
+  max-height:520px;
+  overflow:auto;
+  padding-right:4px;
+}
+.lessonItem{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:18px;
+  padding:13px;
+  margin-bottom:10px;
+}
+.lessonItem h3{
+  margin:0;
+  color:#253f83;
+  font-size:17px;
+}
+.badge{
+  display:inline-block;
+  background:#eef4ff;
+  color:#294a99;
+  border-radius:999px;
+  padding:5px 9px;
+  font-size:12px;
+  font-weight:800;
+  margin:6px 4px 0 0;
+}
+@media(max-width:700px){
+  #homeBtn{position:static;margin-top:10px}
+}
 </style>
 </head>
+
 <body>
-<div id="topNotice" class="topNotice status good"></div>
 <div class="app">
-  <div class="hero"><h1>📚 Lesson Studio</h1><p>Create, edit, and save DL lessons safely. This page saves directly to <b>lessonLibrary</b> and does not touch student tracker or live class data.</p><button id="homeBtn" onclick="location.href='secure-hub.html'">🏠 Main Page</button></div>
-  <div class="grid">
-    <div>
-      <div class="card"><h2>🔥 Firebase</h2><div id="firebaseStatus" class="status">Connecting...</div><button class="secondary" onclick="connectFirebase()">Reconnect</button></div>
-      <div class="card" style="margin-top:14px"><h2>📘 Lessons</h2><label>New Lesson Title</label><input id="newLessonTitle" placeholder="Example: Dreams and Daydreams"><button class="green" onclick="createLesson()">➕ Create New Lesson</button><div class="btns"><button class="secondary" onclick="loadLibrary()">🔄 Refresh</button><button class="orange" onclick="importOldLesson()">📥 Import Old Lesson Key</button></div><label>Old Lesson Key</label><input id="oldLessonKey" placeholder="Paste old lessonKey here"><div id="libraryList" style="margin-top:12px"></div></div>
-      <div class="card" style="margin-top:14px"><h2>🧩 Stations</h2><div class="btns"><button class="green" onclick="addStation()">➕ Add</button><button class="secondary" onclick="moveStation(-1)">⬆</button><button class="secondary" onclick="moveStation(1)">⬇</button><button class="red" onclick="deleteStation()">🗑</button></div><div id="stationList" class="stationList"></div></div>
+
+  <div class="hero">
+    <h1>📥 DL Old Lesson Importer</h1>
+    <p>This page is only for importing old DL lessons from your old lesson keys into the new saved lesson library. No new lesson builder. No editing. No student data.</p>
+    <button id="homeBtn" type="button" onclick="location.href='secure-hub.html'">🏠 Main Page</button>
+  </div>
+
+  <div class="card">
+    <h2>🔥 Firebase Connection</h2>
+    <div id="firebaseStatus" class="status">Connecting...</div>
+    <button class="secondary" onclick="connectFirebase()">Reconnect</button>
+  </div>
+
+  <div class="card">
+    <h2>📥 Import Old Lesson</h2>
+
+    <div class="status">
+      Paste the exact old lesson key from your old DL lesson website. The importer will copy stations, questions, media URLs, objectives, and keywords into <b>lessonLibrary</b>.
     </div>
-    <div>
-      <div class="card"><h2>📝 Lesson Info</h2><label>Lesson Title</label><input id="lessonTitle" placeholder="Lesson title"><label>Objectives <span class="mini">(maximum 3 lines)</span></label><textarea id="lessonObjectives" placeholder="Objective 1&#10;Objective 2&#10;Objective 3"></textarea><label>Keywords</label><input id="lessonKeywords" placeholder="dream, memory, imagine"><div class="btns"><button class="green" onclick="saveLesson()">💾 Save Lesson</button><button class="purple" onclick="openForTeaching()">🚀 Open for Teaching</button></div><div id="activeLessonInfo" class="status">No lesson opened yet.</div></div>
-      <div class="card" style="margin-top:14px"><h2>🎯 Station Builder</h2><div id="noStationMsg" class="status">Create or open a lesson, then choose a station.</div><div id="stationEditor" class="hidden"><div class="editorGrid"><div><label>Station Title</label><input id="stationTitle"><label>Mini Objective</label><input id="stationObjective"><label>Time</label><input id="stationTime" placeholder="10 min"><label>Details / Instructions</label><textarea id="stationDetails"></textarea><label>Activity Picture URL</label><input id="imageUrl" placeholder="Paste image URL"><label>Upload Picture</label><input id="imageFile" type="file" accept="image/*" onchange="uploadMedia('image')"><label>Audio URL</label><input id="audioUrl" placeholder="Paste audio URL"><label>Upload Audio</label><input id="audioFile" type="file" accept="audio/*" onchange="uploadMedia('audio')"><label>Video URL</label><input id="videoUrl" placeholder="Paste video URL"><label>Upload Video</label><input id="videoFile" type="file" accept="video/*" onchange="uploadMedia('video')"><label>Links <span class="mini">(one per line: URL | Title)</span></label><textarea id="linksText" placeholder="https://... | Watch Video"></textarea><label>Source Text / Notes</label><textarea id="sourceText" placeholder="Paste reading text or activity notes"></textarea><button class="green" onclick="saveStation()">💾 Save Station</button></div><div><h3>👀 Media Preview</h3><div id="mediaPreview" class="mediaPreview">No media yet.</div><h3 style="margin-top:14px">❓ Question Builder</h3><label>Type</label><select id="qType" onchange="toggleQuestionFields()"><option value="mcq">MCQ</option><option value="tf">True / False</option><option value="written">Written</option></select><label>Question</label><textarea id="qText"></textarea><div id="mcqFields"><label>Options <span class="mini">(one per line)</span></label><textarea id="qOptions"></textarea><label>Correct Answer <span class="mini">(exact option text)</span></label><input id="qCorrectText"></div><div id="tfFields" class="hidden"><label>Correct Answer</label><select id="qTfCorrect"><option value="True">True</option><option value="False">False</option></select></div><div class="btns"><button onclick="addQuestion()">➕ Add Question</button><button class="secondary" onclick="clearQuestionForm()">Clear</button></div><div id="questionsList"></div></div></div></div></div>
+
+    <label>Old Lesson Key</label>
+    <input id="oldLessonKey" placeholder="Example: DL_Lesson or dreams_unit5">
+
+    <button class="orange" onclick="importOldLesson()">📥 Import Old Lesson Key</button>
+
+    <div id="importStatus" class="status hidden"></div>
+  </div>
+
+  <div class="card">
+    <div class="btns" style="justify-content:space-between;align-items:center">
+      <h2 style="margin:0">📚 Imported Lessons Library</h2>
+      <button class="secondary" onclick="loadLibrary()">🔄 Refresh</button>
+    </div>
+    <div id="libraryList" class="lessonList">
+      <div class="status">Loading imported lessons...</div>
     </div>
   </div>
+
 </div>
+
 <script>
-const firebaseConfig={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
-let db=null,storage=null,currentLessonId='',lesson=null,currentStationIndex=0;
-const defaultStations=[{id:'starter',title:'Starter',time:'5 min',objective:'',details:'',unlocked:false,displayed:true,thumbnail:''},{id:'st1',title:'Station 1',time:'10 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''},{id:'st2',title:'Station 2',time:'10 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''},{id:'st3',title:'Station 3',time:'10 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''},{id:'exit',title:'Exit Ticket',time:'5 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''}];
-function byId(id){return document.getElementById(id)}function safeKey(s){return String(s||'').trim().replace(/[^a-zA-Z0-9_-]/g,'_')}function esc(s){return String(s||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}function clone(x){return JSON.parse(JSON.stringify(x))}function libraryPath(id){return id?'lessonLibrary/'+id:'lessonLibrary'}function livePath(key){return 'lessons/'+key}function notice(msg,type='good'){const n=byId('topNotice');n.className='topNotice status '+type;n.textContent=msg;n.style.display='block';setTimeout(()=>n.style.display='none',3000)}
-async function connectFirebase(){try{if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);db=firebase.database();storage=firebase.storage();byId('firebaseStatus').className='status good';byId('firebaseStatus').innerHTML='✅ Firebase connected';await loadLibrary(false)}catch(e){byId('firebaseStatus').className='status bad';byId('firebaseStatus').textContent='Firebase error: '+e.message}}
-function blankContent(){const content={};defaultStations.forEach(s=>{content[s.id]={imageUrl:'',audioUrl:'',videoUrl:'',links:[],linkUrl:'',linkTitle:'',sourceText:'',imageNotes:'',questions:[]}});return content}
-async function createLesson(){
-  if(!db){
-    alert('Firebase is not connected.');
-    return;
+const firebaseConfig = {
+  apiKey: "AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain: "online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL: "https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId: "online-english-lesson-grade-9",
+  storageBucket: "online-english-lesson-grade-9.firebasestorage.app",
+  appId: "1:542666648554:web:5190c68ea73b3536dae093"
+};
+
+let db = null;
+
+function byId(id){ return document.getElementById(id); }
+function safeKey(s){ return String(s || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_'); }
+function esc(s){
+  return String(s || '').replace(/[&<>'"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
+  });
+}
+function clone(x){ return JSON.parse(JSON.stringify(x || {})); }
+function libraryPath(id){ return id ? 'lessonLibrary/' + id : 'lessonLibrary'; }
+function showImportStatus(msg,type){
+  const el = byId('importStatus');
+  el.className = 'status ' + (type || '');
+  el.innerHTML = msg;
+  el.classList.remove('hidden');
+}
+
+async function connectFirebase(){
+  try{
+    if(!firebase.apps.length){
+      firebase.initializeApp(firebaseConfig);
+    }
+    db = firebase.database();
+
+    byId('firebaseStatus').className = 'status good';
+    byId('firebaseStatus').innerHTML = '✅ Firebase connected. Ready to import old lessons.';
+
+    await loadLibrary();
+  }catch(err){
+    byId('firebaseStatus').className = 'status bad';
+    byId('firebaseStatus').textContent = 'Firebase error: ' + err.message;
+  }
+}
+
+function normalizeStations(rawStations){
+  if(Array.isArray(rawStations)){
+    return rawStations.filter(function(s){ return s && s.id; });
   }
 
-  const title =
-    (byId('newLessonTitle').value || '').trim() ||
-    prompt('Lesson title?');
+  if(rawStations && typeof rawStations === 'object'){
+    return Object.keys(rawStations).map(function(key){
+      const item = rawStations[key] || {};
+      return Object.assign({id:key}, item);
+    }).filter(function(s){ return s && s.id; });
+  }
 
-  if(!title) return;
-
-  const id = safeKey(title + '_' + Date.now());
-
-  lesson = {
-    id,
-    title,
-    date: new Date().toLocaleDateString('en-GB'),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    visible: true,
-    locked: false,
-    lessonMeta: {
-      lessonTitle: title,
-      lessonObjectives: '',
-      lessonKeywords: ''
-    },
-    stations: clone(defaultStations),
-    content: blankContent()
-  };
-
-  currentLessonId = id;
-  currentStationIndex = 0;
-
-  await db.ref(libraryPath(id)).set(clone(lesson));
-
-  await openLesson(id);
-
-  byId('newLessonTitle').value = '';
-
-  notice('✅ New lesson created and opened in builder.');
+  return [];
 }
-  
-async function openLesson(id){const snap=await db.ref(libraryPath(id)).once('value');if(!snap.exists()){alert('Lesson not found.');return}lesson=snap.val();currentLessonId=id;currentStationIndex=0;normalizeLesson();renderAll();notice('✅ Lesson opened.')}
-function normalizeLesson(){lesson.lessonMeta=lesson.lessonMeta||{lessonTitle:lesson.title||'',lessonObjectives:'',lessonKeywords:''};lesson.stations=Array.isArray(lesson.stations)?lesson.stations:clone(defaultStations);lesson.content=lesson.content||{};lesson.stations.forEach(s=>{lesson.content[s.id]=lesson.content[s.id]||{imageUrl:'',audioUrl:'',videoUrl:'',links:[],sourceText:'',imageNotes:'',questions:[]};if(!Array.isArray(lesson.content[s.id].questions))lesson.content[s.id].questions=[]})}
-async function saveLesson(){if(!db||!lesson){alert('No lesson open.');return}saveStationToMemory(false);const objectives=(byId('lessonObjectives').value||lesson.lessonMeta.lessonObjectives||'').split('\n').filter(x=>x.trim()).slice(0,3).join('\n');lesson.lessonMeta={lessonTitle:byId('lessonTitle').value||lesson.lessonMeta.lessonTitle||lesson.title,lessonObjectives:objectives,lessonKeywords:byId('lessonKeywords').value||lesson.lessonMeta.lessonKeywords||''};lesson.title=lesson.lessonMeta.lessonTitle;lesson.updatedAt=Date.now();await db.ref(libraryPath(currentLessonId)).set(clone(lesson));await loadLibrary(false);renderAll();notice('✅ Lesson saved to library.')}
-async function loadLibrary(showMsg=true){if(!db)return;const snap=await db.ref(libraryPath()).once('value');const data=snap.val()||{};const list=Object.values(data).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));byId('libraryList').innerHTML=list.length?list.map(item=>`<div class="libraryItem"><h3>${esc(item.title||item.id)}</h3><div class="mini">${esc(item.date||'')} • ${(item.stations||[]).length} stations</div><div class="btns"><button onclick="openLesson('${esc(item.id)}')">✏️ Edit</button><button class="purple" onclick="openLessonForTeaching('${esc(item.id)}')">🚀 Teach</button><button class="red" onclick="deleteLesson('${esc(item.id)}')">🗑 Delete</button></div></div>`).join(''):'<div class="status">No lessons yet.</div>';if(showMsg)notice('Library refreshed.')}
-async function deleteLesson(id){if(!confirm('Delete this lesson from library?'))return;await db.ref(libraryPath(id)).remove();if(currentLessonId===id){currentLessonId='';lesson=null}await loadLibrary(false);renderAll()}
+
+function normalizeContent(stations, rawContent){
+  rawContent = rawContent || {};
+  const content = {};
+
+  stations.forEach(function(st){
+    const old = rawContent[st.id] || {};
+
+    content[st.id] = {
+      imageUrl: old.imageUrl || '',
+      audioUrl: old.audioUrl || '',
+      videoUrl: old.videoUrl || '',
+      sourceText: old.sourceText || '',
+      imageNotes: old.imageNotes || '',
+      linkUrl: old.linkUrl || '',
+      linkTitle: old.linkTitle || '',
+      links: Array.isArray(old.links) ? old.links : [],
+      questions: Array.isArray(old.questions) ? old.questions : []
+    };
+
+    if(!content[st.id].links.length && old.linkUrl){
+      content[st.id].links.push({
+        url: old.linkUrl,
+        title: old.linkTitle || old.linkUrl
+      });
+    }
+  });
+
+  return content;
+}
+
 async function importOldLesson(){
   if(!db){
-    alert('Firebase is not connected.');
+    alert('Firebase is not connected yet.');
     return;
   }
 
   const oldKey = byId('oldLessonKey').value.trim();
 
   if(!oldKey){
-    alert('Paste old lesson key first.');
+    alert('Paste the old lesson key first.');
     return;
   }
 
-  const configSnap = await db.ref('lessons/' + oldKey + '/config').once('value');
-  const contentSnap = await db.ref('lessons/' + oldKey + '/content').once('value');
-  const metaSnap = await db.ref('lessons/' + oldKey + '/lessonMeta').once('value');
-
-  const oldStationsRaw = configSnap.val();
-  const oldContentRaw = contentSnap.val() || {};
-  const oldMeta = metaSnap.val() || {};
-
-  if(!oldStationsRaw){
-    alert('No stations found for this old lesson key.');
+  if(!confirm('Import this old lesson key?\n\n' + oldKey)){
     return;
   }
 
-  let importedStations = Array.isArray(oldStationsRaw)
-    ? oldStationsRaw
-    : Object.keys(oldStationsRaw).map(function(key){
-        return Object.assign({id:key}, oldStationsRaw[key]);
-      });
+  showImportStatus('⏳ Importing lesson. Please wait...', '');
 
-  importedStations = importedStations.filter(function(s){
-    return s && s.id;
-  });
+  try{
+    const configSnap = await db.ref('lessons/' + oldKey + '/config').once('value');
+    const contentSnap = await db.ref('lessons/' + oldKey + '/content').once('value');
+    const metaSnap = await db.ref('lessons/' + oldKey + '/lessonMeta').once('value');
 
-  if(!importedStations.length){
-    alert('Stations were found, but the format could not be imported.');
-    return;
-  }
+    const rawStations = configSnap.val();
+    const rawContent = contentSnap.val() || {};
+    const oldMeta = metaSnap.val() || {};
 
-  const importedContent = {};
+    if(!rawStations){
+      showImportStatus('❌ No station config found for this old lesson key: <b>' + esc(oldKey) + '</b>', 'bad');
+      return;
+    }
 
-  importedStations.forEach(function(st){
-    importedContent[st.id] = oldContentRaw[st.id] || {
-      imageUrl:'',
-      audioUrl:'',
-      videoUrl:'',
-      links:[],
-      sourceText:'',
-      imageNotes:'',
-      questions:[]
+    const stations = normalizeStations(rawStations);
+
+    if(!stations.length){
+      showImportStatus('❌ Stations were found, but the station format could not be imported.', 'bad');
+      return;
+    }
+
+    const content = normalizeContent(stations, rawContent);
+    const title = oldMeta.lessonTitle || oldKey;
+    const lessonId = safeKey(title + '_imported_' + Date.now());
+
+    const importedLesson = {
+      id: lessonId,
+      title: title,
+      date: new Date().toLocaleDateString('en-GB'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      visible: true,
+      locked: false,
+      importedOnly: true,
+      importedFromOldKey: oldKey,
+      lessonMeta: {
+        lessonTitle: title,
+        lessonObjectives: oldMeta.lessonObjectives || '',
+        lessonKeywords: oldMeta.lessonKeywords || ''
+      },
+      stations: stations,
+      content: content
     };
 
-    if(!Array.isArray(importedContent[st.id].questions)){
-      importedContent[st.id].questions = [];
-    }
-  });
+    await db.ref(libraryPath(lessonId)).set(clone(importedLesson));
 
-  const title = oldMeta.lessonTitle || oldKey;
-  const id = safeKey(title + '_imported_' + Date.now());
+    byId('oldLessonKey').value = '';
 
-  lesson = {
-    id:id,
-    title:title,
-    date:new Date().toLocaleDateString('en-GB'),
-    createdAt:Date.now(),
-    updatedAt:Date.now(),
-    visible:true,
-    locked:false,
-    importedFromOldKey:oldKey,
-    lessonMeta:{
-      lessonTitle:title,
-      lessonObjectives:oldMeta.lessonObjectives || '',
-      lessonKeywords:oldMeta.lessonKeywords || ''
-    },
-    stations:importedStations,
-    content:importedContent
-  };
+    showImportStatus(
+      '✅ Imported successfully: <b>' + esc(title) + '</b><br>' +
+      '<span class="mini">' + stations.length + ' stations copied to lessonLibrary.</span>',
+      'good'
+    );
 
-  currentLessonId = id;
-  currentStationIndex = 0;
+    await loadLibrary();
 
-  await db.ref(libraryPath(id)).set(clone(lesson));
-
-  await openLesson(id);
-
-  byId('oldLessonKey').value = '';
-
-  notice('✅ Old lesson imported and opened in builder.');
+  }catch(err){
+    console.error(err);
+    showImportStatus('❌ Import failed: ' + esc(err.message || err), 'bad');
+  }
 }
-  
-function renderAll(){renderLessonInfo();renderStations();renderStationEditor()}function renderLessonInfo(){if(!lesson){byId('activeLessonInfo').textContent='No lesson opened yet.';byId('lessonTitle').value='';byId('lessonObjectives').value='';byId('lessonKeywords').value='';return}byId('activeLessonInfo').className='status good';byId('activeLessonInfo').innerHTML='Editing: <b>'+esc(lesson.title||lesson.id)+'</b>';byId('lessonTitle').value=lesson.lessonMeta?.lessonTitle||lesson.title||'';byId('lessonObjectives').value=lesson.lessonMeta?.lessonObjectives||'';byId('lessonKeywords').value=lesson.lessonMeta?.lessonKeywords||''}
-function renderStations(){const box=byId('stationList');if(!lesson){box.innerHTML='<div class="status">No lesson open.</div>';return}box.innerHTML=lesson.stations.map((s,i)=>`<div class="stationItem ${i===currentStationIndex?'active':''}" onclick="selectStation(${i})"><img class="thumb" src="${esc((lesson.content[s.id]||{}).imageUrl||s.thumbnail||'')}" onerror="this.style.display='none'"><div><b>${esc(s.title||s.id)}</b><div class="mini">${esc(s.objective||'')}</div><div class="mini">${(lesson.content[s.id]?.questions||[]).length} questions</div></div></div>`).join('')}
-function selectStation(i){saveStationToMemory(false);currentStationIndex=i;renderAll()}function addStation(){if(!lesson){alert('Create/open a lesson first.');return}saveStationToMemory(false);const id='st_'+Date.now();lesson.stations.splice(Math.max(lesson.stations.length-1,0),0,{id,title:'New Station',time:'10 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''});lesson.content[id]={imageUrl:'',audioUrl:'',videoUrl:'',links:[],sourceText:'',imageNotes:'',questions:[]};currentStationIndex=lesson.stations.findIndex(s=>s.id===id);renderAll()}function deleteStation(){if(!lesson)return;const s=lesson.stations[currentStationIndex];if(!s)return;if(s.id==='starter'||s.id==='exit'){alert('Starter and Exit cannot be deleted.');return}if(!confirm('Delete this station?'))return;lesson.stations.splice(currentStationIndex,1);delete lesson.content[s.id];currentStationIndex=Math.max(0,currentStationIndex-1);renderAll()}function moveStation(dir){if(!lesson)return;const i=currentStationIndex,j=i+dir;if(j<0||j>=lesson.stations.length)return;if(lesson.stations[i].id==='exit'||lesson.stations[j].id==='exit'){alert('Exit Ticket must stay last.');return}saveStationToMemory(false);[lesson.stations[i],lesson.stations[j]]=[lesson.stations[j],lesson.stations[i]];currentStationIndex=j;renderAll()}
-function renderStationEditor(){if(!lesson||!lesson.stations[currentStationIndex]){byId('noStationMsg').classList.remove('hidden');byId('stationEditor').classList.add('hidden');return}byId('noStationMsg').classList.add('hidden');byId('stationEditor').classList.remove('hidden');const s=lesson.stations[currentStationIndex],c=lesson.content[s.id]||{};byId('stationTitle').value=s.title||'';byId('stationObjective').value=s.objective||'';byId('stationTime').value=s.time||'';byId('stationDetails').value=s.details||'';byId('imageUrl').value=c.imageUrl||'';byId('audioUrl').value=c.audioUrl||'';byId('videoUrl').value=c.videoUrl||'';byId('linksText').value=(c.links||[]).map(l=>(l.url||'')+' | '+(l.title||'')).join('\n');byId('sourceText').value=c.sourceText||'';renderMediaPreview();renderQuestions()}
-function saveStationToMemory(show=true){if(!lesson||!lesson.stations[currentStationIndex])return;const s=lesson.stations[currentStationIndex],c=lesson.content[s.id]||{};s.title=byId('stationTitle')?.value||s.title||'';s.objective=byId('stationObjective')?.value||'';s.time=byId('stationTime')?.value||'';s.details=byId('stationDetails')?.value||'';c.imageUrl=byId('imageUrl')?.value||'';c.audioUrl=byId('audioUrl')?.value||'';c.videoUrl=byId('videoUrl')?.value||'';c.sourceText=byId('sourceText')?.value||'';c.links=(byId('linksText')?.value||'').split('\n').map(line=>{const parts=line.split('|');return{url:(parts[0]||'').trim(),title:(parts[1]||parts[0]||'').trim()}}).filter(l=>l.url);c.questions=Array.isArray(c.questions)?c.questions:[];s.thumbnail=c.imageUrl||s.thumbnail||'';lesson.content[s.id]=c;if(show)notice('Station saved in memory. Click Save Lesson to store in Firebase.')}
-async function saveStation(){saveStationToMemory(false);await saveLesson();notice('✅ Station and lesson saved.')}function renderMediaPreview(){if(!lesson)return;const s=lesson.stations[currentStationIndex],c=lesson.content[s.id]||{};let html='';if(c.imageUrl)html+=`<img src="${esc(c.imageUrl)}">`;if(c.audioUrl)html+=`<audio controls src="${esc(c.audioUrl)}"></audio>`;if(c.videoUrl)html+=`<video controls src="${esc(c.videoUrl)}"></video>`;if(c.links&&c.links.length)html+='<div style="margin-top:8px">'+c.links.map(l=>`<div><a href="${esc(l.url)}" target="_blank">${esc(l.title||l.url)}</a></div>`).join('')+'</div>';byId('mediaPreview').innerHTML=html||'No media yet.'}
-async function uploadMedia(type){if(!lesson){alert('Open lesson first.');return}const s=lesson.stations[currentStationIndex];const inputId=type==='image'?'imageFile':type==='audio'?'audioFile':'videoFile';const urlId=type==='image'?'imageUrl':type==='audio'?'audioUrl':'videoUrl';const file=byId(inputId).files[0];if(!file)return;try{notice('Uploading '+type+'...','');const safeName=file.name.replace(/[^a-zA-Z0-9_.-]/g,'_');const ref=storage.ref('lesson_studio/'+currentLessonId+'/'+s.id+'/'+type+'/'+Date.now()+'_'+safeName);await ref.put(file);const url=await ref.getDownloadURL();byId(urlId).value=url;saveStationToMemory(false);renderMediaPreview();await saveLesson();notice('✅ '+type+' uploaded and saved.')}catch(e){alert('Upload failed: '+e.message)}}
-function toggleQuestionFields(){const t=byId('qType').value;byId('mcqFields').classList.toggle('hidden',t!=='mcq');byId('tfFields').classList.toggle('hidden',t!=='tf')}function addQuestion(){if(!lesson){alert('Open lesson first.');return}saveStationToMemory(false);const s=lesson.stations[currentStationIndex],c=lesson.content[s.id];const type=byId('qType').value,text=byId('qText').value.trim();if(!text){alert('Write the question.');return}let q={type,text};if(type==='mcq'){const options=byId('qOptions').value.split('\n').map(x=>x.trim()).filter(Boolean);if(options.length<2){alert('Add at least 2 options.');return}q.options=options;q.answer=byId('qCorrectText').value.trim();if(!q.answer){alert('Write correct answer.');return}}else if(type==='tf'){q.options=['True','False'];q.answer=byId('qTfCorrect').value}else{q.answer=''}c.questions.push(q);clearQuestionForm();renderQuestions();saveLesson()}function clearQuestionForm(){byId('qText').value='';byId('qOptions').value='';byId('qCorrectText').value='';byId('qTfCorrect').value='True'}function renderQuestions(){if(!lesson)return;const s=lesson.stations[currentStationIndex],qs=(lesson.content[s.id]?.questions)||[];byId('questionsList').innerHTML=qs.length?qs.map((q,i)=>`<div class="qCard"><b>Q${i+1}. ${esc(q.text)}</b><div class="mini">Type: ${esc(q.type)} ${q.answer?'• Answer: '+esc(q.answer):''}</div>${(q.options||[]).map(o=>`<div class="mini">• ${esc(o)}</div>`).join('')}<div class="btns"><button class="secondary" onclick="editQuestion(${i})">✏️ Edit</button><button class="red" onclick="deleteQuestion(${i})">🗑 Delete</button></div></div>`).join(''):'<div class="status">No questions yet.</div>'}function editQuestion(i){const s=lesson.stations[currentStationIndex],qs=lesson.content[s.id].questions,q=qs[i];if(!q)return;byId('qType').value=q.type||'mcq';toggleQuestionFields();byId('qText').value=q.text||'';if(q.type==='mcq'){byId('qOptions').value=(q.options||[]).join('\n');byId('qCorrectText').value=q.answer||''}if(q.type==='tf'){byId('qTfCorrect').value=q.answer||'True'}qs.splice(i,1);renderQuestions()}function deleteQuestion(i){const s=lesson.stations[currentStationIndex];lesson.content[s.id].questions.splice(i,1);renderQuestions();saveLesson()}
-async function openForTeaching(){if(!lesson){alert('Open or create a lesson first.');return}await saveLesson();await openLessonForTeaching(currentLessonId)}async function openLessonForTeaching(id){const snap=await db.ref(libraryPath(id)).once('value');if(!snap.exists()){alert('Lesson not found.');return}const l=snap.val();const liveKey=id;await db.ref(livePath(liveKey)+'/config').set(l.stations||[]);await db.ref(livePath(liveKey)+'/content').set(l.content||{});await db.ref(livePath(liveKey)+'/lessonMeta').set(l.lessonMeta||{});await db.ref(livePath(liveKey)+'/students').remove();await db.ref(livePath(liveKey)+'/bonus').remove();await db.ref(livePath(liveKey)+'/attendance').remove();localStorage.setItem('DL_lesson_key',liveKey);sessionStorage.setItem('dl_selected_lesson_id',id);notice('🚀 Lesson copied to live DL space.');alert('✅ Opened for teaching.\n\nNow go to DL Lesson page and choose this lesson.')}
-window.addEventListener('load',connectFirebase);
+
+async function loadLibrary(){
+  if(!db) return;
+
+  const snap = await db.ref(libraryPath()).once('value');
+  const data = snap.val() || {};
+
+  const list = Object.values(data)
+    .filter(function(item){ return item && item.id; })
+    .sort(function(a,b){
+      return Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0);
+    });
+
+  const box = byId('libraryList');
+
+  if(!list.length){
+    box.innerHTML = '<div class="status">No imported lessons yet.</div>';
+    return;
+  }
+
+  box.innerHTML = list.map(function(item){
+    const stations = Array.isArray(item.stations) ? item.stations : [];
+    const imported = item.importedFromOldKey ? '<span class="badge">Imported: ' + esc(item.importedFromOldKey) + '</span>' : '';
+    return `
+      <div class="lessonItem">
+        <h3>${esc(item.title || item.lessonMeta?.lessonTitle || item.id)}</h3>
+        <div class="mini">${esc(item.date || '')} • ${stations.length} stations</div>
+        ${imported}
+        <span class="badge">Saved in lessonLibrary</span>
+      </div>
+    `;
+  }).join('');
+}
+
+window.addEventListener('load', connectFirebase);
 </script>
 </body>
 </html>
