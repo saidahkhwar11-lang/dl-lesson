@@ -433,13 +433,35 @@ function getUpdatedText(record){
 }
 
 async function readPerformanceRecord(classId, studentId, keys){
-  for(const key of keys){
-    const snap = await db.ref(`teacherControlCenter/performance/${classId}/${studentId}/${key}`).get();
-    if(snap.exists()) return snap.val();
-  }
-  return null;
+  const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
+  if(!snap.exists()) return null;
+
+  const records = Object.values(snap.val() || {});
+
+  const matched = records.filter(r=>{
+    const type = String(r.activityType || "");
+    const name = String(r.activityName || "");
+    return keys.some(k => type.includes(k) || name.includes(k));
+  });
+
+  if(!matched.length) return null;
+
+  matched.sort((a,b)=>{
+    const ap = Number(a.score || 0) / Math.max(Number(a.total || 1),1);
+    const bp = Number(b.score || 0) / Math.max(Number(b.total || 1),1);
+    return bp - ap;
+  });
+
+  return matched[0];
 }
 
+  function isFullMark(record){
+  if(!record) return false;
+  const score = Number(record.score || 0);
+  const total = Number(record.total || 0);
+  return total > 0 && score >= total;
+}
+  
 async function readScheduledRecovery(session){
   const studentId = String(session.studentId || session.password || "").trim();
   const keys = [safeKey(session.className), session.classId].filter(Boolean);
@@ -490,9 +512,13 @@ async function loadStudentPerformanceWindow(session){
   const classId = session.classId;
   const studentId = String(session.studentId || session.password || "").trim();
 
-  const dl = await readPerformanceRecord(classId, studentId, ["DL_Lesson","DL Lesson","DL_Lesson_Total","Full_Lesson"]);
-  const skill = await readPerformanceRecord(classId, studentId, ["Skill_Clash","Skill Clash","SkillClash","Skill_Clash_Final"]);
-  const rush = await readPerformanceRecord(classId, studentId, ["Reading_Rush","Reading Rush","ReadingRush"]);
+  const dl = await readPerformanceRecord(classId, studentId, ["DL Lesson"]);
+const skill = await readPerformanceRecord(classId, studentId, ["Skill Clash"]);
+const rush = await readPerformanceRecord(classId, studentId, ["Reading Rush"]);
+
+  await autoCreateCertificateIfFull(dl, session, "DL Lesson");
+await autoCreateCertificateIfFull(skill, session, "Skill Clash");
+await autoCreateCertificateIfFull(rush, session, "Reading Rush");
 
   const rows = [
     {page:"DL Lesson", activity:getActivityName(dl,"DL Lesson"), mark:getScoreText(dl), updated:getUpdatedText(dl), record:dl},
@@ -526,6 +552,33 @@ async function loadStudentPerformanceWindow(session){
 
 function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
+}
+
+  async function autoCreateCertificateIfFull(record, session, page){
+  if(!record || !isFullMark(record)) return;
+
+  const certId = safeKey(page + "_" + (record.activityName || page));
+  const certPath =
+    `teacherControlCenter/certificates/${session.classId}/${session.studentId}/${certId}`;
+
+  const snap = await db.ref(certPath).get();
+  if(snap.exists()) return;
+
+  await db.ref(certPath).set({
+    certificateId: certId,
+    certificateTitle: "Certificate of Achievement",
+    source: page,
+    activityName: record.activityName || page,
+    studentId: session.studentId,
+    studentName: session.name,
+    classId: session.classId,
+    className: session.className,
+    score: Number(record.score || 0),
+    total: Number(record.total || 0),
+    reason: "Full mark achieved in " + (record.activityName || page),
+    issuedAt: Date.now(),
+    date: new Date().toLocaleDateString("en-GB")
+  });
 }
 
 function certificateDateText(c){
