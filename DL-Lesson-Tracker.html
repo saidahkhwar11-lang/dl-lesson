@@ -4920,8 +4920,8 @@ body{
     const st = students[sid] || {};
     const total = Number(st.total || 0);
 
-    if(total >= lessonMax){
-
+   if(total > 0){
+  
       await saveDLPerformanceToTeacherControl({
         studentId: sid,
         studentName: st.name || sid,
