@@ -260,9 +260,11 @@ function normalizeContent(stations, rawContent){
 
   stations.forEach(function(st){
     const old = rawContent[st.id] || {};
+    
+    st.thumbnail = '';
 
     content[st.id] = {
-      imageUrl: old.imageUrl || '',
+      imageUrl: '',
       audioUrl: old.audioUrl || '',
       videoUrl: old.videoUrl || '',
       sourceText: old.sourceText || '',
