@@ -2015,50 +2015,6 @@ async function findTeacherControlStudent(studentId){
   }
   return null;
 }
-
-  async function showStudentPerformanceFromTeacherTracker(){
-  const box = byId('studentPerformanceReport');
-  if(!box){
-    alert('Student performance report box not found.');
-    return;
-  }
-
-  const types = ['DL Lesson', 'Reading Rush', 'Skill Clash'];
-  let html = '<h3>📊 My Performance Report</h3>';
-  html += '<table class="tracker-table"><tr><th>Activity</th><th>Mark</th><th>Status</th></tr>';
-
-  for(const type of types){
-    const r = await getStudentBestRecordByType(type);
-
-    html += '<tr>';
-    html += '<td>' + type + '</td>';
-
-    if(r){
-      html += '<td>' + Number(r.score || 0) + ' / ' + Number(r.total || 0) + '</td>';
-      html += '<td>✅ Saved</td>';
-
-      if(Number(r.score || 0) >= Number(r.total || 0) && Number(r.total || 0) > 0){
-        await saveDLCertificateToSecureHub({
-          certificateType: 'Certificate of Achievement',
-          reason: 'Full mark achieved in ' + type,
-          activityName: r.activityName || type,
-          score: r.score,
-          total: r.total
-        });
-      }
-
-    }else{
-      html += '<td>Missing</td>';
-      html += '<td>❌ Not saved yet</td>';
-    }
-
-    html += '</tr>';
-  }
-
-  html += '</table>';
-  box.innerHTML = html;
-}
-  
 async function saveDLPerformanceToTeacherControl(record){
   try{
     if(!db) return;
@@ -2156,59 +2112,11 @@ async function saveDLCertificateToSecureHub(options){
       certificateId
     ).set(cert);
 
-        await dbRef(
-      'teacherControlCenter/studentPerformance/' +
-      classId + '/' +
-      studentKey + '/DL Lesson'
-    ).set({
-      classId: classId,
-      studentId: studentKey,
-      studentName: studentName,
-      activityName: record.activityName || 'DL Lesson',
-      activityType: record.activityType || 'DL Lesson',
-      score: Number(record.score || 0),
-      total: Number(record.total || 0),
-      notes: record.notes || '',
-      sourceLessonKey: lessonKey || '',
-      sourceStudentId: sid,
-      status: 'Saved',
-      date: record.date || tcToday(),
-      time: Date.now()
-    });
-
   }catch(err){
     console.warn('DL certificate save skipped:', err);
   }
 }
 
-  
-  async function getStudentBestRecordByType(activityType){
-  if(!db || !currentStudent || !currentStudent.id) return null;
-
-  const sid = tcCleanKey(currentStudent.id);
-  const found = await findTeacherControlStudent(sid);
-
-  const classId = tcCleanKey((found && found.classId) || 'unknown_class');
-  const studentKey = tcCleanKey((found && found.studentKey) || sid);
-
-  const snap = await dbRef(
-    'teacherControlCenter/records/' + classId + '/' + studentKey
-  ).once('value');
-
-  const records = Object.values(snap.val() || {});
-
-  const matched = records.filter(function(r){
-    return r.activityType === activityType;
-  });
-
-  if(!matched.length) return null;
-
-  matched.sort(function(a,b){
-    return Number(b.score || 0) - Number(a.score || 0);
-  });
-
-  return matched[0];
-}
 
 function getStationById(id){
   return lessonStations.find(function(s){ return s.id === id; });
@@ -2694,8 +2602,6 @@ window.startStudentSession = async function(){
     renderStudentNav();
     listenStudentLive();
     updateStudentProgress();
-
-    showStudentPerformanceFromTeacherTracker();
 
     const displayedStation = lessonStations.find(function(s){
       return s.displayed;
@@ -4867,6 +4773,126 @@ body{
   win.document.close();
 };
 
+  window.downloadProgressCertificate = async function(){
+
+  if(!await hasCompletedAllOpenedStations()){
+    alert("Please finish all stations first.");
+    return;
+  }
+
+  const student = await getFreshCurrentStudentData();
+
+  const studentName = currentStudent && currentStudent.name ? currentStudent.name : 'Student Name';
+  const totalMark = Number(student.total || 0);
+  const lessonTitleText = lessonMeta.lessonTitle || 'English Lesson';
+
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Progress Certificate</title>
+<style>
+body{
+  margin:0;
+  font-family:Georgia, 'Times New Roman', serif;
+  background:#eef3f8;
+  color:#10294a;
+}
+.certificate{
+  width:1100px;
+  height:780px;
+  margin:20px auto;
+  background:linear-gradient(135deg,#ffffff,#f5fbff);
+  border:8px double #5b6fb5;
+  padding:40px;
+  text-align:center;
+}
+.title{
+  font-size:52px;
+  font-weight:bold;
+  margin-top:40px;
+}
+.name{
+  font-size:50px;
+  margin:35px auto;
+  border-bottom:2px solid #5b6fb5;
+  display:inline-block;
+  padding:0 60px 8px;
+}
+.message{
+  font-size:24px;
+  line-height:1.6;
+  margin-top:20px;
+}
+.mark{
+  font-size:34px;
+  color:#1f8f5f;
+  margin-top:28px;
+  font-weight:bold;
+}
+.print-btn{
+  text-align:center;
+  margin:18px;
+}
+.print-btn button{
+  background:#1f3f6d;
+  color:white;
+  border:0;
+  border-radius:10px;
+  padding:10px 18px;
+  font-weight:bold;
+}
+@media print{
+  .print-btn{display:none;}
+  body{background:white;}
+}
+</style>
+</head>
+<body>
+
+<div class="print-btn">
+  <button onclick="window.print()">Print / Save as PDF</button>
+</div>
+
+<div class="certificate">
+  <div class="title">CERTIFICATE OF PROGRESS</div>
+
+<div class="name">${escapeHtml(studentName)}</div>
+
+<div class="rank-text">${rankText}</div>
+  <div class="message">
+    Great effort! You completed all lesson stations successfully.<br>
+    Keep learning, keep improving, and be proud of your progress.
+  </div>
+
+  <div class="mark">
+    Total Mark: ${escapeHtml(totalMark)}
+  </div>
+
+  <div class="message" style="font-size:20px;margin-top:50px;">
+    English Language Lesson<br>
+    Teacher: Ms. Saidah Khwar
+  </div>
+</div>
+
+</body>
+</html>
+`;
+
+  const win = window.open('', '_blank');
+
+  if(!win){
+    alert('Popup blocked. Please allow popups.');
+    return;
+  }
+
+  win.document.open();
+  win.document.write(html);
+  win.document.close();
+};
+
+
 window.submitCurrentStation = async function(stationId){
 
   if(!currentStudent) return;
@@ -4957,19 +4983,6 @@ window.submitCurrentStation = async function(stationId){
 
   const stationObjForPerformance = (typeof getStationById === 'function') ? getStationById(stationId) : null;
   await saveDLPerformanceToTeacherControl({
-    const lessonMax = getLessonMaxMark();
-
-if(total >= lessonMax){
-
-  await saveDLCertificateToSecureHub({
-    certificateType: 'Certificate of Achievement',
-    reason: 'Completed all lesson stations successfully.',
-    activityName: lessonMeta.lessonTitle || 'DL Lesson',
-    score: total,
-    total: lessonMax
-  });
-
-}
     studentId: currentStudent.id,
     studentName: currentStudent.name,
     stationId: stationId,
