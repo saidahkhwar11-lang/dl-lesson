@@ -6934,84 +6934,51 @@ async function importOldLessonKeyToLibrary(){
   loadLessonLibrary();
   loadHomeLessonList();
 }
-async function loadHomeLessonList(){
 
-  if(!db){
-    initFirebaseFromInputs();
-  }
-
-  if(!requireConnection()) return;
-
-  const studentSelect = byId('studentLessonSelect');
-  const teacherSelect = byId('teacherLessonSelect');
-
-  if(studentSelect){
-    studentSelect.innerHTML =
-      '<option value="">Loading lessons...</option>';
-  }
-
-  if(teacherSelect){
-    teacherSelect.innerHTML =
-      '<option value="">Loading lessons...</option>';
-  }
-
-const snap = await dbRef(lessonLibraryPath()).once('value');
-  const lessons = snap.val() || {};
-
-  const list = Object.values(lessons).filter(function(l){
-    return l && l.visible === true;
-  });
-
-  if(!list.length){
-
-    const emptyHtml =
-      '<option value="">No available lessons</option>';
-
-    if(studentSelect){
-      studentSelect.innerHTML = emptyHtml;
+  async function loadHomeLessonList(){
+  try{
+    if(!db){
+      initFirebaseFromInputs();
     }
 
-    if(teacherSelect){
-      teacherSelect.innerHTML = emptyHtml;
+    const studentSelect = byId('studentLessonSelect');
+    const teacherSelect = byId('teacherLessonSelect');
+
+    if(studentSelect) studentSelect.innerHTML = '<option value="">Loading lessons...</option>';
+    if(teacherSelect) teacherSelect.innerHTML = '<option value="">Loading lessons...</option>';
+
+    const libPath = typeof lessonLibraryPath === 'function'
+      ? lessonLibraryPath()
+      : 'lessonLibrary';
+
+    const snap = await dbRef(libPath).once('value');
+    const lessons = snap.val() || {};
+
+    const list = Object.values(lessons).filter(l => l && l.visible !== false);
+
+    if(!list.length){
+      if(studentSelect) studentSelect.innerHTML = '<option value="">No available lessons</option>';
+      if(teacherSelect) teacherSelect.innerHTML = '<option value="">No available lessons</option>';
+      return;
     }
 
-    return;
-  }
-
-  const studentHtml =
-    '<option value="">Choose a lesson</option>' +
-    list
-
-    const studentHtml =
-  '<option value="">Choose a lesson</option>' +
-  list.map(function(l){
-    return '<option value="' + escapeHtml(l.id) + '">' +
-      escapeHtml(l.title || 'Untitled Lesson') +
-    '</option>';
-  }).join('');
-  
-      .map(function(l){
+    const html =
+      '<option value="">Choose a lesson</option>' +
+      list.map(function(l){
         return '<option value="' + escapeHtml(l.id) + '">' +
           escapeHtml(l.title || 'Untitled Lesson') +
         '</option>';
       }).join('');
 
-  const teacherHtml =
-    '<option value="">Choose a lesson</option>' +
-    list.map(function(l){
-      return '<option value="' + escapeHtml(l.id) + '">' +
-        escapeHtml(l.title || 'Untitled Lesson') +
-      '</option>';
-    }).join('');
+    if(studentSelect) studentSelect.innerHTML = html;
+    if(teacherSelect) teacherSelect.innerHTML = html;
 
-  if(studentSelect){
-    studentSelect.innerHTML = studentHtml;
-  }
-
-  if(teacherSelect){
-    teacherSelect.innerHTML = teacherHtml;
+  }catch(e){
+    console.error('loadHomeLessonList error:', e);
+    alert('Lesson list error: ' + e.message);
   }
 }
+      
 async function loadLessonLibrary(){
   if(!db){
     alert('Firebase is not connected. Click Save Config first.');
