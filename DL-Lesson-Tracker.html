@@ -2543,21 +2543,29 @@ window.startStudentSession = async function(){
     studentQuestionStage = 0;
     studentStageAnswers = {};
 
-    const studentName = 'Student ' + id;
+    const secureStudent =
+  JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
 
-    hideNotice('studentNotice');
+const studentName =
+  (secureStudent && secureStudent.name)
+    ? secureStudent.name
+    : ('Student ' + id);
 
-    currentStudent = {
-      name: studentName,
-      id: id,
-      selectedLessonId: selectedLessonId
-    };
+hideNotice('studentNotice');
 
-    sessionStorage.setItem('dl_role', 'student');
-    sessionStorage.setItem('dl_student_name', studentName);
-    sessionStorage.setItem('dl_student_id', id);
-    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
+currentStudent = {
+  name: studentName,
+  id: id,
+  classId: secureStudent?.classId || '',
+  className: secureStudent?.className || '',
+  selectedLessonId: selectedLessonId
+};
 
+sessionStorage.setItem('dl_role', 'student');
+sessionStorage.setItem('dl_student_name', studentName);
+sessionStorage.setItem('dl_student_id', id);
+sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
+    
     const initial = {
       name: studentName,
       id: id,
