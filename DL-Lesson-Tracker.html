@@ -2112,6 +2112,26 @@ async function saveDLCertificateToSecureHub(options){
       certificateId
     ).set(cert);
 
+        await dbRef(
+      'teacherControlCenter/studentPerformance/' +
+      classId + '/' +
+      studentKey + '/DL Lesson'
+    ).set({
+      classId: classId,
+      studentId: studentKey,
+      studentName: studentName,
+      activityName: record.activityName || 'DL Lesson',
+      activityType: record.activityType || 'DL Lesson',
+      score: Number(record.score || 0),
+      total: Number(record.total || 0),
+      notes: record.notes || '',
+      sourceLessonKey: lessonKey || '',
+      sourceStudentId: sid,
+      status: 'Saved',
+      date: record.date || tcToday(),
+      time: Date.now()
+    });
+
   }catch(err){
     console.warn('DL certificate save skipped:', err);
   }
