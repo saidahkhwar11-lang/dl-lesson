@@ -623,9 +623,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   <option value="">Loading lessons...</option>
 </select>
 
-<button type="button" class="secondary" onclick="loadHomeLessonList()">
-  🔄 Refresh Lessons
-</button>
     <button id="studentStartBtn" onclick="startStudentSession()">
       Start Student Session
     </button>
@@ -685,10 +682,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <select id="teacherLessonSelect">
   <option value="">Loading lessons...</option>
 </select>
-
-<button type="button" class="secondary" onclick="loadHomeLessonList()">
-  🔄 Refresh Lessons
-</button>
 
 <button id="teacherOpenBtn" onclick="openTeacherView()">
   Open Teacher View
@@ -6962,8 +6955,7 @@ async function loadHomeLessonList(){
       '<option value="">Loading lessons...</option>';
   }
 
-  const snap = await dbRef('lessonLibrary').once('value');
-
+const snap = await dbRef(lessonLibraryPath()).once('value');
   const lessons = snap.val() || {};
 
   const list = Object.values(lessons).filter(function(l){
@@ -6989,9 +6981,15 @@ async function loadHomeLessonList(){
   const studentHtml =
     '<option value="">Choose a lesson</option>' +
     list
-      .filter(function(l){
-        return l.locked !== true;
-      })
+
+    const studentHtml =
+  '<option value="">Choose a lesson</option>' +
+  list.map(function(l){
+    return '<option value="' + escapeHtml(l.id) + '">' +
+      escapeHtml(l.title || 'Untitled Lesson') +
+    '</option>';
+  }).join('');
+  
       .map(function(l){
         return '<option value="' + escapeHtml(l.id) + '">' +
           escapeHtml(l.title || 'Untitled Lesson') +
@@ -7885,6 +7883,18 @@ window.importOldLessonKeyToLibrary = async function(){
     alert('Import old lesson failed: ' + (err && err.message ? err.message : err));
   }
 };
+
+   window.addEventListener('load', function(){
+
+  setTimeout(function(){
+
+    if(typeof loadHomeLessonList === 'function'){
+      loadHomeLessonList();
+    }
+
+  }, 500);
+
+});
 
 </script>
 </body>
