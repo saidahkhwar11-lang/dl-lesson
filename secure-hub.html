@@ -513,50 +513,68 @@ async function loadStudentPerformanceWindow(session){
   const classId = session.classId;
   const studentId = String(session.studentId || session.password || "").trim();
 
-const dl = await readPerformanceRecord(classId, studentId, [
-  "Final DL lesson mark",
-  "DL Lesson Total",
-  "Full Lesson",
-  "Final"
-]);
-  
-  const skill = await readPerformanceRecord(classId, studentId, ["Skill Clash"]);
-const rush = await readPerformanceRecord(classId, studentId, ["Reading Rush"]);
+  const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
+  const records = snap.exists() ? Object.values(snap.val() || {}) : [];
 
-  await autoCreateCertificateIfFull(dl, session, "DL Lesson");
-await autoCreateCertificateIfFull(skill, session, "Skill Clash");
-await autoCreateCertificateIfFull(rush, session, "Reading Rush");
+  const rows = records
+    .filter(r=>{
+      const type = String(r.activityType || "");
+      const notes = String(r.notes || "");
+      return (
+        notes.includes("Final DL lesson mark") ||
+        type.includes("Skill Clash") ||
+        type.includes("Reading Rush")
+      );
+    })
+    .map(r=>{
+      let page = "Activity";
+      if(String(r.notes || "").includes("Final DL lesson mark")) page = "DL Lesson";
+      else if(String(r.activityType || "").includes("Skill Clash")) page = "Skill Clash";
+      else if(String(r.activityType || "").includes("Reading Rush")) page = "Reading Rush";
 
-  const rows = [
-    {page:"DL Lesson", activity:getActivityName(dl,"DL Lesson"), mark:getScoreText(dl), updated:getUpdatedText(dl), record:dl},
-    {page:"Skill Clash", activity:getActivityName(skill,"Skill Clash"), mark:getScoreText(skill), updated:getUpdatedText(skill), record:skill},
-    {page:"Reading Rush", activity:getActivityName(rush,"Reading Rush"), mark:getScoreText(rush), updated:getUpdatedText(rush), record:rush}
-  ];
+      return {
+        page: page,
+        activity: getActivityName(r, page),
+        mark: getScoreText(r),
+        updated: getUpdatedText(r),
+        record: r
+      };
+    })
+    .sort((a,b)=> Number(b.record.time || 0) - Number(a.record.time || 0));
+
+  for(const row of rows){
+    if(row.record){
+      await autoCreateCertificateIfFull(row.record, session, row.page);
+    }
+  }
 
   const recovery = await readScheduledRecovery(session);
 
-  byId("studentReportTable").innerHTML = renderReportTable(rows);
+  byId("studentReportTable").innerHTML = rows.length
+    ? renderReportTable(rows)
+    : `<div class="actionItem">⚠️ No saved marks found yet.</div>`;
 
   const actions = [];
-  rows.forEach(r=>{
-    if(!r.record) actions.push(`⚠️ Missing mark in ${r.page}. Please complete or ask the teacher to check it.`);
-  });
+
+  if(!rows.length){
+    actions.push("⚠️ No marks saved yet. Complete an activity first.");
+  }
+
   recovery.forEach(a=>{
     actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`);
   });
 
   if(actions.length){
     byId("studentAutoMessage").innerHTML =
-      `Dear ${esc(session.name)}, you still have a few things to complete. Finish the needed actions below so your tracker becomes complete. 🌟`;
+      `Dear ${esc(session.name)}, check the needed actions below to complete your tracker. 🌟`;
     byId("studentNeededActions").innerHTML = actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
   }else{
     byId("studentAutoMessage").innerHTML =
-      `Excellent work, ${esc(session.name)}! Your current learning record looks complete. Keep going — your effort is clear and you should be proud of your progress. 🌟`;
+      `Excellent work, ${esc(session.name)}! Your saved activity marks are listed below. 🌟`;
     byId("studentNeededActions").innerHTML =
-      `<div class="actionItem good">✅ No missing marks or recovery assignments found.</div>`;
+      `<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
   }
 }
-
 function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
 }
