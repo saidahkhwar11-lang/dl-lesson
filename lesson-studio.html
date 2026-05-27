@@ -286,89 +286,57 @@ function normalizeContent(stations, rawContent){
 
 async function importOldLesson(){
   if(!db){
-    alert('Firebase is not connected yet.');
+    alert('Firebase is not connected.');
     return;
   }
 
   const oldKey = byId('oldLessonKey').value.trim();
   if(!oldKey){
-    alert('Paste the old lesson key first.');
+    alert('Paste old lesson key first.');
     return;
   }
 
-  showImportStatus('⏳ Searching old lesson...', '');
+  showImportStatus('⏳ Checking: lessons/' + oldKey, '');
 
-  const possiblePaths = [
-    'lessons/' + oldKey,
-    'lessonLibrary/' + oldKey,
-    oldKey
-  ];
+  try{
+    const configSnap = await db.ref('lessons/' + oldKey + '/config').once('value');
+    const contentSnap = await db.ref('lessons/' + oldKey + '/content').once('value');
+    const metaSnap = await db.ref('lessons/' + oldKey + '/lessonMeta').once('value');
 
-  let found = null;
-  let foundPath = '';
+    const stations = configSnap.val();
+    const content = contentSnap.val() || {};
+    const meta = metaSnap.val() || {};
 
-  for(const path of possiblePaths){
-    const snap = await db.ref(path).once('value');
-    if(snap.exists()){
-      found = snap.val();
-      foundPath = path;
-      break;
+    if(!stations){
+      showImportStatus('❌ No lesson found at: lessons/' + oldKey + '/config', 'bad');
+      return;
     }
+
+    const title = meta.lessonTitle || oldKey;
+    const lessonId = safeKey(title + '_imported_' + Date.now());
+
+    await db.ref('lessonLibrary/' + lessonId).set({
+      id: lessonId,
+      title: title,
+      date: new Date().toLocaleDateString('en-GB'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      visible: true,
+      locked: false,
+      importedOnly: true,
+      importedFromOldKey: oldKey,
+      lessonMeta: meta,
+      stations: stations,
+      content: content
+    });
+
+    showImportStatus('✅ Imported successfully: ' + title, 'good');
+    byId('oldLessonKey').value = '';
+    await loadLibrary();
+
+  }catch(err){
+    showImportStatus('❌ Import error: ' + err.message, 'bad');
   }
-
-  if(!found){
-    showImportStatus('❌ Lesson key not found anywhere: ' + oldKey, 'bad');
-    return;
-  }
-
-  const stations =
-    found.config ||
-    found.stations ||
-    [];
-
-  const content =
-    found.content ||
-    {};
-
-  const meta =
-    found.lessonMeta ||
-    {};
-
-  if(!stations || !Object.keys(stations).length){
-    showImportStatus('❌ Lesson found, but no stations/config found.', 'bad');
-    return;
-  }
-
-  const stationArray = Array.isArray(stations)
-    ? stations
-    : Object.keys(stations).map(k => ({ id:k, ...stations[k] }));
-
-  const title = meta.lessonTitle || found.title || oldKey;
-  const lessonId = safeKey(title + '_imported_' + Date.now());
-
-  await db.ref('lessonLibrary/' + lessonId).set({
-    id: lessonId,
-    title: title,
-    date: new Date().toLocaleDateString('en-GB'),
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    visible: true,
-    locked: false,
-    importedOnly: true,
-    importedFromOldKey: oldKey,
-    importedFromPath: foundPath,
-    lessonMeta: {
-      lessonTitle: title,
-      lessonObjectives: meta.lessonObjectives || '',
-      lessonKeywords: meta.lessonKeywords || ''
-    },
-    stations: stationArray,
-    content: content
-  });
-
-  showImportStatus('✅ Imported successfully from: ' + foundPath, 'good');
-  byId('oldLessonKey').value = '';
-  loadLibrary();
 }
 
 async function loadLibrary(){
