@@ -4993,6 +4993,21 @@ window.submitCurrentStation = async function(stationId){
     notes: 'Submitted DL lesson station'
   });
 
+   const lessonMax = getLessonMaxMark();
+
+if(total >= lessonMax){
+  await saveDLPerformanceToTeacherControl({
+    studentId: currentStudent.id,
+    studentName: currentStudent.name,
+    stationId: 'final_total',
+    activityType: 'DL Lesson',
+    activityName: lessonMeta.lessonTitle || 'DL Lesson',
+    score: total,
+    total: lessonMax,
+    notes: 'Final DL lesson mark'
+  });
+}
+  
   if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
   liveStudents[currentStudent.id].scores = nextScores;
   liveStudents[currentStudent.id].stationResults = nextResults;
@@ -5004,6 +5019,7 @@ window.submitCurrentStation = async function(stationId){
   updateStudentProgress();
   openStation(stationId);
 };
+  
 function listenStudentLive(){
   if(studentBonusRef) studentBonusRef.off();
   if(studentSelfRef) studentSelfRef.off();
