@@ -2015,6 +2015,50 @@ async function findTeacherControlStudent(studentId){
   }
   return null;
 }
+
+  async function showStudentPerformanceFromTeacherTracker(){
+  const box = byId('studentPerformanceReport');
+  if(!box){
+    alert('Student performance report box not found.');
+    return;
+  }
+
+  const types = ['DL Lesson', 'Reading Rush', 'Skill Clash'];
+  let html = '<h3>📊 My Performance Report</h3>';
+  html += '<table class="tracker-table"><tr><th>Activity</th><th>Mark</th><th>Status</th></tr>';
+
+  for(const type of types){
+    const r = await getStudentBestRecordByType(type);
+
+    html += '<tr>';
+    html += '<td>' + type + '</td>';
+
+    if(r){
+      html += '<td>' + Number(r.score || 0) + ' / ' + Number(r.total || 0) + '</td>';
+      html += '<td>✅ Saved</td>';
+
+      if(Number(r.score || 0) >= Number(r.total || 0) && Number(r.total || 0) > 0){
+        await saveDLCertificateToSecureHub({
+          certificateType: 'Certificate of Achievement',
+          reason: 'Full mark achieved in ' + type,
+          activityName: r.activityName || type,
+          score: r.score,
+          total: r.total
+        });
+      }
+
+    }else{
+      html += '<td>Missing</td>';
+      html += '<td>❌ Not saved yet</td>';
+    }
+
+    html += '</tr>';
+  }
+
+  html += '</table>';
+  box.innerHTML = html;
+}
+  
 async function saveDLPerformanceToTeacherControl(record){
   try{
     if(!db) return;
@@ -2137,6 +2181,34 @@ async function saveDLCertificateToSecureHub(options){
   }
 }
 
+  
+  async function getStudentBestRecordByType(activityType){
+  if(!db || !currentStudent || !currentStudent.id) return null;
+
+  const sid = tcCleanKey(currentStudent.id);
+  const found = await findTeacherControlStudent(sid);
+
+  const classId = tcCleanKey((found && found.classId) || 'unknown_class');
+  const studentKey = tcCleanKey((found && found.studentKey) || sid);
+
+  const snap = await dbRef(
+    'teacherControlCenter/records/' + classId + '/' + studentKey
+  ).once('value');
+
+  const records = Object.values(snap.val() || {});
+
+  const matched = records.filter(function(r){
+    return r.activityType === activityType;
+  });
+
+  if(!matched.length) return null;
+
+  matched.sort(function(a,b){
+    return Number(b.score || 0) - Number(a.score || 0);
+  });
+
+  return matched[0];
+}
 
 function getStationById(id){
   return lessonStations.find(function(s){ return s.id === id; });
@@ -2622,6 +2694,8 @@ window.startStudentSession = async function(){
     renderStudentNav();
     listenStudentLive();
     updateStudentProgress();
+
+    showStudentPerformanceFromTeacherTracker();
 
     const displayedStation = lessonStations.find(function(s){
       return s.displayed;
