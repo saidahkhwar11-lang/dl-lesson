@@ -4896,6 +4896,49 @@ body{
   win.document.close();
 };
 
+  async function syncFinalDLMarks(){
+
+  if(!db){
+    alert('Firebase not connected.');
+    return;
+  }
+
+  const snap = await dbRef(lessonBase() + '/students').once('value');
+
+  if(!snap.exists()){
+    alert('No students found.');
+    return;
+  }
+
+  const students = snap.val() || {};
+  const lessonMax = getLessonMaxMark();
+
+  let count = 0;
+
+  for(const sid in students){
+
+    const st = students[sid] || {};
+    const total = Number(st.total || 0);
+
+    if(total >= lessonMax){
+
+      await saveDLPerformanceToTeacherControl({
+        studentId: sid,
+        studentName: st.name || sid,
+        stationId: 'final_total',
+        activityType: 'DL Lesson',
+        activityName: lessonMeta.lessonTitle || 'DL Lesson',
+        score: total,
+        total: lessonMax,
+        notes: 'Final DL lesson mark'
+      });
+
+      count++;
+    }
+  }
+
+  alert('✅ Synced final marks for ' + count + ' completed students.');
+}
 
 window.submitCurrentStation = async function(stationId){
 
