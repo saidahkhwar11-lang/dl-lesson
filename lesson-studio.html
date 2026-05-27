@@ -177,7 +177,7 @@ button.secondary{background:#ecf1ff;color:#2d4380;border:1px solid #cbd7ff;box-s
     <label>Old Lesson Key</label>
     <input id="oldLessonKey" placeholder="Example: DL_Lesson or dreams_unit5">
 
-    <button class="orange" onclick="importOldLesson()">📥 Import Old Lesson Key</button>
+    <button class="orange" onclick="()">📥 Import Old Lesson Key</button>
 
     <div id="importStatus" class="status hidden"></div>
   </div>
@@ -291,78 +291,84 @@ async function importOldLesson(){
   }
 
   const oldKey = byId('oldLessonKey').value.trim();
-
   if(!oldKey){
     alert('Paste the old lesson key first.');
     return;
   }
 
-  if(!confirm('Import this old lesson key?\n\n' + oldKey)){
+  showImportStatus('⏳ Searching old lesson...', '');
+
+  const possiblePaths = [
+    'lessons/' + oldKey,
+    'lessonLibrary/' + oldKey,
+    oldKey
+  ];
+
+  let found = null;
+  let foundPath = '';
+
+  for(const path of possiblePaths){
+    const snap = await db.ref(path).once('value');
+    if(snap.exists()){
+      found = snap.val();
+      foundPath = path;
+      break;
+    }
+  }
+
+  if(!found){
+    showImportStatus('❌ Lesson key not found anywhere: ' + oldKey, 'bad');
     return;
   }
 
-  showImportStatus('⏳ Importing lesson. Please wait...', '');
+  const stations =
+    found.config ||
+    found.stations ||
+    [];
 
-  try{
-    const configSnap = await db.ref('lessons/' + oldKey + '/config').once('value');
-    const contentSnap = await db.ref('lessons/' + oldKey + '/content').once('value');
-    const metaSnap = await db.ref('lessons/' + oldKey + '/lessonMeta').once('value');
+  const content =
+    found.content ||
+    {};
 
-    const rawStations = configSnap.val();
-    const rawContent = contentSnap.val() || {};
-    const oldMeta = metaSnap.val() || {};
+  const meta =
+    found.lessonMeta ||
+    {};
 
-    if(!rawStations){
-      showImportStatus('❌ No station config found for this old lesson key: <b>' + esc(oldKey) + '</b>', 'bad');
-      return;
-    }
-
-    const stations = normalizeStations(rawStations);
-
-    if(!stations.length){
-      showImportStatus('❌ Stations were found, but the station format could not be imported.', 'bad');
-      return;
-    }
-
-    const content = normalizeContent(stations, rawContent);
-    const title = oldMeta.lessonTitle || oldKey;
-    const lessonId = safeKey(title + '_imported_' + Date.now());
-
-    const importedLesson = {
-      id: lessonId,
-      title: title,
-      date: new Date().toLocaleDateString('en-GB'),
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      visible: true,
-      locked: false,
-      importedOnly: true,
-      importedFromOldKey: oldKey,
-      lessonMeta: {
-        lessonTitle: title,
-        lessonObjectives: oldMeta.lessonObjectives || '',
-        lessonKeywords: oldMeta.lessonKeywords || ''
-      },
-      stations: stations,
-      content: content
-    };
-
-    await db.ref(libraryPath(lessonId)).set(clone(importedLesson));
-
-    byId('oldLessonKey').value = '';
-
-    showImportStatus(
-      '✅ Imported successfully: <b>' + esc(title) + '</b><br>' +
-      '<span class="mini">' + stations.length + ' stations copied to lessonLibrary.</span>',
-      'good'
-    );
-
-    await loadLibrary();
-
-  }catch(err){
-    console.error(err);
-    showImportStatus('❌ Import failed: ' + esc(err.message || err), 'bad');
+  if(!stations || !Object.keys(stations).length){
+    showImportStatus('❌ Lesson found, but no stations/config found.', 'bad');
+    return;
   }
+
+  const stationArray = Array.isArray(stations)
+    ? stations
+    : Object.keys(stations).map(k => ({ id:k, ...stations[k] }));
+
+  const title = meta.lessonTitle || found.title || oldKey;
+  const lessonId = safeKey(title + '_imported_' + Date.now());
+
+  await db.ref('lessonLibrary/' + lessonId).set({
+    id: lessonId,
+    title: title,
+    date: new Date().toLocaleDateString('en-GB'),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    visible: true,
+    locked: false,
+    importedOnly: true,
+    importedFromOldKey: oldKey,
+    importedFromPath: foundPath,
+    lessonMeta: {
+      lessonTitle: title,
+      lessonObjectives: meta.lessonObjectives || '',
+      lessonKeywords: meta.lessonKeywords || ''
+    },
+    stations: stationArray,
+    content: content
+  });
+
+  showImportStatus('✅ Imported successfully from: ' + foundPath, 'good');
+  byId('oldLessonKey').value = '';
+  loadLibrary();
 }
 
 async function loadLibrary(){
