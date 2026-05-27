@@ -6838,8 +6838,11 @@ async function saveCurrentLessonToLibrary(){
   sessionStorage.getItem('dl_selected_lesson_id') ||
   sanitizeKey((byId('lessonTitleInput')?.value || lessonKey || 'Saved Lesson') + '_' + Date.now());
 
-const activeLessonKey = lessonKey;
+lessonKey = libraryId;
+localStorage.setItem('DL_lesson_key', lessonKey);
 
+const activeLessonKey = lessonKey;
+  
 if(!activeLessonKey){
   alert('No active lesson key found.');
   return;
