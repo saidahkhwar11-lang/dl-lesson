@@ -690,10 +690,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   🔄 Refresh Lessons
 </button>
 
-<button type="button" class="goodbtn" onclick="createNewBlankLesson()">
-  ➕ Create New Blank Lesson
-</button>
-
 <button id="teacherOpenBtn" onclick="openTeacherView()">
   Open Teacher View
 </button>
@@ -7393,16 +7389,16 @@ window.createNewBlankLesson = async function(){
 
     if(!requireConnection()) return;
 
-    const teacherViewIsOpen =
-      byId('teacherView') && !byId('teacherView').classList.contains('hidden');
+  const teacherViewIsOpen =
+  byId('teacherView') && !byId('teacherView').classList.contains('hidden');
 
-    const teacherPasswordBox = byId('teacherPassword');
+const teacherPasswordBox = byId('teacherPassword');
 
-    if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEACHER_PASSWORD){
-      alert('Please enter the teacher password first, then click Create New Blank Lesson.');
-      teacherPasswordBox.focus();
-      return;
-    }
+if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEACHER_PASSWORD){
+  alert('Please enter the teacher password first, then click Create New Blank Lesson.');
+  teacherPasswordBox.focus();
+  return;
+}
 
     const suggestedTitle = 'New Lesson ' + new Date().toLocaleDateString('en-GB');
     const titleInput = prompt('Enter a title for the new blank lesson:', suggestedTitle);
