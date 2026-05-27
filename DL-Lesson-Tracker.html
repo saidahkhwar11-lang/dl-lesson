@@ -7231,6 +7231,671 @@ async function openStudentSavedLesson(lessonId){
   alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 }
      
-    </script>
+    
+/* =========================================================
+   FINAL STABLE LESSON LIBRARY FIX - 2026-05-27
+   Fixes:
+   1) New lesson creation
+   2) Save Station saves BOTH live lesson + library lesson
+   3) Opening a lesson from library copies it to live lesson space
+   4) Import old lesson key strips huge base64 images so Firebase won't freeze
+   5) Image upload uses Firebase Storage instead of base64
+   ========================================================= */
+
+function dlFixSelectedLessonId(){
+  return sessionStorage.getItem('dl_selected_lesson_id') ||
+         localStorage.getItem('DL_lesson_key') ||
+         lessonKey ||
+         '';
+}
+
+function dlFixIsBase64Image(value){
+  return typeof value === 'string' && value.indexOf('data:image') === 0;
+}
+
+function dlFixSafeClone(obj){
+  return JSON.parse(JSON.stringify(obj || {}));
+}
+
+function dlFixCleanStationsAndContent(stations, content){
+  const safeStations = Array.isArray(stations)
+    ? dlFixSafeClone(stations)
+    : Object.keys(stations || {}).map(function(k){
+        return Object.assign({id:k}, stations[k] || {});
+      });
+
+  const safeContent = dlFixSafeClone(content || {});
+
+  safeStations.forEach(function(st){
+    if(!st.id){
+      st.id = sanitizeKey(st.title || ('station_' + Date.now()));
+    }
+
+    if(dlFixIsBase64Image(st.thumbnail)){
+      st.thumbnail = '';
+    }
+
+    if(!safeContent[st.id]){
+      safeContent[st.id] = {
+        imageUrl:'',
+        sourceText:'',
+        imageNotes:'',
+        audioUrl:'',
+        videoUrl:'',
+        linkUrl:'',
+        linkTitle:'',
+        links:[],
+        questions:[]
+      };
+    }
+
+    if(dlFixIsBase64Image(safeContent[st.id].imageUrl)){
+      safeContent[st.id].imageUrl = '';
+    }
+
+    if(!Array.isArray(safeContent[st.id].questions)){
+      safeContent[st.id].questions = [];
+    }
+
+    if(!Array.isArray(safeContent[st.id].links)){
+      safeContent[st.id].links = [];
+    }
+  });
+
+  return {
+    stations: safeStations,
+    content: safeContent
+  };
+}
+
+async function dlFixSaveLibraryCopy(libraryId){
+  libraryId = libraryId || dlFixSelectedLessonId();
+
+  if(!libraryId){
+    throw new Error('No library lesson ID found.');
+  }
+
+  const cleaned = dlFixCleanStationsAndContent(lessonStations, lessonContent);
+
+  lessonStations = cleaned.stations;
+  lessonContent = cleaned.content;
+
+  const title =
+    (byId('lessonTitleInput') && byId('lessonTitleInput').value.trim()) ||
+    lessonMeta.lessonTitle ||
+    'New Lesson';
+
+  const objectivesText =
+    (byId('lessonObjectivesInput') && byId('lessonObjectivesInput').value || lessonMeta.lessonObjectives || '')
+      .split('\n')
+      .filter(function(x){ return x.trim(); })
+      .slice(0,3)
+      .join('\n');
+
+  lessonMeta = {
+    lessonTitle: title,
+    lessonObjectives: objectivesText,
+    lessonKeywords: (byId('lessonKeywordsInput') && byId('lessonKeywordsInput').value) || lessonMeta.lessonKeywords || ''
+  };
+
+  await dbRef(lessonLibraryPath() + '/' + libraryId).update({
+    id: libraryId,
+    lessonKey: libraryId,
+    title: title,
+    date: new Date().toLocaleDateString('en-GB'),
+    updatedAt: Date.now(),
+    locked: false,
+    visible: true,
+    lessonMeta: lessonMeta,
+    stations: lessonStations,
+    content: lessonContent
+  });
+
+  sessionStorage.setItem('dl_selected_lesson_id', libraryId);
+  localStorage.setItem('DL_lesson_key', libraryId);
+}
+
+window.handleCreatorImage = async function(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+
+  try{
+    if(!requireConnection()) return;
+
+    if(!storage){
+      storage = firebase.storage();
+    }
+
+    const stationId =
+      (byId('creatorStationSelect') && byId('creatorStationSelect').value) ||
+      'station';
+
+    showNotice('creatorNotice', 'Uploading picture... Please wait.', 'warn');
+
+    const safeName = file.name.replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const fileName = Date.now() + '_' + safeName;
+    const ref = storage.ref('lesson_media/' + lessonKey + '/' + stationId + '/images/' + fileName);
+
+    await ref.put(file);
+    const url = await ref.getDownloadURL();
+
+    if(byId('creatorImageUrl')){
+      byId('creatorImageUrl').value = url;
+    }
+
+    showNotice('creatorNotice', '✅ Picture uploaded. Now click Save Station.', 'good');
+
+  }catch(err){
+    console.error('Image upload failed:', err);
+    showNotice('creatorNotice', 'Picture upload failed: ' + (err.message || err), 'bad');
+  }
+};
+
+window.createNewBlankLesson = async function(){
+  try{
+    if(!db){
+      initFirebaseFromInputs();
+    }
+
+    if(!requireConnection()) return;
+
+    const teacherViewIsOpen =
+      byId('teacherView') && !byId('teacherView').classList.contains('hidden');
+
+    const teacherPasswordBox = byId('teacherPassword');
+
+    if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEACHER_PASSWORD){
+      alert('Please enter the teacher password first, then click Create New Blank Lesson.');
+      teacherPasswordBox.focus();
+      return;
+    }
+
+    const suggestedTitle = 'New Lesson ' + new Date().toLocaleDateString('en-GB');
+    const titleInput = prompt('Enter a title for the new blank lesson:', suggestedTitle);
+
+    if(titleInput === null) return;
+
+    const title = String(titleInput || '').trim() || suggestedTitle;
+    const lessonId = sanitizeKey(title + '_' + Date.now());
+
+    lessonKey = lessonId;
+    localStorage.setItem('DL_lesson_key', lessonId);
+    sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+    lessonMeta = {
+      lessonTitle: title,
+      lessonObjectives: '',
+      lessonKeywords: ''
+    };
+
+    lessonStations = JSON.parse(JSON.stringify(defaultStations || []));
+    lessonContent = JSON.parse(JSON.stringify(defaultContent || {}));
+
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+    studentQuestionStage = 0;
+    studentStageAnswers = {};
+    liveStudents = {};
+    liveBonus = {};
+    achievementUnlocked = false;
+
+    const cleaned = dlFixCleanStationsAndContent(lessonStations, lessonContent);
+    lessonStations = cleaned.stations;
+    lessonContent = cleaned.content;
+
+    const blankLesson = {
+      id: lessonId,
+      lessonKey: lessonId,
+      title: title,
+      date: new Date().toLocaleDateString('en-GB'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      locked: false,
+      visible: true,
+      blankCreated: true,
+      lessonMeta: lessonMeta,
+      stations: lessonStations,
+      content: lessonContent
+    };
+
+    await dbRef(lessonLibraryPath() + '/' + lessonId).set(blankLesson);
+
+    await dbRef('lessons/' + lessonId + '/config').set(lessonStations);
+    await dbRef('lessons/' + lessonId + '/content').set(lessonContent);
+    await dbRef('lessons/' + lessonId + '/lessonMeta').set(lessonMeta);
+    await dbRef('lessons/' + lessonId + '/students').remove();
+    await dbRef('lessons/' + lessonId + '/bonus').remove();
+    await dbRef('lessons/' + lessonId + '/attendance').remove();
+
+    if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+    if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = '';
+    if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = '';
+
+    if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
+
+    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
+    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
+
+    if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
+
+    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+    if(typeof renderStudentNav === 'function') renderStudentNav();
+    if(typeof loadCreatorStation === 'function') loadCreatorStation();
+
+    if(teacherViewIsOpen){
+      if(typeof showTeacherSection === 'function') showTeacherSection('teacherCreatorCard');
+      const builder = byId('teacherCreatorCard');
+      if(builder) builder.scrollIntoView({behavior:'smooth', block:'start'});
+    }else{
+      showOnly('teacherView');
+      if(typeof renderTeacherTimer === 'function') renderTeacherTimer();
+      if(typeof startTeacherListeners === 'function') startTeacherListeners();
+      if(typeof showTeacherSection === 'function') showTeacherSection('teacherCreatorCard');
+    }
+
+    alert('✅ New blank lesson created and opened. Build it, then click Save Station.');
+
+  }catch(err){
+    console.error('Create new blank lesson failed:', err);
+    alert('Could not create new blank lesson: ' + (err && err.message ? err.message : err));
+  }
+};
+
+window.saveCreatorStation = async function(){
+  try{
+    if(!requireConnection()) return;
+
+    const libraryId = dlFixSelectedLessonId() || lessonKey;
+
+    if(!libraryId){
+      alert('No active lesson selected. Please create or open a lesson first.');
+      return;
+    }
+
+    lessonKey = libraryId;
+    localStorage.setItem('DL_lesson_key', libraryId);
+    sessionStorage.setItem('dl_selected_lesson_id', libraryId);
+
+    lessonMeta.lessonTitle =
+      (byId('lessonTitleInput') && byId('lessonTitleInput').value.trim()) ||
+      lessonMeta.lessonTitle ||
+      'New Lesson';
+
+    lessonMeta.lessonObjectives =
+      (byId('lessonObjectivesInput') && byId('lessonObjectivesInput').value.trim()) ||
+      lessonMeta.lessonObjectives ||
+      '';
+
+    lessonMeta.lessonKeywords =
+      (byId('lessonKeywordsInput') && byId('lessonKeywordsInput').value.trim()) ||
+      lessonMeta.lessonKeywords ||
+      '';
+
+    const select = byId('creatorStationSelect');
+    const id = select ? select.value : ((lessonStations[0] || {}).id);
+
+    if(!id){
+      alert('No station selected.');
+      return;
+    }
+
+    const imageUrl = byId('creatorImageUrl') ? byId('creatorImageUrl').value.trim() : '';
+    const finalImageUrl = dlFixIsBase64Image(imageUrl) ? '' : imageUrl;
+
+    const sourceText = byId('creatorSourceText') ? byId('creatorSourceText').value.trim() : '';
+    const rawTime = byId('creatorTime') ? byId('creatorTime').value.trim() : '';
+    const stationTime = Number(String(rawTime).replace(/[^\d]/g, '')) || rawTime || '';
+
+    lessonStations = (lessonStations || []).map(function(s){
+      return s.id === id ? Object.assign({}, s, {
+        title: (byId('creatorTitle') && byId('creatorTitle').value.trim()) || s.title || id,
+        objective: (byId('creatorObjective') && byId('creatorObjective').value.trim()) || s.objective || '',
+        details: (byId('creatorDetails') && byId('creatorDetails').value.trim()) || s.details || '',
+        time: stationTime,
+        thumbnail: finalImageUrl
+      }) : s;
+    });
+
+    if(!lessonContent[id]){
+      lessonContent[id] = {
+        imageUrl:'',
+        sourceText:'',
+        imageNotes:'',
+        audioUrl:'',
+        videoUrl:'',
+        linkUrl:'',
+        linkTitle:'',
+        links:[],
+        questions:[]
+      };
+    }
+
+    lessonContent[id].imageUrl = finalImageUrl;
+    lessonContent[id].sourceText = sourceText;
+    lessonContent[id].imageNotes = byId('creatorImageNotes') ? byId('creatorImageNotes').value.trim() : '';
+    lessonContent[id].audioUrl = byId('creatorAudioUrl') ? byId('creatorAudioUrl').value.trim() : '';
+    lessonContent[id].videoUrl = byId('creatorVideoUrl') ? byId('creatorVideoUrl').value.trim() : '';
+
+    const linksRaw = byId('creatorLinks') ? byId('creatorLinks').value : '';
+    lessonContent[id].links = String(linksRaw || '')
+      .split('\n')
+      .map(function(line){
+        const parts = line.split('|');
+        return {
+          url: (parts[0] || '').trim(),
+          title: (parts[1] || 'Open Link').trim()
+        };
+      })
+      .filter(function(link){ return link.url; });
+
+    lessonContent[id].time = stationTime;
+    lessonContent[id].questions = JSON.parse(JSON.stringify(creatorDraftQuestions || []));
+    lessonContent[id].questions.forEach(function(q, idx){
+      q.id = id + '_q' + (idx + 1);
+    });
+
+    const cleaned = dlFixCleanStationsAndContent(lessonStations, lessonContent);
+    lessonStations = cleaned.stations;
+    lessonContent = cleaned.content;
+
+    await dbRef('lessons/' + lessonKey + '/config').set(lessonStations);
+    await dbRef('lessons/' + lessonKey + '/content').set(lessonContent);
+    await dbRef('lessons/' + lessonKey + '/lessonMeta').set(lessonMeta);
+
+    await dlFixSaveLibraryCopy(libraryId);
+
+    creatorDraftQuestions = JSON.parse(JSON.stringify(lessonContent[id].questions || []));
+
+    if(typeof renderCreatorQuestionsList === 'function') renderCreatorQuestionsList();
+    if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(id);
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+    if(typeof renderStudentNav === 'function') renderStudentNav();
+    if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
+    if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
+
+    showNotice('creatorNotice', '✅ Station saved to live lesson AND library.', 'good');
+
+  }catch(err){
+    console.error('Save station failed:', err);
+    alert('Save station failed: ' + (err && err.message ? err.message : err));
+  }
+};
+
+window.saveCurrentLessonToLibrary = async function(){
+  try{
+    if(!db){
+      alert('Firebase is not connected.');
+      return;
+    }
+
+    const libraryId = dlFixSelectedLessonId();
+
+    if(!libraryId){
+      alert('No active lesson found. Create or open a lesson first.');
+      return;
+    }
+
+    lessonKey = libraryId;
+    localStorage.setItem('DL_lesson_key', libraryId);
+    sessionStorage.setItem('dl_selected_lesson_id', libraryId);
+
+    if(typeof window.saveCreatorStation === 'function'){
+      await window.saveCreatorStation();
+    }else{
+      await dlFixSaveLibraryCopy(libraryId);
+    }
+
+    alert('✅ Lesson saved to library with latest stations and questions.');
+
+  }catch(err){
+    console.error('Save current lesson failed:', err);
+    alert('Save current lesson failed: ' + (err && err.message ? err.message : err));
+  }
+};
+
+window.openSavedLesson = async function(lessonId){
+  try{
+    if(!db){
+      initFirebaseFromInputs();
+    }
+    if(!requireConnection()) return;
+
+    const snap = await dbRef(lessonLibraryPath() + '/' + lessonId).once('value');
+
+    if(!snap.exists()){
+      alert('Lesson not found.');
+      return;
+    }
+
+    const l = snap.val();
+
+    lessonKey = lessonId;
+    localStorage.setItem('DL_lesson_key', lessonId);
+    sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+    lessonMeta = l.lessonMeta || {
+      lessonTitle: l.title || '',
+      lessonObjectives: '',
+      lessonKeywords: ''
+    };
+
+    const cleaned = dlFixCleanStationsAndContent(l.stations || [], l.content || {});
+    lessonStations = cleaned.stations;
+    lessonContent = cleaned.content;
+
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+
+    await dbRef('lessons/' + lessonId + '/config').set(lessonStations);
+    await dbRef('lessons/' + lessonId + '/content').set(lessonContent);
+    await dbRef('lessons/' + lessonId + '/lessonMeta').set(lessonMeta);
+
+    if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+    if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
+    if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+
+    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+    if(typeof loadCreatorStation === 'function') loadCreatorStation();
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(currentOpenStation);
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+    if(typeof renderStudentNav === 'function') renderStudentNav();
+    if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
+
+    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
+    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
+
+    alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
+
+  }catch(err){
+    console.error('Open saved lesson failed:', err);
+    alert('Open saved lesson failed: ' + (err && err.message ? err.message : err));
+  }
+};
+
+window.openTeacherView = async function(){
+  try{
+    if(typeof firebase === 'undefined'){
+      showNotice('teacherNotice','Login failed: Please refresh and try again.','bad');
+      return;
+    }
+
+    initFirebaseFromInputs();
+
+    const pw = byId('teacherPassword') ? byId('teacherPassword').value : '';
+
+    if(pw !== TEACHER_PASSWORD){
+      showNotice('teacherNotice','Incorrect password.','bad');
+      return;
+    }
+
+    const lessonSelect = byId('teacherLessonSelect');
+    const selectedLessonId = lessonSelect ? lessonSelect.value : '';
+
+    if(!selectedLessonId){
+      showNotice('teacherNotice','Please choose a lesson first OR click Create New Blank Lesson.','bad');
+      return;
+    }
+
+    if(!requireConnection()){
+      showNotice('teacherNotice','Firebase is not connected.','bad');
+      return;
+    }
+
+    const lessonSnap = await dbRef('lessonLibrary/' + selectedLessonId).once('value');
+
+    if(!lessonSnap.exists()){
+      showNotice('teacherNotice','Lesson not found in library.','bad');
+      return;
+    }
+
+    const chosenLesson = lessonSnap.val();
+
+    lessonKey = selectedLessonId;
+    localStorage.setItem('DL_lesson_key', selectedLessonId);
+    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
+    sessionStorage.setItem('dl_role', 'teacher');
+
+    lessonMeta = chosenLesson.lessonMeta || {
+      lessonTitle: chosenLesson.title || '',
+      lessonObjectives:'',
+      lessonKeywords:''
+    };
+
+    const cleaned = dlFixCleanStationsAndContent(chosenLesson.stations || [], chosenLesson.content || {});
+    lessonStations = cleaned.stations;
+    lessonContent = cleaned.content;
+
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+    studentQuestionStage = 0;
+    studentStageAnswers = {};
+
+    await dbRef('lessons/' + selectedLessonId + '/config').set(lessonStations);
+    await dbRef('lessons/' + selectedLessonId + '/content').set(lessonContent);
+    await dbRef('lessons/' + selectedLessonId + '/lessonMeta').set(lessonMeta);
+
+    hideNotice('teacherNotice');
+
+    showOnly('teacherView');
+
+    if(typeof renderTeacherTimer === 'function') renderTeacherTimer();
+    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+    if(typeof loadCreatorStation === 'function') loadCreatorStation();
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(currentOpenStation);
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+    if(typeof showTeacherSection === 'function') showTeacherSection('teacherTrackerCard');
+    if(typeof startTeacherListeners === 'function') startTeacherListeners();
+    if(typeof renderBonusBox === 'function') renderBonusBox();
+
+    if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
+    if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
+    if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+
+  }catch(err){
+    console.error('Teacher view error:', err);
+    showNotice('teacherNotice','Teacher view failed: ' + (err && err.message ? err.message : err),'bad');
+    showOnly('homeRow');
+  }
+};
+
+window.importOldLessonKeyToLibrary = async function(){
+  try{
+    if(!db){
+      initFirebaseFromInputs();
+    }
+
+    if(!requireConnection()) return;
+
+    const input = byId('oldLessonKeyInput');
+    const rawKey = input && input.value.trim()
+      ? input.value.trim()
+      : (prompt('Type the old lesson key here:') || '').trim();
+
+    if(!rawKey){
+      alert('Please type the old lesson key first.');
+      return;
+    }
+
+    const cleanOldKey = rawKey.trim();
+
+    if(!confirm('Import this exact old lesson key?\n\n' + cleanOldKey)){
+      return;
+    }
+
+    const configSnap = await dbRef('lessons/' + cleanOldKey + '/config').once('value');
+    const contentSnap = await dbRef('lessons/' + cleanOldKey + '/content').once('value');
+    const metaSnap = await dbRef('lessons/' + cleanOldKey + '/lessonMeta').once('value');
+
+    const oldStations = configSnap.val();
+    const oldContent = contentSnap.val() || {};
+    const oldMeta = metaSnap.val() || {};
+
+    if(!oldStations){
+      alert('Stations not found for: ' + cleanOldKey);
+      return;
+    }
+
+    const cleaned = dlFixCleanStationsAndContent(oldStations, oldContent);
+
+    const title = oldMeta.lessonTitle || cleanOldKey;
+    const lessonId = sanitizeKey(title + '_' + Date.now());
+
+    const importedLesson = {
+      id: lessonId,
+      lessonKey: lessonId,
+      title: title,
+      date: new Date().toLocaleDateString('en-GB'),
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      locked: false,
+      visible: true,
+      importedFromOldKey: cleanOldKey,
+      lessonMeta: {
+        lessonTitle: title,
+        lessonObjectives: oldMeta.lessonObjectives || '',
+        lessonKeywords: oldMeta.lessonKeywords || ''
+      },
+      stations: cleaned.stations,
+      content: cleaned.content
+    };
+
+    await dbRef(lessonLibraryPath() + '/' + lessonId).set(importedLesson);
+
+    lessonKey = lessonId;
+    localStorage.setItem('DL_lesson_key', lessonId);
+    sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+    lessonMeta = importedLesson.lessonMeta;
+    lessonStations = importedLesson.stations;
+    lessonContent = importedLesson.content;
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+
+    await dbRef('lessons/' + lessonId + '/config').set(lessonStations);
+    await dbRef('lessons/' + lessonId + '/content').set(lessonContent);
+    await dbRef('lessons/' + lessonId + '/lessonMeta').set(lessonMeta);
+
+    if(input) input.value = '';
+
+    if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
+    if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
+
+    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
+    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
+
+    alert('✅ Old lesson imported and opened: ' + title);
+
+  }catch(err){
+    console.error('Import old lesson failed:', err);
+    alert('Import old lesson failed: ' + (err && err.message ? err.message : err));
+  }
+};
+
+</script>
 </body>
 </html>
