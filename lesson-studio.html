@@ -82,7 +82,98 @@ function normalizeLesson(){lesson.lessonMeta=lesson.lessonMeta||{lessonTitle:les
 async function saveLesson(){if(!db||!lesson){alert('No lesson open.');return}saveStationToMemory(false);const objectives=(byId('lessonObjectives').value||lesson.lessonMeta.lessonObjectives||'').split('\n').filter(x=>x.trim()).slice(0,3).join('\n');lesson.lessonMeta={lessonTitle:byId('lessonTitle').value||lesson.lessonMeta.lessonTitle||lesson.title,lessonObjectives:objectives,lessonKeywords:byId('lessonKeywords').value||lesson.lessonMeta.lessonKeywords||''};lesson.title=lesson.lessonMeta.lessonTitle;lesson.updatedAt=Date.now();await db.ref(libraryPath(currentLessonId)).set(clone(lesson));await loadLibrary(false);renderAll();notice('✅ Lesson saved to library.')}
 async function loadLibrary(showMsg=true){if(!db)return;const snap=await db.ref(libraryPath()).once('value');const data=snap.val()||{};const list=Object.values(data).sort((a,b)=>Number(b.updatedAt||b.createdAt||0)-Number(a.updatedAt||a.createdAt||0));byId('libraryList').innerHTML=list.length?list.map(item=>`<div class="libraryItem"><h3>${esc(item.title||item.id)}</h3><div class="mini">${esc(item.date||'')} • ${(item.stations||[]).length} stations</div><div class="btns"><button onclick="openLesson('${esc(item.id)}')">✏️ Edit</button><button class="purple" onclick="openLessonForTeaching('${esc(item.id)}')">🚀 Teach</button><button class="red" onclick="deleteLesson('${esc(item.id)}')">🗑 Delete</button></div></div>`).join(''):'<div class="status">No lessons yet.</div>';if(showMsg)notice('Library refreshed.')}
 async function deleteLesson(id){if(!confirm('Delete this lesson from library?'))return;await db.ref(libraryPath(id)).remove();if(currentLessonId===id){currentLessonId='';lesson=null}await loadLibrary(false);renderAll()}
-async function importOldLesson(){if(!db){alert('Firebase is not connected.');return}const oldKey=byId('oldLessonKey').value.trim();if(!oldKey){alert('Paste old lesson key first.');return}const configSnap=await db.ref('lessons/'+oldKey+'/config').once('value');const contentSnap=await db.ref('lessons/'+oldKey+'/content').once('value');const metaSnap=await db.ref('lessons/'+oldKey+'/lessonMeta').once('value');if(!configSnap.exists()){alert('No station config found for this key.');return}const meta=metaSnap.val()||{};const title=meta.lessonTitle||oldKey;const id=safeKey(title+'_'+Date.now());lesson={id,title,date:new Date().toLocaleDateString('en-GB'),createdAt:Date.now(),updatedAt:Date.now(),visible:true,locked:false,importedFromOldKey:oldKey,lessonMeta:meta,stations:configSnap.val()||clone(defaultStations),content:contentSnap.val()||{}};currentLessonId=id;normalizeLesson();await saveLesson();renderAll();notice('✅ Old lesson imported.')}
+async function importOldLesson(){
+  if(!db){
+    alert('Firebase is not connected.');
+    return;
+  }
+
+  const oldKey = byId('oldLessonKey').value.trim();
+
+  if(!oldKey){
+    alert('Paste old lesson key first.');
+    return;
+  }
+
+  const configSnap = await db.ref('lessons/' + oldKey + '/config').once('value');
+  const contentSnap = await db.ref('lessons/' + oldKey + '/content').once('value');
+  const metaSnap = await db.ref('lessons/' + oldKey + '/lessonMeta').once('value');
+
+  const oldStationsRaw = configSnap.val();
+  const oldContentRaw = contentSnap.val() || {};
+  const oldMeta = metaSnap.val() || {};
+
+  if(!oldStationsRaw){
+    alert('No stations found for this old lesson key.');
+    return;
+  }
+
+  let importedStations = Array.isArray(oldStationsRaw)
+    ? oldStationsRaw
+    : Object.keys(oldStationsRaw).map(function(key){
+        return Object.assign({id:key}, oldStationsRaw[key]);
+      });
+
+  importedStations = importedStations.filter(function(s){
+    return s && s.id;
+  });
+
+  if(!importedStations.length){
+    alert('Stations were found, but the format could not be imported.');
+    return;
+  }
+
+  const importedContent = {};
+
+  importedStations.forEach(function(st){
+    importedContent[st.id] = oldContentRaw[st.id] || {
+      imageUrl:'',
+      audioUrl:'',
+      videoUrl:'',
+      links:[],
+      sourceText:'',
+      imageNotes:'',
+      questions:[]
+    };
+
+    if(!Array.isArray(importedContent[st.id].questions)){
+      importedContent[st.id].questions = [];
+    }
+  });
+
+  const title = oldMeta.lessonTitle || oldKey;
+  const id = safeKey(title + '_imported_' + Date.now());
+
+  lesson = {
+    id:id,
+    title:title,
+    date:new Date().toLocaleDateString('en-GB'),
+    createdAt:Date.now(),
+    updatedAt:Date.now(),
+    visible:true,
+    locked:false,
+    importedFromOldKey:oldKey,
+    lessonMeta:{
+      lessonTitle:title,
+      lessonObjectives:oldMeta.lessonObjectives || '',
+      lessonKeywords:oldMeta.lessonKeywords || ''
+    },
+    stations:importedStations,
+    content:importedContent
+  };
+
+  currentLessonId = id;
+  currentStationIndex = 0;
+
+  await db.ref(libraryPath(id)).set(clone(lesson));
+
+  await openLesson(id);
+
+  byId('oldLessonKey').value = '';
+
+  notice('✅ Old lesson imported and opened in builder.');
+}
+  
 function renderAll(){renderLessonInfo();renderStations();renderStationEditor()}function renderLessonInfo(){if(!lesson){byId('activeLessonInfo').textContent='No lesson opened yet.';byId('lessonTitle').value='';byId('lessonObjectives').value='';byId('lessonKeywords').value='';return}byId('activeLessonInfo').className='status good';byId('activeLessonInfo').innerHTML='Editing: <b>'+esc(lesson.title||lesson.id)+'</b>';byId('lessonTitle').value=lesson.lessonMeta?.lessonTitle||lesson.title||'';byId('lessonObjectives').value=lesson.lessonMeta?.lessonObjectives||'';byId('lessonKeywords').value=lesson.lessonMeta?.lessonKeywords||''}
 function renderStations(){const box=byId('stationList');if(!lesson){box.innerHTML='<div class="status">No lesson open.</div>';return}box.innerHTML=lesson.stations.map((s,i)=>`<div class="stationItem ${i===currentStationIndex?'active':''}" onclick="selectStation(${i})"><img class="thumb" src="${esc((lesson.content[s.id]||{}).imageUrl||s.thumbnail||'')}" onerror="this.style.display='none'"><div><b>${esc(s.title||s.id)}</b><div class="mini">${esc(s.objective||'')}</div><div class="mini">${(lesson.content[s.id]?.questions||[]).length} questions</div></div></div>`).join('')}
 function selectStation(i){saveStationToMemory(false);currentStationIndex=i;renderAll()}function addStation(){if(!lesson){alert('Create/open a lesson first.');return}saveStationToMemory(false);const id='st_'+Date.now();lesson.stations.splice(Math.max(lesson.stations.length-1,0),0,{id,title:'New Station',time:'10 min',objective:'',details:'',unlocked:false,displayed:false,thumbnail:''});lesson.content[id]={imageUrl:'',audioUrl:'',videoUrl:'',links:[],sourceText:'',imageNotes:'',questions:[]};currentStationIndex=lesson.stations.findIndex(s=>s.id===id);renderAll()}function deleteStation(){if(!lesson)return;const s=lesson.stations[currentStationIndex];if(!s)return;if(s.id==='starter'||s.id==='exit'){alert('Starter and Exit cannot be deleted.');return}if(!confirm('Delete this station?'))return;lesson.stations.splice(currentStationIndex,1);delete lesson.content[s.id];currentStationIndex=Math.max(0,currentStationIndex-1);renderAll()}function moveStation(dir){if(!lesson)return;const i=currentStationIndex,j=i+dir;if(j<0||j>=lesson.stations.length)return;if(lesson.stations[i].id==='exit'||lesson.stations[j].id==='exit'){alert('Exit Ticket must stay last.');return}saveStationToMemory(false);[lesson.stations[i],lesson.stations[j]]=[lesson.stations[j],lesson.stations[i]];currentStationIndex=j;renderAll()}
