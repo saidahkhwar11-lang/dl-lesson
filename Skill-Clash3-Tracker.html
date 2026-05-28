@@ -2319,7 +2319,7 @@ button:hover{filter:brightness(.96)}
 }
 
 /* Make long text cleaner */
-
+#popupActivityDetails{
   font-size:14px!important;
   line-height:1.45!important;
 }
@@ -5847,8 +5847,14 @@ function renderSelectedClass(classData){
         <input id="finalMax_${i}" type="number" min="1" value="${escapeHtml(g.finalActivityMax || 10)}" placeholder="Example: 10">
 
         <label>Teacher Comment</label>
-        <textarea id="comment_${i}">${escapeHtml(g.teacherComment || '')}</textarea>
 
+<textarea id="comment_${i}">${escapeHtml(g.teacherComment || '')}</textarea>
+
+<label>Writing Mark</label>
+<input type="number"
+       id="teacherWritingMark_group${i}"
+       min="0"
+       value="${Number(g.teacherWritingMark || 0)}">
         <button class="green" onclick="saveTeacherFeedback(${i})">Save Voting Points + Final Mark</button>
       </details>
     </div>`;
@@ -7203,6 +7209,8 @@ async function submitReadingQuiz(){
 async function collectActivity(){
   const title = document.getElementById('builderActivityName').value.trim();
   const instructions = document.getElementById('builderInstructions').value.trim();
+  const writingTotal =
+  Number(document.getElementById('activityWritingTotal')?.value || 0);
   const activityType = document.getElementById('builderActivityType') ? document.getElementById('builderActivityType').value : 'writing';
   const readingWorkMode = 'paragraph';
   const taskType = activityType === 'reading' ? 'same' : document.getElementById('builderTaskType').value;
@@ -7234,14 +7242,15 @@ async function collectActivity(){
   }
 
   return {
-    id:currentActivityId || 'activity_'+Date.now(),
-    title,
-    instructions,
-    activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
-    readingWorkMode,
-    taskType,
-    sameTask,
-    sameHybridLink,
+  id:currentActivityId || 'activity_'+Date.now(),
+  title,
+  instructions,
+  writingTotal: writingTotal,
+  activityType: activityType === 'reading' ? 'readingParagraph' : activityType,
+  readingWorkMode,
+  taskType,
+  sameTask,
+  sameHybridLink,
     sameAttachedFile: builderSameFileData || null,
     mainImage: builderMainImageData || '',
     groupTasks,
@@ -9270,6 +9279,8 @@ window.addEventListener('load', function(){
         const finalMark = Number(finalMarkRaw || 0);
         const finalMax = Number(finalMaxRaw || 10);
         const comment = g.teacherComment || document.getElementById("comment_" + groupNum)?.value || "";
+        const writingMark =
+  Number(document.getElementById("teacherWritingMark_group" + groupNum)?.value || 0);
         const students = g.students || {};
 
         // IMPORTANT: Teacher Control receives ONLY the Final Activity Mark.
@@ -9290,10 +9301,13 @@ window.addEventListener('load', function(){
             studentName: st.name || sid,
             activityName: activityName,
             activityType: "Skill Clash",
-            score: finalMark,
-            total: finalMax,
+            score: finalMark + writingMark,
+total: finalMax + Number(latestAssignedActivity?.writingTotal || 0),
             recordId: "skill_final_" + activityId + "_group" + groupNum + "_" + scCleanKey(sid),
-            notes: comment || "Final Skill Clash mark. Voting points are not included."
+
+            notes: (comment || "Final Skill Clash mark.") +
+       " Auto mark: " + finalMark + "/" + finalMax +
+       " | Writing mark: " + writingMark + "/" + Number(latestAssignedActivity?.writingTotal || 0)
           });
         }
       }catch(e){ console.log("Could not save teacher feedback to control center:", e); }
@@ -9304,6 +9318,7 @@ window.addEventListener('load', function(){
   
 <script>
 (function(){
+  
   function addGlobalHomeButton(){
     if(document.getElementById('globalHomeBtn')) return;
 
