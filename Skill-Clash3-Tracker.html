@@ -3754,6 +3754,7 @@ async function joinGroup(){
   sessionStorage.setItem('skillRole',currentRole);
   saveSkillSession();
 
+  await removeStudentFromOtherGroups(currentStudentId, currentGroup);
   await hubRef.child(`classes/${activeClassKey()}/groups/group${currentGroup}/students/${currentStudentId}`).update({
     id: currentStudentId,
     name: currentStudent,
@@ -3836,7 +3837,21 @@ function listenGroup(){
 }
 
 
+async function removeStudentFromOtherGroups(studentId, keepGroup){
+  const cls = activeClassKey();
+  const snap = await hubRef.child(`classes/${cls}/groups`).once('value');
+  const groups = snap.val() || {};
 
+  const updates = {};
+
+  Object.keys(groups).forEach(function(gKey){
+    if(gKey !== 'group' + keepGroup){
+      updates[`classes/${cls}/groups/${gKey}/students/${studentId}`] = null;
+    }
+  });
+
+  await hubRef.update(updates);
+}
 
 function getReadingChecklistHtml(){
   return `<div class="readingChecklistBox">
