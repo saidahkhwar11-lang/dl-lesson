@@ -2601,6 +2601,19 @@ button:hover{filter:brightness(.96)}
   flex-direction:column;
   gap:2px!important;
 }
+
+
+/* ===== Skill Clash saved attempts/history ===== */
+.attemptCard{
+  background:#f8fbff;
+  border:1px solid #d8e5f6;
+  border-radius:16px;
+  padding:12px;
+  margin:10px 0;
+  text-align:left;
+}
+.attemptCard button{width:auto;min-width:210px;}
+#skillAttemptHistoryBtn{width:auto!important;min-width:190px;margin:8px 0 12px 8px!important;}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </head>
@@ -5385,6 +5398,9 @@ async function saveMyWork(){
     name: currentStudent,
     role: currentRole,
     answer,
+    activationId: (latestAssignedActivity && (latestAssignedActivity.activationId || latestAssignedActivity.attemptId)) || '',
+    activityId: (latestAssignedActivity && (latestAssignedActivity.id || latestAssignedActivity.activityLibraryId)) || '',
+    activityName: (latestAssignedActivity && latestAssignedActivity.title) || '',
     status:'in progress',
     updatedAt:Date.now()
   };
@@ -5449,6 +5465,9 @@ async function submitLeaderFinalWork(){
   ).update({
     finalAnswer: finalText,
     finalSubmitted: true,
+    activationId: (latestAssignedActivity && (latestAssignedActivity.activationId || latestAssignedActivity.attemptId)) || '',
+    activityId: (latestAssignedActivity && (latestAssignedActivity.id || latestAssignedActivity.activityLibraryId)) || '',
+    activityName: (latestAssignedActivity && latestAssignedActivity.title) || '',
     finalSubmittedAt: Date.now(),
     finalSubmittedBy: currentStudent
   });
@@ -5739,6 +5758,16 @@ function openClass(cls){
   if(panel) panel.classList.remove('hidden');
   const title = document.getElementById('selectedClassTitle');
   if(title) title.innerText = `📚 Class ${classDisplay(selectedTeacherClass)} Groups`;
+  let histBtn = document.getElementById('skillAttemptHistoryBtn');
+  if(!histBtn){
+    histBtn = document.createElement('button');
+    histBtn.id = 'skillAttemptHistoryBtn';
+    histBtn.className = 'purple';
+    histBtn.style.marginLeft = '8px';
+    histBtn.innerHTML = '📦 Saved Old Attempts';
+    histBtn.onclick = showSkillClashAttemptHistory;
+    title.parentNode.insertBefore(histBtn, title.nextSibling);
+  }
 
   hubRef.child(`classes/${selectedTeacherClass}`).once('value', snap=>{
     renderSelectedClass(snap.val() || {});
@@ -7405,7 +7434,9 @@ function makeStudentActiveActivity(a, groupNo, activationId){
 
   return {
     id: a.id || '',
+    activityLibraryId: a.id || '',
     activationId: activationId || ('act_' + Date.now()),
+    attemptId: activationId || ('act_' + Date.now()),
     title: a.title || 'Activity',
     instructions: a.instructions || '',
     activityType: isReading ? 'readingParagraph' : 'writing',
@@ -7503,6 +7534,141 @@ function normalizeClassKey(cls){
 
 
 
+
+
+/* ===== Skill Clash Attempt History System =====
+   Keeps activity definitions reusable and saves each class assignment as a separate attempt.
+   Old work is archived before a new activity is assigned or the class is reset.
+*/
+function skillAttemptCleanKey(value){
+  return String(value || '').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_');
+}
+
+function skillClassKeyForAttempts(cls){
+  if(typeof safeClassKey === 'function') return safeClassKey(cls);
+  return String(cls || '').replace('/','-').trim();
+}
+
+function skillAttemptHasWork(classData){
+  classData = classData || {};
+  const groups = classData.groups || {};
+  const hasGroups = Object.keys(groups).some(function(gk){
+    const g = groups[gk] || {};
+    return Object.keys(g.students || {}).length || g.finalAnswer || g.finalSubmitted || g.teacherPoints || g.finalActivityMark;
+  });
+  return hasGroups || Object.keys(classData.battleVotes || {}).length || Object.keys(classData.chat || {}).length;
+}
+
+function skillAttemptMetaFromClass(classData, fallbackAttemptId, reason){
+  classData = classData || {};
+  const settings = classData.settings || {};
+  const active = classData.activeActivity || classData.currentActivity || {};
+  const attemptId = settings.activationId || active.activationId || fallbackAttemptId || ('act_' + Date.now());
+  return {
+    attemptId: attemptId,
+    activityId: settings.activeActivityId || active.id || active.activityLibraryId || '',
+    title: active.title || active.activityName || 'Skill Clash Activity',
+    activityType: active.activityType || 'writing',
+    archivedAt: Date.now(),
+    reason: reason || 'archived_before_new_activity',
+    assignedAt: active.assignedAt || settings.activeActivityChangedAt || Date.now()
+  };
+}
+
+async function archiveSkillClashClassAttempt(cls, reason){
+  const clsKey = skillClassKeyForAttempts(cls);
+  if(!clsKey || !hubRef) return null;
+
+  const snap = await hubRef.child('classes/' + clsKey).once('value');
+  const classData = snap.val() || {};
+  if(!skillAttemptHasWork(classData)) return null;
+
+  const meta = skillAttemptMetaFromClass(classData, '', reason);
+  const attemptId = skillAttemptCleanKey(meta.attemptId);
+
+  const archive = {
+    meta: Object.assign({}, meta, {attemptId: attemptId, classId: clsKey}),
+    activeActivity: classData.activeActivity || {},
+    currentActivity: classData.currentActivity || {},
+    assignedActivities: classData.assignedActivities || {},
+    activeActivityGroups: classData.activeActivityGroups || {},
+    groups: classData.groups || {},
+    battleVotes: classData.battleVotes || {},
+    chat: classData.chat || {},
+    settings: classData.settings || {}
+  };
+
+  await hubRef.child('classes/' + clsKey + '/activityAttempts/' + attemptId).set(archive);
+  await hubRef.child('attemptArchive/' + clsKey + '/' + attemptId).set(archive);
+  return attemptId;
+}
+
+function clearSkillClashLiveWorkInUpdates(cls, updates){
+  updates['classes/' + cls + '/groups'] = null;
+  updates['classes/' + cls + '/battleVotes'] = null;
+  updates['classes/' + cls + '/chat'] = null;
+  updates['classes/' + cls + '/votingResults'] = null;
+  updates['classes/' + cls + '/results'] = null;
+}
+
+async function showSkillClashAttemptHistory(){
+  if(!selectedTeacherClass){
+    alert('Choose a class first.');
+    return;
+  }
+  const cls = (typeof activeTeacherClassKey === 'function') ? activeTeacherClassKey() : skillClassKeyForAttempts(selectedTeacherClass);
+  const snap = await hubRef.child('classes/' + cls + '/activityAttempts').once('value');
+  const attempts = snap.val() || {};
+  const ids = Object.keys(attempts).sort(function(a,b){
+    return Number((attempts[b].meta || {}).archivedAt || 0) - Number((attempts[a].meta || {}).archivedAt || 0);
+  });
+
+  let panel = document.getElementById('skillAttemptHistoryPanel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'skillAttemptHistoryPanel';
+    panel.className = 'card';
+    const host = document.getElementById('classGroupsPanel') || document.body;
+    host.appendChild(panel);
+  }
+
+  if(!ids.length){
+    panel.innerHTML = '<h2>📦 Saved Activity Attempts</h2><div class="note">No archived attempts yet for this class.</div>';
+    panel.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+
+  panel.innerHTML = '<h2>📦 Saved Activity Attempts - Class ' + classDisplay(cls) + '</h2>' +
+    '<p class="smallNote">Each item is old student work saved before a new activity/reset. Delete only when you are sure you no longer need it.</p>' +
+    ids.map(function(id){
+      const a = attempts[id] || {};
+      const meta = a.meta || {};
+      const groups = a.groups || {};
+      let joined = 0, final = 0;
+      Object.keys(groups).forEach(function(gk){
+        const g = groups[gk] || {};
+        if(Object.keys(g.students || {}).length) joined++;
+        if(g.finalSubmitted || g.finalAnswer) final++;
+      });
+      const date = meta.archivedAt ? new Date(Number(meta.archivedAt)).toLocaleString() : '-';
+      return '<div class="attemptCard">' +
+        '<b>📌 ' + escapeHtml(meta.title || 'Skill Clash Activity') + '</b>' +
+        '<div class="smallNote">Attempt ID: ' + escapeHtml(id) + '<br>Date: ' + escapeHtml(date) + '<br>Joined groups: ' + joined + ' | Final submitted: ' + final + '</div>' +
+        '<button class="red" onclick="deleteSkillClashAttempt(\'' + escapeJs(id) + '\')">🗑 Delete This Saved Attempt</button>' +
+      '</div>';
+    }).join('');
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+async function deleteSkillClashAttempt(attemptId){
+  if(!selectedTeacherClass || !attemptId) return;
+  if(!confirm('Delete this saved old attempt permanently? This will NOT delete Teacher Control marks/certificates.')) return;
+  const cls = (typeof activeTeacherClassKey === 'function') ? activeTeacherClassKey() : skillClassKeyForAttempts(selectedTeacherClass);
+  await hubRef.child('classes/' + cls + '/activityAttempts/' + attemptId).remove();
+  await hubRef.child('attemptArchive/' + cls + '/' + attemptId).remove();
+  await showSkillClashAttemptHistory();
+}
+
 function strictBuildActiveActivity(a, groupNo, activationId){
   a = a || {};
   const groupKey = 'group' + groupNo;
@@ -7583,6 +7749,12 @@ async function activateSavedActivityForSelectedClasses(){
   const changedAt = Date.now();
   const updates = {};
 
+  // Archive old live work first, then clear live work so the new assignment starts clean.
+  for(const cls of classes){
+    await archiveSkillClashClassAttempt(cls, 'archived_before_new_activation');
+    clearSkillClashLiveWorkInUpdates(cls, updates);
+  }
+
   classes.forEach(cls=>{
     const classActive = strictBuildActiveActivity(a, 1, activationId);
     classActive.assignedClasses = classes;
@@ -7604,6 +7776,7 @@ async function activateSavedActivityForSelectedClasses(){
     updates[`classes/${cls}/settings/resultsReleased`] = false;
     updates[`classes/${cls}/settings/activeActivityId`] = activityId;
     updates[`classes/${cls}/settings/activationId`] = activationId;
+    updates[`classes/${cls}/settings/activityAttemptId`] = activationId;
     updates[`classes/${cls}/settings/activeActivityChangedAt`] = changedAt;
   });
 
@@ -7642,8 +7815,18 @@ async function assignCurrentActivity(){
     groups = [1,2,3,4,5,6,7,8,9,10];
   }
 
+  const activationId = 'act_' + Date.now();
+  const changedAt = Date.now();
   const updates = {};
-  classes.forEach(cls=>{
+
+  for(const rawCls of classes){
+    const cls = safeClassKey(rawCls);
+    await archiveSkillClashClassAttempt(cls, 'archived_before_direct_assignment');
+    clearSkillClashLiveWorkInUpdates(cls, updates);
+  }
+
+  classes.forEach(rawCls=>{
+    const cls = safeClassKey(rawCls);
     groups.forEach(i=>{
       const groupTask = a.taskType === 'same' ? a.sameTask : (a.groupTasks['group'+i] || '');
       const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})['group'+i] || '');
@@ -7652,6 +7835,10 @@ async function assignCurrentActivity(){
       const readingText = a.taskType === 'same' ? (a.readingText || '') : ((a.groupReadingTexts || {})['group'+i] || '');
       const readingQuestions = a.taskType === 'same' ? (a.readingQuestions || []) : ((a.groupReadingQuestions || {})['group'+i] || []);
       updates[`classes/${cls}/assignedActivities/group${i}`] = {
+        id:a.id,
+        activityLibraryId:a.id,
+        activationId:activationId,
+        attemptId:activationId,
         title:a.title,
         instructions:a.instructions,
         mainImage:a.mainImage || '',
@@ -7664,21 +7851,33 @@ async function assignCurrentActivity(){
         criteria:a.criteria,
         votingCriteria:a.votingCriteria,
         taskType:a.taskType,
-        assignedAt:Date.now(),
+        assignedAt:changedAt,
+        activeActivityChangedAt:changedAt,
         assignedBy:'Ms. Saidah Khwar'
       };
     });
-    updates[`classes/${cls}/currentActivity`] = {
+    updates[`classes/${cls}/activeActivity`] = {
+      id:a.id,
+      activityLibraryId:a.id,
+      activationId:activationId,
+      attemptId:activationId,
       title:a.title,
       instructions:a.instructions,
       mainImage:a.mainImage || '',
       taskType:a.taskType,
       criteria:a.criteria,
       votingCriteria:a.votingCriteria,
-      assignedAt:Date.now()
+      assignedAt:changedAt,
+      activeActivityChangedAt:changedAt
     };
+    updates[`classes/${cls}/currentActivity`] = updates[`classes/${cls}/activeActivity`];
     updates[`classes/${cls}/settings/stage`] = 'work';
+    updates[`classes/${cls}/settings/voteSystem`] = 'battle';
     updates[`classes/${cls}/settings/resultsReleased`] = false;
+    updates[`classes/${cls}/settings/activeActivityId`] = a.id;
+    updates[`classes/${cls}/settings/activationId`] = activationId;
+    updates[`classes/${cls}/settings/activityAttemptId`] = activationId;
+    updates[`classes/${cls}/settings/activeActivityChangedAt`] = changedAt;
   });
 
   await hubRef.update(updates);
@@ -8198,14 +8397,17 @@ async function resetSelectedClass(){
     return;
   }
 
-  if(!confirm('Reset this class completely? This will delete all students, groups, saved work, votes, chat, marks, active activity, and kick all students back to login.')){
+  if(!confirm('Reset current class live data? Old student work will be archived first so it can be kept/deleted later. Students will be kicked back to login.')){
     return;
   }
 
   const cls = (typeof currentTeacherClassKey === 'function') ? currentTeacherClassKey() : String(selectedTeacherClass || '').replace('/','-').trim();
   const resetToken = 'reset_' + Date.now();
 
-  // Delete all class data first.
+  // Archive current attempt before clearing live class data.
+  await archiveSkillClashClassAttempt(cls, 'archived_before_class_reset');
+
+  // Delete live class data first. Archived attempts stay under activityAttempts and attemptArchive.
   await hubRef.child(`classes/${cls}`).remove();
 
   // Recreate only clean settings with a new resetToken.
@@ -8970,9 +9172,13 @@ window.addEventListener('load', function(){
       const activeTerm = record.term || settings.activeSavingTerm || settings.term || "term1";
       const studyYear = record.studyYear || settings.studyYear || "";
 
-      // Deterministic recordId prevents duplicated marks when teacher clicks Save more than once.
+      const attemptId = record.activationId || record.attemptId || ((window.latestAssignedActivity || {}).activationId) || ((window.latestAssignedActivity || {}).attemptId) || "no_attempt";
+
+      // Deterministic recordId prevents duplicated marks when teacher clicks Save more than once,
+      // but includes the attempt ID so reusing the same activity creates a NEW history mark.
       const baseId = record.recordId || [
         "skill_final",
+        attemptId,
         record.activityName || scActivityName(),
         record.activityType || "Skill Clash",
         studentId
@@ -8986,6 +9192,8 @@ window.addEventListener('load', function(){
         program: "Skill Clash",
         app: "Skill Clash",
         activityType: "Skill Clash",
+        activationId: attemptId,
+        attemptId: attemptId,
         term: activeTerm,
         studyYear: studyYear,
         date: record.date || new Date().toLocaleDateString(),
@@ -9245,7 +9453,8 @@ window.addEventListener('load', function(){
         }
 
         const activityName = scActivityName();
-        const activityId = scCleanKey(activityName || "Skill Clash Activity");
+        const attemptId = ((window.latestAssignedActivity || {}).activationId) || ((window.latestAssignedActivity || {}).attemptId) || ((g || {}).activationId) || 'no_attempt';
+        const activityId = scCleanKey((attemptId || 'no_attempt') + '_' + (activityName || "Skill Clash Activity"));
 
         for(const sid of Object.keys(students)){
           const st = students[sid] || {};
@@ -9257,6 +9466,8 @@ window.addEventListener('load', function(){
             activityType: "Skill Clash",
             score: finalMark,
             total: finalMax,
+            activationId: attemptId,
+            attemptId: attemptId,
             recordId: "skill_final_" + activityId + "_group" + groupNum + "_" + scCleanKey(sid),
             notes: comment || "Final Skill Clash mark. Voting points are not included."
           });
