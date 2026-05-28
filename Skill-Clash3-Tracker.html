@@ -3542,12 +3542,32 @@ function saveTeacherSession(){
   localStorage.setItem('skillClashTeacherSession','yes');
 }
 function restoreTeacherSessionIfExists(){
+
+  // NEVER restore teacher session
+  // if Secure Hub student exists
+  try{
+    const secureStudent =
+      JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+
+    if(secureStudent && secureStudent.studentId){
+      return false;
+    }
+  }catch(e){}
+
   if(localStorage.getItem('skillClashTeacherSession') === 'yes'){
     showOnly('teacherDashboard');
-    if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard();
-    if(typeof loadLibraryToDashboard === 'function') loadLibraryToDashboard();
+
+    if(typeof renderTeacherDashboard === 'function'){
+      renderTeacherDashboard();
+    }
+
+    if(typeof loadLibraryToDashboard === 'function'){
+      loadLibraryToDashboard();
+    }
+
     return true;
   }
+
   return false;
 }
 function clearTeacherSession(){
