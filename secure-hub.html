@@ -862,14 +862,31 @@ async function loadStudentCertificatesWindow(session){
 
   const filteredCerts = certs.filter(c => recordTerm(c) === selectedTerm);
 
-  if(!filteredCerts.length){
-    box.innerHTML = `<div class="actionItem">🏅 No certificates for ${termLabel(selectedTerm)} yet.</div>`;
+  const uniqueCerts = [];
+
+filteredCerts.forEach(c => {
+  const key = safeKey(
+    (c.source || c.page || '') + '_' +
+    (c.activityName || c.lessonTitle || c.title || '') + '_' +
+    (c.score || '') + '_' +
+    (c.total || '') + '_' +
+    selectedTerm
+  );
+
+  if(!uniqueCerts.some(x => x._uniqueKey === key)){
+    c._uniqueKey = key;
+    uniqueCerts.push(c);
+  }
+});
+
+if(!uniqueCerts.length){
+  box.innerHTML = `<div class="actionItem">🏅 No certificates for ${termLabel(selectedTerm)} yet.</div>`;
     return;
   }
 
-  STUDENT_CERT_CACHE = filteredCerts;
-
-  box.innerHTML = filteredCerts.map((c,index)=>{
+STUDENT_CERT_CACHE = uniqueCerts;
+  
+  box.innerHTML = uniqueCerts.map((c,index)=>{
     const url = certificateUrl(c);
     const title = c.title || c.certificateTitle || "Achievement Certificate";
     const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
