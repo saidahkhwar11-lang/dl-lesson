@@ -2046,6 +2046,24 @@ async function saveDLPerformanceToTeacherControl(record){
       time: Date.now(),
       recordId: recordId
     });
+
+    if(String(record.notes || '').includes('Final DL lesson mark')){
+  await dbRef(
+    'teacherControlCenter/performance/' + classId + '/' + studentKey + '/DL_Lesson'
+  ).set({
+    classId: classId,
+    studentId: studentKey,
+    studentName: studentName,
+    activityName: record.activityName || 'DL Lesson',
+    activityType: 'DL Lesson',
+    score: Number(record.score || 0),
+    total: Number(record.total || 0),
+    notes: 'Final DL lesson mark',
+    sourceLessonKey: lessonKey || '',
+    date: record.date || tcToday(),
+    time: Date.now()
+  });
+}
   }catch(err){
     console.warn('Teacher Control performance save failed:', err);
   }
