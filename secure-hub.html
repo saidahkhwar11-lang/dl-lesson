@@ -399,7 +399,33 @@ function normalizeTerm(value){
 }
 
 function recordTerm(record){
-  return normalizeTerm(record?.term || record?.activeTerm || record?.termId || record?.schoolTerm || "term1");
+
+  const savedTerm =
+    record?.term ||
+    record?.activeTerm ||
+    record?.termId ||
+    record?.schoolTerm;
+
+  if(savedTerm){
+    return normalizeTerm(savedTerm);
+  }
+
+  const value =
+    record?.time ||
+    record?.updatedAt ||
+    record?.completedAt ||
+    record?.savedAt ||
+    record?.issuedAt ||
+    Date.now();
+
+  const d = new Date(Number(value));
+  const m = d.getMonth() + 1;
+
+  if(m >= 8 && m <= 12) return "term1"; // Aug-Dec
+  if(m >= 1 && m <= 3) return "term2";  // Jan-Mar
+  if(m >= 4 && m <= 7) return "term3";  // Apr-Jul
+
+  return "term1";
 }
 
 function reloadStudentTermView(){
@@ -498,6 +524,17 @@ function loginTeacher(){
 
 function safeKey(value){
   return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g,"_");
+}
+
+function getTermFromDate(value){
+  const d = value ? new Date(Number(value)) : new Date();
+  const m = d.getMonth() + 1;
+
+  if(m >= 8 && m <= 12) return "term1"; // Aug-Dec
+  if(m >= 1 && m <= 3) return "term2";  // Jan-Mar
+  if(m >= 4 && m <= 7) return "term3";  // Apr-Jul
+
+  return "term1";
 }
 
 function getScoreText(record){
@@ -663,6 +700,7 @@ async function loadStudentPerformanceWindow(session){
       `<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
   }
 }
+  
 function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
 }
