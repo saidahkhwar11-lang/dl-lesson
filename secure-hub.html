@@ -705,11 +705,25 @@ function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
 }
 
-  async function autoCreateCertificateIfFull(record, session, page, selectedTerm){
+ async function autoCreateCertificateIfFull(record, session, page, selectedTerm){
   if(!record || !isFullMark(record)) return;
 
+  const recordTime =
+    record.time ||
+    record.updatedAt ||
+    record.completedAt ||
+    record.savedAt ||
+    Date.now();
+
   selectedTerm = selectedTerm || recordTerm(record);
-  const certId = safeKey(selectedTerm + "_" + page + "_" + (record.activityName || page));
+
+  const certId = safeKey(
+    selectedTerm + "_" +
+    page + "_" +
+    (record.activityName || page) + "_" +
+    recordTime
+  );
+
   const certPath =
     `teacherControlCenter/certificates/${session.classId}/${session.studentId}/${certId}`;
 
@@ -726,14 +740,14 @@ function certificateUrl(cert){
     classId: session.classId,
     className: session.className,
     term: selectedTerm,
+    time: recordTime,
+    issuedAt: recordTime,
     score: Number(record.score || 0),
     total: Number(record.total || 0),
     reason: "Full mark achieved in " + (record.activityName || page),
-    issuedAt: Date.now(),
-    date: new Date().toLocaleDateString("en-GB")
+    date: new Date(Number(recordTime)).toLocaleDateString("en-GB")
   });
 }
-
 function certificateDateText(c){
   const date = c.date || c.issuedAt || c.createdAt || c.completedAt || c.updatedAt || Date.now();
   try{return new Date(Number(date)).toLocaleDateString();}catch(e){return String(date || "-");}
