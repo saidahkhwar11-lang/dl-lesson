@@ -286,6 +286,10 @@
     <button class="pink" onclick="startBossRound()">👑 Boss Round</button>
     <button class="success" onclick="stopChallenge()">🏆 Stop + Report</button>
     <button class="danger" onclick="resetGame()">🧹 Reset</button>
+
+<button class="danger" onclick="clearRecoveryAssignmentsForClass()">
+  🗑 Clear Recovery Assignments
+</button>
   </div>
 
 
@@ -1679,6 +1683,23 @@ async function stopChallenge(){
   alert('✅ Report stopped. Unfinished students were scheduled automatically.');
 }
 
+ async function clearRecoveryAssignmentsForClass(){
+
+  const cls = getActiveClass();
+  const classId = safeKey(cls);
+
+  if(!confirm("Clear all recovery/scheduled collections for Class " + cls + "?")) return;
+
+  const s = await getState();
+
+  s.scheduledCollections = s.scheduledCollections || {};
+  delete s.scheduledCollections[classId];
+
+  await setState(s);
+
+  alert("✅ Recovery assignments cleared for Class " + cls);
+  teacherRefresh();
+}
 async function resetGame(){
   if(!confirm('Reset students, group points, answers, events, and progress only?\n\nYour saved collections will stay unless you click Delete Collection.')) return;
 
