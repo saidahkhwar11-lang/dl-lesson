@@ -7531,21 +7531,9 @@ function buildAssignedActivityForGroup(a, i, activationId){
 }
 
 
-
-
-
-
-
-
-
 function normalizeClassKey(cls){
   return safeClassKey(cls);
 }
-
-
-
-
-
 
 function strictBuildActiveActivity(a, groupNo, activationId){
   a = a || {};
@@ -7625,10 +7613,16 @@ async function activateSavedActivityForSelectedClasses(){
 
   const activationId = 'act_' + Date.now();
   const changedAt = Date.now();
-  const updates = {};
+ const updates = {};
 
-  classes.forEach(cls=>{
-    const classActive = strictBuildActiveActivity(a, 1, activationId);
+classes.forEach(cls=>{
+
+  // Clear old group memberships for new activity
+  for(let g = 1; g <= 10; g++){
+    updates[`classes/${cls}/groups/group${g}/students`] = {};
+  }
+
+  const classActive = strictBuildActiveActivity(a, 1, activationId);
     classActive.assignedClasses = classes;
     classActive.assignedToText = classes.map(classDisplay).join(', ');
     classActive.activeActivityChangedAt = changedAt;
@@ -7665,11 +7659,6 @@ async function activateSavedActivityForSelectedClasses(){
   if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
 }
 
-
-
-
-
-
 async function assignCurrentActivity(){
   const a = await collectActivity();
   if(!a.title){alert('Write activity name.');return}
@@ -7688,6 +7677,10 @@ async function assignCurrentActivity(){
 
   const updates = {};
   classes.forEach(cls=>{
+    // Clear old group memberships for new activity
+  for(let g=1; g<=10; g++){
+    updates[`classes/${cls}/groups/group${g}/students`] = {};
+  }
     groups.forEach(i=>{
       const groupTask = a.taskType === 'same' ? a.sameTask : (a.groupTasks['group'+i] || '');
       const groupTaskImage = a.taskType === 'same' ? (a.mainImage || '') : ((a.groupTaskImages || {})['group'+i] || '');
