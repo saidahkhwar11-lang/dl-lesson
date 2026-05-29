@@ -149,6 +149,54 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 .miniLoading{color:#607197;font-size:13px;line-height:1.5}
 @media(max-width:900px){.studentWindows{grid-template-columns:1fr}}
 
+/* ===== COMPACT TERM VIEW ===== */
+.termControlBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.termControlBar h2{margin:0!important}
+.termSelectMini{
+  width:auto!important;
+  min-width:120px;
+  padding:8px 10px!important;
+  border-radius:12px!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  color:#203a78!important;
+  background:#eef4ff!important;
+}
+.studentWindows{
+  grid-template-columns:1fr 1fr!important;
+  gap:16px!important;
+  margin:18px 0!important;
+}
+.infoWindow{
+  padding:14px!important;
+  border-radius:22px!important;
+}
+.infoWindow h2{font-size:22px!important;margin-bottom:6px!important}
+.feedbackBox{padding:9px 11px!important;font-size:13px!important;margin:8px 0 10px!important}
+.reportTable{font-size:12px!important;min-width:500px!important}
+.reportTable th,.reportTable td{padding:7px 8px!important}
+.actionItem{padding:8px 10px!important;font-size:12px!important}
+.certList{gap:7px!important;max-height:420px;overflow:auto;padding-right:3px}
+.certCard{padding:9px 10px!important;border-radius:14px!important}
+.certMeta{font-size:11px!important;margin-top:2px!important}
+.certBtn{padding:6px 10px!important;font-size:12px!important;margin-top:6px!important}
+.grid{gap:14px!important}
+.card{padding:18px 14px!important;border-radius:22px!important}
+.emoji{font-size:48px!important;margin-bottom:8px!important}
+.card h2{font-size:22px!important}
+.card p{font-size:13px!important;line-height:1.45!important}
+.hero{padding:24px!important;margin-bottom:20px!important}
+.hero h1{font-size:44px!important}
+.hero p{font-size:15px!important}
+@media(max-width:900px){.studentWindows{grid-template-columns:1fr!important}.certList{max-height:none}}
+
 </style>
 </head>
 
@@ -232,7 +280,14 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
   <div class="studentWindows">
 
     <div class="infoWindow">
-      <h2>📊 My Performance Report</h2>
+      <div class="termControlBar">
+        <h2>📊 My Performance Report</h2>
+        <select id="studentTermSelect" class="termSelectMini" onchange="reloadStudentTermView()">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
       <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
       <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, and Reading Rush marks...</div>
       <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
@@ -240,7 +295,10 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
     </div>
 
     <div class="infoWindow">
-      <h2>🏅 My Certificates</h2>
+      <div class="termControlBar">
+        <h2>🏅 My Certificates</h2>
+        <span id="certificateTermLabel" class="miniLoading">Term 1</span>
+      </div>
       <div class="miniLoading">
         Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files.
       </div>
@@ -322,6 +380,34 @@ const TEACHER_PASSWORD = "Welcome@2020";
 let db=null;
 let classes={};
 let STUDENT_CERT_CACHE=[];
+let CURRENT_STUDENT_SESSION=null;
+
+function selectedStudentTerm(){
+  return byId("studentTermSelect")?.value || "term1";
+}
+
+function termLabel(term){
+  const n = String(term || "term1").replace(/[^0-9]/g,"") || "1";
+  return "Term " + n;
+}
+
+function normalizeTerm(value){
+  const v = String(value || "").toLowerCase().replace(/\s+/g,"");
+  if(v.includes("3")) return "term3";
+  if(v.includes("2")) return "term2";
+  return "term1";
+}
+
+function recordTerm(record){
+  return normalizeTerm(record?.term || record?.activeTerm || record?.termId || record?.schoolTerm || "term1");
+}
+
+function reloadStudentTermView(){
+  if(CURRENT_STUDENT_SESSION){
+    loadStudentHubWindows(CURRENT_STUDENT_SESSION);
+  }
+}
+
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
@@ -512,11 +598,13 @@ async function loadStudentPerformanceWindow(session){
 
   const classId = session.classId;
   const studentId = String(session.studentId || session.password || "").trim();
+  const selectedTerm = selectedStudentTerm();
 
   const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
   const records = snap.exists() ? Object.values(snap.val() || {}) : [];
 
   const rows = records
+    .filter(r=> recordTerm(r) === selectedTerm)
     .filter(r=>{
       const type = String(r.activityType || "");
       const notes = String(r.notes || "");
@@ -544,7 +632,7 @@ async function loadStudentPerformanceWindow(session){
 
   for(const row of rows){
     if(row.record){
-      await autoCreateCertificateIfFull(row.record, session, row.page);
+      await autoCreateCertificateIfFull(row.record, session, row.page, selectedTerm);
     }
   }
 
@@ -566,11 +654,11 @@ async function loadStudentPerformanceWindow(session){
 
   if(actions.length){
     byId("studentAutoMessage").innerHTML =
-      `Dear ${esc(session.name)}, check the needed actions below to complete your tracker. 🌟`;
+      `Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
     byId("studentNeededActions").innerHTML = actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
   }else{
     byId("studentAutoMessage").innerHTML =
-      `Excellent work, ${esc(session.name)}! Your saved activity marks are listed below. 🌟`;
+      `Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
     byId("studentNeededActions").innerHTML =
       `<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
   }
@@ -579,10 +667,11 @@ function certificateUrl(cert){
   return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
 }
 
-  async function autoCreateCertificateIfFull(record, session, page){
+  async function autoCreateCertificateIfFull(record, session, page, selectedTerm){
   if(!record || !isFullMark(record)) return;
 
-  const certId = safeKey(page + "_" + (record.activityName || page));
+  selectedTerm = selectedTerm || recordTerm(record);
+  const certId = safeKey(selectedTerm + "_" + page + "_" + (record.activityName || page));
   const certPath =
     `teacherControlCenter/certificates/${session.classId}/${session.studentId}/${certId}`;
 
@@ -598,6 +687,7 @@ function certificateUrl(cert){
     studentName: session.name,
     classId: session.classId,
     className: session.className,
+    term: selectedTerm,
     score: Number(record.score || 0),
     total: Number(record.total || 0),
     reason: "Full mark achieved in " + (record.activityName || page),
@@ -685,6 +775,9 @@ async function loadStudentCertificatesWindow(session){
   const classId = session.classId;
   const classKey = safeKey(session.className);
   const studentId = String(session.studentId || session.password || "").trim();
+  const selectedTerm = selectedStudentTerm();
+  const termBox = byId("certificateTermLabel");
+  if(termBox) termBox.innerText = termLabel(selectedTerm);
 
   const certs = [];
 
@@ -715,9 +808,16 @@ async function loadStudentCertificatesWindow(session){
     return;
   }
 
-  STUDENT_CERT_CACHE = certs;
+  const filteredCerts = certs.filter(c => recordTerm(c) === selectedTerm);
 
-  box.innerHTML = certs.map((c,index)=>{
+  if(!filteredCerts.length){
+    box.innerHTML = `<div class="actionItem">🏅 No certificates for ${termLabel(selectedTerm)} yet.</div>`;
+    return;
+  }
+
+  STUDENT_CERT_CACHE = filteredCerts;
+
+  box.innerHTML = filteredCerts.map((c,index)=>{
     const url = certificateUrl(c);
     const title = c.title || c.certificateTitle || "Achievement Certificate";
     const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
@@ -742,6 +842,7 @@ function loadStudentHubWindows(session){
 }
 
 function openStudentHub(session){
+  CURRENT_STUDENT_SESSION = session;
   byId("loginScreen").classList.add("hidden");
   byId("teacherHub").classList.add("hidden");
   byId("studentHub").classList.remove("hidden");
