@@ -7957,32 +7957,91 @@ function formatTeacherTime(totalSeconds){
   const s = totalSeconds % 60;
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
-async function addMissingSkillClashMark(){
-  const classId = prompt("Class ID? Example: 9_3 or 9-3");
-  const studentId = prompt("Student ID?");
-  const studentName = prompt("Student name?");
-  const activityName = prompt("Activity name?");
-  const score = Number(prompt("Score?"));
-  const total = Number(prompt("Total mark?"));
+function addMissingSkillClashMark(){
+  const box = document.createElement("div");
+  box.innerHTML = `
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:99999;display:flex;align-items:center;justify-content:center;padding:18px">
+      <div style="background:white;border-radius:22px;padding:18px;max-width:520px;width:100%">
+        <h2>➕ Add Missing Skill Clash Mark</h2>
 
-  if(!classId || !studentId || !activityName || isNaN(score) || isNaN(total)){
-    alert("Missing information.");
+        <label>Class</label>
+        <select id="missingClass">
+          <option value="9_1">9/1</option>
+          <option value="9_2">9/2</option>
+          <option value="9_3">9/3</option>
+          <option value="9_4">9/4</option>
+        </select>
+
+        <label>Student ID</label>
+        <input id="missingStudentId" placeholder="Student ID">
+
+        <label>Activity Name</label>
+        <input id="missingActivityName" placeholder="Example: Debate Activity Make-up">
+
+        <label>Mark / Total</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input id="missingScore" type="number" placeholder="Score">
+          <input id="missingTotal" type="number" placeholder="Total">
+        </div>
+
+        <label>Term</label>
+        <select id="missingTerm">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+
+        <div style="display:flex;gap:10px;margin-top:14px">
+          <button class="green" onclick="saveMissingSkillClashMark(this)">Save Mark</button>
+          <button class="red" onclick="this.closest('div[style*=fixed]').remove()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(box.firstElementChild);
+}
+  async function saveMissingSkillClashMark(btn){
+  const classId = document.getElementById("missingClass").value;
+  const studentId = scCleanKey(document.getElementById("missingStudentId").value);
+  const activityName = document.getElementById("missingActivityName").value.trim();
+  const score = Number(document.getElementById("missingScore").value || 0);
+  const total = Number(document.getElementById("missingTotal").value || 0);
+  const term = document.getElementById("missingTerm").value;
+
+  if(!classId || !studentId || !activityName || !total){
+    alert("Please complete class, student ID, activity name, score and total.");
     return;
   }
 
-  await scSavePerformance({
-    classId: classId,
-    studentId: studentId,
-    studentName: studentName || studentId,
-    activityName: activityName,
+  const recordId =
+    "skill_makeup_" + scCleanKey(activityName) + "_" + studentId + "_" + Date.now();
+
+  const record = {
+    classId,
+    studentId,
+    studentName: studentId,
+    activityName,
     activityType: "Skill Clash",
-    score: score,
-    total: total,
-    recordId: "skill_makeup_" + Date.now() + "_" + scCleanKey(studentId),
-    notes: "Final Skill Clash mark - make-up added by teacher"
-  });
+    score,
+    total,
+    term,
+    activeTerm: term,
+    recordId,
+    notes: "Final Skill Clash mark - make-up added by teacher",
+    time: Date.now(),
+    date: new Date().toLocaleDateString("en-GB")
+  };
+
+  await hubRef.root.child(
+    "teacherControlCenter/records/" + classId + "/" + studentId + "/" + recordId
+  ).set(record);
+
+  await hubRef.root.child(
+    "teacherControlCenter/performance/" + classId + "/" + studentId + "/Skill_Clash"
+  ).set(record);
 
   alert("✅ Missing Skill Clash mark saved.");
+  btn.closest("div[style*=fixed]").remove();
 }
 function renderStudentHeaderTimer(seconds, state){
   const studentTimer = document.getElementById('studentTimer');
