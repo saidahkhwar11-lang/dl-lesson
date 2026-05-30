@@ -7615,6 +7615,17 @@ async function activateSavedActivityForSelectedClasses(){
   const changedAt = Date.now();
  const updates = {};
 
+  // Archive current class work before replacing it
+for(const cls of classes){
+  if(typeof window.archiveSkillClassWork === 'function'){
+    await window.archiveSkillClassWork(
+      cls,
+      scArchiveTerm(),
+      'Auto archive before new activity activation'
+    );
+  }
+}
+
 classes.forEach(cls=>{
 
   // Clear old group memberships for new activity
