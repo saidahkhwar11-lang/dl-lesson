@@ -7992,7 +7992,7 @@ function addMissingSkillClashMark(){
         </select>
 
         <div style="display:flex;gap:10px;margin-top:14px">
-          <button class="green" onclick="saveMissingSkillClashMark(this)">Save Mark</button>
+          <button class="green" onclick="window.saveMissingSkillClashMark(this)">Save Mark</button>
           <button class="red" onclick="this.closest('div[style*=fixed]').remove()">Cancel</button>
         </div>
       </div>
@@ -8000,7 +8000,7 @@ function addMissingSkillClashMark(){
   `;
   document.body.appendChild(box.firstElementChild);
 }
-  async function saveMissingSkillClashMark(btn){
+  window.saveMissingSkillClashMark = async function(btn){
   const classId = document.getElementById("missingClass").value;
   const studentId = scCleanKey(document.getElementById("missingStudentId").value);
   const activityName = document.getElementById("missingActivityName").value.trim();
