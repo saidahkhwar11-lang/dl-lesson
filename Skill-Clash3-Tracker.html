@@ -7992,7 +7992,7 @@ function addMissingSkillClashMark(){
         </select>
 
         <div style="display:flex;gap:10px;margin-top:14px">
-          <button class="green" onclick="window.saveMissingSkillClashMark(this)">Save Mark</button>
+<button class="green" onclick="saveMissingSkillClashMarkNow()">Save Mark</button>
           <button class="red" onclick="this.closest('div[style*=fixed]').remove()">Cancel</button>
         </div>
       </div>
@@ -8000,49 +8000,58 @@ function addMissingSkillClashMark(){
   `;
   document.body.appendChild(box.firstElementChild);
 }
-  window.saveMissingSkillClashMark = async function(btn){
-  const classId = document.getElementById("missingClass").value;
-  const studentId = scCleanKey(document.getElementById("missingStudentId").value);
-  const activityName = document.getElementById("missingActivityName").value.trim();
-  const score = Number(document.getElementById("missingScore").value || 0);
-  const total = Number(document.getElementById("missingTotal").value || 0);
-  const term = document.getElementById("missingTerm").value;
+  
+window.saveMissingSkillClashMarkNow = async function(){
 
-  if(!classId || !studentId || !activityName || !total){
-    alert("Please complete class, student ID, activity name, score and total.");
-    return;
+  try{
+    const classId = document.getElementById("missingClass").value;
+    const studentId = String(document.getElementById("missingStudentId").value || "").trim().replace(/[^a-zA-Z0-9_-]/g,"_");
+    const activityName = document.getElementById("missingActivityName").value.trim();
+    const score = Number(document.getElementById("missingScore").value || 0);
+    const total = Number(document.getElementById("missingTotal").value || 0);
+    const term = document.getElementById("missingTerm").value;
+
+    if(!classId || !studentId || !activityName || !total){
+      alert("Please complete all fields.");
+      return;
+    }
+
+    const recordId = "skill_makeup_" + Date.now() + "_" + studentId;
+
+    const record = {
+      classId: classId,
+      studentId: studentId,
+      studentName: studentId,
+      activityName: activityName,
+      activityType: "Skill Clash",
+      score: score,
+      total: total,
+      term: term,
+      activeTerm: term,
+      recordId: recordId,
+      notes: "Final Skill Clash mark - make-up added by teacher",
+      time: Date.now(),
+      date: new Date().toLocaleDateString("en-GB")
+    };
+
+    await firebase.database().ref(
+      "teacherControlCenter/records/" + classId + "/" + studentId + "/" + recordId
+    ).set(record);
+
+    await firebase.database().ref(
+      "teacherControlCenter/performance/" + classId + "/" + studentId + "/Skill_Clash"
+    ).set(record);
+
+    alert("✅ Missing Skill Clash mark saved.");
+
+    document.querySelectorAll(".rewardPopup, .missingMarkPopup").forEach(x=>x.remove());
+
+  }catch(err){
+    alert("Save failed: " + err.message);
+    console.error(err);
   }
-
-  const recordId =
-    "skill_makeup_" + scCleanKey(activityName) + "_" + studentId + "_" + Date.now();
-
-  const record = {
-    classId,
-    studentId,
-    studentName: studentId,
-    activityName,
-    activityType: "Skill Clash",
-    score,
-    total,
-    term,
-    activeTerm: term,
-    recordId,
-    notes: "Final Skill Clash mark - make-up added by teacher",
-    time: Date.now(),
-    date: new Date().toLocaleDateString("en-GB")
-  };
-
-  await hubRef.root.child(
-    "teacherControlCenter/records/" + classId + "/" + studentId + "/" + recordId
-  ).set(record);
-
-  await hubRef.root.child(
-    "teacherControlCenter/performance/" + classId + "/" + studentId + "/Skill_Clash"
-  ).set(record);
-
-  alert("✅ Missing Skill Clash mark saved.");
-  btn.closest("div[style*=fixed]").remove();
-}
+};
+  
 function renderStudentHeaderTimer(seconds, state){
   const studentTimer = document.getElementById('studentTimer');
   const box = document.getElementById('studentHeaderTimer');
