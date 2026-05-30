@@ -673,16 +673,26 @@ async function loadStudentPerformanceWindow(session){
     }
   }
 
+  const uniqueRows = [];
+
+rows.forEach(r=>{
+  const key = safeKey(r.page + "_" + r.activity + "_" + r.mark);
+  if(!uniqueRows.some(x => x._key === key)){
+    r._key = key;
+    uniqueRows.push(r);
+  }
+});
+
   const recovery = await readScheduledRecovery(session);
 
-  byId("studentReportTable").innerHTML = rows.length
-    ? renderReportTable(rows)
+  byId("studentReportTable").innerHTML = uniqueRows.length
+  ? renderReportTable(uniqueRows)
     : `<div class="actionItem">⚠️ No saved marks found yet.</div>`;
 
   const actions = [];
 
-  if(!rows.length){
-    actions.push("⚠️ No marks saved yet. Complete an activity first.");
+if(!uniqueRows.length){
+  actions.push("⚠️ No marks saved yet. Complete an activity first.");
   }
 
   recovery.forEach(a=>{
