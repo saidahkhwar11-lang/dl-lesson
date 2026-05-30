@@ -2888,6 +2888,9 @@ button:hover{filter:brightness(.96)}
         <button class="purple" onclick="toggleActivationPanel()">🚀 Activate Activity</button>
         <button class="blue" onclick="showBuilder()">🧩 Activity Builder</button>
         <button class="orange" onclick="finishActivity()">🏁 Finish Activity + Excel</button>
+        <button class="purple" onclick="addMissingSkillClashMark()">
+  ➕ Add Missing Skill Clash Mark
+</button>
         <button onclick="location.href='Secure-Hub.html'">
   🏠 Back to Main Page
 </button>
@@ -7947,13 +7950,40 @@ async function renderTeacherVotingResults(showPanel){
       ${fullHtml}
      </table>`;
 }
+  
 function formatTeacherTime(totalSeconds){
   totalSeconds = Math.max(0, Number(totalSeconds || 0));
   const m = Math.floor(totalSeconds / 60);
   const s = totalSeconds % 60;
   return String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
 }
+async function addMissingSkillClashMark(){
+  const classId = prompt("Class ID? Example: 9_3 or 9-3");
+  const studentId = prompt("Student ID?");
+  const studentName = prompt("Student name?");
+  const activityName = prompt("Activity name?");
+  const score = Number(prompt("Score?"));
+  const total = Number(prompt("Total mark?"));
 
+  if(!classId || !studentId || !activityName || isNaN(score) || isNaN(total)){
+    alert("Missing information.");
+    return;
+  }
+
+  await scSavePerformance({
+    classId: classId,
+    studentId: studentId,
+    studentName: studentName || studentId,
+    activityName: activityName,
+    activityType: "Skill Clash",
+    score: score,
+    total: total,
+    recordId: "skill_makeup_" + Date.now() + "_" + scCleanKey(studentId),
+    notes: "Final Skill Clash mark - make-up added by teacher"
+  });
+
+  alert("✅ Missing Skill Clash mark saved.");
+}
 function renderStudentHeaderTimer(seconds, state){
   const studentTimer = document.getElementById('studentTimer');
   const box = document.getElementById('studentHeaderTimer');
