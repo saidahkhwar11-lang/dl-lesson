@@ -232,6 +232,31 @@ td.commentCol{background:#fffdf5;min-width:240px}
 }
 .loginCard{width:min(430px,94vw)}
 .footerNote{text-align:center;color:#667497;font-size:12px;margin-top:10px}
+
+.dailySummaryGrid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin:12px 0;
+}
+.dailyMini{
+  background:linear-gradient(135deg,#ffffff,#f8fbff);
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+  text-align:center;
+  font-weight:900;
+}
+.dailyMini .label{font-size:12px;color:#667497;margin-bottom:4px}
+.dailyMini .value{font-family:Quicksand,sans-serif;font-size:24px;color:#203a78}
+.dailyPresent{color:#157347;font-weight:900}
+.dailyAbsent{color:#9a2740;font-weight:900}
+.dailyHigh{color:#157347;font-weight:900}
+.dailyMedium{color:#b86a00;font-weight:900}
+.dailyLow{color:#b4233a;font-weight:900}
+.dailyAbsentLevel{color:#667497;font-weight:900}
+@media(max-width:850px){.dailySummaryGrid{grid-template-columns:1fr 1fr}}
+
 @media(max-width:950px){.grid,.grid3{grid-template-columns:1fr}}
 </style>
 </head>
@@ -262,6 +287,7 @@ td.commentCol{background:#fffdf5;min-width:240px}
       <button onclick="showSection('classes')">🏫 Classes</button>
       <button onclick="showSection('students')">👩‍🎓 Students</button>
       <button onclick="showSection('records')">📊 Performance Tracker</button>
+      <button onclick="showSection('daily')">📅 Daily Tracker</button>
       <button onclick="showSection('individual')">🔎 Individual Record</button>
       <button class="secondary" onclick="location.href='hub.html'">🎮 Back to Hub</button>
       <button class="danger" onclick="logoutTeacher()">Logout</button>
@@ -349,6 +375,29 @@ td.commentCol{background:#fffdf5;min-width:240px}
         <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Tracker Excel/CSV</button>
         <button class="danger" onclick="clearDLRecordsOnly()">🧹 Clear DL Lesson Records</button>
         <div id="classRecordsTable"></div>
+      </div>
+    </section>
+
+
+    <section id="dailySection" class="hidden">
+      <div class="card">
+        <h2>📅 Daily Attendance & Activity Tracker</h2>
+        <div class="status good">Phase 1: tracks today's attendance, first login time, and activity level. It does not show marks or missing work.</div>
+        <div class="grid">
+          <div>
+            <label>Choose Class</label>
+            <select id="dailyClassSelect" onchange="renderDailyTracker()"></select>
+          </div>
+          <div>
+            <label>Date</label>
+            <input id="dailyDateInput" type="date" onchange="renderDailyTracker()">
+          </div>
+        </div>
+        <button class="secondary" onclick="setDailyDateToday()">Today</button>
+        <button class="purple" onclick="renderDailyTracker()">🔄 Refresh Daily Tracker</button>
+        <button class="success" onclick="downloadDailyTrackerCSV()">⬇️ Download Daily CSV</button>
+        <div id="dailySummaryBox"></div>
+        <div id="dailyTrackerTable"></div>
       </div>
     </section>
 
@@ -551,7 +600,7 @@ function logoutTeacher(){
 }
 
 function showSection(name){
-  ["classes","students","records","individual"].forEach(s=>{
+  ["classes","students","records","daily","individual"].forEach(s=>{
     byId(s+"Section").classList.toggle("hidden",s!==name);
   });
   refreshAll();
@@ -616,7 +665,7 @@ async function deleteClass(id){
 function fillClassSelects(){
   const classes=Object.values(getClasses()).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
   const options=classes.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("");
-  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","individualClassSelect"].forEach(id=>{
+  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","dailyClassSelect","individualClassSelect"].forEach(id=>{
     const el=byId(id);
     if(!el)return;
     const current=el.value;
@@ -642,9 +691,10 @@ function renderClasses(){
 }
 
 function selectClassEverywhere(id){
-  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","individualClassSelect"].forEach(x=>{if(byId(x))byId(x).value=id});
+  ["uploadClassSelect","studentsClassSelect","recordsClassSelect","dailyClassSelect","individualClassSelect"].forEach(x=>{if(byId(x))byId(x).value=id});
   renderStudentsTable();
   renderClassRecords();
+  renderDailyTracker();
   renderStudentSelect();
   renderIndividualRecord();
 }
@@ -1189,6 +1239,160 @@ function renderClassRecords(){
   </table></div>`;
 }
 
+
+function todayKeyISO(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function setDailyDateToday(){
+  const el=byId('dailyDateInput');
+  if(el) el.value=todayKeyISO();
+  renderDailyTracker();
+}
+function getSelectedDailyDate(){
+  const el=byId('dailyDateInput');
+  if(el && !el.value) el.value=todayKeyISO();
+  return (el && el.value) || todayKeyISO();
+}
+function isSameISODate(timeValue, isoDate){
+  const n=Number(timeValue||0);
+  if(!n || !isoDate) return false;
+  const d=new Date(n);
+  const key=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return key===isoDate;
+}
+function formatLoginTime(timeValue){
+  const n=Number(timeValue||0);
+  if(!n) return '-';
+  try{return new Date(n).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});}catch(e){return '-';}
+}
+function getStoredDailyData(classId, student){
+  const dateKey=getSelectedDailyDate();
+  const daily=(controlData.dailyAttendance || controlData.dailyTracker || {});
+  const byDate=daily[dateKey] || {};
+  const byClass=byDate[classId] || {};
+  return byClass[student.id] || byClass[student.password] || byClass[cleanKey(student.password)] || null;
+}
+function getDLDailyLoginForStudent(student, isoDate){
+  const sid1=normalizeStudentForCompare(student.id);
+  const sid2=normalizeStudentForCompare(student.password);
+  let earliest=0;
+  let count=0;
+
+  Object.values(lessonsData || {}).forEach(lessonObj=>{
+    const students=(lessonObj && lessonObj.students) || {};
+    Object.keys(students).forEach(rawId=>{
+      const sd=students[rawId] || {};
+      const rid=normalizeStudentForCompare(sd.id || rawId);
+      if(rid!==sid1 && rid!==sid2) return;
+      const possibleTimes=[sd.loginTime, sd.firstLoginAt, sd.lastLoginAt, sd.startedAt, sd.updatedAt, sd.time].map(Number).filter(Boolean);
+      possibleTimes.forEach(t=>{
+        if(isSameISODate(t, isoDate)){
+          count++;
+          if(!earliest || t<earliest) earliest=t;
+        }
+      });
+    });
+  });
+  return {earliest,count};
+}
+function getDailyActivityLevel(isPresent, activityCount){
+  if(!isPresent) return {text:'⚫ Absent', cls:'dailyAbsentLevel'};
+  if(activityCount>=3) return {text:'🟢 High', cls:'dailyHigh'};
+  if(activityCount>=1) return {text:'🟡 Medium', cls:'dailyMedium'};
+  return {text:'🔴 Low', cls:'dailyLow'};
+}
+function getDailyRowsForClass(classId){
+  const cls=getClasses()[classId];
+  if(!cls) return [];
+  const isoDate=getSelectedDailyDate();
+  const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+
+  return students.map(st=>{
+    const stored=getStoredDailyData(classId, st) || {};
+    const recordsToday=studentRecordsForClass(classId, st, {allTerms:true}).filter(r=>isSameISODate(r.time || r.createdAt || r.updatedAt || r.savedAt, isoDate));
+    const dlToday=getDLDailyLoginForStudent(st, isoDate);
+    const storedLogin=Number(stored.loginAt || stored.firstLoginAt || stored.time || 0);
+    const loginCandidates=[storedLogin, dlToday.earliest].concat(recordsToday.map(r=>Number(r.time||0))).filter(t=>t && isSameISODate(t, isoDate));
+    const loginTime=loginCandidates.length ? Math.min(...loginCandidates) : 0;
+    const storedCount=Number(stored.activityCount || stored.openCount || 0);
+    const activityCount=storedCount + recordsToday.length + dlToday.count;
+    const isPresent=Boolean(loginTime || stored.attendance==='present' || stored.present===true || activityCount>0);
+    const level=getDailyActivityLevel(isPresent, activityCount);
+
+    return {
+      name:st.name || stored.name || 'Student',
+      id:st.password || st.id,
+      isPresent,
+      loginTime,
+      activityCount,
+      levelText:level.text,
+      levelClass:level.cls
+    };
+  });
+}
+function renderDailyTracker(){
+  const classId=byId('dailyClassSelect')?.value;
+  const cls=getClasses()[classId];
+  const summary=byId('dailySummaryBox');
+  const box=byId('dailyTrackerTable');
+  if(!box || !summary) return;
+  getSelectedDailyDate();
+  if(!cls){
+    summary.innerHTML='';
+    box.innerHTML='<div class="status">Choose a class.</div>';
+    return;
+  }
+
+  const rows=getDailyRowsForClass(classId);
+  const present=rows.filter(r=>r.isPresent).length;
+  const absent=rows.length-present;
+  const high=rows.filter(r=>r.levelText.includes('High')).length;
+  const medium=rows.filter(r=>r.levelText.includes('Medium')).length;
+  const low=rows.filter(r=>r.levelText.includes('Low')).length;
+
+  summary.innerHTML=`
+    <div class="dailySummaryGrid">
+      <div class="dailyMini"><div class="label">✅ Present</div><div class="value">${present}</div></div>
+      <div class="dailyMini"><div class="label">❌ Absent</div><div class="value">${absent}</div></div>
+      <div class="dailyMini"><div class="label">🟢 High</div><div class="value">${high}</div></div>
+      <div class="dailyMini"><div class="label">🟡/🔴 Medium + Low</div><div class="value">${medium+low}</div></div>
+    </div>`;
+
+  if(!rows.length){
+    box.innerHTML='<div class="status">No students in this class.</div>';
+    return;
+  }
+
+  box.innerHTML=`<div class="tableWrap"><table>
+    <thead><tr><th>Student Name</th><th>Student ID</th><th>Attendance</th><th>Login Time</th><th>Activity Level</th></tr></thead>
+    <tbody>${rows.map(r=>`<tr>
+      <td><b>${esc(r.name)}</b></td>
+      <td>${esc(r.id)}</td>
+      <td class="${r.isPresent?'dailyPresent':'dailyAbsent'}">${r.isPresent?'✅ Present':'❌ Absent'}</td>
+      <td>${r.isPresent ? esc(formatLoginTime(r.loginTime)) : '-'}</td>
+      <td class="${r.levelClass}">${r.levelText}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+}
+function downloadDailyTrackerCSV(){
+  const classId=byId('dailyClassSelect')?.value;
+  const cls=getClasses()[classId];
+  if(!cls){alert('Choose class.');return;}
+  const isoDate=getSelectedDailyDate();
+  const rows=getDailyRowsForClass(classId);
+  const csv=[
+    ['Daily Attendance & Activity Tracker'],
+    ['Teacher','Saidah Khwar'],
+    ['Class',cls.name || classId],
+    ['Date',isoDate],
+    [],
+    ['Student Name','Student ID','Attendance','Login Time','Activity Level']
+  ];
+  rows.forEach(r=>csv.push([r.name,r.id,r.isPresent?'Present':'Absent',r.isPresent?formatLoginTime(r.loginTime):'',r.levelText.replace(/[🟢🟡🔴⚫]/g,'').trim()]));
+  downloadText((cls.name||'class')+'_'+isoDate+'_daily_tracker.csv', toCSV(csv));
+}
+
 function renderStudentSelect(){
   const classId=byId("individualClassSelect")?.value;
   const cls=getClasses()[classId];
@@ -1358,6 +1562,7 @@ function refreshAll(){
   renderStudentsTable();
   renderStats();
   renderClassRecords();
+  renderDailyTracker();
   renderStudentSelect();
   renderIndividualRecord();
 }
