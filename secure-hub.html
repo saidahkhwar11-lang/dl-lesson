@@ -538,7 +538,7 @@ async function loginStudent(){
       firstLoginAt:old.firstLoginAt || now,
       loginTimeMs:old.loginTimeMs || now,
       lastActiveAt:now,
-      activityCount:(old.activityCount || 0) + 1
+      activityCount: old.activityCount || 0
     });
 
     console.log("✅ Daily attendance saved:", todayKey, classId, safeStudentId);
