@@ -509,44 +509,46 @@ async function loginStudent(){
 
   localStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(session));
 
-  // ✅ Save today's attendance for Teacher Control Daily Tracker
+  // ✅ DAILY TRACKER LOGIN SAVE
   try{
-    const d = new Date();
-    const todayKey = d.getFullYear() + "-" +
-      String(d.getMonth()+1).padStart(2,"0") + "-" +
-      String(d.getDate()).padStart(2,"0");
+    const d=new Date();
+    const todayKey=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 
-    const timeText = d.toLocaleTimeString([], {
-      hour:"2-digit",
-      minute:"2-digit"
-    });
+    const safeStudentId=String(session.studentId||"")
+      .trim()
+      .replace(/[.#$\[\]\/]/g,"_")
+      .replace(/\s+/g,"_");
 
-    const safeStudentId = cleanKey(session.studentId);
-
-    const dailyRef = db.ref(
-      "teacherControlCenter/dailyAttendance/" + todayKey + "/" + classId + "/" + safeStudentId
+    const ref=firebase.database().ref(
+      "teacherControlCenter/dailyAttendance/"+todayKey+"/"+classId+"/"+safeStudentId
     );
 
-    const oldSnap = await dailyRef.once("value");
-    const oldData = oldSnap.val() || {};
+    const snap=await ref.once("value");
+    const old=snap.val() || {};
+    const now=Date.now();
 
-    await dailyRef.update({
-      name: session.name,
-      id: session.studentId,
-      classId: classId,
-      className: session.className,
-      attendance: "present",
-      loginTime: oldData.loginTime || timeText,
-      lastActive: timeText,
-      activityCount: (oldData.activityCount || 0) + 1,
-      updatedAt: Date.now()
+    await ref.update({
+      name:session.name,
+      id:session.studentId,
+      classId:classId,
+      className:session.className,
+      attendance:"present",
+      present:true,
+      loginAt:old.loginAt || now,
+      firstLoginAt:old.firstLoginAt || now,
+      loginTimeMs:old.loginTimeMs || now,
+      lastActiveAt:now,
+      activityCount:(old.activityCount || 0) + 1
     });
+
+    console.log("✅ Daily attendance saved:", todayKey, classId, safeStudentId);
   }catch(err){
-    console.warn("Daily attendance save error:", err);
+    console.error("❌ Daily attendance save failed:", err);
   }
 
   openStudentHub(session);
 }
+  
 function loginTeacher(){
   const pass=byId("teacherPassword").value;
   if(pass!==TEACHER_PASSWORD){
