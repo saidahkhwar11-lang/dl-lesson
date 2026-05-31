@@ -1273,29 +1273,11 @@ function getStoredDailyData(classId, student){
   const byClass=byDate[classId] || {};
   return byClass[student.id] || byClass[student.password] || byClass[cleanKey(student.password)] || null;
 }
-function getDLDailyLoginForStudent(student, isoDate){
-  const sid1=normalizeStudentForCompare(student.id);
-  const sid2=normalizeStudentForCompare(student.password);
-  let earliest=0;
-  let count=0;
-
-  Object.values(lessonsData || {}).forEach(lessonObj=>{
-    const students=(lessonObj && lessonObj.students) || {};
-    Object.keys(students).forEach(rawId=>{
-      const sd=students[rawId] || {};
-      const rid=normalizeStudentForCompare(sd.id || rawId);
-      if(rid!==sid1 && rid!==sid2) return;
-      const possibleTimes=[sd.loginTime, sd.firstLoginAt, sd.lastLoginAt, sd.startedAt, sd.updatedAt, sd.time].map(Number).filter(Boolean);
-      possibleTimes.forEach(t=>{
-        if(isSameISODate(t, isoDate)){
-          count++;
-          if(!earliest || t<earliest) earliest=t;
-        }
-      });
-    });
-  });
-  return {earliest,count};
-}
+/* DAILY TRACKER FIX
+   Attendance must come ONLY from today's real Secure Hub login data.
+   Do NOT mark students present just because old marks, DL records, or generated missed-work
+   records exist today. This prevents false Present rows.
+*/
 function getDailyActivityLevel(isPresent, activityCount){
   if(!isPresent) return {text:'⚫ Absent', cls:'dailyAbsentLevel'};
   if(activityCount>=3) return {text:'🟢 High', cls:'dailyHigh'};
@@ -1310,21 +1292,31 @@ function getDailyRowsForClass(classId){
 
   return students.map(st=>{
     const stored=getStoredDailyData(classId, st) || {};
-    const recordsToday=studentRecordsForClass(classId, st, {allTerms:true}).filter(r=>isSameISODate(r.time || r.createdAt || r.updatedAt || r.savedAt, isoDate));
-    const dlToday=getDLDailyLoginForStudent(st, isoDate);
-    const storedLogin=Number(stored.loginAt || stored.firstLoginAt || stored.time || 0);
-    const loginCandidates=[storedLogin, dlToday.earliest].concat(recordsToday.map(r=>Number(r.time||0))).filter(t=>t && isSameISODate(t, isoDate));
-    const loginTime=loginCandidates.length ? Math.min(...loginCandidates) : 0;
-    const storedCount=Number(stored.activityCount || stored.openCount || 0);
-    const activityCount=storedCount + recordsToday.length + dlToday.count;
-    const isPresent=Boolean(loginTime || stored.attendance==='present' || stored.present===true || activityCount>0);
+
+    const loginTime=Number(
+      stored.loginAt ||
+      stored.firstLoginAt ||
+      stored.loginTimeMs ||
+      stored.time ||
+      0
+    );
+
+    const validLoginToday = loginTime && isSameISODate(loginTime, isoDate);
+
+    const isPresent = Boolean(
+      validLoginToday ||
+      stored.attendance === 'present' ||
+      stored.present === true
+    );
+
+    const activityCount = isPresent ? Number(stored.activityCount || stored.openCount || 0) : 0;
     const level=getDailyActivityLevel(isPresent, activityCount);
 
     return {
       name:st.name || stored.name || 'Student',
       id:st.password || st.id,
       isPresent,
-      loginTime,
+      loginTime: validLoginToday ? loginTime : 0,
       activityCount,
       levelText:level.text,
       levelClass:level.cls
