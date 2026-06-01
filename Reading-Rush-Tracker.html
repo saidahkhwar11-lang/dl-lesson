@@ -441,8 +441,31 @@
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
 const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
-function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{},teacherInfo:{goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:5},lessonPlan:null,roundStartTime:null,scheduledCollections:{}}}
-function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
+
+ function defaultState(){
+  return {
+    stage:'waiting',
+    currentCollectionId:null,
+    currentCollectionTitle:'',
+    collections:{},
+    students:{},
+    answers:{},
+    scores:{},
+    studentProgress:{},
+    final:false,
+    boss:false,
+    analytics:{},
+    teacherInfo:{
+      goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',
+      instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',
+      timerMinutes:5
+    },
+    lessonPlan:null,
+    roundStartTime:null,
+    scheduledCollections:{}
+  };
+}
+ function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
 async function initFirebase(){const box=byId('connectionBox');try{if(!firebase.apps.length)firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);db=firebase.database();stateRef=db.ref(gamePath('state'));stateRef.on('value',snap=>{stateCache=snap.exists()?snap.val():defaultState();if(!currentUser)restoreStudentSession();if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()});const snap=await stateRef.get();if(!snap.exists())await stateRef.set(defaultState());box.className='card status good';box.innerHTML='✅ Firebase connected live.'}catch(err){box.className='card status bad';box.innerHTML='Firebase error: '+esc(err.message)}}
 
  async function getState(){
@@ -539,7 +562,7 @@ studentRefresh();
  }
  
 async function teacherJoin(){if(byId('teacherPass').value!==TEACHER_PASSWORD){alert('Incorrect password.');return}currentUser={role:'teacher'};hide('loginPage');show('teacherPage');teacherRefresh()}
-function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','boss','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
+function activeGroups(s){const set=new Set();Object.values(s.students||{}).forEach(x=>x.group&&set.add(String(x.group)));Object.keys(s.scores||{}).forEach(g=>set.add(String(g)));return[...set].sort((a,b)=>Number(a)-Number(b))}function renderStages(id,active){const el=byId(id);if(!el)return;el.innerHTML=['waiting','playing','final'].map(st=>`<span class="stage ${st===active?'active':''}">${st}</span>`).join('')}
 function getSelectedCollectionId(){return byId('editCollectionSelect')?.value||''}
  function getActiveClass(){
   return byId('activeClassSelect')?.value || '9/1';
@@ -551,7 +574,6 @@ async function saveActiveClass(){
   await setState(s);
 }
 function toggleBuilder(){const el=byId('builderShell'); if(el) el.classList.toggle('hiddenBuilder');}
-function assignMagicQuestionForStudent(s, studentId){return null}
 function showMagicStealPopup(s){}
 function closeMagicStealPopup(){}
 async function magicStealFromGroup(targetGroup){}
@@ -1499,7 +1521,6 @@ Object.values(s.students || {})
   await setState(s);
 }
 
-async function startBossRound(){alert('Boss Round was removed. Reading Rush is now test mode only.')}
 async function stopChallenge(){
 
   const s = await getState();
