@@ -476,7 +476,29 @@ function byId(id){return document.getElementById(id)}function show(id){byId(id).
 function defaultState(){return{stage:'waiting',currentCollectionId:null,currentCollectionTitle:'',collections:{},students:{},answers:{},scores:{},events:[],studentProgress:{},final:false,boss:false,analytics:{},teacherInfo:{goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:5},lessonPlan:null,roundStartTime:null,scheduledCollections:{}}}
 function gamePath(path=''){return path?`games/${LESSON_KEY}/${path}`:`games/${LESSON_KEY}`}
 async function initFirebase(){const box=byId('connectionBox');try{if(!firebase.apps.length)firebase.initializeApp(DEFAULT_FIREBASE_CONFIG);db=firebase.database();stateRef=db.ref(gamePath('state'));stateRef.on('value',snap=>{stateCache=snap.exists()?snap.val():defaultState();if(!currentUser)restoreStudentSession();if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()});const snap=await stateRef.get();if(!snap.exists())await stateRef.set(defaultState());box.className='card status good';box.innerHTML='✅ Firebase connected live.'}catch(err){box.className='card status bad';box.innerHTML='Firebase error: '+esc(err.message)}}
-async function getState(){if(stateCache)return JSON.parse(JSON.stringify(stateCache));const snap=await stateRef.get();return snap.exists()?snap.val():defaultState()}async function setState(s){stateCache=JSON.parse(JSON.stringify(s));await stateRef.set(s)}
+
+ async function getState(){
+  if(stateCache) return JSON.parse(JSON.stringify(stateCache));
+
+  const snap = await stateRef.get();
+
+  stateCache = snap.exists()
+    ? snap.val()
+    : defaultState();
+
+  return JSON.parse(JSON.stringify(stateCache));
+}
+
+async function setState(s){
+  stateCache = JSON.parse(JSON.stringify(s));
+  await stateRef.set(s);
+}
+
+async function updateStatePatch(patch){
+  stateCache = stateCache || {};
+  Object.assign(stateCache, patch);
+  await stateRef.update(patch);
+}
 function saveStudentSession(){if(currentUser?.role==='student')localStorage.setItem(SESSION_KEY,JSON.stringify(currentUser))}function clearStudentSession(){localStorage.removeItem(SESSION_KEY)}function restoreStudentSession(){try{const saved=JSON.parse(localStorage.getItem(SESSION_KEY)||'null');if(!saved||saved.role!=='student')return false;currentUser=saved;hide('hubPage');hide('loginPage');hide('teacherPage');show('studentPage');return true}catch(e){return false}}
 function openLogin(){hide('hubPage');show('loginPage');showLogin('student');setTimeout(syncSecureHubLoginToReadingRush,100)}function backHome(){hide('teacherPage');hide('studentPage');hide('loginPage');show('hubPage');currentUser=null}function showLogin(type){type==='teacher'?(hide('studentLogin'),show('teacherLogin')):(show('studentLogin'),hide('teacherLogin'))}
 async function studentJoin(){const secure=getSecureHubStudent();const name=(secure?.name||byId('studentName').value.trim());const studentId=(secure?.studentId||secure?.password||byId('studentId').value.trim());const cls=(secure?.className||byId('studentClass').value);const classId=(secure?.classId||safeKey(cls));const group=byId('studentGroup').value;if(!name){alert('Student name was not found. Please login from Secure Hub first.');return}if(!studentId){alert('Student ID was not found. Please login from Secure Hub first.');return}const id=String(studentId).trim();const s=await getState();s.students=s.students||{};s.scores=s.scores||{};s.students[id] = {
@@ -1972,34 +1994,48 @@ function lessonPlanHTML(plan, forDownload=false){
 async function updateLessonPlanFromActiveCollection(){const s=await getState();const plan=buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}s.lessonPlan=plan;await setState(s);renderLessonPlanPreview(s);alert('Lesson plan updated from the active collection.');}
 function renderLessonPlanPreview(s){const box=byId('lessonPlanPreview');if(!box)return;const plan=s.lessonPlan||buildLessonPlanObject(s);box.innerHTML=lessonPlanHTML(plan).replace(/<!DOCTYPE[\s\S]*?<body>/i,'').replace(/<\/body><\/html>/i,'');}
 async function downloadLessonPlan(){const s=await getState();let plan=s.lessonPlan||buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}const html=lessonPlanHTML(plan,true);const blob=new Blob([html],{type:'application/msword;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(plan.lessonTitle||'Reading_Rush_Lesson_Plan').replace(/[^a-z0-9]+/gi,'_')+'_Lesson_Plan.doc';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},500);}
+
 async function openScheduledCollection(collectionId){
 
-  const s = await getState();
+  if(window._readingRushStarting) return;
+  window._readingRushStarting = true;
 
-  const col = s.collections?.[collectionId];
+  try{
 
-  if(!col){
-    alert('Collection was not found.');
-    return;
+    const s = await getState();
+
+    const col = s.collections?.[collectionId];
+
+    if(!col){
+      alert('Collection was not found.');
+      return;
+    }
+
+    s.currentCollectionId = collectionId;
+    s.currentCollectionTitle = col.title;
+    s.stage = 'playing';
+
+    s.studentProgress = s.studentProgress || {};
+
+    s.studentProgress[currentUser.id] = {
+      paraIndex:0,
+      qIndex:0,
+      done:false,
+      recoveryMode:true
+    };
+
+    await updateStatePatch({
+  currentCollectionId: s.currentCollectionId,
+  currentCollectionTitle: s.currentCollectionTitle,
+  stage: s.stage,
+  [`studentProgress/${currentUser.id}`]: s.studentProgress[currentUser.id]
+});
+
+    studentRefresh();
+
+  } finally {
+    window._readingRushStarting = false;
   }
-
-  s.currentCollectionId = collectionId;
-  s.currentCollectionTitle = col.title;
-
-  s.stage = 'playing';
-
-  s.studentProgress = s.studentProgress || {};
-
-  s.studentProgress[currentUser.id] = {
-    paraIndex:0,
-    qIndex:0,
-    done:false,
-    recoveryMode:true
-  };
-
-  await setState(s);
-
-  studentRefresh();
 }
 function buildAnalytics(s){const ev=s.events||[];const total=ev.length,correct=ev.filter(e=>e.correct).length;const skills={};ev.forEach(e=>{const k=e.skill||'unknown';skills[k]=skills[k]||{total:0,correct:0};skills[k].total++;if(e.correct)skills[k].correct++});let weakest='Not enough data';Object.keys(skills).forEach(k=>{const rate=skills[k].correct/skills[k].total;if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/skills[weakest]?.total||1))weakest=k});return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills}}
 function renderAnalytics(s){const box=byId('analyticsBox');if(!box)return;if(s.stage!=='final'){box.classList.add('hidden');return}const a=s.analytics||buildAnalytics(s);box.classList.remove('hidden');box.innerHTML=`<h2>📊 Teacher Report</h2><div class="analyticsGrid"><div class="analyticsCard"><b>Total Answers</b><br>${a.total||0}</div><div class="analyticsCard"><b>Accuracy</b><br>${a.accuracy||0}%</div><div class="analyticsCard"><b>Correct Answers</b><br>${a.correct||0}</div><div class="analyticsCard"><b>Needs Practice</b><br>${esc(a.weakest||'Not enough data')}</div></div>`}
