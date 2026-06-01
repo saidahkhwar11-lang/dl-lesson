@@ -2198,7 +2198,7 @@ async function saveReadingRushCertificatesForFinalists(s){
   if(Number(record.questionsTotal) <= 0) return;
 
   const certificateId =
-    'Reading_Rush_Excellent_' + safeKey(record.activityName || 'Collection');
+  safeKey('Reading_Rush_Excellent_' + (record.activityName || 'Collection'));
 
   const cert = {
     certificateId,
@@ -2267,7 +2267,13 @@ async function saveReadingRushToTeacherControl(s){
     };
 
     await db.ref('teacherControlCenter/performance/' + record.classId + '/' + id + '/Reading_Rush').set(record);
-    await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + record.classId + '/' + id).set(record);
+
+   await db.ref(
+  'teacherControlCenter/activityRecords/Reading_Rush/' +
+  record.classId + '/' +
+  id + '/' +
+  safeKey(record.activityName || 'Reading_Rush')
+).set(record);
    
    await saveReadingRushExcellentCertificate(record);
    
