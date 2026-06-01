@@ -231,6 +231,17 @@
   gap:8px;
 }
 
+ .wordBank{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+
+.wordChip.used{
+  text-decoration:line-through;
+  opacity:.45;
+}
 
 .scheduledCollectionsPanel{
   margin:10px 0 12px;
@@ -2080,6 +2091,22 @@ async function submitAnswer(){
 function showReward(emoji,title,text){byId('studentResultBox').innerHTML='<div class="status good">'+esc(title||'Done')+'</div>'}
 function closeReward(){}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 
+ function toggleWordUsed(wordEl){
+  wordEl.classList.toggle('used');
+}
+
+function renderWordBank(words){
+  return `
+    <div class="wordBank">
+      ${words.map(w=>`
+        <div class="wordChip"
+             onclick="toggleWordUsed(this)">
+          ${esc(w)}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
 function safeKey(value){
   return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
 }
