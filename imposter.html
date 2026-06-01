@@ -2439,8 +2439,28 @@ async function setState(s){
   if(firebaseReady && stateRef){
     await stateRef.set(s);
   }else{
-    alert('Firebase is not connected. Paste your config in the code first.');
+    alert('Firebase is not connected.');
   }
+}
+
+async function updateStatePatch(patch){
+  if(!firebaseReady || !stateRef){
+    alert('Firebase is not connected.');
+    return;
+  }
+  stateCache = stateCache || defaultState();
+
+  Object.keys(patch).forEach(path=>{
+    const parts = path.split('/');
+    let obj = stateCache;
+    for(let i=0;i<parts.length-1;i++){
+      obj[parts[i]] = obj[parts[i]] || {};
+      obj = obj[parts[i]];
+    }
+    obj[parts[parts.length-1]] = patch[path];
+  });
+
+  await stateRef.update(patch);
 }
 
 
@@ -2621,8 +2641,12 @@ async function studentJoin(){
   if(!s.scores[id]) s.scores[id]=0;
   if(!s.groupScores[group]) s.groupScores[group]=0;
 
-  await setState(s);
-
+await updateStatePatch({
+  [`students/${id}`]: {id,name,cls,group,lastSeen:Date.now()},
+  [`scores/${id}`]: s.scores[id] || 0,
+  [`groupScores/${group}`]: s.groupScores[group] || 0
+});
+  
   currentUser={role:'student',id,name,cls,group};
   saveSession();
   hide('loginPage');show('studentPage');
@@ -3074,8 +3098,10 @@ async function saveHint(){
       s.students[currentUser.id].lastSeen = Date.now();
     }
 
-    await setState(s);
-
+await updateStatePatch({
+  [`hints/${currentUser.id}`]: hintText,
+  [`students/${currentUser.id}/lastSeen`]: Date.now()
+});
     if(msg){
       msg.classList.remove('hidden');
       msg.innerText = '✅ Hint saved successfully';
@@ -3143,10 +3169,9 @@ async function vote(id){
   if(stageByTime(s)!=='vote') return;
   if(s.votes?.[currentUser.id]) return;
 
-  s.votes = s.votes || {};
-  s.votes[currentUser.id] = id;
-
-  await setState(s);
+await updateStatePatch({
+  [`votes/${currentUser.id}`]: id
+});
   beep(720,.1);
   studentRefresh();
 }
@@ -3376,8 +3401,14 @@ function showQuizLogin(type){
 }
 function getSecureHubStudent(){
   try{
-    return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
-  }catch(e){return null;}
+    return JSON.parse(
+      localStorage.getItem('DL_SECURE_STUDENT_LOGIN') ||
+      sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') ||
+      'null'
+    );
+  }catch(e){
+    return null;
+  }
 }
 function loadQuizSecureStudent(){
   const secure = getSecureHubStudent() || {};
