@@ -259,6 +259,14 @@
 .scheduledStatusDone{background:#eafff3;border:1px solid #9fe4bd;color:#176b45;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
 .recoveryBanner{background:#eef4ff;border:1px solid #cfdcff;color:#294a99;border-radius:16px;padding:10px 12px;font-weight:800;margin-bottom:10px}
 
+
+.paragraphQuestionsList{display:grid;gap:12px;margin-top:10px}
+.paragraphQuestionCard{background:white;border:1px solid #d7e3ff;border-radius:18px;padding:12px}
+.paragraphQuestionCard .questionText{margin:8px 0 10px}
+.paragraphQuestionOptions{display:grid;gap:8px}
+.paragraphQuestionOptions .optionBtn{margin:0}
+.paragraphSubmitSummary{font-weight:900;margin-top:10px}
+
 </style>
 </head>
 <body>
@@ -266,7 +274,7 @@
 <div class="hero"><h1>📚 Reading Rush: Collection Mode</h1><p>Students rotate through paragraphs, answer reading comprehension questions, and complete the test.</p></div>
 <div id="connectionBox" class="card status">Connecting to Firebase...</div>
 <div id="hubPage"><div class="grid"><div class="card"><h2>📚 Collection Mode</h2><p class="status good">Teacher creates a collection with many paragraphs. Each group member gets a different paragraph one at a time.</p><button onclick="openLogin()">Open Game</button><button class="secondary" onclick="location.href='secure-hub.html'">🏠 Back to Main Page</button></div><div class="card"><h2>🎮 Flow</h2><div class="stepsGrid"><div class="stepCard"><span>📦</span><b>Collection</b><small>Teacher selects one set.</small></div><div class="stepCard"><span>📖</span><b>Paragraph</b><small>Students get different paragraphs.</small></div><div class="stepCard"><span>❓</span><b>Questions</b><small>Finish all assigned questions.</small></div><div class="stepCard"><span>🏆</span><b>Top 3</b><small>Teacher stops challenge.</small></div></div></div></div></div>
-<div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><div class="status good">If you entered from Secure Hub, your name and ID appear automatically. Choose your group, then join.</div><label>Name</label><input id="studentName" placeholder="Your name appears from hub" readonly><label>Student ID</label><input id="studentId" placeholder="Your ID appears from hub" readonly><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Reading Rush</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button></div><div class="card"><h2>📌 Rule</h2><div class="status good">Reading comprehension test mode: each question = 1 point.</div><div class="status">Students move to the next paragraph after finishing the current paragraph questions.</div><div class="status good">Final marks stay linked to Secure Hub and certificates.</div></div></div></div>
+<div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><div class="status good">If you entered from Secure Hub, your name and ID appear automatically. Choose your group, then join.</div><label>Name</label><input id="studentName" placeholder="Your name appears from hub" readonly><label>Student ID</label><input id="studentId" placeholder="Your ID appears from hub" readonly><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Reading Rush</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button></div><div class="card"><h2>📌 Rule</h2><div class="status good">Reading comprehension test mode: each question = 1 point.</div><div class="status">Students submit all questions for one paragraph, then move to the next paragraph.</div><div class="status good">Final marks stay linked to Secure Hub and certificates.</div></div></div></div>
 <div id="teacherPage" class="hidden">
  <label style="max-width:220px">
   Active Class
@@ -300,7 +308,7 @@
     </div>
     <div class="teacherInfoCard">
       <h3>📌 Instructions</h3>
-      <p id="teacherMainInstructions">Read carefully, use context clues, answer one question at a time, and move through the collection.</p>
+      <p id="teacherMainInstructions">Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.</p>
       <div class="teacherInfoControls">
         <input id="goalInput" placeholder="Main goal">
         <input id="instructionsInput" placeholder="Instructions">
@@ -374,7 +382,7 @@
     <div class="studentInfoCard">
       <h3>📌 Instructions</h3>
       <p id="studentMainInstructions">
-        Read carefully, use context clues, answer one question at a time, and move through the collection.
+        Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.
       </p>
     </div>
 
@@ -409,7 +417,7 @@
       <div id="questionBox" class="questionBox hidden">
 
         <div class="questionHeader cleanQuestionHeader">
-          <h2>❓ Your Question</h2>
+          <h2>❓ Your Paragraph Questions</h2>
 
           <div class="questionMiniTools">
             <div id="miniLeaderboardBox" class="miniQuestionBadge">
@@ -439,7 +447,7 @@
 <script>
   let collectionUIBusy = false;
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
-const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';
+const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';let paragraphAnswers={};
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
  function defaultState(){
@@ -457,7 +465,7 @@ function byId(id){return document.getElementById(id)}function show(id){byId(id).
     analytics:{},
     teacherInfo:{
       goal:'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',
-      instructions:'Read carefully, use context clues, answer one question at a time, and move through the collection.',
+      instructions:'Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.',
       timerMinutes:5
     },
     lessonPlan:null,
@@ -1279,6 +1287,7 @@ async function startScheduledCollection(collectionId){
 
   await setState(s);
   selectedAnswer = '';
+  paragraphAnswers = {};
   studentRefresh();
 }
 
@@ -1288,6 +1297,7 @@ function exitScheduledCollection(){
   currentUser.recoveryCollectionId = '';
   saveStudentSession();
   selectedAnswer = '';
+  paragraphAnswers = {};
   studentRefresh();
 }
 
@@ -1614,7 +1624,7 @@ function groupFinishedParagraph(s,group,paraIndex){
 function renderTeacherInfo(s){
   const info=s.teacherInfo||{};
   const goal=info.goal||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.';
-  const instructions=info.instructions||'Read carefully, use context clues, answer one question at a time, and move through the collection.';
+  const instructions=info.instructions||'Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.';
   if(byId('teacherMainGoal'))byId('teacherMainGoal').innerText=goal;
   if(byId('teacherMainInstructions'))byId('teacherMainInstructions').innerText=instructions;
   if(byId('goalInput')&&!byId('goalInput').value)byId('goalInput').value=goal;
@@ -1626,7 +1636,7 @@ async function saveTeacherInfo(){
   const s=await getState();
   s.teacherInfo=s.teacherInfo||{};
   s.teacherInfo.goal=byId('goalInput').value.trim()||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.';
-  s.teacherInfo.instructions=byId('instructionsInput').value.trim()||'Read carefully, use context clues, answer one question at a time, and move through the collection.';
+  s.teacherInfo.instructions=byId('instructionsInput').value.trim()||'Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.';
   s.teacherInfo.timerMinutes=Math.max(1,Number(byId('timerMinutesInput').value||5));
   await setState(s);
 }
@@ -1757,7 +1767,7 @@ function buildLessonPlanObject(s){
   'I can use context clues to guess the meaning of new words.',
   'I can answer exam-style questions and move through the collection successfully.'
  ];
- return {date:new Date().toLocaleDateString(),subject:'English',teacher:'Ms. Saidah Khwar',lessonTitle:title,topic:'Reading comprehension through Reading Rush collection mode',hotQuestion:'How can context clues and supporting details help us understand a text more deeply?',keywords:kws,objectives,success,paragraphs:paras.map((p,i)=>({title:p.title||`Paragraph ${i+1}`,questions:(p.questions||[]).length,keywords:p.keywords||[],text:p.text||''})),goal:s.teacherInfo?.goal||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:s.teacherInfo?.instructions||'Read carefully, use context clues, answer one question at a time, and move through the collection.',timerMinutes:s.teacherInfo?.timerMinutes||5};
+ return {date:new Date().toLocaleDateString(),subject:'English',teacher:'Ms. Saidah Khwar',lessonTitle:title,topic:'Reading comprehension through Reading Rush collection mode',hotQuestion:'How can context clues and supporting details help us understand a text more deeply?',keywords:kws,objectives,success,paragraphs:paras.map((p,i)=>({title:p.title||`Paragraph ${i+1}`,questions:(p.questions||[]).length,keywords:p.keywords||[],text:p.text||''})),goal:s.teacherInfo?.goal||'Students read their assigned paragraph, answer exam-style questions, and complete the collection with their group.',instructions:s.teacherInfo?.instructions||'Read the paragraph carefully, answer all questions together, submit once, then move to the next paragraph.',timerMinutes:s.teacherInfo?.timerMinutes||5};
 }
 function lessonPlanHTML(plan, forDownload=false){
  if(!plan) return '<div class="status bad">No active collection lesson plan yet.</div>';
@@ -1820,7 +1830,7 @@ function lessonPlanHTML(plan, forDownload=false){
  <h3>Lesson Procedures</h3>
  <table><tr><th>Stage</th><th>Time</th><th>Teacher Role</th><th>Student Role</th><th>AFL / Differentiation</th></tr>
  <tr><td><b>Starter</b></td><td>5 minutes</td><td>Introduce the active Reading Rush collection and explain the goal.</td><td>Read the instructions and prepare to work with the group.</td><td>Check prior knowledge through quick oral questions.</td></tr>
- <tr><td><b>Main Activity 1</b></td><td>${Math.max(20, plan.paragraphs.length*(Number(plan.timerMinutes)||5))} minutes</td><td>Monitor live progress, timer, group performance, and question accuracy.</td><td>Read assigned paragraphs, answer one question at a time, and use context clues.</td><td>Support low-level students with keywords; challenge high-level students to justify answers.</td></tr>
+ <tr><td><b>Main Activity 1</b></td><td>${Math.max(20, plan.paragraphs.length*(Number(plan.timerMinutes)||5))} minutes</td><td>Monitor live progress, timer, group performance, and question accuracy.</td><td>Read assigned paragraphs, answer all questions together, and use context clues.</td><td>Support low-level students with keywords; challenge high-level students to justify answers.</td></tr>
  <tr><td><b>Main Activity 2</b></td><td>10 minutes</td><td>Review difficult questions and common mistakes from group performance.</td><td>Discuss answers, explain evidence, and review vocabulary.</td><td>Use live board data to identify misconceptions.</td></tr>
  <tr><td><b>Plenary / Exit Ticket</b></td><td>5 minutes</td><td>Ask students to conclude what helped them understand the text.</td><td>Share one reading strategy they used successfully.</td><td>Quick reflection and teacher feedback.</td></tr></table>
  <h3>Active Collection Paragraphs</h3><table><tr><th>Paragraph</th><th>Keywords / Skills</th><th>Questions</th><th>Task</th></tr>${paraRows}</table>
@@ -1927,7 +1937,7 @@ function studentRefresh(){
 
   byId('studentInstruction').innerText =
     s.stage === 'playing'
-      ? 'Read your paragraph and answer all questions. Each correct answer = 1 point.'
+      ? 'Read your paragraph and answer all questions together. Submit once to save and auto-mark.'
       : 'Wait for teacher.';
 
   byId('studentRoundTitle').innerText =
@@ -1954,9 +1964,12 @@ function studentRefresh(){
 
   if((s.stage === 'playing') && d.p){
 
+    const totalQ = (d.p.questions || []).length;
+    const answeredCount = Object.keys(paragraphAnswers || {}).length;
+
     byId('studentProgress').innerText = d.pr.done
       ? 'You finished all paragraphs 🎉'
-      : `Paragraph ${d.pr.paraIndex + 1}/${d.total} • Question ${Math.min(d.pr.qIndex + 1, (d.p.questions || []).length)}/${(d.p.questions || []).length}`;
+      : `Paragraph ${d.pr.paraIndex + 1}/${d.total} • Answered ${answeredCount}/${totalQ} questions`;
 
     byId('paragraphBox').innerHTML =
       `<div class="pTitle"><b>${esc(d.p.title)}</b></div>
@@ -1981,37 +1994,104 @@ function studentRefresh(){
     byId('studentResultBox').innerHTML = '';
   }
 }
+
 function renderStudentQuestion(s,d){
 
-  const q=d.q,box=byId('studentQuestion'),opts=byId('studentOptions');
+  const box = byId('studentQuestion');
+  const opts = byId('studentOptions');
+  const submitBtn = byId('submitAnswerBtn');
+  const questions = (d.p && d.p.questions) ? d.p.questions : [];
 
-  if(!q||d.pr.done){
+  if(!questions.length || d.pr.done){
     box.innerHTML='<div class="status good">You finished all paragraphs in this collection 🎉</div>';
     opts.innerHTML='';
-    byId('submitAnswerBtn').disabled=true;
+    if(submitBtn) submitBtn.disabled=true;
     return;
   }
 
-  byId('questionNumberPill').innerText=`Question ${d.pr.qIndex+1} / ${(d.p.questions||[]).length}`;
-  box.innerHTML=`<span class="aiBadge">${esc(q.skill||'question')}</span><div class="questionText">${esc(q.text)}</div>`;
-  opts.innerHTML=Object.keys(q.options||{}).map(k=>`<button class="optionBtn ${selectedAnswer===k?'selected':''}" onclick="chooseAnswer('${k}')">${k}) ${esc(q.options[k])}</button>`).join('');
-  byId('submitAnswerBtn').disabled=false;
+  if(byId('questionNumberPill')){
+    byId('questionNumberPill').innerText = `Paragraph ${d.pr.paraIndex + 1} • ${questions.length} Questions`;
+  }
+
+  box.innerHTML = `
+    <div class="status good">
+      ✅ Read the paragraph, answer all questions below, then click submit once.
+    </div>
+    <div class="paragraphQuestionsList">
+      ${questions.map((q,qi)=>`
+        <div class="paragraphQuestionCard" data-qindex="${qi}">
+          <span class="aiBadge">${esc(q.skill || 'question')}</span>
+          <div class="questionText"><b>Q${qi + 1}.</b> ${esc(q.text || '')}</div>
+          <div class="paragraphQuestionOptions">
+            ${Object.keys(q.options || {}).map(k=>`
+              <button type="button"
+                class="optionBtn ${paragraphAnswers[qi] === k ? 'selected' : ''}"
+                onclick="chooseParagraphAnswer(${qi}, '${k}')">
+                ${k}) ${esc(q.options[k])}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  opts.innerHTML = '';
+  if(submitBtn){
+    submitBtn.innerText = 'Submit Paragraph Answers';
+    submitBtn.disabled = false;
+  }
 }
-function chooseAnswer(k){selectedAnswer=k;studentRefresh()}
+
+function chooseParagraphAnswer(qIndex, answer){
+  paragraphAnswers[qIndex] = answer;
+
+  const card = document.querySelector(`.paragraphQuestionCard[data-qindex="${qIndex}"]`);
+  if(card){
+    card.querySelectorAll('.optionBtn').forEach(btn=>btn.classList.remove('selected'));
+    const buttons = Array.from(card.querySelectorAll('.optionBtn'));
+    const selectedBtn = buttons.find(btn=>btn.textContent.trim().startsWith(answer + ')'));
+    if(selectedBtn) selectedBtn.classList.add('selected');
+  }
+
+  const s = stateCache || defaultState();
+  const d = currentPQ(s);
+  if(d && d.p && byId('studentProgress')){
+    const totalQ = (d.p.questions || []).length;
+    byId('studentProgress').innerText =
+      `Paragraph ${Number(d.pr.paraIndex || 0) + 1}/${d.total} • Answered ${Object.keys(paragraphAnswers).length}/${totalQ} questions`;
+  }
+}
+
+function chooseAnswer(k){
+  if(currentUser?.recoveryMode){
+    selectedAnswer = k;
+    studentRefresh();
+    return;
+  }
+  // Old one-question mode disabled for live collections.
+}
+
 async function submitAnswer(){
   if(currentUser?.recoveryMode){
     return submitRecoveryAnswer();
   }
 
-  if(!selectedAnswer){
-    alert('Choose an answer.');
-    return;
-  }
-
   const s = await getState();
   const d = currentPQ(s);
-  const q = d.q;
-  if(!q) return;
+  const p = d.p;
+  const questions = (p && p.questions) ? p.questions : [];
+
+  if(!p || !questions.length) return;
+
+  const missing = questions
+    .map((q,i)=> (paragraphAnswers[i] ? null : (i + 1)))
+    .filter(Boolean);
+
+  if(missing.length){
+    alert('Please answer all questions before submitting. Missing: Q' + missing.join(', Q'));
+    return;
+  }
 
   s.scores = s.scores || {};
   s.answers = s.answers || {};
@@ -2023,48 +2103,63 @@ async function submitAnswer(){
 
   const pr = s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false};
   const answerParaIndex = Number(pr.paraIndex || 0);
-  const answerQIndex = Number(pr.qIndex || 0);
-  const correct = selectedAnswer === q.correct;
 
-  const answerKey = 'p' + answerParaIndex + '_q' + answerQIndex;
   s.answers[currentUser.id] = s.answers[currentUser.id] || {};
 
-  // Reading comprehension test mode: each correct question = 1 point.
-  if(!s.answers[currentUser.id][answerKey]){
-    s.answers[currentUser.id][answerKey] = {
-      studentId: currentUser.id,
-      student: currentUser.name,
-      group: currentUser.group,
-      paraIndex: answerParaIndex,
-      qIndex: answerQIndex,
-      selected: selectedAnswer,
-      correctAnswer: q.correct,
-      correct,
-      point: correct ? 1 : 0,
-      time: Date.now(),
-      skill: q.skill || 'unknown'
-    };
+  let paragraphScore = 0;
+  let newlySavedCorrect = 0;
+  const savedDetails = [];
 
-    if(correct){
-      s.scores[currentUser.group] = Number(s.scores[currentUser.group] || 0) + 1;
+  questions.forEach((q, qi)=>{
+    const selected = paragraphAnswers[qi];
+    const correct = selected === q.correct;
+    const answerKey = 'p' + answerParaIndex + '_q' + qi;
+
+    if(!s.answers[currentUser.id][answerKey]){
+      s.answers[currentUser.id][answerKey] = {
+        studentId: currentUser.id,
+        student: currentUser.name,
+        group: currentUser.group,
+        paraIndex: answerParaIndex,
+        qIndex: qi,
+        selected: selected,
+        correctAnswer: q.correct,
+        correct,
+        point: correct ? 1 : 0,
+        time: Date.now(),
+        skill: q.skill || 'unknown',
+        mode: 'paragraph_submit'
+      };
+
+      if(correct){
+        newlySavedCorrect++;
+      }
     }
-  }
+
+    if(correct) paragraphScore++;
+    savedDetails.push({
+      question: qi + 1,
+      selected,
+      correctAnswer: q.correct,
+      correct
+    });
+  });
+
+  s.scores[currentUser.group] =
+    Number(s.scores[currentUser.group] || 0) + newlySavedCorrect;
 
   const col = s.collections?.[s.currentCollectionId];
-  const p = (col?.paragraphs || [])[pr.paraIndex];
-  const qTotal = (p?.questions || []).length;
+  const paragraphs = col?.paragraphs || [];
 
-  pr.qIndex++;
+  pr.qIndex = 0;
+  pr.paraIndex = answerParaIndex + 1;
 
-  if(pr.qIndex >= qTotal){
-    pr.qIndex = 0;
-    pr.paraIndex++;
-
-    if(pr.paraIndex >= (col?.paragraphs || []).length){
-      pr.done = true;
-      pr.paraIndex = (col?.paragraphs || []).length - 1;
-      pr.qIndex = qTotal;
-    }
+  if(pr.paraIndex >= paragraphs.length){
+    pr.done = true;
+    pr.paraIndex = Math.max(0, paragraphs.length - 1);
+    pr.qIndex = questions.length;
+  }else{
+    pr.done = false;
   }
 
   s.studentProgress[currentUser.id] = pr;
@@ -2072,10 +2167,21 @@ async function submitAnswer(){
   await setState(s);
   await saveReadingRushToTeacherControl(s);
 
+  const nextText = pr.done
+    ? 'You finished all paragraphs 🎉'
+    : 'Saved. Moving to the next paragraph.';
+
+  byId('studentResultBox').innerHTML =
+    `<div class="status ${paragraphScore === questions.length ? 'good' : 'bad'}">
+      ✅ Paragraph submitted and saved.<br>
+      Score: <b>${paragraphScore}/${questions.length}</b><br>
+      ${esc(nextText)}
+    </div>`;
+
+  paragraphAnswers = {};
   selectedAnswer = '';
-  byId('studentResultBox').innerHTML = correct
-    ? '<div class="status good">✅ Correct! +1 point</div>'
-    : '<div class="status bad">❌ Incorrect. Keep going.</div>';
+  paragraphAnswers = {};
+  studentRefresh();
 }
 function showReward(emoji,title,text){byId('studentResultBox').innerHTML='<div class="status good">'+esc(title||'Done')+'</div>'}
 function closeReward(){}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
