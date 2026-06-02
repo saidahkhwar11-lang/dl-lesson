@@ -616,12 +616,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   "
 >
 
-  <label style="display:block;margin-top:12px;">
-  Choose Lesson
-</label>  
-  <select id="studentLessonSelect">
-  <option value="">Loading lessons...</option>
-</select>
+    <div class="small" style="margin:10px 0;line-height:1.5;">
+      The teacher will activate today's lesson. Enter your Student ID only.
+    </div>
 
     <button id="studentStartBtn" onclick="startStudentSession()">
       Start Student Session
@@ -738,14 +735,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
 
 <div class="top-bar" id="topStations"></div>
-    <div class="card" style="margin-bottom:12px;">
-  <div class="btns" style="justify-content:space-between;align-items:center;">
-    <h3 style="margin:0;">📚 Available Lessons</h3>
-    <button class="secondary" onclick="loadStudentLessonLibrary()">Refresh</button>
-  </div>
-  <div id="studentLessonLibraryList" style="margin-top:10px;"></div>
-</div>
-    
   <div class="student-layout">
     <div class="sidebar">
       <h3 style="margin-top:0">Stations</h3>
@@ -1969,6 +1958,7 @@ function bonusPath(){ return lessonBase() + '/bonus'; }
 function configPath(){ return lessonBase() + '/config'; }
 function contentPath(){ return lessonBase() + '/content'; }
 function attendancePath(studentId){ return lessonBase() + '/attendance/' + studentId; }
+function activeLessonPath(){ return 'DL_activeLesson/current'; }
 
 
 /* ===== Teacher Control Center performance link =====
@@ -2499,24 +2489,35 @@ window.startStudentSession = async function(){
     }
 
     initFirebaseFromInputs();
-
-    showNotice('studentNotice','Starting student session...','warn');
+    showNotice('studentNotice','Checking today\'s active lesson...','warn');
 
     if(!requireConnection()) return;
 
     const studentCode = byId('studentCode').value.trim();
-    const lessonSelect = byId('studentLessonSelect');
-    const selectedLessonId = lessonSelect ? lessonSelect.value : '';
 
     if(!studentCode){
       showNotice('studentNotice','Please enter your Student ID.','bad');
       return;
     }
 
-    if(!selectedLessonId){
-      showNotice('studentNotice','Please choose a lesson first.','bad');
+    const activeSnap = await dbRef(activeLessonPath()).once('value');
+
+    if(!activeSnap.exists()){
+      showNotice('studentNotice','No lesson is active yet. Please wait for your teacher.','bad');
       return;
     }
+
+    const active = activeSnap.val() || {};
+    const selectedLessonId = active.lessonId || active.lessonKey || '';
+
+    if(!selectedLessonId){
+      showNotice('studentNotice','No lesson is active yet. Please wait for your teacher.','bad');
+      return;
+    }
+
+    lessonKey = selectedLessonId;
+    localStorage.setItem('DL_lesson_key', lessonKey);
+    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
 
     const id = sanitizeKey(studentCode);
     const oldId = sessionStorage.getItem('dl_student_id');
@@ -2524,71 +2525,66 @@ window.startStudentSession = async function(){
     if(oldId && oldId !== id){
       sessionStorage.removeItem('dl_student_name');
       sessionStorage.removeItem('dl_student_id');
-      sessionStorage.removeItem('dl_selected_lesson_id');
-
       delete liveStudents[oldId];
-
       currentStudent = null;
       currentOpenStation = '';
       studentQuestionStage = 0;
       studentStageAnswers = {};
     }
 
-    const lessonSnap = await dbRef('lessonLibrary/' + selectedLessonId).once('value');
+    const lessonSnap = await dbRef('lessons/' + selectedLessonId).once('value');
 
     if(!lessonSnap.exists()){
-      showNotice('studentNotice','This lesson was not found. Please refresh.','bad');
+      showNotice('studentNotice','The active lesson data was not found. Please ask the teacher to activate it again.','bad');
       return;
     }
 
-    const chosenLesson = lessonSnap.val();
+    const chosenLesson = lessonSnap.val() || {};
 
-    if(chosenLesson.visible !== true || chosenLesson.locked === true){
-      showNotice('studentNotice','This lesson is not available now.','bad');
-      return;
-    }
-
-    lessonMeta = chosenLesson.lessonMeta || {
-      lessonTitle: chosenLesson.title || '',
+    lessonMeta = chosenLesson.lessonMeta || active.lessonMeta || {
+      lessonTitle: active.title || selectedLessonId,
       lessonObjectives: '',
       lessonKeywords: ''
     };
 
-    lessonStations = chosenLesson.stations || [];
+    lessonStations = chosenLesson.config || [];
     lessonContent = chosenLesson.content || {};
+
+    if(!Array.isArray(lessonStations) || !lessonStations.length){
+      showNotice('studentNotice','The active lesson has no stations yet. Please ask the teacher to check it.','bad');
+      return;
+    }
 
     currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
     studentQuestionStage = 0;
     studentStageAnswers = {};
 
-    const secureStudent =
-  JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    let secureStudent = null;
+    try{
+      secureStudent = JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null');
+    }catch(e){ secureStudent = null; }
 
-const studentName =
-  (secureStudent && secureStudent.name)
-    ? secureStudent.name
-    : ('Student ' + id);
+    const studentName = (secureStudent && secureStudent.name) ? secureStudent.name : ('Student ' + id);
 
-hideNotice('studentNotice');
+    hideNotice('studentNotice');
 
-currentStudent = {
-  name: studentName,
-  id: id,
-  classId: secureStudent?.classId || '',
-  className: secureStudent?.className || '',
-  selectedLessonId: selectedLessonId
-};
+    currentStudent = {
+      name: studentName,
+      id: id,
+      classId: secureStudent && secureStudent.classId ? secureStudent.classId : '',
+      className: secureStudent && secureStudent.className ? secureStudent.className : '',
+      selectedLessonId: selectedLessonId
+    };
 
-sessionStorage.setItem('dl_role', 'student');
-sessionStorage.setItem('dl_student_name', studentName);
-sessionStorage.setItem('dl_student_id', id);
-sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
-    
+    sessionStorage.setItem('dl_role', 'student');
+    sessionStorage.setItem('dl_student_name', studentName);
+    sessionStorage.setItem('dl_student_id', id);
+
     const initial = {
       name: studentName,
       id: id,
       selectedLessonId: selectedLessonId,
-      lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
+      lessonTitle: lessonMeta.lessonTitle || active.title || selectedLessonId,
       scores:{},
       total:0,
       startedAt:Date.now(),
@@ -2608,7 +2604,7 @@ sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
         name: studentName,
         id:id,
         selectedLessonId:selectedLessonId,
-        lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
+        lessonTitle: lessonMeta.lessonTitle || active.title || selectedLessonId,
         lastLoginAt:Date.now()
       });
     }
@@ -2622,7 +2618,7 @@ sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
       name:studentName,
       id:id,
       selectedLessonId:selectedLessonId,
-      lessonTitle: lessonMeta.lessonTitle || chosenLesson.title || '',
+      lessonTitle: lessonMeta.lessonTitle || active.title || selectedLessonId,
       startedAt:Date.now(),
       present:true
     });
@@ -2633,11 +2629,8 @@ sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
     listenStudentLive();
     updateStudentProgress();
 
-    const displayedStation = lessonStations.find(function(s){
-      return s.displayed;
-    }) || lessonStations.find(function(s){
-      return s.unlocked;
-    }) || lessonStations[0];
+    const displayedStation = lessonStations.find(function(s){ return s.displayed; }) ||
+      lessonStations.find(function(s){ return s.unlocked; }) || lessonStations[0];
 
     if(displayedStation){
       openStation(displayedStation.id);
@@ -2646,10 +2639,8 @@ sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
     }
 
   }catch(err){
-
     console.error('Student session error:', err);
     showNotice('studentNotice','Student session failed: ' + (err && err.message ? err.message : err),'bad');
-
   }
 
 };
@@ -2813,7 +2804,7 @@ window.openTeacherView = async function(){
   }
 };
   
-window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard'].forEach(function(sec){ byId(sec).classList.add('hidden'); }); byId(id).classList.remove('hidden'); };
+window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard','teacherLibraryCard'].forEach(function(sec){ if(byId(sec)) byId(sec).classList.add('hidden'); }); if(byId(id)) byId(id).classList.remove('hidden'); };
   function stationHasWrittenQuestion(stationId){
 
   const questions = (getStationContent(stationId).questions || []);
@@ -6867,7 +6858,6 @@ async function createNewBlankLesson(){
 
     await loadHomeLessonList();
     if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
 
     if(typeof loadLessonLibrary === 'function'){
       loadLessonLibrary();
@@ -7030,41 +7020,29 @@ async function importOldLessonKeyToLibrary(){
       initFirebaseFromInputs();
     }
 
-    const studentSelect = byId('studentLessonSelect');
     const teacherSelect = byId('teacherLessonSelect');
-
-    if(studentSelect) studentSelect.innerHTML = '<option value="">Loading lessons...</option>';
     if(teacherSelect) teacherSelect.innerHTML = '<option value="">Loading lessons...</option>';
 
-    const libPath = typeof lessonLibraryPath === 'function'
-      ? lessonLibraryPath()
-      : 'lessonLibrary';
-
+    const libPath = typeof lessonLibraryPath === 'function' ? lessonLibraryPath() : 'lessonLibrary';
     const snap = await dbRef(libPath).once('value');
     const lessons = snap.val() || {};
-
     const list = Object.values(lessons).filter(l => l && l.visible !== false);
 
     if(!list.length){
-      if(studentSelect) studentSelect.innerHTML = '<option value="">No available lessons</option>';
-      if(teacherSelect) teacherSelect.innerHTML = '<option value="">No available lessons</option>';
+      if(teacherSelect) teacherSelect.innerHTML = '<option value="">No saved lessons</option>';
       return;
     }
 
-    const html =
-      '<option value="">Choose a lesson</option>' +
+    const html = '<option value="">Choose a lesson to activate</option>' +
       list.map(function(l){
-        return '<option value="' + escapeHtml(l.id) + '">' +
-          escapeHtml(l.title || 'Untitled Lesson') +
-        '</option>';
+        return '<option value="' + escapeHtml(l.id) + '">' + escapeHtml(l.title || 'Untitled Lesson') + '</option>';
       }).join('');
 
-    if(studentSelect) studentSelect.innerHTML = html;
     if(teacherSelect) teacherSelect.innerHTML = html;
 
   }catch(e){
     console.error('loadHomeLessonList error:', e);
-    alert('Lesson list error: ' + e.message);
+    if(byId('teacherNotice')) showNotice('teacherNotice','Lesson list error: ' + e.message,'bad');
   }
 }
       
@@ -7111,6 +7089,7 @@ const list = Object.values(lessons).map(function(l){
 
         <div class="btns" style="margin-top:10px;">
           <button onclick="openSavedLesson('${escapeJs(l.id)}')">📂 Open</button>
+          <button class="goodbtn" onclick="activateSavedLesson('${escapeJs(l.id)}')">🚀 Activate</button>
           <button class="secondary" onclick="toggleSavedLessonLock('${escapeJs(l.id)}', ${l.locked ? 'false' : 'true'})">
             ${l.locked ? '🔓 Unlock' : '🔒 Lock'}
           </button>
@@ -7169,6 +7148,55 @@ lessonKey = lessonId;
   if(typeof renderStudentNav === 'function') renderStudentNav();
 
   alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
+}
+
+
+async function activateSavedLesson(lessonId){
+  const snap = await dbRef(lessonLibraryPath() + '/' + lessonId).once('value');
+
+  if(!snap.exists()){
+    alert('Lesson not found.');
+    return;
+  }
+
+  const l = snap.val() || {};
+  const cleaned = (typeof dlFixCleanStationsAndContent === 'function')
+    ? dlFixCleanStationsAndContent(l.stations || [], l.content || {})
+    : {stations: l.stations || [], content: l.content || {}};
+
+  lessonKey = lessonId;
+  localStorage.setItem('DL_lesson_key', lessonKey);
+  sessionStorage.setItem('dl_selected_lesson_id', lessonId);
+
+  lessonMeta = l.lessonMeta || {
+    lessonTitle: l.title || lessonId,
+    lessonObjectives: '',
+    lessonKeywords: ''
+  };
+  lessonStations = cleaned.stations;
+  lessonContent = cleaned.content;
+  currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+
+  await dbRef('lessons/' + lessonId + '/config').set(lessonStations);
+  await dbRef('lessons/' + lessonId + '/content').set(lessonContent);
+  await dbRef('lessons/' + lessonId + '/lessonMeta').set(lessonMeta);
+
+  await dbRef(activeLessonPath()).set({
+    lessonId: lessonId,
+    title: lessonMeta.lessonTitle || l.title || lessonId,
+    activatedAt: Date.now(),
+    activatedBy: 'teacher',
+    lessonMeta: lessonMeta
+  });
+
+  if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
+  if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+  if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+  if(typeof renderControlStatus === 'function') renderControlStatus();
+  if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
+  if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(currentOpenStation);
+
+  alert('🚀 Lesson activated for students: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 }
 
 async function toggleSavedLessonLock(lessonId, value){
@@ -7517,7 +7545,6 @@ if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEAC
     if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
 
     if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
 
     if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
 
@@ -7751,7 +7778,6 @@ window.openSavedLesson = async function(lessonId){
     if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
 
     if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
 
     alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 
@@ -7821,6 +7847,14 @@ window.openTeacherView = async function(){
     await dbRef('lessons/' + selectedLessonId + '/config').set(lessonStations);
     await dbRef('lessons/' + selectedLessonId + '/content').set(lessonContent);
     await dbRef('lessons/' + selectedLessonId + '/lessonMeta').set(lessonMeta);
+
+    await dbRef(activeLessonPath()).set({
+      lessonId: selectedLessonId,
+      title: lessonMeta.lessonTitle || chosenLesson.title || selectedLessonId,
+      activatedAt: Date.now(),
+      activatedBy: 'teacher',
+      lessonMeta: lessonMeta
+    });
 
     hideNotice('teacherNotice');
 
@@ -7930,7 +7964,6 @@ window.importOldLessonKeyToLibrary = async function(){
     if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
 
     if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-    if(byId('studentLessonSelect')) byId('studentLessonSelect').value = lessonId;
 
     alert('✅ Old lesson imported and opened: ' + title);
 
