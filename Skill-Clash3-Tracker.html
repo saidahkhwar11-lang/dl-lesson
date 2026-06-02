@@ -3692,6 +3692,24 @@ let builderGroupReadingQuestions = {};
 let builderReadingTexts = {};
 let builderParagraphReading = [];
 
+
+/* ✅ FINAL FIX: global class-key helpers
+   Prevents join error: activeClassKey is not defined. */
+window.skillClashClassKey = function(value){
+  return String(value || '').trim().replace(/\//g,'-').replace(/[^a-zA-Z0-9_-]/g,'_');
+};
+window.activeClassKey = window.activeClassKey || function(){
+  return window.skillClashClassKey(window.currentClass || currentClass || '');
+};
+window.activeTeacherClassKey = window.activeTeacherClassKey || function(){
+  return window.skillClashClassKey(window.selectedTeacherClass || selectedTeacherClass || '');
+};
+function getSkillActiveClassKey(){
+  if(typeof window.activeClassKey === 'function') return window.activeClassKey();
+  if(typeof activeClassKey === 'function') return activeClassKey();
+  return String(currentClass || '').trim().replace(/\//g,'-').replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+
 function classDisplay(c){return c.replace('-','/')}
 
 function toggleActivityImage(btn,id){
@@ -9453,6 +9471,7 @@ window.addEventListener('load', function(){
       const roleBox = document.getElementById("studentRole");
 
       currentClass = classBox ? classBox.value : "";
+      window.currentClass = currentClass;
       currentGroup = groupBox ? groupBox.value : "";
       currentStudent = nameBox ? nameBox.value.trim() : "";
       currentStudentId = idBox ? idBox.value.trim() : "";
@@ -9466,7 +9485,7 @@ window.addEventListener('load', function(){
 
       currentStudentId = String(currentStudentId).replace(/[^a-zA-Z0-9_-]/g,"_");
 
-      const groupPath = "classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students";
+      const groupPath = "classes/" + getSkillActiveClassKey() + "/groups/group" + currentGroup + "/students";
       const studentsSnap = await hubRef.child(groupPath).once("value");
       const existingStudents = studentsSnap.val() || {};
       const existingLeader = Object.keys(existingStudents).find(function(id){
@@ -9497,7 +9516,7 @@ window.addEventListener('load', function(){
         }));
       }catch(e){}
 
-      await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).update({
+      await hubRef.child("classes/" + getSkillActiveClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).update({
         id: currentStudentId,
         name: currentStudent,
         role: currentRole,
@@ -9506,7 +9525,7 @@ window.addEventListener('load', function(){
       });
 
       try{
-        const resetSnap = await hubRef.child("classes/" + activeClassKey() + "/settings/resetToken").once("value");
+        const resetSnap = await hubRef.child("classes/" + getSkillActiveClassKey() + "/settings/resetToken").once("value");
         if(typeof saveCurrentResetToken === "function") saveCurrentResetToken(resetSnap.val() || "");
       }catch(e){}
 
@@ -9539,7 +9558,7 @@ window.addEventListener('load', function(){
     window.submitParagraphReadingQuestions = async function(){
       await oldSubmitParagraphReadingQuestions.apply(this, arguments);
       try{
-        const snap = await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
+        const snap = await hubRef.child("classes/" + getSkillActiveClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
         const s = snap.val() || {};
         await scSavePerformance({
           classId: scClassForControl(),
@@ -9561,7 +9580,7 @@ window.addEventListener('load', function(){
     window.submitReadingQuiz = async function(){
       await oldSubmitReadingQuiz.apply(this, arguments);
       try{
-        const snap = await hubRef.child("classes/" + activeClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
+        const snap = await hubRef.child("classes/" + getSkillActiveClassKey() + "/groups/group" + currentGroup + "/students/" + currentStudentId).once("value");
         const s = snap.val() || {};
         await scSavePerformance({
           classId: scClassForControl(),
