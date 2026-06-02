@@ -675,10 +675,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 <label>Teacher Password</label>
 <input id="teacherPassword" type="password" placeholder="Enter password" />
 
-<label style="display:block;margin-top:12px;">Choose Lesson</label>
-<select id="teacherLessonSelect">
-  <option value="">Loading lessons...</option>
-</select>
+<div class="small" style="margin:10px 0;line-height:1.5;">
+  Open teacher dashboard first. Lessons will load only when you open the Teacher Library.
+</div>
 
 <button id="teacherOpenBtn" onclick="openTeacherView()">
   Open Teacher View
@@ -6857,7 +6856,6 @@ async function createNewBlankLesson(){
     if(typeof loadCreatorStation === 'function') loadCreatorStation();
 
     await loadHomeLessonList();
-    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
 
     if(typeof loadLessonLibrary === 'function'){
       loadLessonLibrary();
@@ -7015,35 +7013,8 @@ async function importOldLessonKeyToLibrary(){
 }
 
   async function loadHomeLessonList(){
-  try{
-    if(!db){
-      initFirebaseFromInputs();
-    }
-
-    const teacherSelect = byId('teacherLessonSelect');
-    if(teacherSelect) teacherSelect.innerHTML = '<option value="">Loading lessons...</option>';
-
-    const libPath = typeof lessonLibraryPath === 'function' ? lessonLibraryPath() : 'lessonLibrary';
-    const snap = await dbRef(libPath).once('value');
-    const lessons = snap.val() || {};
-    const list = Object.values(lessons).filter(l => l && l.visible !== false);
-
-    if(!list.length){
-      if(teacherSelect) teacherSelect.innerHTML = '<option value="">No saved lessons</option>';
-      return;
-    }
-
-    const html = '<option value="">Choose a lesson to activate</option>' +
-      list.map(function(l){
-        return '<option value="' + escapeHtml(l.id) + '">' + escapeHtml(l.title || 'Untitled Lesson') + '</option>';
-      }).join('');
-
-    if(teacherSelect) teacherSelect.innerHTML = html;
-
-  }catch(e){
-    console.error('loadHomeLessonList error:', e);
-    if(byId('teacherNotice')) showNotice('teacherNotice','Lesson list error: ' + e.message,'bad');
-  }
+  // ✅ Removed for speed: no lesson dropdown/list loads on teacher login page.
+  return;
 }
       
 async function loadLessonLibrary(){
@@ -7188,13 +7159,13 @@ async function activateSavedLesson(lessonId){
     activatedBy: 'teacher',
     lessonMeta: lessonMeta
   });
-
-  if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
   if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
   if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
   if(typeof renderControlStatus === 'function') renderControlStatus();
   if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
   if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(currentOpenStation);
+  if(typeof startTeacherListeners === 'function') startTeacherListeners();
+  if(typeof showTeacherSection === 'function') showTeacherSection('teacherTrackerCard');
 
   alert('🚀 Lesson activated for students: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 }
@@ -7465,8 +7436,6 @@ if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEAC
 
     if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
 
-    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-
     if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
 
     if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
@@ -7698,8 +7667,6 @@ window.openSavedLesson = async function(lessonId){
     if(typeof renderStudentNav === 'function') renderStudentNav();
     if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
 
-    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
-
     alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
 
   }catch(err){
@@ -7724,77 +7691,37 @@ window.openTeacherView = async function(){
       return;
     }
 
-    const lessonSelect = byId('teacherLessonSelect');
-    const selectedLessonId = lessonSelect ? lessonSelect.value : '';
-
-    if(!selectedLessonId){
-      showNotice('teacherNotice','Please choose a lesson first OR click Create New Blank Lesson.','bad');
-      return;
-    }
-
     if(!requireConnection()){
       showNotice('teacherNotice','Firebase is not connected.','bad');
       return;
     }
 
-    const lessonSnap = await dbRef('lessonLibrary/' + selectedLessonId).once('value');
-
-    if(!lessonSnap.exists()){
-      showNotice('teacherNotice','Lesson not found in library.','bad');
-      return;
-    }
-
-    const chosenLesson = lessonSnap.val();
-
-    lessonKey = selectedLessonId;
-    localStorage.setItem('DL_lesson_key', selectedLessonId);
-    sessionStorage.setItem('dl_selected_lesson_id', selectedLessonId);
+    // ✅ FAST TEACHER LOGIN:
+    // Do NOT load the lesson library here.
+    // Do NOT load any saved lesson here.
+    // Teacher opens the dashboard first, then clicks Library when needed.
     sessionStorage.setItem('dl_role', 'teacher');
-
-    lessonMeta = chosenLesson.lessonMeta || {
-      lessonTitle: chosenLesson.title || '',
-      lessonObjectives:'',
-      lessonKeywords:''
-    };
-
-    const cleaned = dlFixCleanStationsAndContent(chosenLesson.stations || [], chosenLesson.content || {});
-    lessonStations = cleaned.stations;
-    lessonContent = cleaned.content;
-
-    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
-    studentQuestionStage = 0;
-    studentStageAnswers = {};
-
-    await dbRef('lessons/' + selectedLessonId + '/config').set(lessonStations);
-    await dbRef('lessons/' + selectedLessonId + '/content').set(lessonContent);
-    await dbRef('lessons/' + selectedLessonId + '/lessonMeta').set(lessonMeta);
-
-    await dbRef(activeLessonPath()).set({
-      lessonId: selectedLessonId,
-      title: lessonMeta.lessonTitle || chosenLesson.title || selectedLessonId,
-      activatedAt: Date.now(),
-      activatedBy: 'teacher',
-      lessonMeta: lessonMeta
-    });
+    lessonKey = localStorage.getItem('DL_lesson_key') || lessonKey || 'DL_Lesson';
 
     hideNotice('teacherNotice');
-
     showOnly('teacherView');
 
     if(typeof renderTeacherTimer === 'function') renderTeacherTimer();
-    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
-    if(typeof loadCreatorStation === 'function') loadCreatorStation();
-    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
-    if(typeof openTeacherStationPreview === 'function') openTeacherStationPreview(currentOpenStation);
-    if(typeof renderControlStatus === 'function') renderControlStatus();
-    if(typeof renderTeacherTracker === 'function') renderTeacherTracker();
-    if(typeof showTeacherSection === 'function') showTeacherSection('teacherTrackerCard');
-    if(typeof startTeacherListeners === 'function') startTeacherListeners();
-    if(typeof renderBonusBox === 'function') renderBonusBox();
 
-    if(byId('lessonTitleInput')) byId('lessonTitleInput').value = lessonMeta.lessonTitle || '';
-    if(byId('lessonObjectivesInput')) byId('lessonObjectivesInput').value = lessonMeta.lessonObjectives || '';
-    if(byId('lessonKeywordsInput')) byId('lessonKeywordsInput').value = lessonMeta.lessonKeywords || '';
+    // Keep the dashboard light until a lesson is opened/activated from Library.
+    lessonStations = lessonStations && lessonStations.length ? lessonStations : JSON.parse(JSON.stringify(defaultStations));
+    lessonContent = lessonContent || JSON.parse(JSON.stringify(defaultContent));
+    currentOpenStation = (lessonStations[0] && lessonStations[0].id) || 'starter';
+
+    if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
+    if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
+    if(typeof renderControlStatus === 'function') renderControlStatus();
+    if(typeof showTeacherSection === 'function') showTeacherSection('teacherLibraryCard');
+
+    const libBox = byId('teacherLessonLibraryList');
+    if(libBox){
+      libBox.innerHTML = '<div class="status good">Teacher dashboard opened. Click <b>Refresh Library</b> to load saved lessons, then click <b>🚀 Activate</b>.</div>';
+    }
 
   }catch(err){
     console.error('Teacher view error:', err);
@@ -7883,8 +7810,6 @@ window.importOldLessonKeyToLibrary = async function(){
 
     if(typeof loadHomeLessonList === 'function') await loadHomeLessonList();
     if(typeof loadLessonLibrary === 'function') await loadLessonLibrary();
-
-    if(byId('teacherLessonSelect')) byId('teacherLessonSelect').value = lessonId;
 
     alert('✅ Old lesson imported and opened: ' + title);
 
