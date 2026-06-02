@@ -1735,19 +1735,41 @@ function renderStudents(s){
 
  const col = s.collections?.[s.currentCollectionId];
  const paragraphs = col?.paragraphs || [];
+ const collectionTotal = paragraphs.reduce((sum,p)=>sum + ((p.questions || []).length), 0);
+
  if(!students.length){box.innerHTML='<div class="status">No students joined.</div>';return}
+
  const headerParas=paragraphs.map((p,i)=>`<th>P${i+1}</th>`).join('');
  const rows=students.map(st=>{
-   const pr=s.studentProgress?.[st.id]||null; const groupClass='groupColor'+(((Number(st.group)||1)-1)%6+1);
+   const pr=s.studentProgress?.[st.id]||null;
+   const groupClass='groupColor'+(((Number(st.group)||1)-1)%6+1);
    const progress=pr?(pr.done?'Done ✅':`P${Number(pr.paraIndex||0)+1} • station`):'Waiting';
+
+   const totals = (typeof getReadingRushTotalsForStudent === 'function')
+     ? getReadingRushTotalsForStudent(s, st.id)
+     : {correctAnswers:0,totalQuestions:collectionTotal,weightedScore:0};
+
+   const studentMarkText =
+     `${Number(totals.correctAnswers || 0)}/${Number(totals.totalQuestions || collectionTotal || 0)}`
+     + ` (${Number(totals.weightedScore || 0)}/30)`;
+
    const paraCells=paragraphs.map((p,i)=>{
-     const delta=eventDeltaForStudentParagraph(s,st.id,i); const count=eventCountForStudentParagraph(s,st.id,i);
+     const delta=eventDeltaForStudentParagraph(s,st.id,i);
+     const count=eventCountForStudentParagraph(s,st.id,i);
      const cls=delta>0?'scoreGood':delta<0?'scoreBad':'scoreNeutral';
      return `<td><span class="${cls}">${delta>0?'+':''}${delta}</span><div class="progressSmall">${count}/${(p.questions||[]).length||0} Qs</div></td>`;
    }).join('');
-   return `<tr><td class="studentNameCell ${groupClass}">${esc(st.name)}<div class="progressSmall">Group ${esc(st.group)}</div></td><td>${esc(progress)}</td>${paraCells}<td><b>${Number(s.scores?.[st.group]||0)}</b></td></tr>`;
+
+   return `<tr>
+     <td class="studentNameCell ${groupClass}">${esc(st.name)}<div class="progressSmall">Group ${esc(st.group)}</div></td>
+     <td>${esc(progress)}</td>
+     ${paraCells}
+     <td><b>${studentMarkText}</b><div class="progressSmall">Individual mark</div></td>
+     <td><b>${Number(s.scores?.[st.group]||0)}</b><div class="progressSmall">Group points</div></td>
+   </tr>`;
  }).join('');
- box.innerHTML=`<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Now</th>${headerParas}<th>Group Mark</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+
+ box.innerHTML=`<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Now</th>${headerParas}<th>Student Mark</th><th>Group Mark</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function teacherRefresh(){
   const s = stateCache || defaultState();
@@ -2410,6 +2432,7 @@ async function saveReadingRushExcellentCertificate(record){
     score: record.score,
     total: record.total,
     percentage: 100,
+    date: new Date().toLocaleDateString('en-GB'),
     issuedAt: Date.now(),
     status: 'issued'
   };
@@ -2455,6 +2478,8 @@ async function saveReadingRushRecordForStudent(s, student){
       studentName: student.name || '',
       collectionId: colId,
       completed: ((s.studentProgress || {})[id] || {}).done === true,
+      status: 'Saved',
+      date: new Date().toLocaleDateString('en-GB'),
       updatedAt: Date.now()
     };
 
