@@ -447,7 +447,7 @@
 <script>
   let collectionUIBusy = false;
 const DEFAULT_FIREBASE_CONFIG={apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",authDomain:"online-english-lesson-grade-9.firebaseapp.com",databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",projectId:"online-english-lesson-grade-9",storageBucket:"online-english-lesson-grade-9.firebasestorage.app",appId:"1:542666648554:web:5190c68ea73b3536dae093"};
-const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';let paragraphAnswers={};
+const LESSON_KEY='reading_rush_collection_v1';const TEACHER_PASSWORD='Welcome@2020';const SESSION_KEY='reading_rush_collection_student_session_v1';let db=null,stateRef=null,stateCache=null,currentUser=null;let tempQuestions=[];let selectedAnswer='';let paragraphAnswers={};let activeParagraphAnswerKey='';
 function byId(id){return document.getElementById(id)}function show(id){byId(id).classList.remove('hidden')}function hide(id){byId(id).classList.add('hidden')}function esc(t){return String(t||'').replace(/[&<>\'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 
  function defaultState(){
@@ -458,6 +458,7 @@ function byId(id){return document.getElementById(id)}function show(id){byId(id).
     collections:{},
     students:{},
     answers:{},
+    paragraphResults:{},
     scores:{},
     studentProgress:{},
     final:false,
@@ -842,6 +843,7 @@ async function createManualCollectionFromBulk(){
   s.currentCollectionTitle=title;
   s.stage='waiting';
   s.answers={};
+  s.paragraphResults={};
   s.studentProgress={};
   s.boss=false;
   byId('collectionTitleInput').value='';
@@ -859,7 +861,7 @@ async function generateFullCollection(){
  if(!paras.length){alert('Please paste at least one clear paragraph.');return}
  const s=await getState();s.collections=s.collections||{};const id='col_'+Date.now();
  s.collections[id]={id,title,paragraphs:paras.map((p,i)=>({id:'p_'+Date.now()+'_'+i,title:`Paragraph ${i+1}${i===paras.length-1?' 👑 Boss':''}`,text:p,boss:i===paras.length-1,questions:generateQuestionsForParagraph(p,i)}))};
- s.currentCollectionId=id;s.currentCollectionTitle=title;s.stage='waiting';s.answers={};s.studentProgress={};s.boss=false;s.lessonPlan=buildLessonPlanObject(s);
+ s.currentCollectionId=id;s.currentCollectionTitle=title;s.stage='waiting';s.answers={};s.paragraphResults={};s.studentProgress={};s.boss=false;s.lessonPlan=buildLessonPlanObject(s);
  byId('collectionTitleInput').value='';byId('fullTextInput').value='';await setState(s);alert('AI collection generated successfully.');
 }
 async function createCollection(){const title=byId('collectionTitleInput').value.trim();if(!title){alert('Write collection title.');return}const s=await getState();s.collections=s.collections||{};const id='col_'+Date.now();s.collections[id]={id,title,paragraphs:[]};byId('collectionTitleInput').value='';await setState(s)}
@@ -1030,6 +1032,7 @@ function renderEditCollection(){
 
   // keep collection safe
   if(!s.answers) s.answers = {};
+  if(!s.paragraphResults) s.paragraphResults = {};
   if(!s.studentProgress) s.studentProgress = {};
 
   s.lessonPlan = buildLessonPlanObject(s);
@@ -1510,7 +1513,7 @@ async function saveScheduledReadingRushToTeacherControl(s, assignment, col){
   s.stage = 'playing';
   s.roundStartTime = Date.now();
   s.answers = {};
-  s.answers = {};
+  s.paragraphResults = {};
   s.studentProgress = {};
 
 const activeClass = s.activeClass || getActiveClass();
@@ -1594,8 +1597,8 @@ async function resetGame(){
   fresh.stage = 'waiting';
   fresh.students = {};
   fresh.answers = {};
+  fresh.paragraphResults = {};
   fresh.scores = {};
-  fresh.answers = {};
   fresh.studentProgress = {};
   fresh.final = false;
   fresh.boss = false;
@@ -1684,10 +1687,13 @@ function renderParagraphTimers(s){
     const totalQ = (p.questions || []).length;
     let doneQ = 0;
 
-    if(pr.done || i < Number(pr.paraIndex || 0)){
+    const r = paragraphResultForStudent(s,currentUser.id,i);
+    if(r){
+      doneQ = Number(r.total || totalQ);
+    }else if(pr.done || i < Number(pr.paraIndex || 0)){
       doneQ = totalQ;
     }else if(i === Number(pr.paraIndex || 0)){
-      doneQ = Number(pr.qIndex || 0);
+      doneQ = Object.keys(paragraphAnswers || {}).length;
     }
 
     return `
@@ -1700,9 +1706,17 @@ function renderParagraphTimers(s){
   }).join('');
 }
 function leaderboardRows(s){return activeGroups(s).map(g=>({g,pts:Number(s.scores?.[g]||0)})).sort((a,b)=>b.pts-a.pts)}function renderLeaderboard(id,s){const box=byId(id);if(!box)return;const rows=leaderboardRows(s);box.innerHTML=rows.length?rows.map((r,i)=>`<div class="rankRow groupColor${((Number(r.g)-1)%6)+1}"><div class="rankName">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐'} Group ${esc(r.g)}</div><div class="rankPts">${r.pts} pts</div></div>`).join(''):'<div class="status">No groups yet.</div>'}
-function answerRecordsForStudentParagraph(s,studentId,paraIndex){return Object.values(s.answers?.[studentId]||{}).filter(a=>Number(a.paraIndex)===Number(paraIndex))}
-function eventDeltaForStudentParagraph(s,studentId,paraIndex){return answerRecordsForStudentParagraph(s,studentId,paraIndex).filter(a=>a.correct).length}
-function eventCountForStudentParagraph(s,studentId,paraIndex){return answerRecordsForStudentParagraph(s,studentId,paraIndex).length}
+function paragraphResultForStudent(s,studentId,paraIndex){
+  return (s.paragraphResults?.[studentId] || {})['p' + Number(paraIndex)];
+}
+function eventDeltaForStudentParagraph(s,studentId,paraIndex){
+  const r = paragraphResultForStudent(s,studentId,paraIndex);
+  return r ? Number(r.score || 0) : 0;
+}
+function eventCountForStudentParagraph(s,studentId,paraIndex){
+  const r = paragraphResultForStudent(s,studentId,paraIndex);
+  return r ? Number(r.total || 0) : 0;
+}
 function renderStudents(s){
 
  const box = byId('teacherStudents');
@@ -1722,7 +1736,7 @@ function renderStudents(s){
  const headerParas=paragraphs.map((p,i)=>`<th>P${i+1}</th>`).join('');
  const rows=students.map(st=>{
    const pr=s.studentProgress?.[st.id]||null; const groupClass='groupColor'+(((Number(st.group)||1)-1)%6+1);
-   const progress=pr?(pr.done?'Done ✅':`P${Number(pr.paraIndex||0)+1} • Q${Number(pr.qIndex||0)+1}`):'Waiting';
+   const progress=pr?(pr.done?'Done ✅':`P${Number(pr.paraIndex||0)+1} • station`):'Waiting';
    const paraCells=paragraphs.map((p,i)=>{
      const delta=eventDeltaForStudentParagraph(s,st.id,i); const count=eventCountForStudentParagraph(s,st.id,i);
      const cls=delta>0?'scoreGood':delta<0?'scoreBad':'scoreNeutral';
@@ -1888,7 +1902,26 @@ async function openScheduledCollection(collectionId){
     window._readingRushStarting = false;
   }
 }
-function buildAnalytics(s){const all=Object.values(s.answers||{}).flatMap(v=>Object.values(v||{}));const total=all.length,correct=all.filter(a=>a.correct).length;const skills={};all.forEach(a=>{const k=a.skill||'unknown';skills[k]=skills[k]||{total:0,correct:0};skills[k].total++;if(a.correct)skills[k].correct++});let weakest='Not enough data';Object.keys(skills).forEach(k=>{const rate=skills[k].correct/skills[k].total;if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/skills[weakest]?.total||1))weakest=k});return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills}}
+function buildAnalytics(s){
+  const all = Object.values(s.paragraphResults || {}).flatMap(v=>Object.values(v||{}));
+  const total = all.reduce((sum,r)=>sum + Number(r.total || 0), 0);
+  const correct = all.reduce((sum,r)=>sum + Number(r.score || 0), 0);
+  const skills = {};
+  all.forEach(r=>{
+    Object.values(r.skillSummary || {}).forEach(sk=>{
+      const k = sk.skill || 'unknown';
+      skills[k] = skills[k] || {total:0, correct:0};
+      skills[k].total += Number(sk.total || 0);
+      skills[k].correct += Number(sk.correct || 0);
+    });
+  });
+  let weakest='Not enough data';
+  Object.keys(skills).forEach(k=>{
+    const rate=skills[k].correct/Math.max(1,skills[k].total);
+    if(weakest==='Not enough data'||rate<(skills[weakest]?.correct/Math.max(1,skills[weakest]?.total)||1))weakest=k;
+  });
+  return{total,correct,accuracy:total?Math.round(correct/total*100):0,weakest,skills};
+}
 function renderAnalytics(s){const box=byId('analyticsBox');if(!box)return;if(s.stage!=='final'){box.classList.add('hidden');return}const a=s.analytics||buildAnalytics(s);box.classList.remove('hidden');box.innerHTML=`<h2>📊 Teacher Report</h2><div class="analyticsGrid"><div class="analyticsCard"><b>Total Answers</b><br>${a.total||0}</div><div class="analyticsCard"><b>Accuracy</b><br>${a.accuracy||0}%</div><div class="analyticsCard"><b>Correct Answers</b><br>${a.correct||0}</div><div class="analyticsCard"><b>Needs Practice</b><br>${esc(a.weakest||'Not enough data')}</div></div>`}
 
 function highlightKeywords(text, extraWords){
@@ -1963,6 +1996,12 @@ function studentRefresh(){
   }
 
   if((s.stage === 'playing') && d.p){
+
+    const answerKey = currentUser.id + '_' + Number(d.pr.paraIndex || 0);
+    if(activeParagraphAnswerKey !== answerKey){
+      paragraphAnswers = {};
+      activeParagraphAnswerKey = answerKey;
+    }
 
     const totalQ = (d.p.questions || []).length;
     const answeredCount = Object.keys(paragraphAnswers || {}).length;
@@ -2094,8 +2133,8 @@ async function submitAnswer(){
   }
 
   s.scores = s.scores || {};
-  s.answers = s.answers || {};
   s.studentProgress = s.studentProgress || {};
+  s.paragraphResults = s.paragraphResults || {};
 
   if(typeof s.scores[currentUser.group] === 'undefined'){
     s.scores[currentUser.group] = 0;
@@ -2103,54 +2142,58 @@ async function submitAnswer(){
 
   const pr = s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false};
   const answerParaIndex = Number(pr.paraIndex || 0);
+  const resultKey = 'p' + answerParaIndex;
 
-  s.answers[currentUser.id] = s.answers[currentUser.id] || {};
+  s.paragraphResults[currentUser.id] = s.paragraphResults[currentUser.id] || {};
+  const alreadySaved = !!s.paragraphResults[currentUser.id][resultKey];
 
   let paragraphScore = 0;
-  let newlySavedCorrect = 0;
-  const savedDetails = [];
+  const selectedAnswers = {};
+  const skillSummary = {};
 
   questions.forEach((q, qi)=>{
     const selected = paragraphAnswers[qi];
     const correct = selected === q.correct;
-    const answerKey = 'p' + answerParaIndex + '_q' + qi;
+    const skill = q.skill || 'unknown';
 
-    if(!s.answers[currentUser.id][answerKey]){
-      s.answers[currentUser.id][answerKey] = {
-        studentId: currentUser.id,
-        student: currentUser.name,
-        group: currentUser.group,
-        paraIndex: answerParaIndex,
-        qIndex: qi,
-        selected: selected,
-        correctAnswer: q.correct,
-        correct,
-        point: correct ? 1 : 0,
-        time: Date.now(),
-        skill: q.skill || 'unknown',
-        mode: 'paragraph_submit'
-      };
+    selectedAnswers[qi] = selected;
 
-      if(correct){
-        newlySavedCorrect++;
-      }
+    skillSummary[skill] = skillSummary[skill] || {skill, total:0, correct:0};
+    skillSummary[skill].total += 1;
+    if(correct){
+      paragraphScore += 1;
+      skillSummary[skill].correct += 1;
     }
-
-    if(correct) paragraphScore++;
-    savedDetails.push({
-      question: qi + 1,
-      selected,
-      correctAnswer: q.correct,
-      correct
-    });
   });
 
-  s.scores[currentUser.group] =
-    Number(s.scores[currentUser.group] || 0) + newlySavedCorrect;
+  /* ✅ Light storage: one compact record per paragraph.
+     No more answers[studentId][questionId] for every question. */
+  s.paragraphResults[currentUser.id][resultKey] = {
+    studentId: currentUser.id,
+    student: currentUser.name,
+    group: currentUser.group,
+    paraIndex: answerParaIndex,
+    paragraphId: p.id || resultKey,
+    paragraphTitle: p.title || ('Paragraph ' + (answerParaIndex + 1)),
+    score: paragraphScore,
+    total: questions.length,
+    selectedAnswers: selectedAnswers,
+    skillSummary: skillSummary,
+    submittedAt: Date.now(),
+    mode: 'paragraph_submit_light'
+  };
+
+  if(!alreadySaved){
+    s.scores[currentUser.group] =
+      Number(s.scores[currentUser.group] || 0) + paragraphScore;
+  }
 
   const col = s.collections?.[s.currentCollectionId];
   const paragraphs = col?.paragraphs || [];
 
+  pr.score = Number(pr.score || 0) + (alreadySaved ? 0 : paragraphScore);
+  pr.lastParagraphScore = paragraphScore;
+  pr.lastParagraphTotal = questions.length;
   pr.qIndex = 0;
   pr.paraIndex = answerParaIndex + 1;
 
@@ -2158,8 +2201,11 @@ async function submitAnswer(){
     pr.done = true;
     pr.paraIndex = Math.max(0, paragraphs.length - 1);
     pr.qIndex = questions.length;
+    pr.completed = true;
+    pr.completedAt = Date.now();
   }else{
     pr.done = false;
+    pr.completed = false;
   }
 
   s.studentProgress[currentUser.id] = pr;
@@ -2180,9 +2226,9 @@ async function submitAnswer(){
 
   paragraphAnswers = {};
   selectedAnswer = '';
-  paragraphAnswers = {};
   studentRefresh();
 }
+
 function showReward(emoji,title,text){byId('studentResultBox').innerHTML='<div class="status good">'+esc(title||'Done')+'</div>'}
 function closeReward(){}async function leaveGame(){if(!currentUser)return backHome();const s=await getState();delete s.students[currentUser.id];await setState(s);clearStudentSession();currentUser=null;backHome()}setInterval(()=>{if(currentUser?.role==='teacher')teacherRefresh();if(currentUser?.role==='student')studentRefresh()},1000);initFirebase();
 
@@ -2360,7 +2406,7 @@ async function saveReadingRushToTeacherControl(s){
 
     const group = String(currentUser?.group || '');
     const groupScore = Number((s.scores || {})[group] || 0);
-    const myAnswers = Object.values((s.answers || {})[id] || {});
+    const myParagraphResults = Object.values((s.paragraphResults || {})[id] || {});
 
     const allParagraphs =
       s.collections?.[s.currentCollectionId]?.paragraphs || [];
@@ -2368,7 +2414,7 @@ async function saveReadingRushToTeacherControl(s){
     const totalQuestions = allParagraphs.reduce((sum, p) =>
       sum + ((p.questions || []).length), 0);
 
-    const correctAnswers = myAnswers.filter(a => a.correct).length;
+    const correctAnswers = myParagraphResults.reduce((sum,r)=>sum + Number(r.score || 0), 0);
 
     const percentage = totalQuestions
       ? (correctAnswers / totalQuestions)
