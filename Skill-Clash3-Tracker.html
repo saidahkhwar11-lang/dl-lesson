@@ -5383,6 +5383,216 @@ function downloadCertificate(info){
            <div class="date">📅 Date: ${escapeHtml(dateText)}</div>
     </div>
   </div>
+
+
+<script>
+/* =========================================================
+   FINAL FIX - Skill Clash Secure Hub Marks + Certificates
+   Rule:
+   1) Any saved Final Activity Mark appears in Secure Hub
+      for every student in the group, even if it is not full mark.
+   2) Certificate is saved/released to Secure Hub ONLY when
+      Final Activity Mark equals Full Mark.
+   3) Writes to BOTH:
+      teacherControlCenter/records
+      teacherControlCenter/performance
+   ========================================================= */
+(function(){
+  function cleanKey(v){
+    return String(v || '').trim()
+      .replace(/[.#$\[\]\/]/g,'_')
+      .replace(/\s+/g,'_')
+      .replace(/-/g,'_');
+  }
+
+  function safeJson(v){ try{return JSON.parse(v || 'null');}catch(e){return null;} }
+
+  function hubStudent(){
+    return safeJson(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')) ||
+           safeJson(sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN')) ||
+           null;
+  }
+
+  function currentClassKeyForSkillClash(){
+    try{
+      if(typeof activeTeacherClassKey === 'function' && selectedTeacherClass){
+        return cleanKey(activeTeacherClassKey());
+      }
+      if(typeof activeClassKey === 'function' && currentClass){
+        return cleanKey(activeClassKey());
+      }
+    }catch(e){}
+
+    const s = hubStudent();
+    return cleanKey(
+      (s && (s.classId || s.className || s.class || s.cls)) ||
+      selectedTeacherClass || currentClass || 'unknown_class'
+    );
+  }
+
+  async function getActiveTrackerSettings(){
+    try{
+      if(typeof firebase === 'undefined') return {};
+      const snap = await firebase.database().ref('teacherControlCenter/settings/tracker').once('value');
+      return snap.val() || {};
+    }catch(e){ return {}; }
+  }
+
+  function getSkillActivityName(){
+    try{
+      if(typeof scActivityName === 'function') return scActivityName() || 'Skill Clash Activity';
+    }catch(e){}
+    try{
+      if(typeof latestAssignedActivity !== 'undefined' && latestAssignedActivity){
+        return latestAssignedActivity.title || latestAssignedActivity.activityName || 'Skill Clash Activity';
+      }
+    }catch(e){}
+    return 'Skill Clash Activity';
+  }
+
+  async function saveSkillPerformanceRecord(record){
+    try{
+      if(typeof firebase === 'undefined') return;
+
+      const settings = await getActiveTrackerSettings();
+      const classId = cleanKey(record.classId || currentClassKeyForSkillClash());
+      const studentId = cleanKey(record.studentId || record.password || '');
+      if(!classId || !studentId) return;
+
+      const activeTerm = record.term || settings.activeSavingTerm || settings.term || 'term3';
+      const studyYear = record.studyYear || settings.studyYear || '';
+      const activityName = record.activityName || getSkillActivityName();
+      const recordId = cleanKey(record.recordId || ('skill_clash_' + activityName + '_' + studentId));
+
+      const finalRecord = Object.assign({}, record, {
+        classId: classId,
+        studentId: studentId,
+        studentName: record.studentName || studentId,
+        activityName: activityName,
+        activityType: 'Skill Clash',
+        source: 'Skill Clash',
+        page: 'Skill Clash',
+        program: 'Skill Clash',
+        app: 'Skill Clash',
+        recordId: recordId,
+        score: Number(record.score || 0),
+        total: Number(record.total || 0),
+        term: activeTerm,
+        activeTerm: activeTerm,
+        studyYear: studyYear,
+        status: 'Saved',
+        notes: record.notes || 'Final Skill Clash mark saved by teacher.',
+        date: record.date || new Date().toLocaleDateString('en-GB'),
+        time: Date.now()
+      });
+
+      const updates = {};
+      updates['teacherControlCenter/records/' + classId + '/' + studentId + '/' + recordId] = finalRecord;
+      updates['teacherControlCenter/performance/' + classId + '/' + studentId + '/Skill_Clash'] = finalRecord;
+      await firebase.database().ref().update(updates);
+    }catch(err){
+      console.warn('Skill Clash Secure Hub mark save failed:', err);
+    }
+  }
+
+  async function saveGroupFinalMarkToSecureHub(groupNum){
+    try{
+      const clsKey = (typeof activeTeacherClassKey === 'function')
+        ? activeTeacherClassKey()
+        : String(selectedTeacherClass || currentClass || '').replace('/','-');
+
+      const gSnap = await hubRef.child('classes/' + clsKey + '/groups/group' + groupNum).once('value');
+      const g = gSnap.val() || {};
+      const students = g.students || {};
+
+      const finalMarkRaw = (g.finalActivityMark !== undefined && g.finalActivityMark !== '')
+        ? g.finalActivityMark
+        : (document.getElementById('finalMark_' + groupNum)?.value || '');
+
+      if(finalMarkRaw === ''){
+        console.log('Skill Clash: Final Activity Mark empty. Nothing sent to Secure Hub.');
+        return;
+      }
+
+      const finalMaxRaw = (g.finalActivityMax !== undefined && g.finalActivityMax !== '')
+        ? g.finalActivityMax
+        : (document.getElementById('finalMax_' + groupNum)?.value || 10);
+
+      const writingMark = Number(document.getElementById('teacherWritingMark_group' + groupNum)?.value || g.teacherWritingMark || 0);
+      const writingTotal = Number((typeof latestAssignedActivity !== 'undefined' && latestAssignedActivity && latestAssignedActivity.writingTotal) || 0);
+
+      const score = Number(finalMarkRaw || 0) + writingMark;
+      const total = Number(finalMaxRaw || 10) + writingTotal;
+      const activityName = getSkillActivityName();
+      const comment = g.teacherComment || document.getElementById('comment_' + groupNum)?.value || '';
+
+      for(const sid of Object.keys(students)){
+        const st = students[sid] || {};
+        await saveSkillPerformanceRecord({
+          classId: cleanKey(String(selectedTeacherClass || clsKey).replace('-','/')),
+          studentId: sid,
+          studentName: st.name || sid,
+          activityName: activityName,
+          score: score,
+          total: total,
+          recordId: 'skill_final_' + cleanKey(activityName) + '_group' + groupNum + '_' + cleanKey(sid),
+          notes: (comment || 'Final Skill Clash mark.') + ' Final mark: ' + score + '/' + total
+        });
+      }
+    }catch(err){
+      console.warn('Could not save Skill Clash final mark to Secure Hub:', err);
+    }
+  }
+
+  if(typeof window.saveTeacherFeedback === 'function'){
+    const oldSaveTeacherFeedbackSecureHubFinal = window.saveTeacherFeedback;
+    window.saveTeacherFeedback = async function(groupNum){
+      await oldSaveTeacherFeedbackSecureHubFinal.apply(this, arguments);
+      await saveGroupFinalMarkToSecureHub(groupNum);
+      alert('✅ Skill Clash final mark is now connected to Secure Hub for all students in this group.');
+    };
+  }
+
+  function getCurrentGroupFinalMarkStatus(){
+    try{
+      const g = (typeof latestClassGroups !== 'undefined' && latestClassGroups)
+        ? (latestClassGroups['group' + currentGroup] || {})
+        : {};
+      const score = Number(g.finalActivityMark || 0);
+      const total = Number(g.finalActivityMax || 10);
+      return {score:score,total:total,full:(total > 0 && score >= total)};
+    }catch(e){ return {score:0,total:10,full:false}; }
+  }
+
+  if(typeof window.saveSkillClashCertificateToSecureHub === 'function'){
+    const oldSaveSkillClashCertificateToSecureHub = window.saveSkillClashCertificateToSecureHub;
+    window.saveSkillClashCertificateToSecureHub = async function(info){
+      const mark = getCurrentGroupFinalMarkStatus();
+      if(!mark.full){
+        console.log('Skill Clash certificate blocked: mark is not full (' + mark.score + '/' + mark.total + ').');
+        return;
+      }
+      return oldSaveSkillClashCertificateToSecureHub.apply(this, arguments);
+    };
+  }
+
+  if(typeof window.downloadCertificate === 'function'){
+    const oldDownloadCertificateSecureHubRule = window.downloadCertificate;
+    window.downloadCertificate = function(info){
+      const mark = getCurrentGroupFinalMarkStatus();
+      if(!mark.full){
+        alert('Certificate is locked. Skill Clash certificate is released only when the group gets full mark (' + mark.total + '/' + mark.total + '). Current mark: ' + mark.score + '/' + mark.total + '. The mark is still saved in Secure Hub.');
+        return;
+      }
+      return oldDownloadCertificateSecureHubRule.apply(this, arguments);
+    };
+  }
+
+  window.saveSkillPerformanceRecord = saveSkillPerformanceRecord;
+  window.saveGroupFinalMarkToSecureHub = saveGroupFinalMarkToSecureHub;
+})();
+</script>
+
 </body>
 </html>`;
 
