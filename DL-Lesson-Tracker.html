@@ -2018,41 +2018,47 @@ async function saveDLPerformanceToTeacherControl(record){
     const classId = tcCleanKey((found && found.classId) || record.classId || 'unknown_class');
     const studentKey = tcCleanKey((found && found.studentKey) || sid);
     const studentName = (found && found.student && found.student.name) || record.studentName || (currentStudent && currentStudent.name) || 'Student';
-    const recordId = 'dl_' + tcCleanKey(lessonKey || 'lesson') + '_' + tcCleanKey(record.stationId || record.activityName || 'station') + '_' + Date.now();
+    const activityName = record.activityName || lessonMeta.lessonTitle || 'DL Lesson';
+    const score = Number(record.score || 0);
+    const total = Number(record.total || 0);
+    const today = record.date || tcToday();
+    const now = Date.now();
+    const term = record.term || localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'Term 3';
+    const recordId = 'dl_' + tcCleanKey(lessonKey || 'lesson') + '_' + tcCleanKey(record.stationId || record.activityName || 'station') + '_' + now;
 
-    await dbRef('teacherControlCenter/records/' + classId + '/' + studentKey + '/' + recordId).set({
+    const data = {
       classId: classId,
       studentId: studentKey,
       studentName: studentName,
-      activityName: record.activityName || 'DL Lesson',
+      activityName: activityName,
       activityType: record.activityType || 'DL Lesson',
-      score: Number(record.score || 0),
-      total: Number(record.total || 0),
+      page: 'DL Lesson',
+      score: score,
+      mark: score,
+      total: total,
+      max: total,
+      status: 'Saved',
       notes: record.notes || '',
       sourceLessonKey: lessonKey || '',
       sourceStudentId: sid,
-      date: record.date || tcToday(),
-      time: Date.now(),
+      term: term,
+      date: today,
+      updated: today,
+      updatedAt: now,
+      time: now,
       recordId: recordId
-    });
+    };
 
+    await dbRef('teacherControlCenter/records/' + classId + '/' + studentKey + '/' + recordId).set(data);
+
+    /* Secure Hub reads a saved final activity mark, not only station records.
+       Save the final DL total in several compatible paths so old/new Secure Hub pages can find it. */
     if(String(record.notes || '').includes('Final DL lesson mark')){
-  await dbRef(
-    'teacherControlCenter/performance/' + classId + '/' + studentKey + '/DL_Lesson'
-  ).set({
-    classId: classId,
-    studentId: studentKey,
-    studentName: studentName,
-    activityName: record.activityName || 'DL Lesson',
-    activityType: 'DL Lesson',
-    score: Number(record.score || 0),
-    total: Number(record.total || 0),
-    notes: 'Final DL lesson mark',
-    sourceLessonKey: lessonKey || '',
-    date: record.date || tcToday(),
-    time: Date.now()
-  });
-}
+      await dbRef('teacherControlCenter/performance/' + classId + '/' + studentKey + '/DL_Lesson').set(data);
+      await dbRef('teacherControlCenter/performance/' + classId + '/' + studentKey + '/' + term + '/DL_Lesson').set(data);
+      await dbRef('teacherControlCenter/studentPerformance/' + classId + '/' + studentKey + '/DL_Lesson').set(data);
+      await dbRef('teacherControlCenter/studentPerformance/' + classId + '/' + studentKey + '/' + term + '/DL_Lesson').set(data);
+    }
   }catch(err){
     console.warn('Teacher Control performance save failed:', err);
   }
@@ -4134,6 +4140,43 @@ async function getFreshCurrentStudentData(){
 }
 
 
+async function saveFinalDLMarkIfLessonCompleted(studentId, studentName){
+  try{
+    if(!db || !studentId) return;
+
+    const snap = await dbRef(studentPath(studentId)).once('value');
+    const student = snap.exists() ? (snap.val() || {}) : (liveStudents[studentId] || {});
+    const submitted = student.submittedStations || {};
+    const requiredStations = (lessonStations || []).filter(function(st){ return st && st.id; });
+
+    if(!requiredStations.length) return;
+
+    const completed = requiredStations.every(function(st){
+      return submitted[st.id] === true;
+    });
+
+    if(!completed) return;
+
+    const finalScore = Object.values(student.scores || {}).reduce(function(a,b){
+      return a + Number(b || 0);
+    }, 0);
+
+    await saveDLPerformanceToTeacherControl({
+      studentId: studentId,
+      studentName: studentName || student.name || studentId,
+      stationId: 'final_total',
+      activityType: 'DL Lesson',
+      activityName: lessonMeta.lessonTitle || lessonKey || 'DL Lesson',
+      score: finalScore,
+      total: getLessonMaxMark(),
+      notes: 'Final DL lesson mark'
+    });
+
+  }catch(err){
+    console.warn('Could not save final DL mark:', err);
+  }
+}
+
 async function hasCompletedAllOpenedStations(){
 
   if(!currentStudent || !currentStudent.id){
@@ -5156,20 +5199,9 @@ window.submitCurrentStation = async function(stationId){
     notes: 'Submitted DL lesson station'
   });
 
-   const lessonMax = getLessonMaxMark();
-
-if(total >= lessonMax){
-  await saveDLPerformanceToTeacherControl({
-    studentId: currentStudent.id,
-    studentName: currentStudent.name,
-    stationId: 'final_total',
-    activityType: 'DL Lesson',
-    activityName: lessonMeta.lessonTitle || 'DL Lesson',
-    score: total,
-    total: lessonMax,
-    notes: 'Final DL lesson mark'
-  });
-}
+  // Save the final mark to Secure Hub as soon as the student completes all stations.
+  // It does NOT require full marks. Certificates can still require full marks separately.
+  await saveFinalDLMarkIfLessonCompleted(currentStudent.id, currentStudent.name);
   
   if(!liveStudents[currentStudent.id]) liveStudents[currentStudent.id] = {};
   liveStudents[currentStudent.id].scores = nextScores;
