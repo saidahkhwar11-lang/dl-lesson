@@ -97,6 +97,26 @@ window.addEventListener('load', hideStudentUploadBoxesSafely);
 
 </script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+/* Emergency global class-key helpers: available before any login/join code runs. */
+function skillClashClassKey(value){
+  return String(value || '').trim().replace(/\//g,'-').replace(/[^a-zA-Z0-9_-]/g,'_');
+}
+function getSkillActiveClassKey(){
+  return skillClashClassKey(window.currentClass || sessionStorage.getItem('skillClass') || '');
+}
+function activeClassKey(){
+  return getSkillActiveClassKey();
+}
+function activeTeacherClassKey(){
+  return skillClashClassKey(window.selectedTeacherClass || '');
+}
+window.skillClashClassKey = skillClashClassKey;
+window.getSkillActiveClassKey = getSkillActiveClassKey;
+window.activeClassKey = activeClassKey;
+window.activeTeacherClassKey = activeTeacherClassKey;
+</script>
+
 
 <style>
 *{box-sizing:border-box}
@@ -9445,6 +9465,7 @@ total: finalMax + Number(latestAssignedActivity?.writingTotal || 0),
 
 })();
   
+</script>
 <script>
 (function(){
   
