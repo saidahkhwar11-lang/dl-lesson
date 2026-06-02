@@ -1551,13 +1551,16 @@ async function stopChallenge(){
     s.analytics = {};
   }
 
-  if(typeof saveReadingRushCertificatesForFinalists === 'function'){
-    await saveReadingRushCertificatesForFinalists(s);
+  // ✅ Save every student's final Reading Rush mark when teacher releases results.
+  // Certificates are NOT group/ranking certificates anymore.
+  // A certificate is saved only when the student gets full marks.
+  if(typeof saveReadingRushFinalMarksAndCertificates === 'function'){
+    await saveReadingRushFinalMarksAndCertificates(s);
   }
 
   await setState(s);
 
-  alert('✅ Report stopped. Unfinished students were scheduled automatically.');
+  alert('✅ Results released. Marks were saved. Certificates were given only to full-mark students.');
 }
 
  async function clearRecoveryAssignmentsForClass(){
@@ -2305,79 +2308,98 @@ async function saveReadingRushCertificateRecord(record){
 }
 
 async function saveReadingRushCertificatesForFinalists(s){
+  // ✅ Old behavior disabled.
+  // Do NOT give certificates to top groups or finalists.
+  // Certificates are handled by saveReadingRushFinalMarksAndCertificates()
+  // and only full-mark students receive one.
+  return;
+}
+
+function getReadingRushTotalsForStudent(s, studentId){
+  const col = s.collections?.[s.currentCollectionId] || {};
+  const paragraphs = col.paragraphs || [];
+  const totalQuestions = paragraphs.reduce(function(sum, p){
+    return sum + ((p.questions || []).length);
+  }, 0);
+
+  const paragraphResults = Object.values((s.paragraphResults || {})[studentId] || {});
+  let correctAnswers = paragraphResults.reduce(function(sum, r){
+    return sum + Number(r.score || 0);
+  }, 0);
+
+  // Backward fallback for older data before paragraphResults existed.
+  if(correctAnswers === 0 && paragraphResults.length === 0){
+    const oldAnswers = Object.values((s.answers || {})[studentId] || {});
+    correctAnswers = oldAnswers.filter(function(a){ return a && a.correct === true; }).length;
+  }
+
+  const percentage = totalQuestions ? (correctAnswers / totalQuestions) : 0;
+  const weightedScore = Math.round(percentage * 30);
+
+  return {
+    correctAnswers: correctAnswers,
+    totalQuestions: totalQuestions,
+    percentage: Math.round(percentage * 100),
+    weightedScore: weightedScore
+  };
+}
+
+async function removeReadingRushCertificatesIfNotFull(record){
   try{
-    if(!db || !s) return;
+    if(!db || !record || !record.classId || !record.studentId) return;
 
-    const colId = s.currentCollectionId || 'reading_rush_collection';
-    const col = s.collections?.[colId] || {};
-    const activityName = col.title || s.currentCollectionTitle || 'Reading Rush Collection';
-    const rows = typeof leaderboardRows === 'function' ? leaderboardRows(s).slice(0,3) : [];
-    const topGroups = rows.map(r => String(r.g));
+    const certRef = db.ref(
+      'teacherControlCenter/certificates/' +
+      record.classId + '/' +
+      record.studentId
+    );
 
-    if(!topGroups.length) return;
+    const snap = await certRef.once('value');
+    const certs = snap.val() || {};
 
-    const rankLabel = {
-      1:'🥇 First Place Group',
-      2:'🥈 Second Place Group',
-      3:'🥉 Third Place Group'
-    };
+    const updates = {};
+    Object.keys(certs).forEach(function(certId){
+      const c = certs[certId] || {};
+      const isReadingRush =
+        c.source === 'Reading Rush' ||
+        c.activityType === 'Reading Rush' ||
+        String(certId).indexOf('Reading_Rush') === 0;
 
-    const students = Object.values(s.students || {})
-      .filter(st => topGroups.includes(String(st.group)));
+      if(isReadingRush){
+        updates[certId] = null;
+      }
+    });
 
-    for(const st of students){
-      const group = String(st.group || '');
-      const rankIndex = topGroups.indexOf(group) + 1;
-      const classId = st.classId || safeKey(st.cls || st.className || '');
-      const studentId = String(st.id || st.studentId || '').trim();
-
-      if(!classId || !studentId) continue;
-
-      const certificateId = safeKey('Reading_Rush_' + colId + '_' + studentId);
-
-      const record = {
-        certificateId,
-        source:'Reading Rush',
-        activityType:'Reading Rush',
-        activityName,
-        certificateTitle:'Reading Rush Achievement Certificate',
-        certificateText:'Awarded for outstanding participation and achievement in Reading Rush.',
-        rank:rankIndex,
-        rankLabel:rankLabel[rankIndex] || 'Reading Rush Finalist',
-        group,
-        groupScore:Number(s.scores?.[group] || 0),
-        studentId,
-        studentName:st.name || '',
-        classId,
-        className:st.cls || st.className || '',
-        issuedAt:Date.now(),
-        downloadType:'generated_pdf',
-        pdfUrl:'',
-        status:'issued'
-      };
-
-      await saveReadingRushCertificateRecord(record);
+    if(Object.keys(updates).length){
+      await certRef.update(updates);
     }
   }catch(err){
-    console.warn('Reading Rush finalist certificate save skipped:', err);
+    console.warn('Could not remove non-full Reading Rush certificates:', err);
   }
 }
 
- async function saveReadingRushExcellentCertificate(record){
-
+async function saveReadingRushExcellentCertificate(record){
   if(!db || !record) return;
 
-  if(Number(record.correct) !== Number(record.questionsTotal)) return;
+  // ✅ Certificate rule: ONLY full mark gets a certificate.
+  if(Number(record.correct) !== Number(record.questionsTotal)){
+    await removeReadingRushCertificatesIfNotFull(record);
+    return;
+  }
   if(Number(record.questionsTotal) <= 0) return;
 
-  const certificateId =
-  safeKey('Reading_Rush_Excellent_' + (record.activityName || 'Collection'));
+  const certificateId = safeKey(
+    'Reading_Rush_Excellent_' +
+    (record.collectionId || record.activityName || 'Collection') + '_' +
+    record.studentId
+  );
 
   const cert = {
     certificateId,
     source: 'Reading Rush',
-    certificateTitle: 'Certificate of Appreciation',
-    reason: 'Excellent Performance - 100% correct answers',
+    activityType: 'Reading Rush',
+    certificateTitle: 'Reading Rush Achievement Certificate',
+    reason: 'Excellent Performance - Full Mark',
     activityName: record.activityName || 'Reading Rush Collection',
     studentId: record.studentId,
     studentName: record.studentName,
@@ -2385,8 +2407,11 @@ async function saveReadingRushCertificatesForFinalists(s){
     className: record.className,
     correct: record.correct,
     questionsTotal: record.questionsTotal,
+    score: record.score,
+    total: record.total,
     percentage: 100,
-    issuedAt: Date.now()
+    issuedAt: Date.now(),
+    status: 'issued'
   };
 
   await db.ref(
@@ -2396,60 +2421,99 @@ async function saveReadingRushCertificatesForFinalists(s){
     certificateId
   ).set(cert);
 }
-async function saveReadingRushToTeacherControl(s){
+
+async function saveReadingRushRecordForStudent(s, student){
   try{
-    const secure = getSecureHubStudent();
-    if(!secure || !db) return;
+    if(!db || !student) return null;
 
-    const id = String(secure.studentId || secure.password || currentUser?.id || '').trim();
-    if(!id) return;
+    const id = String(student.id || student.studentId || '').trim();
+    if(!id) return null;
 
-    const group = String(currentUser?.group || '');
+    const group = String(student.group || '');
     const groupScore = Number((s.scores || {})[group] || 0);
-    const myParagraphResults = Object.values((s.paragraphResults || {})[id] || {});
+    const totals = getReadingRushTotalsForStudent(s, id);
 
-    const allParagraphs =
-      s.collections?.[s.currentCollectionId]?.paragraphs || [];
+    const classId = student.classId || safeKey(student.cls || student.className || '');
+    if(!classId) return null;
 
-    const totalQuestions = allParagraphs.reduce((sum, p) =>
-      sum + ((p.questions || []).length), 0);
-
-    const correctAnswers = myParagraphResults.reduce((sum,r)=>sum + Number(r.score || 0), 0);
-
-    const percentage = totalQuestions
-      ? (correctAnswers / totalQuestions)
-      : 0;
-
-    const weightedScore = Math.round(percentage * 30);
+    const colId = s.currentCollectionId || 'reading_rush_collection';
+    const col = s.collections?.[colId] || {};
 
     const record = {
       activityType: 'Reading Rush',
-      activityName: s.currentCollectionTitle || 'Reading Rush Collection',
-      score: weightedScore,
+      activityName: col.title || s.currentCollectionTitle || 'Reading Rush Collection',
+      score: totals.weightedScore,
       total: 30,
-      correct: correctAnswers,
-      questionsTotal: totalQuestions,
-      percentage: Math.round(percentage * 100),
+      correct: totals.correctAnswers,
+      questionsTotal: totals.totalQuestions,
+      percentage: totals.percentage,
       group: group,
       groupScore: groupScore,
-      classId: secure.classId || safeKey(secure.className || currentUser?.cls || ''),
-      className: secure.className || currentUser?.cls || '',
+      classId: classId,
+      className: student.cls || student.className || '',
       studentId: id,
-      studentName: secure.name || currentUser?.name || '',
+      studentName: student.name || '',
+      collectionId: colId,
+      completed: ((s.studentProgress || {})[id] || {}).done === true,
       updatedAt: Date.now()
     };
 
-    await db.ref('teacherControlCenter/performance/' + record.classId + '/' + id + '/Reading_Rush').set(record);
+    // ✅ Main card in Secure Hub performance report.
+    await db.ref(
+      'teacherControlCenter/performance/' +
+      record.classId + '/' +
+      id + '/Reading_Rush'
+    ).set(record);
 
-   await db.ref(
-  'teacherControlCenter/activityRecords/Reading_Rush/' +
-  record.classId + '/' +
-  id + '/' +
-  safeKey(record.activityName || 'Reading_Rush')
-).set(record);
-   
-   await saveReadingRushExcellentCertificate(record);
-   
+    // ✅ Keep collection-specific history too.
+    await db.ref(
+      'teacherControlCenter/performance/' +
+      record.classId + '/' +
+      id + '/Reading_Rush_' + colId
+    ).set(record);
+
+    await db.ref(
+      'teacherControlCenter/activityRecords/Reading_Rush/' +
+      record.classId + '/' +
+      id + '/' +
+      colId
+    ).set(record);
+
+    await saveReadingRushExcellentCertificate(record);
+
+    return record;
+  }catch(err){
+    console.warn('Reading Rush student record save skipped:', err);
+    return null;
+  }
+}
+
+async function saveReadingRushFinalMarksAndCertificates(s){
+  const students = Object.values(s.students || {});
+  for(const st of students){
+    await saveReadingRushRecordForStudent(s, st);
+  }
+}
+
+async function saveReadingRushToTeacherControl(s){
+  try{
+    if(!db) return;
+
+    const secure = getSecureHubStudent();
+    const id = String(secure?.studentId || secure?.password || currentUser?.id || '').trim();
+    if(!id) return;
+
+    const student = (s.students || {})[id] || {
+      id: id,
+      studentId: id,
+      name: secure?.name || currentUser?.name || '',
+      classId: secure?.classId || safeKey(secure?.className || currentUser?.cls || ''),
+      cls: secure?.className || currentUser?.cls || '',
+      group: currentUser?.group || ''
+    };
+
+    await saveReadingRushRecordForStudent(s, student);
+
   }catch(err){
     console.warn('Reading Rush tracker save skipped:', err);
   }
