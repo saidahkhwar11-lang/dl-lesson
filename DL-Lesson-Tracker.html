@@ -2133,8 +2133,25 @@ function getStationById(id){
   return lessonStations.find(function(s){ return s.id === id; });
 }
 
+/* ✅ MEDIA FIX:
+   Always read media from the safest place.
+   Some old/saved/activated lessons kept the picture in station.thumbnail,
+   while newer lessons keep it in content.imageUrl. This keeps both teacher
+   and student pages working after activation.
+*/
+function dlCleanMediaUrl(value){
+  return String(value || '').trim();
+}
+
+function dlStationMediaFallback(id){
+  return getStationById(id) || {};
+}
+
 function getStationContent(id){
-  return lessonContent[id] || {
+  const station = dlStationMediaFallback(id);
+  const c = lessonContent[id] || {};
+
+  const fixed = Object.assign({
     imageUrl:'',
     sourceText:'',
     imageNotes:'',
@@ -2142,8 +2159,100 @@ function getStationContent(id){
     videoUrl:'',
     linkUrl:'',
     linkTitle:'',
+    links:[],
     questions:[]
-  };
+  }, c);
+
+  fixed.imageUrl = dlCleanMediaUrl(
+    fixed.imageUrl ||
+    fixed.image ||
+    fixed.pictureUrl ||
+    station.imageUrl ||
+    station.image ||
+    station.pictureUrl ||
+    station.thumbnail ||
+    ''
+  );
+
+  fixed.audioUrl = dlCleanMediaUrl(
+    fixed.audioUrl ||
+    fixed.audio ||
+    station.audioUrl ||
+    station.audio ||
+    ''
+  );
+
+  fixed.videoUrl = dlCleanMediaUrl(
+    fixed.videoUrl ||
+    fixed.video ||
+    fixed.videoLink ||
+    station.videoUrl ||
+    station.video ||
+    station.videoLink ||
+    ''
+  );
+
+  if(!Array.isArray(fixed.links)){
+    fixed.links = [];
+  }
+
+  if(fixed.linkUrl && !fixed.links.some(function(x){ return x && x.url === fixed.linkUrl; })){
+    fixed.links.push({
+      url: fixed.linkUrl,
+      title: fixed.linkTitle || 'Open Link'
+    });
+  }
+
+  if(!Array.isArray(fixed.questions)){
+    fixed.questions = [];
+  }
+
+  return fixed;
+}
+
+function dlYoutubeEmbedUrl(url){
+  const u = String(url || '').trim();
+  let m = u.match(/[?&]v=([^&]+)/);
+  if(m && m[1]) return 'https://www.youtube.com/embed/' + encodeURIComponent(m[1]);
+  m = u.match(/youtu\.be\/([^?&/]+)/);
+  if(m && m[1]) return 'https://www.youtube.com/embed/' + encodeURIComponent(m[1]);
+  m = u.match(/youtube\.com\/shorts\/([^?&/]+)/);
+  if(m && m[1]) return 'https://www.youtube.com/embed/' + encodeURIComponent(m[1]);
+  m = u.match(/youtube\.com\/embed\/([^?&/]+)/);
+  if(m && m[1]) return u;
+  return '';
+}
+
+function dlDriveEmbedUrl(url){
+  const u = String(url || '').trim();
+  let m = u.match(/\/file\/d\/([^/]+)/);
+  if(m && m[1]) return 'https://drive.google.com/file/d/' + encodeURIComponent(m[1]) + '/preview';
+  m = u.match(/[?&]id=([^&]+)/);
+  if(u.indexOf('drive.google.com') !== -1 && m && m[1]){
+    return 'https://drive.google.com/file/d/' + encodeURIComponent(m[1]) + '/preview';
+  }
+  return '';
+}
+
+function dlVideoHtml(url){
+  url = dlCleanMediaUrl(url);
+  if(!url) return '';
+
+  const youtube = dlYoutubeEmbedUrl(url);
+  const drive = dlDriveEmbedUrl(url);
+  const embed = youtube || drive;
+
+  if(embed){
+    return '<div style="margin-bottom:12px;">' +
+      '<iframe src="' + escapeHtml(embed) + '" style="width:100%; min-height:360px; border:0; border-radius:12px;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>' +
+    '</div>';
+  }
+
+  return '<video controls playsinline preload="metadata" style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px; background:#000;">' +
+    '<source src="' + escapeHtml(url) + '">' +
+    'Your browser does not support this video. ' +
+    '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener">Open video</a>' +
+  '</video>';
 }
 
 window.cancelRaiseHandForQuestion = async function(stationId, questionIndex){
@@ -2842,14 +2951,7 @@ if(content.audioUrl){
   `;
 }
 
-  let videoHtml = '';
-  if(content.videoUrl){
-    videoHtml = `
-      <video controls style="width:100%; max-height:400px; margin-bottom:12px;">
-        <source src="${escapeHtml(content.videoUrl)}">
-      </video>
-    `;
-  }
+  let videoHtml = dlVideoHtml(content.videoUrl);
 
   let questionsHtml = '';
 
@@ -3617,9 +3719,7 @@ const isLastStage = studentQuestionStage >= totalStages - 1;
     '</audio>'
   : '';
 
-const videoBlock = ct.videoUrl
-  ? '<video controls style="width:100%; max-height:400px; margin-bottom:12px; border-radius:12px;"><source src="' + ct.videoUrl + '"></video>'
-  : '';
+const videoBlock = dlVideoHtml(ct.videoUrl);
 
 const linkBlock = (ct.links && ct.links.length)
   ? '<div style="margin-bottom:12px;">' +
@@ -7154,10 +7254,15 @@ async function activateSavedLesson(lessonId){
 
   await dbRef(activeLessonPath()).set({
     lessonId: lessonId,
+    lessonKey: lessonId,
     title: lessonMeta.lessonTitle || l.title || lessonId,
     activatedAt: Date.now(),
     activatedBy: 'teacher',
-    lessonMeta: lessonMeta
+    lessonMeta: lessonMeta,
+    // ✅ MEDIA FIX: store active media snapshot too, so students can still load
+    // picture/video data even if a listener is late.
+    stations: lessonStations,
+    content: lessonContent
   });
   if(typeof fillTeacherSelects === 'function') fillTeacherSelects();
   if(typeof renderTeacherOverview === 'function') renderTeacherOverview();
@@ -7253,8 +7358,15 @@ function dlFixCleanStationsAndContent(stations, content){
       };
     }
 
+    // ✅ MEDIA FIX: keep old and new saved lesson media fields connected.
+    safeContent[st.id].imageUrl = safeContent[st.id].imageUrl || st.imageUrl || st.thumbnail || st.pictureUrl || '';
+    safeContent[st.id].audioUrl = safeContent[st.id].audioUrl || st.audioUrl || '';
+    safeContent[st.id].videoUrl = safeContent[st.id].videoUrl || st.videoUrl || st.videoLink || '';
+    st.thumbnail = st.thumbnail || safeContent[st.id].imageUrl || '';
+
     if(dlFixIsBase64Image(safeContent[st.id].imageUrl)){
       safeContent[st.id].imageUrl = '';
+      if(dlFixIsBase64Image(st.thumbnail)) st.thumbnail = '';
     }
 
     if(!Array.isArray(safeContent[st.id].questions)){
