@@ -7222,88 +7222,9 @@ async function deleteSavedLesson(lessonId){
   loadLessonLibrary();
   loadHomeLessonList();
 }
-      async function loadStudentLessonLibrary(){
-  if(!db){
-    alert('Firebase is not connected.');
-    return;
-  }
 
-  const box = document.getElementById('studentLessonLibraryList');
-  if(!box) return;
+/* Student lesson library removed: students now join only the teacher active lesson. */
 
-  box.innerHTML = 'Loading available lessons...';
-
-  const snap = await dbRef('lessonLibrary').once('value');
-  const lessons = snap.val() || {};
-
-  const list = Object.values(lessons).filter(function(l){
-    return l && l.visible === true;
-  });
-
-  if(!list.length){
-    box.innerHTML = '<div class="small">No available lessons yet.</div>';
-    return;
-  }
-
-  box.innerHTML = list.map(function(l){
-    const locked = l.locked === true;
-
-    return `
-      <div class="card" style="margin-bottom:8px;padding:10px;">
-        <strong>${locked ? '🔒' : '✅'} ${escapeHtml(l.title || 'Untitled Lesson')}</strong>
-        <div class="small">Date: ${escapeHtml(l.date || '')}</div>
-
-        <button
-          class="${locked ? 'muted' : 'goodbtn'}"
-          style="margin-top:8px;"
-          ${locked ? 'disabled' : ''}
-          onclick="openStudentSavedLesson('${escapeJs(l.id)}')">
-          ${locked ? 'Locked by Teacher' : 'Open Lesson'}
-        </button>
-      </div>
-    `;
-  }).join('');
-}
-
-async function openStudentSavedLesson(lessonId){
-  const snap = await dbRef('lessonLibrary/' + lessonId).once('value');
-
-  if(!snap.exists()){
-    alert('Lesson not found.');
-    return;
-  }
-
-  const l = snap.val();
-
-  if(l.locked){
-    alert('This lesson is locked by your teacher.');
-    return;
-  }
-
-  if(l.visible !== true){
-    alert('This lesson is not available.');
-    return;
-  }
-
-  lessonMeta = l.lessonMeta || {
-    lessonTitle: l.title || '',
-    lessonObjectives: '',
-    lessonKeywords: ''
-  };
-
-  lessonStations = l.stations || [];
-  lessonContent = l.content || {};
-  currentOpenStation = lessonStations[0]?.id || 'starter';
-  studentQuestionStage = 0;
-
-  renderStudentNav();
-  openStation(currentOpenStation);
-  updateStudentProgress();
-
-  alert('✅ Lesson opened: ' + (lessonMeta.lessonTitle || l.title || 'Lesson'));
-}
-     
-    
 /* =========================================================
    FINAL STABLE LESSON LIBRARY FIX - 2026-05-27
    Fixes:
@@ -7973,17 +7894,8 @@ window.importOldLessonKeyToLibrary = async function(){
   }
 };
 
-   window.addEventListener('load', function(){
 
-  setTimeout(function(){
-
-    if(typeof loadHomeLessonList === 'function'){
-      loadHomeLessonList();
-    }
-
-  }, 500);
-
-});
+/* Removed automatic lesson-list loading on page open to reduce Firebase reads before login. */
 
 </script>
 </body>
