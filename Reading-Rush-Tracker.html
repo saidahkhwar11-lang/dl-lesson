@@ -1878,7 +1878,711 @@ function lessonPlanHTML(plan, forDownload=false){
  <h3>UAE Vision 2031 Link</h3><p>The lesson supports quality education, digital skills, collaboration, and student readiness for future learning.</p>
  <h3>Differentiation</h3><table><tr><th>High</th><td>Justify answers using evidence and explain implied meaning.</td></tr><tr><th>Middle</th><td>Answer exam-style questions and identify details independently.</td></tr><tr><th>Low</th><td>Use highlighted keywords, context clues, and teacher support to answer.</td></tr></table>
  <p class="small">Generated automatically from the active Reading Rush collection.</p>
- </body></html>`;
+ 
+
+<script>
+/* ============================================================
+   READING RUSH INDIVIDUAL TEST MODE OVERRIDE
+   - No grouping for students
+   - Students join directly from Secure Hub ID
+   - Teacher starts collection; each student gets a random paragraph order
+   - Final collection mark saves to Teacher Center + Secure Hub even if not full
+   - Certificate only when the student gets full mark
+   ============================================================ */
+(function(){
+  const INDIVIDUAL_GROUP = 'individual';
+
+  function rrSafeKey(value){
+    if(typeof safeKey === 'function') return safeKey(value);
+    return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrGetSecureStudent(){
+    try{
+      if(typeof getSecureHubStudent === 'function'){
+        const s = getSecureHubStudent();
+        if(s && (s.studentId || s.id || s.password)) return s;
+      }
+    }catch(e){}
+    try{
+      const raw = localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN');
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      return {
+        name: obj.name || obj.studentName || '',
+        studentId: obj.studentId || obj.id || obj.password || '',
+        password: obj.password || '',
+        className: obj.className || obj.cls || obj.class || '',
+        classId: obj.classId || rrSafeKey(obj.className || obj.cls || obj.class || '')
+      };
+    }catch(e){ return null; }
+  }
+
+  function rrHash(str){
+    str = String(str || '');
+    let h = 2166136261;
+    for(let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return Math.abs(h >>> 0);
+  }
+
+  function rrShuffleIndexes(length, seedText){
+    const arr = Array.from({length:length}, (_,i)=>i);
+    let seed = rrHash(seedText || Date.now());
+    for(let i=arr.length-1;i>0;i--){
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      const j = seed % (i+1);
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function rrCollectionTotal(col){
+    return (col && col.paragraphs || []).reduce(function(sum,p){
+      return sum + ((p.questions || []).length);
+    },0);
+  }
+
+  function rrEnsureUiClean(){
+    const groupWrap = document.getElementById('studentGroupWrap');
+    if(groupWrap) groupWrap.classList.add('hidden');
+    const groupSelect = document.getElementById('studentGroup');
+    if(groupSelect){
+      groupSelect.innerHTML = '<option value="individual">Individual</option>';
+      groupSelect.value = 'individual';
+    }
+    const mini = document.getElementById('miniLeaderboardBox');
+    if(mini) mini.innerHTML = '📝 Individual Reading Test';
+    const lb = document.getElementById('studentLeaderboard');
+    if(lb) lb.closest('div').style.display = 'none';
+    const goal = document.getElementById('studentMainGoal');
+    if(goal) goal.textContent = 'Complete the reading test individually. Read each paragraph carefully and answer all questions.';
+    const ins = document.getElementById('studentMainInstructions');
+    if(ins) ins.textContent = 'Wait for your teacher to start the collection. Your paragraphs will appear in a random order. Submit each paragraph once.';
+    const tgoal = document.getElementById('teacherMainGoal');
+    if(tgoal) tgoal.textContent = 'Students complete an individual reading test simulation with random paragraph order.';
+    const tins = document.getElementById('teacherMainInstructions');
+    if(tins) tins.textContent = 'Students join directly from Secure Hub, answer all paragraphs individually, then final marks are saved to trackers.';
+  }
+
+  window.openLogin = function(){
+    rrEnsureUiClean();
+    const secure = rrGetSecureStudent();
+    if(secure && (secure.studentId || secure.password)){
+      window.studentJoin();
+      return;
+    }
+    hide('hubPage'); show('loginPage'); showLogin('student');
+    if(typeof syncSecureHubLoginToReadingRush === 'function') setTimeout(syncSecureHubLoginToReadingRush,100);
+  };
+
+  window.studentJoin = async function(){
+    const secure = rrGetSecureStudent();
+    const name = (secure && secure.name) || (byId('studentName') && byId('studentName').value.trim()) || '';
+    const studentId = (secure && (secure.studentId || secure.password || secure.id)) || (byId('studentId') && byId('studentId').value.trim()) || '';
+    const cls = (secure && secure.className) || (byId('studentClass') && byId('studentClass').value) || '';
+    const classId = (secure && secure.classId) || rrSafeKey(cls);
+
+    if(!name){ alert('Student name was not found. Please login from Secure Hub first.'); return; }
+    if(!studentId){ alert('Student ID was not found. Please login from Secure Hub first.'); return; }
+
+    const id = String(studentId).trim();
+    const s = await getState();
+    s.students = s.students || {};
+    s.studentProgress = s.studentProgress || {};
+
+    const studentRecord = {
+      id:id,
+      name:name,
+      studentId:id,
+      cls:cls,
+      className:cls,
+      classId:classId,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test',
+      lastSeen:Date.now()
+    };
+
+    s.students[id] = Object.assign({}, s.students[id] || {}, studentRecord);
+
+    if(s.stage === 'playing' && s.currentCollectionId && s.collections && s.collections[s.currentCollectionId]){
+      const col = s.collections[s.currentCollectionId];
+      const paragraphs = col.paragraphs || [];
+      if(paragraphs.length && !s.studentProgress[id]){
+        s.studentProgress[id] = {
+          paraIndex:0,
+          qIndex:0,
+          done:false,
+          completed:false,
+          order:rrShuffleIndexes(paragraphs.length, id + '_' + s.currentCollectionId + '_' + Number(s.roundStartTime || 0)),
+          mode:'individual_test'
+        };
+      }
+    }
+
+    await setState(s);
+
+    currentUser = {
+      role:'student',
+      id:id,
+      name:name,
+      studentId:id,
+      cls:cls,
+      className:cls,
+      classId:classId,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test'
+    };
+
+    if(typeof saveStudentSession === 'function') saveStudentSession();
+    hide('hubPage'); hide('loginPage'); hide('teacherPage'); show('studentPage');
+    rrEnsureUiClean();
+    studentRefresh();
+  };
+
+  window.getInitialParaIndex = function(s, student){ return 0; };
+
+  window.startCollectionChallenge = async function(){
+    const s = await getState();
+    const col = s.collections && s.collections[s.currentCollectionId];
+    if(!col){ alert('Select a collection first.'); return; }
+    if(!col.paragraphs || !col.paragraphs.length){ alert('Collection needs paragraphs.'); return; }
+
+    s.stage = 'playing';
+    s.roundStartTime = Date.now();
+    s.answers = {};
+    s.paragraphResults = {};
+    s.studentProgress = {};
+    s.scores = {};
+    s.final = false;
+    s.boss = false;
+
+    const activeClass = s.activeClass || (typeof getActiveClass === 'function' ? getActiveClass() : '');
+    const paragraphs = col.paragraphs || [];
+
+    Object.values(s.students || {})
+      .filter(function(st){ return !activeClass || String(st.cls || st.className || st.classId) === String(activeClass) || String(st.classId) === rrSafeKey(activeClass); })
+      .forEach(function(st){
+        s.studentProgress[st.id] = {
+          paraIndex:0,
+          qIndex:0,
+          done:false,
+          completed:false,
+          order:rrShuffleIndexes(paragraphs.length, String(st.id || st.studentId) + '_' + s.currentCollectionId + '_' + s.roundStartTime),
+          mode:'individual_test'
+        };
+        st.group = INDIVIDUAL_GROUP;
+        st.mode = 'individual_test';
+      });
+
+    await setState(s);
+    alert('✅ Individual Reading Test started. Students will receive random paragraph order.');
+  };
+
+  window.currentPQ = function(s){
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const pr = s.studentProgress && currentUser ? s.studentProgress[currentUser.id] : null;
+    if(!col || !pr) return {p:null,q:null,pr:null,total:0,actualIndex:0};
+    const paragraphs = col.paragraphs || [];
+    const order = (pr.order && pr.order.length) ? pr.order : paragraphs.map(function(_,i){return i;});
+    const pos = Math.min(Number(pr.paraIndex || 0), Math.max(0, order.length - 1));
+    const actualIndex = Number(order[pos] || 0);
+    const p = paragraphs[actualIndex];
+    const q = (p && p.questions || [])[pr.qIndex || 0];
+    return {p:p,q:q,pr:pr,total:paragraphs.length,actualIndex:actualIndex,position:pos,order:order};
+  };
+
+  window.submitAnswer = async function(){
+    if(currentUser && currentUser.recoveryMode && typeof submitRecoveryAnswer === 'function') return submitRecoveryAnswer();
+    const s = await getState();
+    const d = currentPQ(s);
+    const p = d.p;
+    const questions = (p && p.questions) ? p.questions : [];
+    if(!p || !questions.length) return;
+
+    const missing = questions.map(function(q,i){ return paragraphAnswers[i] ? null : (i+1); }).filter(Boolean);
+    if(missing.length){ alert('Please answer all questions before submitting. Missing: Q' + missing.join(', Q')); return; }
+
+    s.studentProgress = s.studentProgress || {};
+    s.paragraphResults = s.paragraphResults || {};
+    const pr = s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false,order:d.order || []};
+    const actualParaIndex = Number(d.actualIndex || 0);
+    const resultKey = 'p' + actualParaIndex;
+
+    s.paragraphResults[currentUser.id] = s.paragraphResults[currentUser.id] || {};
+    const alreadySaved = !!s.paragraphResults[currentUser.id][resultKey];
+
+    let paragraphScore = 0;
+    const selectedAnswers = {};
+    const skillSummary = {};
+
+    questions.forEach(function(q, qi){
+      const selected = paragraphAnswers[qi];
+      const correct = selected === q.correct;
+      const skill = q.skill || 'unknown';
+      selectedAnswers[qi] = selected;
+      skillSummary[skill] = skillSummary[skill] || {skill:skill,total:0,correct:0};
+      skillSummary[skill].total += 1;
+      if(correct){ paragraphScore += 1; skillSummary[skill].correct += 1; }
+    });
+
+    s.paragraphResults[currentUser.id][resultKey] = {
+      studentId:currentUser.id,
+      student:currentUser.name,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test',
+      paraIndex:actualParaIndex,
+      paragraphPosition:Number(pr.paraIndex || 0),
+      paragraphId:p.id || resultKey,
+      paragraphTitle:p.title || ('Paragraph ' + (actualParaIndex + 1)),
+      score:paragraphScore,
+      total:questions.length,
+      selectedAnswers:selectedAnswers,
+      skillSummary:skillSummary,
+      submittedAt:Date.now()
+    };
+
+    pr.score = Number(pr.score || 0) + (alreadySaved ? 0 : paragraphScore);
+    pr.lastParagraphScore = paragraphScore;
+    pr.lastParagraphTotal = questions.length;
+    pr.qIndex = 0;
+    pr.paraIndex = Number(pr.paraIndex || 0) + 1;
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const totalParas = (col && col.paragraphs || []).length;
+
+    if(pr.paraIndex >= totalParas){
+      pr.done = true;
+      pr.completed = true;
+      pr.completedAt = Date.now();
+      pr.paraIndex = Math.max(0, totalParas - 1);
+      pr.qIndex = questions.length;
+    }else{
+      pr.done = false;
+      pr.completed = false;
+    }
+    pr.mode = 'individual_test';
+    s.studentProgress[currentUser.id] = pr;
+
+    if(s.students && s.students[currentUser.id]){
+      s.students[currentUser.id].group = INDIVIDUAL_GROUP;
+      s.students[currentUser.id].mode = 'individual_test';
+    }
+
+    await setState(s);
+    if(typeof saveReadingRushToTeacherControl === 'function') await saveReadingRushToTeacherControl(s);
+
+    const nextText = pr.done ? 'You finished the full reading test 🎉' : 'Saved. Moving to your next random paragraph.';
+    const resultBox = byId('studentResultBox');
+    if(resultBox){
+      resultBox.innerHTML = `<div class="status ${paragraphScore === questions.length ? 'good' : 'bad'}">✅ Paragraph submitted and saved.<br>Score: <b>${paragraphScore}/${questions.length}</b><br>${esc(nextText)}</div>`;
+    }
+    paragraphAnswers = {};
+    selectedAnswer = '';
+    studentRefresh();
+  };
+
+  window.renderLeaderboard = function(id,s){
+    const box = byId(id); if(!box) return;
+    const students = Object.values((s && s.students) || {});
+    const totalStudents = students.length;
+    const doneStudents = students.filter(function(st){ return ((s.studentProgress || {})[st.id] || {}).done === true; }).length;
+    box.innerHTML = `<div class="rankRow"><div class="rankName">📝 Individual Test</div><div class="rankPts">${doneStudents}/${totalStudents} done</div></div>`;
+  };
+
+  window.renderParagraphTimers = function(s){
+    const box = byId('paragraphTimers'); if(!box) return;
+    const col = s.collections && s.collections[s.currentCollectionId];
+    if(!col || !(col.paragraphs || []).length){ box.innerHTML = '<div class="status">Select a collection first.</div>'; return; }
+    const students = Object.values(s.students || {});
+    const totalStudents = students.length;
+    box.innerHTML = (col.paragraphs || []).map(function(p,i){
+      const done = students.filter(function(st){ return !!(((s.paragraphResults || {})[st.id] || {})['p' + i]); }).length;
+      return `<div class="paragraphTimerCard"><b>P${i+1}</b><div class="timerClock">${done}/${totalStudents}</div><span class="doneCount">students done</span></div>`;
+    }).join('');
+  };
+
+  window.renderStudents = function(s){
+    const box = byId('teacherStudents'); if(!box) return;
+    const activeClass = s.activeClass || (typeof getActiveClass === 'function' ? getActiveClass() : '');
+    const students = Object.values(s.students || {})
+      .filter(function(st){ return !activeClass || String(st.cls || st.className || st.classId) === String(activeClass) || String(st.classId) === rrSafeKey(activeClass); })
+      .sort(function(a,b){ return String(a.name || '').localeCompare(String(b.name || '')); });
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const paragraphs = col && col.paragraphs || [];
+    const collectionTotal = rrCollectionTotal(col);
+    if(!students.length){ box.innerHTML = '<div class="status">No students joined yet.</div>'; return; }
+    const headerParas = paragraphs.map(function(p,i){ return `<th>P${i+1}</th>`; }).join('');
+    const rows = students.map(function(st){
+      const pr = (s.studentProgress || {})[st.id] || null;
+      const progress = pr ? (pr.done ? 'Done ✅' : `Working • ${Number(pr.paraIndex || 0)+1}/${paragraphs.length}`) : 'Waiting';
+      const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, st.id) : {correctAnswers:0,totalQuestions:collectionTotal,weightedScore:0};
+      const studentMarkText = `${Number(totals.correctAnswers || 0)}/${Number(totals.totalQuestions || collectionTotal || 0)} (${Number(totals.weightedScore || 0)}/30)`;
+      const paraCells = paragraphs.map(function(p,i){
+        const r = ((s.paragraphResults || {})[st.id] || {})['p' + i];
+        const score = r ? Number(r.score || 0) : 0;
+        const total = r ? Number(r.total || 0) : ((p.questions || []).length || 0);
+        const cls = r ? (score === total ? 'scoreGood' : 'scoreBad') : 'scoreNeutral';
+        return `<td><span class="${cls}">${r ? score : '-'}</span><div class="progressSmall">${r ? (score + '/' + total) : 'not yet'}</div></td>`;
+      }).join('');
+      return `<tr><td class="studentNameCell">${esc(st.name || st.id)}<div class="progressSmall">ID: ${esc(st.id || st.studentId || '')}</div></td><td>${esc(progress)}</td>${paraCells}<td><b>${studentMarkText}</b><div class="progressSmall">Collection final mark</div></td><td>${pr && pr.done ? '✅ Completed' : '⏳ In progress'}</td></tr>`;
+    }).join('');
+    box.innerHTML = `<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Status</th>${headerParas}<th>Final Mark</th><th>Completion</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+
+  const oldStudentRefresh = window.studentRefresh;
+  window.studentRefresh = function(){
+    rrEnsureUiClean();
+    if(typeof oldStudentRefresh === 'function') oldStudentRefresh();
+    try{
+      if(currentUser && currentUser.role === 'student'){
+        const welcome = byId('studentWelcome');
+        if(welcome) welcome.innerText = `Welcome, ${currentUser.name}`;
+        const instruction = byId('studentInstruction');
+        const s = stateCache || defaultState();
+        if(instruction){
+          instruction.innerText = s.stage === 'playing'
+            ? 'Read carefully and answer all questions. Your final mark will be saved when you finish.'
+            : 'Wait for teacher to start the reading test.';
+        }
+        const progress = byId('studentProgress');
+        if(progress){
+          const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, currentUser.id) : {correctAnswers:0,totalQuestions:0,weightedScore:0};
+          const pr = (s.studentProgress || {})[currentUser.id] || {};
+          progress.innerText = pr.done
+            ? `Finished: ${totals.correctAnswers}/${totals.totalQuestions} (${totals.weightedScore}/30)`
+            : `Progress: ${totals.correctAnswers}/${totals.totalQuestions || '...'} correct so far`;
+        }
+      }
+    }catch(e){ console.warn('Individual student refresh note skipped:', e); }
+  };
+
+  const oldTeacherRefresh = window.teacherRefresh;
+  window.teacherRefresh = function(){
+    rrEnsureUiClean();
+    if(typeof oldTeacherRefresh === 'function') oldTeacherRefresh();
+    try{
+      const title = document.querySelector('#teacherPage .card h2');
+      if(title && title.textContent.includes('Group')) title.textContent = '📝 Individual Student Marks';
+    }catch(e){}
+  };
+
+  const oldStopChallenge = window.stopChallenge;
+  window.stopChallenge = async function(){
+    const s = await getState();
+    s.stage = 'final';
+    s.final = true;
+    s.boss = false;
+    s.roundStartTime = null;
+    if(typeof buildAnalytics === 'function') s.analytics = buildAnalytics(s); else s.analytics = {};
+    if(typeof saveReadingRushFinalMarksAndCertificates === 'function') await saveReadingRushFinalMarksAndCertificates(s);
+    await setState(s);
+    alert('✅ Individual Reading Test ended. Final collection marks were saved to Teacher Center and Secure Hub. Full mark students only received certificates.');
+  };
+
+  window.addEventListener('load', function(){
+    rrEnsureUiClean();
+    setTimeout(async function(){
+      rrEnsureUiClean();
+      const secure = rrGetSecureStudent();
+      if(secure && (secure.studentId || secure.password)){
+        const hub = byId('hubPage');
+        const login = byId('loginPage');
+        const teacher = byId('teacherPage');
+        const student = byId('studentPage');
+        if(hub && !hub.classList.contains('hidden')){
+          try{ await window.studentJoin(); }catch(e){ console.warn('Direct Secure Hub Reading Rush join skipped:', e); }
+        }else if(login && !login.classList.contains('hidden')){
+          try{ await window.studentJoin(); }catch(e){ console.warn('Direct login Reading Rush join skipped:', e); }
+        }
+      }
+    },900);
+  });
+})();
+</script>
+
+<script>
+/* ===== FINAL PATCH: Individual Reading Rush + Secure Hub mark sync ===== */
+(function(){
+  function rrSafeKey(value){
+    if(typeof safeKey === 'function') return safeKey(value || '');
+    return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrToday(){
+    return new Date().toLocaleDateString('en-GB');
+  }
+
+  function rrCollection(s){
+    const colId = (s && s.currentCollectionId) || 'reading_rush_collection';
+    const col = ((s && s.collections) || {})[colId] || {};
+    return { colId, col, title: col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection' };
+  }
+
+  function rrTotalsForStudent(s, studentId){
+    const info = rrCollection(s);
+    const paragraphs = info.col.paragraphs || [];
+    const totalQuestions = paragraphs.reduce(function(sum,p){
+      return sum + ((p.questions || []).length);
+    },0);
+
+    const resultsObj = ((s.paragraphResults || {})[studentId]) || {};
+    const results = Object.values(resultsObj);
+    let correct = results.reduce(function(sum,r){ return sum + Number(r.score || 0); },0);
+    let attemptedTotal = results.reduce(function(sum,r){ return sum + Number(r.total || 0); },0);
+
+    if(correct === 0 && results.length === 0){
+      const oldAnswers = Object.values(((s.answers || {})[studentId]) || {});
+      correct = oldAnswers.filter(function(a){ return a && a.correct === true; }).length;
+      attemptedTotal = oldAnswers.length;
+    }
+
+    return {
+      correctAnswers: correct,
+      totalQuestions: totalQuestions || attemptedTotal || 0,
+      attemptedTotal: attemptedTotal,
+      percentage: (totalQuestions || attemptedTotal) ? Math.round((correct / (totalQuestions || attemptedTotal)) * 100) : 0
+    };
+  }
+
+  async function rrFindTeacherControlStudent(studentId){
+    try{
+      if(!db || !studentId) return null;
+      const sid = rrSafeKey(studentId);
+      const snap = await db.ref('teacherControlCenter/classes').once('value');
+      const classes = snap.val() || {};
+      for(const classId of Object.keys(classes)){
+        const cls = classes[classId] || {};
+        const students = cls.students || {};
+        if(students[sid]){
+          return { classId, className: cls.name || classId, studentKey: sid, student: students[sid] };
+        }
+        for(const key of Object.keys(students)){
+          const st = students[key] || {};
+          const possible = [key, st.id, st.studentId, st.password].map(x=>rrSafeKey(x));
+          if(possible.includes(sid)){
+            return { classId, className: cls.name || classId, studentKey: key, student: st };
+          }
+        }
+      }
+    }catch(err){
+      console.warn('Reading Rush could not scan Teacher Control students:', err);
+    }
+    return null;
+  }
+
+  async function rrRemoveReadingRushCertificates(record){
+    try{
+      if(!db || !record || !record.classId || !record.studentId) return;
+      const ref = db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId);
+      const snap = await ref.once('value');
+      const certs = snap.val() || {};
+      const updates = {};
+      Object.keys(certs).forEach(function(certId){
+        const c = certs[certId] || {};
+        if(c.source === 'Reading Rush' || c.activityType === 'Reading Rush' || String(certId).indexOf('Reading_Rush') === 0){
+          updates[certId] = null;
+        }
+      });
+      if(Object.keys(updates).length) await ref.update(updates);
+    }catch(err){
+      console.warn('Reading Rush certificate cleanup skipped:', err);
+    }
+  }
+
+  async function rrSaveFullMarkCertificate(record){
+    if(!db || !record) return;
+    if(Number(record.score) !== Number(record.total) || Number(record.total) <= 0){
+      await rrRemoveReadingRushCertificates(record);
+      return;
+    }
+    const certificateId = rrSafeKey('Reading_Rush_Full_Mark_' + (record.collectionId || record.activityName) + '_' + record.studentId);
+    const cert = {
+      certificateId,
+      source:'Reading Rush',
+      activityType:'Reading Rush',
+      certificateTitle:'Reading Rush Achievement Certificate',
+      reason:'Full mark in Reading Rush collection',
+      activityName:record.activityName,
+      studentId:record.studentId,
+      studentName:record.studentName,
+      classId:record.classId,
+      className:record.className,
+      score:record.score,
+      total:record.total,
+      correct:record.score,
+      questionsTotal:record.total,
+      percentage:100,
+      date:rrToday(),
+      issuedAt:Date.now(),
+      status:'issued'
+    };
+    await db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId + '/' + certificateId).set(cert);
+  }
+
+  window.saveReadingRushRecordForStudent = async function(s, student){
+    try{
+      if(!db || !student) return null;
+      const rawId = String(student.id || student.studentId || student.password || '').trim();
+      if(!rawId) return null;
+
+      const found = await rrFindTeacherControlStudent(rawId);
+      const classId = rrSafeKey((found && found.classId) || student.classId || student.cls || student.className || 'unknown_class');
+      const studentKey = rrSafeKey((found && found.studentKey) || rawId);
+      const studentName = (found && found.student && found.student.name) || student.name || '';
+      const className = (found && found.className) || student.cls || student.className || '';
+      const info = rrCollection(s);
+      const totals = rrTotalsForStudent(s, rawId);
+      const progress = ((s.studentProgress || {})[rawId]) || {};
+
+      const record = {
+        page:'Reading Rush',
+        activityType:'Reading Rush',
+        activityName:info.title,
+        score:Number(totals.correctAnswers || 0),
+        total:Number(totals.totalQuestions || 0),
+        correct:Number(totals.correctAnswers || 0),
+        questionsTotal:Number(totals.totalQuestions || 0),
+        percentage:Number(totals.percentage || 0),
+        classId:classId,
+        className:className,
+        studentId:studentKey,
+        sourceStudentId:rawId,
+        studentName:studentName,
+        collectionId:info.colId,
+        completed: progress.done === true || progress.completed === true,
+        status:'Saved',
+        notes:'Final Reading Rush collection mark',
+        date:rrToday(),
+        updatedAt:Date.now(),
+        time:Date.now()
+      };
+
+      const recordId = 'reading_rush_' + rrSafeKey(info.colId) + '_' + Date.now();
+
+      /* Secure Hub main performance card */
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + studentKey + '/Reading_Rush').set(record);
+      /* Collection-specific history */
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + studentKey + '/Reading_Rush_' + rrSafeKey(info.colId)).set(record);
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + studentKey + '/' + rrSafeKey(info.colId)).set(record);
+      /* Teacher center records table compatibility */
+      await db.ref('teacherControlCenter/records/' + classId + '/' + studentKey + '/' + recordId).set(Object.assign({}, record, {recordId:recordId}));
+
+      await rrSaveFullMarkCertificate(record);
+      return record;
+    }catch(err){
+      console.warn('Reading Rush final mark save failed:', err);
+      return null;
+    }
+  };
+
+  window.saveReadingRushFinalMarksAndCertificates = async function(s){
+    const students = Object.values((s && s.students) || {});
+    for(const st of students){
+      await window.saveReadingRushRecordForStudent(s, st);
+    }
+  };
+
+  window.saveReadingRushToTeacherControl = async function(s){
+    try{
+      const secure = (typeof getSecureHubStudent === 'function') ? getSecureHubStudent() : null;
+      const id = String((secure && (secure.studentId || secure.password)) || (currentUser && currentUser.id) || '').trim();
+      if(!id) return;
+      const student = ((s.students || {})[id]) || {
+        id:id,
+        studentId:id,
+        name:(secure && secure.name) || (currentUser && currentUser.name) || '',
+        classId:(secure && secure.classId) || rrSafeKey((secure && secure.className) || (currentUser && currentUser.cls) || ''),
+        cls:(secure && secure.className) || (currentUser && currentUser.cls) || ''
+      };
+      await window.saveReadingRushRecordForStudent(s, student);
+    }catch(err){
+      console.warn('Reading Rush tracker save skipped:', err);
+    }
+  };
+
+  window.renderLeaderboard = function(id,s){
+    const box = byId(id);
+    if(!box) return;
+    if(id === 'studentLeaderboard'){
+      const sid = currentUser && currentUser.id;
+      const totals = rrTotalsForStudent(s || {}, sid || '');
+      const info = rrCollection(s || {});
+      box.innerHTML = '<div class="rankRow">' +
+        '<div class="rankName">🏅 ' + esc(info.title) + '</div>' +
+        '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+        '</div>';
+      return;
+    }
+
+    const students = Object.values((s && s.students) || {});
+    if(!students.length){
+      box.innerHTML = '<div class="status">No students yet.</div>';
+      return;
+    }
+    box.innerHTML = students.map(function(st){
+      const totals = rrTotalsForStudent(s, st.id || st.studentId || '');
+      return '<div class="rankRow">' +
+        '<div class="rankName">👤 ' + esc(st.name || st.id || 'Student') + '</div>' +
+        '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+        '</div>';
+    }).join('');
+  };
+
+  const oldStudentRefresh = window.studentRefresh;
+  if(typeof oldStudentRefresh === 'function'){
+    window.studentRefresh = function(){
+      const result = oldStudentRefresh.apply(this, arguments);
+      try{
+        const s = stateCache || {};
+        const welcome = byId('studentWelcome');
+        if(welcome && currentUser){
+          welcome.innerText = 'Welcome, ' + (currentUser.name || 'Student');
+        }
+        if(s.stage === 'final' && currentUser){
+          const totals = rrTotalsForStudent(s, currentUser.id || '');
+          const info = rrCollection(s);
+          const resultBox = byId('studentResultBox');
+          const paragraphBox = byId('paragraphBox');
+          const progressBox = byId('studentProgress');
+          if(progressBox) progressBox.innerText = 'Test ended. Final mark: ' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0);
+          if(paragraphBox) paragraphBox.innerText = 'Your Reading Rush test is complete.';
+          if(resultBox){
+            resultBox.innerHTML = '<div class="finalWinners">' +
+              '<h2>✅ Final Result Saved</h2>' +
+              '<div class="rankRow" style="margin-top:12px">' +
+              '<div class="rankName">🏅 ' + esc(info.title) + '</div>' +
+              '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+              '</div>' +
+              '<div class="status good">Your mark is saved to Secure Hub and Teacher Center. Certificate is released only for full mark.</div>' +
+              '</div>';
+          }
+        }
+      }catch(err){ console.warn('Reading Rush final display patch skipped:', err); }
+      return result;
+    };
+  }
+
+  const oldStopChallenge = window.stopChallenge;
+  if(typeof oldStopChallenge === 'function'){
+    window.stopChallenge = async function(){
+      const s = await getState();
+      if(typeof autoScheduleUnfinishedStudents === 'function') autoScheduleUnfinishedStudents(s);
+      s.stage = 'final';
+      s.final = true;
+      s.boss = false;
+      s.roundStartTime = null;
+      if(typeof buildAnalytics === 'function') s.analytics = buildAnalytics(s);
+      await window.saveReadingRushFinalMarksAndCertificates(s);
+      await setState(s);
+      alert('✅ Reading Rush results released. Final collection marks were saved to Secure Hub and Teacher Center. Full-mark students only received certificates.');
+    };
+  }
+})();
+</script>
+
+</body></html>`;
 }
 async function updateLessonPlanFromActiveCollection(){const s=await getState();const plan=buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}s.lessonPlan=plan;await setState(s);renderLessonPlanPreview(s);alert('Lesson plan updated from the active collection.');}
 function renderLessonPlanPreview(s){const box=byId('lessonPlanPreview');if(!box)return;const plan=s.lessonPlan||buildLessonPlanObject(s);box.innerHTML=lessonPlanHTML(plan).replace(/<!DOCTYPE[\s\S]*?<body>/i,'').replace(/<\/body><\/html>/i,'');}
@@ -2622,7 +3326,7 @@ async function saveReadingRushToTeacherControl(s){
     const mini = document.getElementById('miniLeaderboardBox');
     if(mini) mini.innerHTML = '📝 Individual Reading Test';
     const lb = document.getElementById('studentLeaderboard');
-    if(lb && lb.closest('div')) lb.closest('div').style.display = 'none';
+    if(lb) lb.closest('div').style.display = 'none';
     const goal = document.getElementById('studentMainGoal');
     if(goal) goal.textContent = 'Complete the reading test individually. Read each paragraph carefully and answer all questions.';
     const ins = document.getElementById('studentMainInstructions');
@@ -2660,8 +3364,15 @@ async function saveReadingRushToTeacherControl(s){
     s.studentProgress = s.studentProgress || {};
 
     const studentRecord = {
-      id:id, name:name, studentId:id, cls:cls, className:cls, classId:classId,
-      group:INDIVIDUAL_GROUP, mode:'individual_test', lastSeen:Date.now()
+      id:id,
+      name:name,
+      studentId:id,
+      cls:cls,
+      className:cls,
+      classId:classId,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test',
+      lastSeen:Date.now()
     };
 
     s.students[id] = Object.assign({}, s.students[id] || {}, studentRecord);
@@ -2671,7 +3382,10 @@ async function saveReadingRushToTeacherControl(s){
       const paragraphs = col.paragraphs || [];
       if(paragraphs.length && !s.studentProgress[id]){
         s.studentProgress[id] = {
-          paraIndex:0, qIndex:0, done:false, completed:false,
+          paraIndex:0,
+          qIndex:0,
+          done:false,
+          completed:false,
           order:rrShuffleIndexes(paragraphs.length, id + '_' + s.currentCollectionId + '_' + Number(s.roundStartTime || 0)),
           mode:'individual_test'
         };
@@ -2680,7 +3394,18 @@ async function saveReadingRushToTeacherControl(s){
 
     await setState(s);
 
-    currentUser = {role:'student', id:id, name:name, studentId:id, cls:cls, className:cls, classId:classId, group:INDIVIDUAL_GROUP, mode:'individual_test'};
+    currentUser = {
+      role:'student',
+      id:id,
+      name:name,
+      studentId:id,
+      cls:cls,
+      className:cls,
+      classId:classId,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test'
+    };
+
     if(typeof saveStudentSession === 'function') saveStudentSession();
     hide('hubPage'); hide('loginPage'); hide('teacherPage'); show('studentPage');
     rrEnsureUiClean();
@@ -2697,8 +3422,12 @@ async function saveReadingRushToTeacherControl(s){
 
     s.stage = 'playing';
     s.roundStartTime = Date.now();
-    s.answers = {}; s.paragraphResults = {}; s.studentProgress = {}; s.scores = {};
-    s.final = false; s.boss = false;
+    s.answers = {};
+    s.paragraphResults = {};
+    s.studentProgress = {};
+    s.scores = {};
+    s.final = false;
+    s.boss = false;
 
     const activeClass = s.activeClass || (typeof getActiveClass === 'function' ? getActiveClass() : '');
     const paragraphs = col.paragraphs || [];
@@ -2707,7 +3436,10 @@ async function saveReadingRushToTeacherControl(s){
       .filter(function(st){ return !activeClass || String(st.cls || st.className || st.classId) === String(activeClass) || String(st.classId) === rrSafeKey(activeClass); })
       .forEach(function(st){
         s.studentProgress[st.id] = {
-          paraIndex:0, qIndex:0, done:false, completed:false,
+          paraIndex:0,
+          qIndex:0,
+          done:false,
+          completed:false,
           order:rrShuffleIndexes(paragraphs.length, String(st.id || st.studentId) + '_' + s.currentCollectionId + '_' + s.roundStartTime),
           mode:'individual_test'
         };
@@ -2755,6 +3487,7 @@ async function saveReadingRushToTeacherControl(s){
     let paragraphScore = 0;
     const selectedAnswers = {};
     const skillSummary = {};
+
     questions.forEach(function(q, qi){
       const selected = paragraphAnswers[qi];
       const correct = selected === q.correct;
@@ -2766,10 +3499,19 @@ async function saveReadingRushToTeacherControl(s){
     });
 
     s.paragraphResults[currentUser.id][resultKey] = {
-      studentId:currentUser.id, student:currentUser.name, group:INDIVIDUAL_GROUP, mode:'individual_test',
-      paraIndex:actualParaIndex, paragraphPosition:Number(pr.paraIndex || 0), paragraphId:p.id || resultKey,
-      paragraphTitle:p.title || ('Paragraph ' + (actualParaIndex + 1)), score:paragraphScore, total:questions.length,
-      selectedAnswers:selectedAnswers, skillSummary:skillSummary, submittedAt:Date.now()
+      studentId:currentUser.id,
+      student:currentUser.name,
+      group:INDIVIDUAL_GROUP,
+      mode:'individual_test',
+      paraIndex:actualParaIndex,
+      paragraphPosition:Number(pr.paraIndex || 0),
+      paragraphId:p.id || resultKey,
+      paragraphTitle:p.title || ('Paragraph ' + (actualParaIndex + 1)),
+      score:paragraphScore,
+      total:questions.length,
+      selectedAnswers:selectedAnswers,
+      skillSummary:skillSummary,
+      submittedAt:Date.now()
     };
 
     pr.score = Number(pr.score || 0) + (alreadySaved ? 0 : paragraphScore);
@@ -2779,10 +3521,17 @@ async function saveReadingRushToTeacherControl(s){
     pr.paraIndex = Number(pr.paraIndex || 0) + 1;
     const col = s.collections && s.collections[s.currentCollectionId];
     const totalParas = (col && col.paragraphs || []).length;
+
     if(pr.paraIndex >= totalParas){
-      pr.done = true; pr.completed = true; pr.completedAt = Date.now();
-      pr.paraIndex = Math.max(0, totalParas - 1); pr.qIndex = questions.length;
-    }else{ pr.done = false; pr.completed = false; }
+      pr.done = true;
+      pr.completed = true;
+      pr.completedAt = Date.now();
+      pr.paraIndex = Math.max(0, totalParas - 1);
+      pr.qIndex = questions.length;
+    }else{
+      pr.done = false;
+      pr.completed = false;
+    }
     pr.mode = 'individual_test';
     s.studentProgress[currentUser.id] = pr;
 
@@ -2797,7 +3546,7 @@ async function saveReadingRushToTeacherControl(s){
     const nextText = pr.done ? 'You finished the full reading test 🎉' : 'Saved. Moving to your next random paragraph.';
     const resultBox = byId('studentResultBox');
     if(resultBox){
-      resultBox.innerHTML = '<div class="status ' + (paragraphScore === questions.length ? 'good' : 'bad') + '">✅ Paragraph submitted and saved.<br>Score: <b>' + paragraphScore + '/' + questions.length + '</b><br>' + esc(nextText) + '</div>';
+      resultBox.innerHTML = `<div class="status ${paragraphScore === questions.length ? 'good' : 'bad'}">✅ Paragraph submitted and saved.<br>Score: <b>${paragraphScore}/${questions.length}</b><br>${esc(nextText)}</div>`;
     }
     paragraphAnswers = {};
     selectedAnswer = '';
@@ -2809,7 +3558,7 @@ async function saveReadingRushToTeacherControl(s){
     const students = Object.values((s && s.students) || {});
     const totalStudents = students.length;
     const doneStudents = students.filter(function(st){ return ((s.studentProgress || {})[st.id] || {}).done === true; }).length;
-    box.innerHTML = '<div class="rankRow"><div class="rankName">📝 Individual Test</div><div class="rankPts">' + doneStudents + '/' + totalStudents + ' done</div></div>';
+    box.innerHTML = `<div class="rankRow"><div class="rankName">📝 Individual Test</div><div class="rankPts">${doneStudents}/${totalStudents} done</div></div>`;
   };
 
   window.renderParagraphTimers = function(s){
@@ -2820,7 +3569,7 @@ async function saveReadingRushToTeacherControl(s){
     const totalStudents = students.length;
     box.innerHTML = (col.paragraphs || []).map(function(p,i){
       const done = students.filter(function(st){ return !!(((s.paragraphResults || {})[st.id] || {})['p' + i]); }).length;
-      return '<div class="paragraphTimerCard"><b>P' + (i+1) + '</b><div class="timerClock">' + done + '/' + totalStudents + '</div><span class="doneCount">students done</span></div>';
+      return `<div class="paragraphTimerCard"><b>P${i+1}</b><div class="timerClock">${done}/${totalStudents}</div><span class="doneCount">students done</span></div>`;
     }).join('');
   };
 
@@ -2834,22 +3583,22 @@ async function saveReadingRushToTeacherControl(s){
     const paragraphs = col && col.paragraphs || [];
     const collectionTotal = rrCollectionTotal(col);
     if(!students.length){ box.innerHTML = '<div class="status">No students joined yet.</div>'; return; }
-    const headerParas = paragraphs.map(function(p,i){ return '<th>P' + (i+1) + '</th>'; }).join('');
+    const headerParas = paragraphs.map(function(p,i){ return `<th>P${i+1}</th>`; }).join('');
     const rows = students.map(function(st){
       const pr = (s.studentProgress || {})[st.id] || null;
-      const progress = pr ? (pr.done ? 'Done ✅' : 'Working • ' + (Number(pr.paraIndex || 0)+1) + '/' + paragraphs.length) : 'Waiting';
+      const progress = pr ? (pr.done ? 'Done ✅' : `Working • ${Number(pr.paraIndex || 0)+1}/${paragraphs.length}`) : 'Waiting';
       const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, st.id) : {correctAnswers:0,totalQuestions:collectionTotal,weightedScore:0};
-      const studentMarkText = Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || collectionTotal || 0) + ' (' + Number(totals.weightedScore || 0) + '/30)';
+      const studentMarkText = `${Number(totals.correctAnswers || 0)}/${Number(totals.totalQuestions || collectionTotal || 0)} (${Number(totals.weightedScore || 0)}/30)`;
       const paraCells = paragraphs.map(function(p,i){
         const r = ((s.paragraphResults || {})[st.id] || {})['p' + i];
         const score = r ? Number(r.score || 0) : 0;
         const total = r ? Number(r.total || 0) : ((p.questions || []).length || 0);
         const cls = r ? (score === total ? 'scoreGood' : 'scoreBad') : 'scoreNeutral';
-        return '<td><span class="' + cls + '">' + (r ? score : '-') + '</span><div class="progressSmall">' + (r ? (score + '/' + total) : 'not yet') + '</div></td>';
+        return `<td><span class="${cls}">${r ? score : '-'}</span><div class="progressSmall">${r ? (score + '/' + total) : 'not yet'}</div></td>`;
       }).join('');
-      return '<tr><td class="studentNameCell">' + esc(st.name || st.id) + '<div class="progressSmall">ID: ' + esc(st.id || st.studentId || '') + '</div></td><td>' + esc(progress) + '</td>' + paraCells + '<td><b>' + studentMarkText + '</b><div class="progressSmall">Collection final mark</div></td><td>' + (pr && pr.done ? '✅ Completed' : '⏳ In progress') + '</td></tr>';
+      return `<tr><td class="studentNameCell">${esc(st.name || st.id)}<div class="progressSmall">ID: ${esc(st.id || st.studentId || '')}</div></td><td>${esc(progress)}</td>${paraCells}<td><b>${studentMarkText}</b><div class="progressSmall">Collection final mark</div></td><td>${pr && pr.done ? '✅ Completed' : '⏳ In progress'}</td></tr>`;
     }).join('');
-    box.innerHTML = '<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Status</th>' + headerParas + '<th>Final Mark</th><th>Completion</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    box.innerHTML = `<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Status</th>${headerParas}<th>Final Mark</th><th>Completion</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   };
 
   const oldStudentRefresh = window.studentRefresh;
@@ -2859,7 +3608,7 @@ async function saveReadingRushToTeacherControl(s){
     try{
       if(currentUser && currentUser.role === 'student'){
         const welcome = byId('studentWelcome');
-        if(welcome) welcome.innerText = 'Welcome, ' + currentUser.name;
+        if(welcome) welcome.innerText = `Welcome, ${currentUser.name}`;
         const instruction = byId('studentInstruction');
         const s = stateCache || defaultState();
         if(instruction){
@@ -2872,8 +3621,8 @@ async function saveReadingRushToTeacherControl(s){
           const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, currentUser.id) : {correctAnswers:0,totalQuestions:0,weightedScore:0};
           const pr = (s.studentProgress || {})[currentUser.id] || {};
           progress.innerText = pr.done
-            ? 'Finished: ' + totals.correctAnswers + '/' + totals.totalQuestions + ' (' + totals.weightedScore + '/30)'
-            : 'Progress: ' + totals.correctAnswers + '/' + (totals.totalQuestions || '...') + ' correct so far';
+            ? `Finished: ${totals.correctAnswers}/${totals.totalQuestions} (${totals.weightedScore}/30)`
+            : `Progress: ${totals.correctAnswers}/${totals.totalQuestions || '...'} correct so far`;
         }
       }
     }catch(e){ console.warn('Individual student refresh note skipped:', e); }
@@ -2883,11 +3632,19 @@ async function saveReadingRushToTeacherControl(s){
   window.teacherRefresh = function(){
     rrEnsureUiClean();
     if(typeof oldTeacherRefresh === 'function') oldTeacherRefresh();
+    try{
+      const title = document.querySelector('#teacherPage .card h2');
+      if(title && title.textContent.includes('Group')) title.textContent = '📝 Individual Student Marks';
+    }catch(e){}
   };
 
+  const oldStopChallenge = window.stopChallenge;
   window.stopChallenge = async function(){
     const s = await getState();
-    s.stage = 'final'; s.final = true; s.boss = false; s.roundStartTime = null;
+    s.stage = 'final';
+    s.final = true;
+    s.boss = false;
+    s.roundStartTime = null;
     if(typeof buildAnalytics === 'function') s.analytics = buildAnalytics(s); else s.analytics = {};
     if(typeof saveReadingRushFinalMarksAndCertificates === 'function') await saveReadingRushFinalMarksAndCertificates(s);
     await setState(s);
@@ -2902,12 +3659,296 @@ async function saveReadingRushToTeacherControl(s){
       if(secure && (secure.studentId || secure.password)){
         const hub = byId('hubPage');
         const login = byId('loginPage');
-        if((hub && !hub.classList.contains('hidden')) || (login && !login.classList.contains('hidden'))){
+        const teacher = byId('teacherPage');
+        const student = byId('studentPage');
+        if(hub && !hub.classList.contains('hidden')){
           try{ await window.studentJoin(); }catch(e){ console.warn('Direct Secure Hub Reading Rush join skipped:', e); }
+        }else if(login && !login.classList.contains('hidden')){
+          try{ await window.studentJoin(); }catch(e){ console.warn('Direct login Reading Rush join skipped:', e); }
         }
       }
     },900);
   });
+})();
+</script>
+
+<script>
+/* ===== FINAL PATCH: Individual Reading Rush + Secure Hub mark sync ===== */
+(function(){
+  function rrSafeKey(value){
+    if(typeof safeKey === 'function') return safeKey(value || '');
+    return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrToday(){
+    return new Date().toLocaleDateString('en-GB');
+  }
+
+  function rrCollection(s){
+    const colId = (s && s.currentCollectionId) || 'reading_rush_collection';
+    const col = ((s && s.collections) || {})[colId] || {};
+    return { colId, col, title: col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection' };
+  }
+
+  function rrTotalsForStudent(s, studentId){
+    const info = rrCollection(s);
+    const paragraphs = info.col.paragraphs || [];
+    const totalQuestions = paragraphs.reduce(function(sum,p){
+      return sum + ((p.questions || []).length);
+    },0);
+
+    const resultsObj = ((s.paragraphResults || {})[studentId]) || {};
+    const results = Object.values(resultsObj);
+    let correct = results.reduce(function(sum,r){ return sum + Number(r.score || 0); },0);
+    let attemptedTotal = results.reduce(function(sum,r){ return sum + Number(r.total || 0); },0);
+
+    if(correct === 0 && results.length === 0){
+      const oldAnswers = Object.values(((s.answers || {})[studentId]) || {});
+      correct = oldAnswers.filter(function(a){ return a && a.correct === true; }).length;
+      attemptedTotal = oldAnswers.length;
+    }
+
+    return {
+      correctAnswers: correct,
+      totalQuestions: totalQuestions || attemptedTotal || 0,
+      attemptedTotal: attemptedTotal,
+      percentage: (totalQuestions || attemptedTotal) ? Math.round((correct / (totalQuestions || attemptedTotal)) * 100) : 0
+    };
+  }
+
+  async function rrFindTeacherControlStudent(studentId){
+    try{
+      if(!db || !studentId) return null;
+      const sid = rrSafeKey(studentId);
+      const snap = await db.ref('teacherControlCenter/classes').once('value');
+      const classes = snap.val() || {};
+      for(const classId of Object.keys(classes)){
+        const cls = classes[classId] || {};
+        const students = cls.students || {};
+        if(students[sid]){
+          return { classId, className: cls.name || classId, studentKey: sid, student: students[sid] };
+        }
+        for(const key of Object.keys(students)){
+          const st = students[key] || {};
+          const possible = [key, st.id, st.studentId, st.password].map(x=>rrSafeKey(x));
+          if(possible.includes(sid)){
+            return { classId, className: cls.name || classId, studentKey: key, student: st };
+          }
+        }
+      }
+    }catch(err){
+      console.warn('Reading Rush could not scan Teacher Control students:', err);
+    }
+    return null;
+  }
+
+  async function rrRemoveReadingRushCertificates(record){
+    try{
+      if(!db || !record || !record.classId || !record.studentId) return;
+      const ref = db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId);
+      const snap = await ref.once('value');
+      const certs = snap.val() || {};
+      const updates = {};
+      Object.keys(certs).forEach(function(certId){
+        const c = certs[certId] || {};
+        if(c.source === 'Reading Rush' || c.activityType === 'Reading Rush' || String(certId).indexOf('Reading_Rush') === 0){
+          updates[certId] = null;
+        }
+      });
+      if(Object.keys(updates).length) await ref.update(updates);
+    }catch(err){
+      console.warn('Reading Rush certificate cleanup skipped:', err);
+    }
+  }
+
+  async function rrSaveFullMarkCertificate(record){
+    if(!db || !record) return;
+    if(Number(record.score) !== Number(record.total) || Number(record.total) <= 0){
+      await rrRemoveReadingRushCertificates(record);
+      return;
+    }
+    const certificateId = rrSafeKey('Reading_Rush_Full_Mark_' + (record.collectionId || record.activityName) + '_' + record.studentId);
+    const cert = {
+      certificateId,
+      source:'Reading Rush',
+      activityType:'Reading Rush',
+      certificateTitle:'Reading Rush Achievement Certificate',
+      reason:'Full mark in Reading Rush collection',
+      activityName:record.activityName,
+      studentId:record.studentId,
+      studentName:record.studentName,
+      classId:record.classId,
+      className:record.className,
+      score:record.score,
+      total:record.total,
+      correct:record.score,
+      questionsTotal:record.total,
+      percentage:100,
+      date:rrToday(),
+      issuedAt:Date.now(),
+      status:'issued'
+    };
+    await db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId + '/' + certificateId).set(cert);
+  }
+
+  window.saveReadingRushRecordForStudent = async function(s, student){
+    try{
+      if(!db || !student) return null;
+      const rawId = String(student.id || student.studentId || student.password || '').trim();
+      if(!rawId) return null;
+
+      const found = await rrFindTeacherControlStudent(rawId);
+      const classId = rrSafeKey((found && found.classId) || student.classId || student.cls || student.className || 'unknown_class');
+      const studentKey = rrSafeKey((found && found.studentKey) || rawId);
+      const studentName = (found && found.student && found.student.name) || student.name || '';
+      const className = (found && found.className) || student.cls || student.className || '';
+      const info = rrCollection(s);
+      const totals = rrTotalsForStudent(s, rawId);
+      const progress = ((s.studentProgress || {})[rawId]) || {};
+
+      const record = {
+        page:'Reading Rush',
+        activityType:'Reading Rush',
+        activityName:info.title,
+        score:Number(totals.correctAnswers || 0),
+        total:Number(totals.totalQuestions || 0),
+        correct:Number(totals.correctAnswers || 0),
+        questionsTotal:Number(totals.totalQuestions || 0),
+        percentage:Number(totals.percentage || 0),
+        classId:classId,
+        className:className,
+        studentId:studentKey,
+        sourceStudentId:rawId,
+        studentName:studentName,
+        collectionId:info.colId,
+        completed: progress.done === true || progress.completed === true,
+        status:'Saved',
+        notes:'Final Reading Rush collection mark',
+        date:rrToday(),
+        updatedAt:Date.now(),
+        time:Date.now()
+      };
+
+      const recordId = 'reading_rush_' + rrSafeKey(info.colId) + '_' + Date.now();
+
+      /* Secure Hub main performance card */
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + studentKey + '/Reading_Rush').set(record);
+      /* Collection-specific history */
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + studentKey + '/Reading_Rush_' + rrSafeKey(info.colId)).set(record);
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + studentKey + '/' + rrSafeKey(info.colId)).set(record);
+      /* Teacher center records table compatibility */
+      await db.ref('teacherControlCenter/records/' + classId + '/' + studentKey + '/' + recordId).set(Object.assign({}, record, {recordId:recordId}));
+
+      await rrSaveFullMarkCertificate(record);
+      return record;
+    }catch(err){
+      console.warn('Reading Rush final mark save failed:', err);
+      return null;
+    }
+  };
+
+  window.saveReadingRushFinalMarksAndCertificates = async function(s){
+    const students = Object.values((s && s.students) || {});
+    for(const st of students){
+      await window.saveReadingRushRecordForStudent(s, st);
+    }
+  };
+
+  window.saveReadingRushToTeacherControl = async function(s){
+    try{
+      const secure = (typeof getSecureHubStudent === 'function') ? getSecureHubStudent() : null;
+      const id = String((secure && (secure.studentId || secure.password)) || (currentUser && currentUser.id) || '').trim();
+      if(!id) return;
+      const student = ((s.students || {})[id]) || {
+        id:id,
+        studentId:id,
+        name:(secure && secure.name) || (currentUser && currentUser.name) || '',
+        classId:(secure && secure.classId) || rrSafeKey((secure && secure.className) || (currentUser && currentUser.cls) || ''),
+        cls:(secure && secure.className) || (currentUser && currentUser.cls) || ''
+      };
+      await window.saveReadingRushRecordForStudent(s, student);
+    }catch(err){
+      console.warn('Reading Rush tracker save skipped:', err);
+    }
+  };
+
+  window.renderLeaderboard = function(id,s){
+    const box = byId(id);
+    if(!box) return;
+    if(id === 'studentLeaderboard'){
+      const sid = currentUser && currentUser.id;
+      const totals = rrTotalsForStudent(s || {}, sid || '');
+      const info = rrCollection(s || {});
+      box.innerHTML = '<div class="rankRow">' +
+        '<div class="rankName">🏅 ' + esc(info.title) + '</div>' +
+        '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+        '</div>';
+      return;
+    }
+
+    const students = Object.values((s && s.students) || {});
+    if(!students.length){
+      box.innerHTML = '<div class="status">No students yet.</div>';
+      return;
+    }
+    box.innerHTML = students.map(function(st){
+      const totals = rrTotalsForStudent(s, st.id || st.studentId || '');
+      return '<div class="rankRow">' +
+        '<div class="rankName">👤 ' + esc(st.name || st.id || 'Student') + '</div>' +
+        '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+        '</div>';
+    }).join('');
+  };
+
+  const oldStudentRefresh = window.studentRefresh;
+  if(typeof oldStudentRefresh === 'function'){
+    window.studentRefresh = function(){
+      const result = oldStudentRefresh.apply(this, arguments);
+      try{
+        const s = stateCache || {};
+        const welcome = byId('studentWelcome');
+        if(welcome && currentUser){
+          welcome.innerText = 'Welcome, ' + (currentUser.name || 'Student');
+        }
+        if(s.stage === 'final' && currentUser){
+          const totals = rrTotalsForStudent(s, currentUser.id || '');
+          const info = rrCollection(s);
+          const resultBox = byId('studentResultBox');
+          const paragraphBox = byId('paragraphBox');
+          const progressBox = byId('studentProgress');
+          if(progressBox) progressBox.innerText = 'Test ended. Final mark: ' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0);
+          if(paragraphBox) paragraphBox.innerText = 'Your Reading Rush test is complete.';
+          if(resultBox){
+            resultBox.innerHTML = '<div class="finalWinners">' +
+              '<h2>✅ Final Result Saved</h2>' +
+              '<div class="rankRow" style="margin-top:12px">' +
+              '<div class="rankName">🏅 ' + esc(info.title) + '</div>' +
+              '<div class="rankPts">' + Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || 0) + '</div>' +
+              '</div>' +
+              '<div class="status good">Your mark is saved to Secure Hub and Teacher Center. Certificate is released only for full mark.</div>' +
+              '</div>';
+          }
+        }
+      }catch(err){ console.warn('Reading Rush final display patch skipped:', err); }
+      return result;
+    };
+  }
+
+  const oldStopChallenge = window.stopChallenge;
+  if(typeof oldStopChallenge === 'function'){
+    window.stopChallenge = async function(){
+      const s = await getState();
+      if(typeof autoScheduleUnfinishedStudents === 'function') autoScheduleUnfinishedStudents(s);
+      s.stage = 'final';
+      s.final = true;
+      s.boss = false;
+      s.roundStartTime = null;
+      if(typeof buildAnalytics === 'function') s.analytics = buildAnalytics(s);
+      await window.saveReadingRushFinalMarksAndCertificates(s);
+      await setState(s);
+      alert('✅ Reading Rush results released. Final collection marks were saved to Secure Hub and Teacher Center. Full-mark students only received certificates.');
+    };
+  }
 })();
 </script>
 
