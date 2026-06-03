@@ -1878,7 +1878,197 @@ function lessonPlanHTML(plan, forDownload=false){
  <h3>UAE Vision 2031 Link</h3><p>The lesson supports quality education, digital skills, collaboration, and student readiness for future learning.</p>
  <h3>Differentiation</h3><table><tr><th>High</th><td>Justify answers using evidence and explain implied meaning.</td></tr><tr><th>Middle</th><td>Answer exam-style questions and identify details independently.</td></tr><tr><th>Low</th><td>Use highlighted keywords, context clues, and teacher support to answer.</td></tr></table>
  <p class="small">Generated automatically from the active Reading Rush collection.</p>
- </body></html>`;
+ 
+
+<script>
+/* ============================================================
+   FINAL COLLECTION-ONLY SAVE PATCH
+   Fix: do NOT save Reading Rush marks per paragraph.
+   Save ONE final collection mark only after teacher ends/releases test.
+   Also cleans old per-paragraph Reading Rush rows from Secure Hub/Teacher Center.
+   ============================================================ */
+(function(){
+  function rrKey(v){
+    if(typeof safeKey === 'function') return safeKey(v);
+    return String(v || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrCol(s){
+    return (s && s.collections && s.currentCollectionId) ? (s.collections[s.currentCollectionId] || {}) : {};
+  }
+
+  function rrTitle(s){
+    const col = rrCol(s);
+    return col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection';
+  }
+
+  function rrTotals(s, studentId){
+    const col = rrCol(s);
+    const paragraphs = col.paragraphs || [];
+    const totalQuestions = paragraphs.reduce(function(sum,p){ return sum + ((p.questions || []).length); }, 0);
+    const results = Object.values(((s.paragraphResults || {})[studentId] || {}));
+    const correctAnswers = results.reduce(function(sum,r){ return sum + Number(r.score || 0); }, 0);
+    const percentage = totalQuestions ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+    return {correctAnswers:correctAnswers,totalQuestions:totalQuestions,percentage:percentage};
+  }
+
+  async function rrCleanOldReadingRushRows(classId, studentId){
+    if(!db || !classId || !studentId) return;
+
+    // Clean visible Secure Hub performance rows except the final single Reading_Rush key.
+    const perfRef = db.ref('teacherControlCenter/performance/' + classId + '/' + studentId);
+    const perfSnap = await perfRef.once('value');
+    const perf = perfSnap.val() || {};
+    const perfUpdates = {};
+    Object.keys(perf).forEach(function(k){
+      const r = perf[k] || {};
+      const isRR =
+        k === 'Reading_Rush' ||
+        k.indexOf('Reading_Rush_') === 0 ||
+        String(r.page || '').toLowerCase() === 'reading rush' ||
+        String(r.source || '').toLowerCase() === 'reading rush' ||
+        String(r.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR && k !== 'Reading_Rush') perfUpdates[k] = null;
+    });
+    if(Object.keys(perfUpdates).length) await perfRef.update(perfUpdates);
+
+    // Clean per-paragraph / old timestamp history rows that may appear in Teacher Center.
+    const recordsRef = db.ref('teacherControlCenter/records/' + classId + '/' + studentId);
+    const recSnap = await recordsRef.once('value');
+    const recs = recSnap.val() || {};
+    const recUpdates = {};
+    Object.keys(recs).forEach(function(k){
+      const r = recs[k] || {};
+      const isRR =
+        k.indexOf('reading_rush') === 0 ||
+        k.indexOf('Reading_Rush') === 0 ||
+        String(r.page || '').toLowerCase() === 'reading rush' ||
+        String(r.source || '').toLowerCase() === 'reading rush' ||
+        String(r.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR) recUpdates[k] = null;
+    });
+    if(Object.keys(recUpdates).length) await recordsRef.update(recUpdates);
+  }
+
+  async function rrClearReadingRushCertificates(classId, studentId){
+    if(!db || !classId || !studentId) return;
+    const ref = db.ref('teacherControlCenter/certificates/' + classId + '/' + studentId);
+    const snap = await ref.once('value');
+    const certs = snap.val() || {};
+    const updates = {};
+    Object.keys(certs).forEach(function(k){
+      const c = certs[k] || {};
+      const isRR =
+        k.indexOf('Reading_Rush') === 0 ||
+        String(c.source || '').toLowerCase() === 'reading rush' ||
+        String(c.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR) updates[k] = null;
+    });
+    if(Object.keys(updates).length) await ref.update(updates);
+  }
+
+  async function rrSaveFullMarkCertificate(record){
+    if(!db || !record) return;
+    await rrClearReadingRushCertificates(record.classId, record.studentId);
+    if(Number(record.score) !== Number(record.total) || Number(record.total) <= 0) return;
+
+    const certId = rrKey('Reading_Rush_Full_Mark_' + record.collectionId + '_' + record.studentId);
+    await db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId + '/' + certId).set({
+      certificateId: certId,
+      source: 'Reading Rush',
+      activityType: 'Reading Rush',
+      certificateTitle: 'Reading Rush Achievement Certificate',
+      reason: 'Full mark in Reading Rush collection',
+      activityName: record.activityName,
+      studentId: record.studentId,
+      studentName: record.studentName,
+      classId: record.classId,
+      className: record.className,
+      score: record.score,
+      total: record.total,
+      correct: record.score,
+      questionsTotal: record.total,
+      percentage: 100,
+      date: new Date().toLocaleDateString('en-GB'),
+      issuedAt: Date.now(),
+      status: 'issued'
+    });
+  }
+
+  // IMPORTANT: during paragraph submission this becomes a no-op.
+  window.saveReadingRushToTeacherControl = async function(s){
+    if(!s || s.stage !== 'final') return null;
+    if(!currentUser) return null;
+    const st = ((s.students || {})[currentUser.id]) || currentUser;
+    return window.saveReadingRushRecordForStudent(s, st);
+  };
+
+  window.saveReadingRushRecordForStudent = async function(s, student){
+    try{
+      if(!db || !s || !student) return null;
+      const id = String(student.id || student.studentId || '').trim();
+      if(!id) return null;
+      const classId = student.classId || rrKey(student.cls || student.className || '');
+      if(!classId) return null;
+
+      const colId = s.currentCollectionId || 'reading_rush_collection';
+      const title = rrTitle(s);
+      const totals = rrTotals(s, id);
+
+      const record = {
+        recordId: 'Reading_Rush_Final',
+        page: 'Reading Rush',
+        source: 'Reading Rush',
+        activityType: 'Reading Rush',
+        activityName: title,
+        displayName: title + ' - ' + totals.correctAnswers + '/' + totals.totalQuestions,
+        score: Number(totals.correctAnswers || 0),
+        total: Number(totals.totalQuestions || 0),
+        correct: Number(totals.correctAnswers || 0),
+        questionsTotal: Number(totals.totalQuestions || 0),
+        percentage: Number(totals.percentage || 0),
+        classId: classId,
+        className: student.cls || student.className || '',
+        studentId: id,
+        studentName: student.name || '',
+        collectionId: colId,
+        completed: ((s.studentProgress || {})[id] || {}).done === true,
+        status: 'Saved',
+        date: new Date().toLocaleDateString('en-GB'),
+        updatedAt: Date.now(),
+        mode: 'individual_test',
+        note: 'Final collection mark only. Paragraph rows are not saved.'
+      };
+
+      await rrCleanOldReadingRushRows(classId, id);
+
+      // ONE visible Secure Hub row only.
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
+
+      // ONE teacher-center record only, overwritten each release.
+      await db.ref('teacherControlCenter/records/' + classId + '/' + id + '/Reading_Rush_Final').set(record);
+
+      // Keep one collection-level archive, not per paragraph.
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId)).set(record);
+
+      await rrSaveFullMarkCertificate(record);
+      return record;
+    }catch(err){
+      console.warn('Reading Rush final collection record save skipped:', err);
+      return null;
+    }
+  };
+
+  window.saveReadingRushFinalMarksAndCertificates = async function(s){
+    const students = Object.values((s && s.students) || {});
+    for(const st of students){
+      await window.saveReadingRushRecordForStudent(s, st);
+    }
+  };
+})();
+</script>
+
+</body></html>`;
 }
 async function updateLessonPlanFromActiveCollection(){const s=await getState();const plan=buildLessonPlanObject(s);if(!plan){alert('Please choose an active collection first.');return}s.lessonPlan=plan;await setState(s);renderLessonPlanPreview(s);alert('Lesson plan updated from the active collection.');}
 function renderLessonPlanPreview(s){const box=byId('lessonPlanPreview');if(!box)return;const plan=s.lessonPlan||buildLessonPlanObject(s);box.innerHTML=lessonPlanHTML(plan).replace(/<!DOCTYPE[\s\S]*?<body>/i,'').replace(/<\/body><\/html>/i,'');}
@@ -2982,6 +3172,196 @@ async function saveReadingRushToTeacherControl(s){
       }
     },900);
   });
+})();
+</script>
+
+
+
+<script>
+/* ============================================================
+   FINAL COLLECTION-ONLY SAVE PATCH
+   Fix: do NOT save Reading Rush marks per paragraph.
+   Save ONE final collection mark only after teacher ends/releases test.
+   Also cleans old per-paragraph Reading Rush rows from Secure Hub/Teacher Center.
+   ============================================================ */
+(function(){
+  function rrKey(v){
+    if(typeof safeKey === 'function') return safeKey(v);
+    return String(v || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrCol(s){
+    return (s && s.collections && s.currentCollectionId) ? (s.collections[s.currentCollectionId] || {}) : {};
+  }
+
+  function rrTitle(s){
+    const col = rrCol(s);
+    return col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection';
+  }
+
+  function rrTotals(s, studentId){
+    const col = rrCol(s);
+    const paragraphs = col.paragraphs || [];
+    const totalQuestions = paragraphs.reduce(function(sum,p){ return sum + ((p.questions || []).length); }, 0);
+    const results = Object.values(((s.paragraphResults || {})[studentId] || {}));
+    const correctAnswers = results.reduce(function(sum,r){ return sum + Number(r.score || 0); }, 0);
+    const percentage = totalQuestions ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+    return {correctAnswers:correctAnswers,totalQuestions:totalQuestions,percentage:percentage};
+  }
+
+  async function rrCleanOldReadingRushRows(classId, studentId){
+    if(!db || !classId || !studentId) return;
+
+    // Clean visible Secure Hub performance rows except the final single Reading_Rush key.
+    const perfRef = db.ref('teacherControlCenter/performance/' + classId + '/' + studentId);
+    const perfSnap = await perfRef.once('value');
+    const perf = perfSnap.val() || {};
+    const perfUpdates = {};
+    Object.keys(perf).forEach(function(k){
+      const r = perf[k] || {};
+      const isRR =
+        k === 'Reading_Rush' ||
+        k.indexOf('Reading_Rush_') === 0 ||
+        String(r.page || '').toLowerCase() === 'reading rush' ||
+        String(r.source || '').toLowerCase() === 'reading rush' ||
+        String(r.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR && k !== 'Reading_Rush') perfUpdates[k] = null;
+    });
+    if(Object.keys(perfUpdates).length) await perfRef.update(perfUpdates);
+
+    // Clean per-paragraph / old timestamp history rows that may appear in Teacher Center.
+    const recordsRef = db.ref('teacherControlCenter/records/' + classId + '/' + studentId);
+    const recSnap = await recordsRef.once('value');
+    const recs = recSnap.val() || {};
+    const recUpdates = {};
+    Object.keys(recs).forEach(function(k){
+      const r = recs[k] || {};
+      const isRR =
+        k.indexOf('reading_rush') === 0 ||
+        k.indexOf('Reading_Rush') === 0 ||
+        String(r.page || '').toLowerCase() === 'reading rush' ||
+        String(r.source || '').toLowerCase() === 'reading rush' ||
+        String(r.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR) recUpdates[k] = null;
+    });
+    if(Object.keys(recUpdates).length) await recordsRef.update(recUpdates);
+  }
+
+  async function rrClearReadingRushCertificates(classId, studentId){
+    if(!db || !classId || !studentId) return;
+    const ref = db.ref('teacherControlCenter/certificates/' + classId + '/' + studentId);
+    const snap = await ref.once('value');
+    const certs = snap.val() || {};
+    const updates = {};
+    Object.keys(certs).forEach(function(k){
+      const c = certs[k] || {};
+      const isRR =
+        k.indexOf('Reading_Rush') === 0 ||
+        String(c.source || '').toLowerCase() === 'reading rush' ||
+        String(c.activityType || '').toLowerCase() === 'reading rush';
+      if(isRR) updates[k] = null;
+    });
+    if(Object.keys(updates).length) await ref.update(updates);
+  }
+
+  async function rrSaveFullMarkCertificate(record){
+    if(!db || !record) return;
+    await rrClearReadingRushCertificates(record.classId, record.studentId);
+    if(Number(record.score) !== Number(record.total) || Number(record.total) <= 0) return;
+
+    const certId = rrKey('Reading_Rush_Full_Mark_' + record.collectionId + '_' + record.studentId);
+    await db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId + '/' + certId).set({
+      certificateId: certId,
+      source: 'Reading Rush',
+      activityType: 'Reading Rush',
+      certificateTitle: 'Reading Rush Achievement Certificate',
+      reason: 'Full mark in Reading Rush collection',
+      activityName: record.activityName,
+      studentId: record.studentId,
+      studentName: record.studentName,
+      classId: record.classId,
+      className: record.className,
+      score: record.score,
+      total: record.total,
+      correct: record.score,
+      questionsTotal: record.total,
+      percentage: 100,
+      date: new Date().toLocaleDateString('en-GB'),
+      issuedAt: Date.now(),
+      status: 'issued'
+    });
+  }
+
+  // IMPORTANT: during paragraph submission this becomes a no-op.
+  window.saveReadingRushToTeacherControl = async function(s){
+    if(!s || s.stage !== 'final') return null;
+    if(!currentUser) return null;
+    const st = ((s.students || {})[currentUser.id]) || currentUser;
+    return window.saveReadingRushRecordForStudent(s, st);
+  };
+
+  window.saveReadingRushRecordForStudent = async function(s, student){
+    try{
+      if(!db || !s || !student) return null;
+      const id = String(student.id || student.studentId || '').trim();
+      if(!id) return null;
+      const classId = student.classId || rrKey(student.cls || student.className || '');
+      if(!classId) return null;
+
+      const colId = s.currentCollectionId || 'reading_rush_collection';
+      const title = rrTitle(s);
+      const totals = rrTotals(s, id);
+
+      const record = {
+        recordId: 'Reading_Rush_Final',
+        page: 'Reading Rush',
+        source: 'Reading Rush',
+        activityType: 'Reading Rush',
+        activityName: title,
+        displayName: title + ' - ' + totals.correctAnswers + '/' + totals.totalQuestions,
+        score: Number(totals.correctAnswers || 0),
+        total: Number(totals.totalQuestions || 0),
+        correct: Number(totals.correctAnswers || 0),
+        questionsTotal: Number(totals.totalQuestions || 0),
+        percentage: Number(totals.percentage || 0),
+        classId: classId,
+        className: student.cls || student.className || '',
+        studentId: id,
+        studentName: student.name || '',
+        collectionId: colId,
+        completed: ((s.studentProgress || {})[id] || {}).done === true,
+        status: 'Saved',
+        date: new Date().toLocaleDateString('en-GB'),
+        updatedAt: Date.now(),
+        mode: 'individual_test',
+        note: 'Final collection mark only. Paragraph rows are not saved.'
+      };
+
+      await rrCleanOldReadingRushRows(classId, id);
+
+      // ONE visible Secure Hub row only.
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
+
+      // ONE teacher-center record only, overwritten each release.
+      await db.ref('teacherControlCenter/records/' + classId + '/' + id + '/Reading_Rush_Final').set(record);
+
+      // Keep one collection-level archive, not per paragraph.
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId)).set(record);
+
+      await rrSaveFullMarkCertificate(record);
+      return record;
+    }catch(err){
+      console.warn('Reading Rush final collection record save skipped:', err);
+      return null;
+    }
+  };
+
+  window.saveReadingRushFinalMarksAndCertificates = async function(s){
+    const students = Object.values((s && s.students) || {});
+    for(const st of students){
+      await window.saveReadingRushRecordForStudent(s, st);
+    }
+  };
 })();
 </script>
 
