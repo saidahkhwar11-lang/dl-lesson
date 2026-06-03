@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Reading Rush Collection Mode</title>
+<title>Reading Rush Individual Test Mode</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -271,10 +271,10 @@
 </head>
 <body>
 <div class="app">
-<div class="hero"><h1>📚 Reading Rush: Collection Mode</h1><p>Students rotate through paragraphs, answer reading comprehension questions, and complete the test.</p></div>
+<div class="hero"><h1>📚 Reading Rush: Individual Test Simulation</h1><p>Students complete an individual reading test. Paragraphs are randomly ordered for each student.</p></div>
 <div id="connectionBox" class="card status">Connecting to Firebase...</div>
-<div id="hubPage"><div class="grid"><div class="card"><h2>📚 Collection Mode</h2><p class="status good">Teacher creates a collection with many paragraphs. Each group member gets a different paragraph one at a time.</p><button onclick="openLogin()">Open Game</button><button class="secondary" onclick="location.href='secure-hub.html'">🏠 Back to Main Page</button></div><div class="card"><h2>🎮 Flow</h2><div class="stepsGrid"><div class="stepCard"><span>📦</span><b>Collection</b><small>Teacher selects one set.</small></div><div class="stepCard"><span>📖</span><b>Paragraph</b><small>Students get different paragraphs.</small></div><div class="stepCard"><span>❓</span><b>Questions</b><small>Finish all assigned questions.</small></div><div class="stepCard"><span>🏆</span><b>Top 3</b><small>Teacher stops challenge.</small></div></div></div></div></div>
-<div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><div class="status good">If you entered from Secure Hub, your name and ID appear automatically. Choose your group, then join.</div><label>Name</label><input id="studentName" placeholder="Your name appears from hub" readonly><label>Student ID</label><input id="studentId" placeholder="Your ID appears from hub" readonly><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><label>Group</label><select id="studentGroup"><option value="1">Group 1</option><option value="2">Group 2</option><option value="3">Group 3</option><option value="4">Group 4</option><option value="5">Group 5</option><option value="6">Group 6</option></select><button onclick="studentJoin()">Join Reading Rush</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button></div><div class="card"><h2>📌 Rule</h2><div class="status good">Reading comprehension test mode: each question = 1 point.</div><div class="status">Students submit all questions for one paragraph, then move to the next paragraph.</div><div class="status good">Final marks stay linked to Secure Hub and certificates.</div></div></div></div>
+<div id="hubPage"><div class="grid"><div class="card"><h2>📚 Collection Mode</h2><p class="status good">Teacher creates a reading collection. Each student joins directly from Secure Hub and receives a random paragraph order.</p><button onclick="openLogin()">Open Game</button><button class="secondary" onclick="location.href='secure-hub.html'">🏠 Back to Main Page</button></div><div class="card"><h2>🎮 Flow</h2><div class="stepsGrid"><div class="stepCard"><span>📦</span><b>Collection</b><small>Teacher selects one set.</small></div><div class="stepCard"><span>📖</span><b>Paragraph</b><small>Students get random paragraphs.</small></div><div class="stepCard"><span>❓</span><b>Questions</b><small>Finish all assigned questions.</small></div><div class="stepCard"><span>🏆</span><b>Final Marks</b><small>Teacher stops challenge.</small></div></div></div></div></div>
+<div id="loginPage" class="hidden"><div class="tabs"><button onclick="showLogin('student')">👨‍🎓 Student Login</button><button class="purple" onclick="showLogin('teacher')">👩‍🏫 Teacher Login</button><button class="secondary" onclick="backHome()">🏠 Home</button></div><div class="grid"><div id="studentLogin" class="card"><h2>Student Login</h2><div class="status good">If you entered from Secure Hub, your name and ID appear automatically. The test opens directly from Secure Hub using your student ID.</div><label>Name</label><input id="studentName" placeholder="Your name appears from hub" readonly><label>Student ID</label><input id="studentId" placeholder="Your ID appears from hub" readonly><label>Class</label><select id="studentClass"><option>9/1</option><option>9/2</option><option>9/3</option><option>9/4</option></select><div id="studentGroupWrap" class="hidden"><label>Group</label><select id="studentGroup"><option value="individual">Individual</option></select></div><button onclick="studentJoin()">Start Reading Test</button></div><div id="teacherLogin" class="card hidden"><h2>Teacher Login</h2><label>Password</label><input id="teacherPass" type="password" placeholder="Teacher password"><button class="purple" onclick="teacherJoin()">Open Teacher Dashboard</button></div><div class="card"><h2>📌 Rule</h2><div class="status good">Reading comprehension test mode: each question = 1 point.</div><div class="status">Students submit all questions for one paragraph, then move to the next paragraph.</div><div class="status good">Final marks stay linked to Secure Hub and certificates.</div></div></div></div>
 <div id="teacherPage" class="hidden">
  <label style="max-width:220px">
   Active Class
@@ -291,7 +291,7 @@
     <button class="downloadMini" onclick="downloadLessonPlan()">⬇️ Download Lesson Plan</button>
     <button class="secondary" onclick="backHome()">🏠 Home</button>
     <button onclick="startCollectionChallenge()">▶️ Start Collection</button>
-    <button class="success" onclick="stopChallenge()">🏆 Stop + Report</button>
+    <button class="success" onclick="stopChallenge()">🏆 End Test + Save Marks</button>
     <button class="danger" onclick="resetGame()">🧹 Reset</button>
 
 <button class="danger" onclick="clearRecoveryAssignmentsForClass()">
@@ -340,8 +340,8 @@
   </div>
 
   <div class="grid" style="margin-top:14px">
-    <div class="card"><h2>🏆 Group Total Points</h2><div id="leaderboard" class="leaderboard"></div></div>
-    <div class="card"><h2>👥 Student Live Board</h2><div class="mini">Students are grouped by color. Track each student’s reading progress and question marks.</div><div id="teacherStudents" class="list" style="margin-top:10px"></div></div>
+    <div class="card"><h2>🏆 Class Progress</h2><div id="leaderboard" class="leaderboard"></div></div>
+    <div class="card"><h2>👥 Student Live Board</h2><div class="mini">Individual test tracker: each student mark is saved to Teacher Center and Secure Hub.</div><div id="teacherStudents" class="list" style="margin-top:10px"></div></div>
   </div>
   <div id="finalWinnersBox" class="hidden finalWinners" style="margin-top:14px"></div><div id="analyticsBox" class="card hidden" style="margin-top:14px"></div>
 </div>
@@ -405,10 +405,10 @@
 
     <div class="card readingSide">
       <div class="readingMeta">
-        <h2 id="studentRoundTitle">Current Collection</h2>
+        <h2 id="studentRoundTitle">Current Reading Test</h2>
         <span class="readPill">📖 Text on left</span>
       </div>
-      <div id="paragraphBox" class="paragraphBox">Wait for teacher to start collection.</div>
+      <div id="paragraphBox" class="paragraphBox">Wait for teacher to start the reading test.</div>
     </div>
 
     <div class="card questionSide">
@@ -417,12 +417,11 @@
       <div id="questionBox" class="questionBox hidden">
 
         <div class="questionHeader cleanQuestionHeader">
-          <h2>❓ Your Paragraph Questions</h2>
+          <h2>❓ Your Reading Questions</h2>
 
           <div class="questionMiniTools">
             <div id="miniLeaderboardBox" class="miniQuestionBadge">
-              🏆 <span id="miniLeaderboardGroup">G</span> •
-              <span id="miniLeaderboardPoints">0 pts</span>
+              📝 Individual Test
             </div>
 
             <span id="questionNumberPill" class="questionNumberPill">
@@ -1999,7 +1998,7 @@ function studentRefresh(){
       : 'Wait for teacher.';
 
   byId('studentRoundTitle').innerText =
-    s.currentCollectionTitle || 'Current Collection';
+    s.currentCollectionTitle || 'Current Reading Test';
 
   renderLeaderboard('studentLeaderboard', s);
 
@@ -2054,7 +2053,7 @@ function studentRefresh(){
 
     hide('questionBox');
     byId('studentProgress').innerText = 'Progress will appear here.';
-    byId('paragraphBox').innerText = 'Wait for teacher to start collection.';
+    byId('paragraphBox').innerText = 'Wait for teacher to start the reading test.';
     byId('studentResultBox').innerHTML = '';
   }
 }
@@ -2543,6 +2542,373 @@ async function saveReadingRushToTeacherControl(s){
     console.warn('Reading Rush tracker save skipped:', err);
   }
 }
+</script>
+
+
+
+<script>
+/* ============================================================
+   READING RUSH INDIVIDUAL TEST MODE OVERRIDE
+   - No grouping for students
+   - Students join directly from Secure Hub ID
+   - Teacher starts collection; each student gets a random paragraph order
+   - Final collection mark saves to Teacher Center + Secure Hub even if not full
+   - Certificate only when the student gets full mark
+   ============================================================ */
+(function(){
+  const INDIVIDUAL_GROUP = 'individual';
+
+  function rrSafeKey(value){
+    if(typeof safeKey === 'function') return safeKey(value);
+    return String(value || '').trim().replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function rrGetSecureStudent(){
+    try{
+      if(typeof getSecureHubStudent === 'function'){
+        const s = getSecureHubStudent();
+        if(s && (s.studentId || s.id || s.password)) return s;
+      }
+    }catch(e){}
+    try{
+      const raw = localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN');
+      if(!raw) return null;
+      const obj = JSON.parse(raw);
+      return {
+        name: obj.name || obj.studentName || '',
+        studentId: obj.studentId || obj.id || obj.password || '',
+        password: obj.password || '',
+        className: obj.className || obj.cls || obj.class || '',
+        classId: obj.classId || rrSafeKey(obj.className || obj.cls || obj.class || '')
+      };
+    }catch(e){ return null; }
+  }
+
+  function rrHash(str){
+    str = String(str || '');
+    let h = 2166136261;
+    for(let i=0;i<str.length;i++){
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return Math.abs(h >>> 0);
+  }
+
+  function rrShuffleIndexes(length, seedText){
+    const arr = Array.from({length:length}, (_,i)=>i);
+    let seed = rrHash(seedText || Date.now());
+    for(let i=arr.length-1;i>0;i--){
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      const j = seed % (i+1);
+      const tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    return arr;
+  }
+
+  function rrCollectionTotal(col){
+    return (col && col.paragraphs || []).reduce(function(sum,p){
+      return sum + ((p.questions || []).length);
+    },0);
+  }
+
+  function rrEnsureUiClean(){
+    const groupWrap = document.getElementById('studentGroupWrap');
+    if(groupWrap) groupWrap.classList.add('hidden');
+    const groupSelect = document.getElementById('studentGroup');
+    if(groupSelect){
+      groupSelect.innerHTML = '<option value="individual">Individual</option>';
+      groupSelect.value = 'individual';
+    }
+    const mini = document.getElementById('miniLeaderboardBox');
+    if(mini) mini.innerHTML = '📝 Individual Reading Test';
+    const lb = document.getElementById('studentLeaderboard');
+    if(lb && lb.closest('div')) lb.closest('div').style.display = 'none';
+    const goal = document.getElementById('studentMainGoal');
+    if(goal) goal.textContent = 'Complete the reading test individually. Read each paragraph carefully and answer all questions.';
+    const ins = document.getElementById('studentMainInstructions');
+    if(ins) ins.textContent = 'Wait for your teacher to start the collection. Your paragraphs will appear in a random order. Submit each paragraph once.';
+    const tgoal = document.getElementById('teacherMainGoal');
+    if(tgoal) tgoal.textContent = 'Students complete an individual reading test simulation with random paragraph order.';
+    const tins = document.getElementById('teacherMainInstructions');
+    if(tins) tins.textContent = 'Students join directly from Secure Hub, answer all paragraphs individually, then final marks are saved to trackers.';
+  }
+
+  window.openLogin = function(){
+    rrEnsureUiClean();
+    const secure = rrGetSecureStudent();
+    if(secure && (secure.studentId || secure.password)){
+      window.studentJoin();
+      return;
+    }
+    hide('hubPage'); show('loginPage'); showLogin('student');
+    if(typeof syncSecureHubLoginToReadingRush === 'function') setTimeout(syncSecureHubLoginToReadingRush,100);
+  };
+
+  window.studentJoin = async function(){
+    const secure = rrGetSecureStudent();
+    const name = (secure && secure.name) || (byId('studentName') && byId('studentName').value.trim()) || '';
+    const studentId = (secure && (secure.studentId || secure.password || secure.id)) || (byId('studentId') && byId('studentId').value.trim()) || '';
+    const cls = (secure && secure.className) || (byId('studentClass') && byId('studentClass').value) || '';
+    const classId = (secure && secure.classId) || rrSafeKey(cls);
+
+    if(!name){ alert('Student name was not found. Please login from Secure Hub first.'); return; }
+    if(!studentId){ alert('Student ID was not found. Please login from Secure Hub first.'); return; }
+
+    const id = String(studentId).trim();
+    const s = await getState();
+    s.students = s.students || {};
+    s.studentProgress = s.studentProgress || {};
+
+    const studentRecord = {
+      id:id, name:name, studentId:id, cls:cls, className:cls, classId:classId,
+      group:INDIVIDUAL_GROUP, mode:'individual_test', lastSeen:Date.now()
+    };
+
+    s.students[id] = Object.assign({}, s.students[id] || {}, studentRecord);
+
+    if(s.stage === 'playing' && s.currentCollectionId && s.collections && s.collections[s.currentCollectionId]){
+      const col = s.collections[s.currentCollectionId];
+      const paragraphs = col.paragraphs || [];
+      if(paragraphs.length && !s.studentProgress[id]){
+        s.studentProgress[id] = {
+          paraIndex:0, qIndex:0, done:false, completed:false,
+          order:rrShuffleIndexes(paragraphs.length, id + '_' + s.currentCollectionId + '_' + Number(s.roundStartTime || 0)),
+          mode:'individual_test'
+        };
+      }
+    }
+
+    await setState(s);
+
+    currentUser = {role:'student', id:id, name:name, studentId:id, cls:cls, className:cls, classId:classId, group:INDIVIDUAL_GROUP, mode:'individual_test'};
+    if(typeof saveStudentSession === 'function') saveStudentSession();
+    hide('hubPage'); hide('loginPage'); hide('teacherPage'); show('studentPage');
+    rrEnsureUiClean();
+    studentRefresh();
+  };
+
+  window.getInitialParaIndex = function(s, student){ return 0; };
+
+  window.startCollectionChallenge = async function(){
+    const s = await getState();
+    const col = s.collections && s.collections[s.currentCollectionId];
+    if(!col){ alert('Select a collection first.'); return; }
+    if(!col.paragraphs || !col.paragraphs.length){ alert('Collection needs paragraphs.'); return; }
+
+    s.stage = 'playing';
+    s.roundStartTime = Date.now();
+    s.answers = {}; s.paragraphResults = {}; s.studentProgress = {}; s.scores = {};
+    s.final = false; s.boss = false;
+
+    const activeClass = s.activeClass || (typeof getActiveClass === 'function' ? getActiveClass() : '');
+    const paragraphs = col.paragraphs || [];
+
+    Object.values(s.students || {})
+      .filter(function(st){ return !activeClass || String(st.cls || st.className || st.classId) === String(activeClass) || String(st.classId) === rrSafeKey(activeClass); })
+      .forEach(function(st){
+        s.studentProgress[st.id] = {
+          paraIndex:0, qIndex:0, done:false, completed:false,
+          order:rrShuffleIndexes(paragraphs.length, String(st.id || st.studentId) + '_' + s.currentCollectionId + '_' + s.roundStartTime),
+          mode:'individual_test'
+        };
+        st.group = INDIVIDUAL_GROUP;
+        st.mode = 'individual_test';
+      });
+
+    await setState(s);
+    alert('✅ Individual Reading Test started. Students will receive random paragraph order.');
+  };
+
+  window.currentPQ = function(s){
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const pr = s.studentProgress && currentUser ? s.studentProgress[currentUser.id] : null;
+    if(!col || !pr) return {p:null,q:null,pr:null,total:0,actualIndex:0};
+    const paragraphs = col.paragraphs || [];
+    const order = (pr.order && pr.order.length) ? pr.order : paragraphs.map(function(_,i){return i;});
+    const pos = Math.min(Number(pr.paraIndex || 0), Math.max(0, order.length - 1));
+    const actualIndex = Number(order[pos] || 0);
+    const p = paragraphs[actualIndex];
+    const q = (p && p.questions || [])[pr.qIndex || 0];
+    return {p:p,q:q,pr:pr,total:paragraphs.length,actualIndex:actualIndex,position:pos,order:order};
+  };
+
+  window.submitAnswer = async function(){
+    if(currentUser && currentUser.recoveryMode && typeof submitRecoveryAnswer === 'function') return submitRecoveryAnswer();
+    const s = await getState();
+    const d = currentPQ(s);
+    const p = d.p;
+    const questions = (p && p.questions) ? p.questions : [];
+    if(!p || !questions.length) return;
+
+    const missing = questions.map(function(q,i){ return paragraphAnswers[i] ? null : (i+1); }).filter(Boolean);
+    if(missing.length){ alert('Please answer all questions before submitting. Missing: Q' + missing.join(', Q')); return; }
+
+    s.studentProgress = s.studentProgress || {};
+    s.paragraphResults = s.paragraphResults || {};
+    const pr = s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false,order:d.order || []};
+    const actualParaIndex = Number(d.actualIndex || 0);
+    const resultKey = 'p' + actualParaIndex;
+
+    s.paragraphResults[currentUser.id] = s.paragraphResults[currentUser.id] || {};
+    const alreadySaved = !!s.paragraphResults[currentUser.id][resultKey];
+
+    let paragraphScore = 0;
+    const selectedAnswers = {};
+    const skillSummary = {};
+    questions.forEach(function(q, qi){
+      const selected = paragraphAnswers[qi];
+      const correct = selected === q.correct;
+      const skill = q.skill || 'unknown';
+      selectedAnswers[qi] = selected;
+      skillSummary[skill] = skillSummary[skill] || {skill:skill,total:0,correct:0};
+      skillSummary[skill].total += 1;
+      if(correct){ paragraphScore += 1; skillSummary[skill].correct += 1; }
+    });
+
+    s.paragraphResults[currentUser.id][resultKey] = {
+      studentId:currentUser.id, student:currentUser.name, group:INDIVIDUAL_GROUP, mode:'individual_test',
+      paraIndex:actualParaIndex, paragraphPosition:Number(pr.paraIndex || 0), paragraphId:p.id || resultKey,
+      paragraphTitle:p.title || ('Paragraph ' + (actualParaIndex + 1)), score:paragraphScore, total:questions.length,
+      selectedAnswers:selectedAnswers, skillSummary:skillSummary, submittedAt:Date.now()
+    };
+
+    pr.score = Number(pr.score || 0) + (alreadySaved ? 0 : paragraphScore);
+    pr.lastParagraphScore = paragraphScore;
+    pr.lastParagraphTotal = questions.length;
+    pr.qIndex = 0;
+    pr.paraIndex = Number(pr.paraIndex || 0) + 1;
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const totalParas = (col && col.paragraphs || []).length;
+    if(pr.paraIndex >= totalParas){
+      pr.done = true; pr.completed = true; pr.completedAt = Date.now();
+      pr.paraIndex = Math.max(0, totalParas - 1); pr.qIndex = questions.length;
+    }else{ pr.done = false; pr.completed = false; }
+    pr.mode = 'individual_test';
+    s.studentProgress[currentUser.id] = pr;
+
+    if(s.students && s.students[currentUser.id]){
+      s.students[currentUser.id].group = INDIVIDUAL_GROUP;
+      s.students[currentUser.id].mode = 'individual_test';
+    }
+
+    await setState(s);
+    if(typeof saveReadingRushToTeacherControl === 'function') await saveReadingRushToTeacherControl(s);
+
+    const nextText = pr.done ? 'You finished the full reading test 🎉' : 'Saved. Moving to your next random paragraph.';
+    const resultBox = byId('studentResultBox');
+    if(resultBox){
+      resultBox.innerHTML = '<div class="status ' + (paragraphScore === questions.length ? 'good' : 'bad') + '">✅ Paragraph submitted and saved.<br>Score: <b>' + paragraphScore + '/' + questions.length + '</b><br>' + esc(nextText) + '</div>';
+    }
+    paragraphAnswers = {};
+    selectedAnswer = '';
+    studentRefresh();
+  };
+
+  window.renderLeaderboard = function(id,s){
+    const box = byId(id); if(!box) return;
+    const students = Object.values((s && s.students) || {});
+    const totalStudents = students.length;
+    const doneStudents = students.filter(function(st){ return ((s.studentProgress || {})[st.id] || {}).done === true; }).length;
+    box.innerHTML = '<div class="rankRow"><div class="rankName">📝 Individual Test</div><div class="rankPts">' + doneStudents + '/' + totalStudents + ' done</div></div>';
+  };
+
+  window.renderParagraphTimers = function(s){
+    const box = byId('paragraphTimers'); if(!box) return;
+    const col = s.collections && s.collections[s.currentCollectionId];
+    if(!col || !(col.paragraphs || []).length){ box.innerHTML = '<div class="status">Select a collection first.</div>'; return; }
+    const students = Object.values(s.students || {});
+    const totalStudents = students.length;
+    box.innerHTML = (col.paragraphs || []).map(function(p,i){
+      const done = students.filter(function(st){ return !!(((s.paragraphResults || {})[st.id] || {})['p' + i]); }).length;
+      return '<div class="paragraphTimerCard"><b>P' + (i+1) + '</b><div class="timerClock">' + done + '/' + totalStudents + '</div><span class="doneCount">students done</span></div>';
+    }).join('');
+  };
+
+  window.renderStudents = function(s){
+    const box = byId('teacherStudents'); if(!box) return;
+    const activeClass = s.activeClass || (typeof getActiveClass === 'function' ? getActiveClass() : '');
+    const students = Object.values(s.students || {})
+      .filter(function(st){ return !activeClass || String(st.cls || st.className || st.classId) === String(activeClass) || String(st.classId) === rrSafeKey(activeClass); })
+      .sort(function(a,b){ return String(a.name || '').localeCompare(String(b.name || '')); });
+    const col = s.collections && s.collections[s.currentCollectionId];
+    const paragraphs = col && col.paragraphs || [];
+    const collectionTotal = rrCollectionTotal(col);
+    if(!students.length){ box.innerHTML = '<div class="status">No students joined yet.</div>'; return; }
+    const headerParas = paragraphs.map(function(p,i){ return '<th>P' + (i+1) + '</th>'; }).join('');
+    const rows = students.map(function(st){
+      const pr = (s.studentProgress || {})[st.id] || null;
+      const progress = pr ? (pr.done ? 'Done ✅' : 'Working • ' + (Number(pr.paraIndex || 0)+1) + '/' + paragraphs.length) : 'Waiting';
+      const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, st.id) : {correctAnswers:0,totalQuestions:collectionTotal,weightedScore:0};
+      const studentMarkText = Number(totals.correctAnswers || 0) + '/' + Number(totals.totalQuestions || collectionTotal || 0) + ' (' + Number(totals.weightedScore || 0) + '/30)';
+      const paraCells = paragraphs.map(function(p,i){
+        const r = ((s.paragraphResults || {})[st.id] || {})['p' + i];
+        const score = r ? Number(r.score || 0) : 0;
+        const total = r ? Number(r.total || 0) : ((p.questions || []).length || 0);
+        const cls = r ? (score === total ? 'scoreGood' : 'scoreBad') : 'scoreNeutral';
+        return '<td><span class="' + cls + '">' + (r ? score : '-') + '</span><div class="progressSmall">' + (r ? (score + '/' + total) : 'not yet') + '</div></td>';
+      }).join('');
+      return '<tr><td class="studentNameCell">' + esc(st.name || st.id) + '<div class="progressSmall">ID: ' + esc(st.id || st.studentId || '') + '</div></td><td>' + esc(progress) + '</td>' + paraCells + '<td><b>' + studentMarkText + '</b><div class="progressSmall">Collection final mark</div></td><td>' + (pr && pr.done ? '✅ Completed' : '⏳ In progress') + '</td></tr>';
+    }).join('');
+    box.innerHTML = '<div class="liveTableWrap"><table class="liveTable"><thead><tr><th>Student</th><th>Status</th>' + headerParas + '<th>Final Mark</th><th>Completion</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  };
+
+  const oldStudentRefresh = window.studentRefresh;
+  window.studentRefresh = function(){
+    rrEnsureUiClean();
+    if(typeof oldStudentRefresh === 'function') oldStudentRefresh();
+    try{
+      if(currentUser && currentUser.role === 'student'){
+        const welcome = byId('studentWelcome');
+        if(welcome) welcome.innerText = 'Welcome, ' + currentUser.name;
+        const instruction = byId('studentInstruction');
+        const s = stateCache || defaultState();
+        if(instruction){
+          instruction.innerText = s.stage === 'playing'
+            ? 'Read carefully and answer all questions. Your final mark will be saved when you finish.'
+            : 'Wait for teacher to start the reading test.';
+        }
+        const progress = byId('studentProgress');
+        if(progress){
+          const totals = (typeof getReadingRushTotalsForStudent === 'function') ? getReadingRushTotalsForStudent(s, currentUser.id) : {correctAnswers:0,totalQuestions:0,weightedScore:0};
+          const pr = (s.studentProgress || {})[currentUser.id] || {};
+          progress.innerText = pr.done
+            ? 'Finished: ' + totals.correctAnswers + '/' + totals.totalQuestions + ' (' + totals.weightedScore + '/30)'
+            : 'Progress: ' + totals.correctAnswers + '/' + (totals.totalQuestions || '...') + ' correct so far';
+        }
+      }
+    }catch(e){ console.warn('Individual student refresh note skipped:', e); }
+  };
+
+  const oldTeacherRefresh = window.teacherRefresh;
+  window.teacherRefresh = function(){
+    rrEnsureUiClean();
+    if(typeof oldTeacherRefresh === 'function') oldTeacherRefresh();
+  };
+
+  window.stopChallenge = async function(){
+    const s = await getState();
+    s.stage = 'final'; s.final = true; s.boss = false; s.roundStartTime = null;
+    if(typeof buildAnalytics === 'function') s.analytics = buildAnalytics(s); else s.analytics = {};
+    if(typeof saveReadingRushFinalMarksAndCertificates === 'function') await saveReadingRushFinalMarksAndCertificates(s);
+    await setState(s);
+    alert('✅ Individual Reading Test ended. Final collection marks were saved to Teacher Center and Secure Hub. Full mark students only received certificates.');
+  };
+
+  window.addEventListener('load', function(){
+    rrEnsureUiClean();
+    setTimeout(async function(){
+      rrEnsureUiClean();
+      const secure = rrGetSecureStudent();
+      if(secure && (secure.studentId || secure.password)){
+        const hub = byId('hubPage');
+        const login = byId('loginPage');
+        if((hub && !hub.classList.contains('hidden')) || (login && !login.classList.contains('hidden'))){
+          try{ await window.studentJoin(); }catch(e){ console.warn('Direct Secure Hub Reading Rush join skipped:', e); }
+        }
+      }
+    },900);
+  });
+})();
 </script>
 
 </body>
