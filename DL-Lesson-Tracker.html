@@ -2024,7 +2024,7 @@ async function saveDLPerformanceToTeacherControl(record){
     const today = record.date || tcToday();
     const now = Date.now();
     const term = record.term || localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'Term 3';
-    const recordId = 'dl_' + tcCleanKey(lessonKey || 'lesson') + '_' + tcCleanKey(record.stationId || record.activityName || 'station') + '_' + now;
+    const recordId = record.recordKey || ('dl_' + tcCleanKey(lessonKey || 'lesson') + '_' + tcCleanKey(record.stationId || record.activityName || 'station') + '_' + now);
 
     const data = {
       classId: classId,
@@ -2054,10 +2054,14 @@ async function saveDLPerformanceToTeacherControl(record){
     /* Secure Hub reads a saved final activity mark, not only station records.
        Save the final DL total in several compatible paths so old/new Secure Hub pages can find it. */
     if(String(record.notes || '').includes('Final DL lesson mark')){
+      /* FINAL DL MARK: keep this permanently outside the live lesson tracker.
+         Teacher Center / Secure Hub can read any of these compatible paths. */
       await dbRef('teacherControlCenter/performance/' + classId + '/' + studentKey + '/DL_Lesson').set(data);
       await dbRef('teacherControlCenter/performance/' + classId + '/' + studentKey + '/' + term + '/DL_Lesson').set(data);
       await dbRef('teacherControlCenter/studentPerformance/' + classId + '/' + studentKey + '/DL_Lesson').set(data);
       await dbRef('teacherControlCenter/studentPerformance/' + classId + '/' + studentKey + '/' + term + '/DL_Lesson').set(data);
+      await dbRef('teacherControlCenter/dlFinalMarks/' + classId + '/' + studentKey + '/' + term + '/' + tcCleanKey(lessonKey || activityName)).set(data);
+      await dbRef('teacherControlCenter/dlFinalMarksByStudent/' + studentKey + '/' + term + '/' + tcCleanKey(lessonKey || activityName)).set(data);
     }
   }catch(err){
     console.warn('Teacher Control performance save failed:', err);
@@ -5055,64 +5059,81 @@ body{
   win.document.close();
 };
 
- async function syncFinalDLMarks(){
+ async function syncFinalDLMarks(options){
+
+  options = options || {};
+  const silent = options.silent === true;
 
   if(!db){
-    alert('Firebase not connected.');
-    return;
+    if(!silent) alert('Firebase not connected.');
+    return {saved:0, skipped:0};
   }
 
   const snap = await dbRef(lessonBase() + '/students').once('value');
 
   if(!snap.exists()){
-    alert('No students found.');
-    return;
+    if(!silent) alert('No live DL students found to sync.');
+    return {saved:0, skipped:0};
   }
 
   const students = snap.val() || {};
   const lessonMax = getLessonMaxMark();
-  const lessonTitle = lessonMeta.lessonTitle || 'DL Lesson';
+  const lessonTitle = lessonMeta.lessonTitle || lessonKey || 'DL Lesson';
+  const term = localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'Term 3';
 
-  let count = 0;
+  let saved = 0;
   let skipped = 0;
 
   for(const sid in students){
 
     const st = students[sid] || {};
-    const total = Number(st.total || 0);
+    const scores = st.scores || {};
+    const submitted = st.submittedStations || {};
+    const hasAnyWork =
+      Object.keys(scores).length > 0 ||
+      Object.keys(submitted).length > 0 ||
+      Number(st.total || 0) > 0;
 
-    if(total <= 0) continue;
-
-    const recordKey = cleanKey(sid + '_' + lessonTitle + '_final_total');
-
-    const existsSnap = await firebase.database()
-      .ref('teacherControlCenter/records/' + recordKey)
-      .once('value');
-
-    if(existsSnap.exists()){
+    if(!hasAnyWork){
       skipped++;
       continue;
     }
 
+    const finalScore = Object.values(scores).reduce(function(a,b){
+      return a + Number(b || 0);
+    }, 0);
+
+    /* Stable final record key prevents duplicate final DL rows every time you sync/clear. */
+    const recordKey =
+      'dl_' +
+      tcCleanKey(lessonKey || lessonTitle || 'lesson') +
+      '_final_' +
+      tcCleanKey(term) +
+      '_' +
+      tcCleanKey(sid);
+
     await saveDLPerformanceToTeacherControl({
       studentId: sid,
       studentName: st.name || sid,
+      classId: st.classId || '',
       stationId: 'final_total',
       activityType: 'DL Lesson',
       activityName: lessonTitle,
-      score: total,
+      score: finalScore,
       total: lessonMax,
+      term: term,
       notes: 'Final DL lesson mark',
       recordKey: recordKey
     });
 
-    count++;
+    saved++;
   }
 
-  alert(
-    '✅ Synced final marks for ' + count + ' students.\n' +
-    '↪️ Skipped duplicates: ' + skipped
-  );
+  if(!silent){
+    alert('✅ Final DL marks saved to Teacher Center: ' + saved + '\n↪️ Skipped empty students: ' + skipped);
+  }
+
+  return {saved:saved, skipped:skipped};
 }
 
 window.submitCurrentStation = async function(stationId){
@@ -5553,36 +5574,59 @@ window.clearTrackerData = async function(){
   if(!requireConnection()) return;
 
   if(!confirm(
-    'Clear ONLY the online live lesson tracker?\n\n' +
-    'Saved marks in Teacher Center will stay.'
+    'Clear ONLY the online live lesson tracker for the next class?
+
+' +
+    '✅ Final DL marks will be saved first.
+' +
+    '✅ Teacher Center records will stay.
+' +
+    '✅ Saved lesson/library will stay.
+
+' +
+    'This only removes today\'s live student attempts from this active lesson.'
   )) return;
 
-  // ✅ Save final DL marks to Teacher Center BEFORE clearing live tracker
   try{
+    /* 1) Save final DL marks permanently BEFORE removing live tracker data. */
     if(typeof syncFinalDLMarks === 'function'){
-      await syncFinalDLMarks();
+      await syncFinalDLMarks({silent:true});
     }
+
+    /* 2) Keep a backup snapshot, just in case you ever need to check old live results. */
+    const liveSnap = await dbRef(lessonBase() + '/students').once('value');
+    if(liveSnap.exists()){
+      const archiveId = 'archive_' + Date.now();
+      await dbRef(lessonBase() + '/trackerArchive/' + archiveId).set({
+        archivedAt: Date.now(),
+        lessonKey: lessonKey,
+        lessonTitle: lessonMeta.lessonTitle || lessonKey || 'DL Lesson',
+        students: liveSnap.val() || {}
+      });
+    }
+
+    /* 3) Clear ONLY live tracker/attendance/bonus for the active online lesson.
+          Never remove config, content, library, Teacher Center, or Secure Hub records. */
+    await dbRef(lessonBase() + '/students').remove();
+    await dbRef(lessonBase() + '/attendance').remove();
+    await dbRef(lessonBase() + '/bonus').remove();
+
+    liveStudents = {};
+    liveBonus = {};
+
+    renderTeacherTracker();
+    renderStudentNav();
+    renderBonusBox();
+    updateRankingBoard();
+
+    alert('✅ Live tracker cleared for the next class. Final DL marks were saved in Teacher Center.');
+
   }catch(err){
-    console.warn('Could not sync before clearing:', err);
+    console.error('Clear tracker failed:', err);
+    alert('❌ Tracker was NOT cleared because saving/backup failed. Please try Sync Final DL Marks first.');
   }
-
-  // ✅ Clear only DL live lesson tracker data
-  await dbRef(lessonBase() + '/students').remove();
-  await dbRef(lessonBase() + '/attendance').remove();
-
-  // ❌ DO NOT delete:
-  // teacherControlCenter/records
-  // teacherControlCenter/performance
-  // teacherControlCenter/studentPerformance
-
-  liveStudents = {};
-
-  renderTeacherTracker();
-  renderStudentNav();
-
-  alert('✅ Live lesson tracker cleared. Teacher Center saved marks were not deleted.');
 };
-  
+
   window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
 
 window.exportTrackerCsv = function(){
