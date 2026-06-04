@@ -821,9 +821,35 @@ function isDLRecord(record){
   return normalizeProgramName(record)==='dl';
 }
 
+function isFinalSavedDLRecord(record){
+  if(!record || !isDLRecord(record)) return false;
+  const txt = String(
+    (record.notes || '') + ' ' +
+    (record.recordId || '') + ' ' +
+    (record.stationId || '') + ' ' +
+    (record.activityName || '') + ' ' +
+    (record.isFullDLLesson ? 'full' : '')
+  ).toLowerCase();
+
+  return (
+    record.isFullDLLesson === true ||
+    txt.includes('final dl lesson mark') ||
+    txt.includes('final_total') ||
+    txt.includes('_final_') ||
+    txt.includes('completed full dl lesson')
+  );
+}
+
 function pushUniqueNonDLRecord(arr, seen, record, fallback){
   if(!record) return;
-  if(isDLRecord(record)) return; // DL is counted from the live DL Lesson station tracker below
+
+  /* IMPORTANT FIX:
+     Old Teacher Center ignored ALL DL records here because it only counted DL marks
+     from the live lesson tracker under /lessons. That is why DL marks disappeared
+     after Clear Tracker. Now we still ignore temporary station rows, but we KEEP
+     saved final DL lesson records written by the DL page. */
+  if(isDLRecord(record) && !isFinalSavedDLRecord(record)) return;
+
   pushUniqueRecord(arr, seen, record, fallback);
 }
 
@@ -937,7 +963,7 @@ function addDLFullLessonRecords(arr, seen){
       completedByClass[classId].term=dlTerm;
       completedStudentKeys[classId+'|'+cleanKey(found.studentKey)] = true;
 
-      const recordId='dl_full_'+cleanKey(lessonKey)+'_'+cleanKey(found.studentKey);
+      const recordId='dl_'+cleanKey(lessonKey)+'_final_'+cleanKey(dlTerm)+'_'+cleanKey(found.studentKey);
       if(seen[recordId]) return;
       seen[recordId]=true;
       arr.push({
