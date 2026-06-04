@@ -799,7 +799,10 @@ function pushUniqueRecord(arr, seen, record, fallback){
   const sc = recordScore(record);
   const time = Number(record.time || record.updatedAt || record.createdAt || record.savedAt || 0) || 0;
   const activityName = record.activityName || record.activity || record.title || PROGRAM_WEIGHTS[programKey].label;
-  const key = String(record.recordId || record.id || [classId, studentId, programKey, activityName, sc.score, sc.total, time].join('|'));
+  /* IMPORTANT: recordId can be the same across different students/pages
+     (example: Reading_Rush_Final). The unique key MUST include class + student + program. */
+  const baseId = String(record.recordId || record.id || activityName || 'record');
+  const key = [classId, studentId, programKey, baseId, sc.score, sc.total, time].join('|');
   if(seen[key]) return;
   seen[key] = true;
   arr.push({
