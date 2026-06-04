@@ -5055,7 +5055,7 @@ body{
   win.document.close();
 };
 
-  async function syncFinalDLMarks(){
+ async function syncFinalDLMarks(){
 
   if(!db){
     alert('Firebase not connected.');
@@ -5071,32 +5071,48 @@ body{
 
   const students = snap.val() || {};
   const lessonMax = getLessonMaxMark();
+  const lessonTitle = lessonMeta.lessonTitle || 'DL Lesson';
 
   let count = 0;
+  let skipped = 0;
 
   for(const sid in students){
 
     const st = students[sid] || {};
     const total = Number(st.total || 0);
 
-   if(total > 0){
-  
-      await saveDLPerformanceToTeacherControl({
-        studentId: sid,
-        studentName: st.name || sid,
-        stationId: 'final_total',
-        activityType: 'DL Lesson',
-        activityName: lessonMeta.lessonTitle || 'DL Lesson',
-        score: total,
-        total: lessonMax,
-        notes: 'Final DL lesson mark'
-      });
+    if(total <= 0) continue;
 
-      count++;
+    const recordKey = cleanKey(sid + '_' + lessonTitle + '_final_total');
+
+    const existsSnap = await firebase.database()
+      .ref('teacherControlCenter/records/' + recordKey)
+      .once('value');
+
+    if(existsSnap.exists()){
+      skipped++;
+      continue;
     }
+
+    await saveDLPerformanceToTeacherControl({
+      studentId: sid,
+      studentName: st.name || sid,
+      stationId: 'final_total',
+      activityType: 'DL Lesson',
+      activityName: lessonTitle,
+      score: total,
+      total: lessonMax,
+      notes: 'Final DL lesson mark',
+      recordKey: recordKey
+    });
+
+    count++;
   }
 
-  alert('✅ Synced final marks for ' + count + ' completed students.');
+  alert(
+    '✅ Synced final marks for ' + count + ' students.\n' +
+    '↪️ Skipped duplicates: ' + skipped
+  );
 }
 
 window.submitCurrentStation = async function(stationId){
