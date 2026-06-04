@@ -3382,6 +3382,11 @@ async function saveWrittenMarksForStudent(studentId, stationId, questionMarks){
   liveStudents[studentId].stationResults = nextResults;
   liveStudents[studentId].teacherMarks = nextTeacherMarks;
   liveStudents[studentId].total = total;
+
+  // If the student already completed all stations, update the final DL mark automatically after written marks.
+  if(typeof saveFinalDLMarkIfLessonCompleted === 'function'){
+    await saveFinalDLMarkIfLessonCompleted(studentId, student.name || studentId);
+  }
 }
 window.toggleTeacherQuestions = function(id){
   teacherQuestionVisibility[id] = teacherQuestionVisibility[id] === false ? true : false;
@@ -4175,38 +4180,80 @@ async function getFreshCurrentStudentData(){
 
 async function saveFinalDLMarkIfLessonCompleted(studentId, studentName){
   try{
-    if(!db || !studentId) return;
+    if(!db || !studentId) return {saved:false, reason:'No Firebase or student ID'};
 
-    const snap = await dbRef(studentPath(studentId)).once('value');
-    const student = snap.exists() ? (snap.val() || {}) : (liveStudents[studentId] || {});
+    const sid = tcCleanKey(studentId);
+    const snap = await dbRef(studentPath(sid)).once('value');
+    const student = snap.exists() ? (snap.val() || {}) : (liveStudents[sid] || liveStudents[studentId] || {});
     const submitted = student.submittedStations || {};
-    const requiredStations = (lessonStations || []).filter(function(st){ return st && st.id; });
 
-    if(!requiredStations.length) return;
+    // Auto-save only when the student has submitted EVERY lesson station.
+    const requiredStations = (lessonStations || []).filter(function(st){
+      return st && st.id;
+    });
+
+    if(!requiredStations.length) return {saved:false, reason:'No stations'};
 
     const completed = requiredStations.every(function(st){
       return submitted[st.id] === true;
     });
 
-    if(!completed) return;
+    if(!completed) return {saved:false, reason:'Not completed'};
 
-    const finalScore = Object.values(student.scores || {}).reduce(function(a,b){
+    const scores = student.scores || {};
+    const finalScore = Object.values(scores).reduce(function(a,b){
       return a + Number(b || 0);
     }, 0);
 
+    const lessonMax = getLessonMaxMark();
+    const lessonTitle = lessonMeta.lessonTitle || lessonKey || 'DL Lesson';
+    const trackerSettings = await getTeacherControlActiveTrackerSettings();
+    const term = trackerSettings.term || 'term3';
+    const studyYear = trackerSettings.studyYear || tcDefaultStudyYear();
+
+    // Stable key = one final row per student per DL lesson per term.
+    // This prevents duplicates but still updates the mark if teacher later adds written marks.
+    const recordKey =
+      'dl_' +
+      tcCleanKey(lessonKey || lessonTitle || 'lesson') +
+      '_final_' +
+      tcCleanKey(term) +
+      '_' +
+      tcCleanKey(sid);
+
     await saveDLPerformanceToTeacherControl({
-      studentId: studentId,
-      studentName: studentName || student.name || studentId,
+      studentId: sid,
+      studentName: studentName || student.name || sid,
+      classId: student.classId || (currentStudent && currentStudent.classId) || '',
       stationId: 'final_total',
       activityType: 'DL Lesson',
-      activityName: lessonMeta.lessonTitle || lessonKey || 'DL Lesson',
+      activityName: lessonTitle,
       score: finalScore,
-      total: getLessonMaxMark(),
-      notes: 'Final DL lesson mark'
+      total: lessonMax,
+      term: term,
+      studyYear: studyYear,
+      notes: 'Final DL lesson mark - auto saved when student completed all stations',
+      recordKey: recordKey
     });
 
+    await dbRef(studentPath(sid)).update({
+      finalDLSaved:true,
+      finalDLSavedAt:Date.now(),
+      finalDLScore:finalScore,
+      finalDLTotal:lessonMax
+    });
+
+    if(!liveStudents[sid]) liveStudents[sid] = {};
+    liveStudents[sid].finalDLSaved = true;
+    liveStudents[sid].finalDLSavedAt = Date.now();
+    liveStudents[sid].finalDLScore = finalScore;
+    liveStudents[sid].finalDLTotal = lessonMax;
+
+    return {saved:true, score:finalScore, total:lessonMax};
+
   }catch(err){
-    console.warn('Could not save final DL mark:', err);
+    console.warn('Could not auto-save final DL mark:', err);
+    return {saved:false, reason:(err && err.message) || String(err)};
   }
 }
 
