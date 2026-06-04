@@ -5532,8 +5532,42 @@ window.toggleTopStudents = function(){
 };
   
 window.clearBonusData = async function(){ if(!requireConnection()) return; await dbRef(bonusPath()).remove(); liveBonus = {}; renderBonusBox(); renderTeacherTracker(); };
-window.clearTrackerData = async function(){ if(!requireConnection()) return; await dbRef(lessonBase() + '/students').remove(); await dbRef(lessonBase() + '/attendance').remove(); liveStudents = {}; renderTeacherTracker(); renderStudentNav(); };
-window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
+window.clearTrackerData = async function(){
+
+  if(!requireConnection()) return;
+
+  if(!confirm(
+    'Clear ONLY the online live lesson tracker?\n\n' +
+    'Saved marks in Teacher Center will stay.'
+  )) return;
+
+  // ✅ Save final DL marks to Teacher Center BEFORE clearing live tracker
+  try{
+    if(typeof syncFinalDLMarks === 'function'){
+      await syncFinalDLMarks();
+    }
+  }catch(err){
+    console.warn('Could not sync before clearing:', err);
+  }
+
+  // ✅ Clear only DL live lesson tracker data
+  await dbRef(lessonBase() + '/students').remove();
+  await dbRef(lessonBase() + '/attendance').remove();
+
+  // ❌ DO NOT delete:
+  // teacherControlCenter/records
+  // teacherControlCenter/performance
+  // teacherControlCenter/studentPerformance
+
+  liveStudents = {};
+
+  renderTeacherTracker();
+  renderStudentNav();
+
+  alert('✅ Live lesson tracker cleared. Teacher Center saved marks were not deleted.');
+};
+  
+  window.refreshTeacherNow = function(){ startTeacherListeners(); renderControlStatus(); };
 
 window.exportTrackerCsv = function(){
 
