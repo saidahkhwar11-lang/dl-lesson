@@ -1971,6 +1971,30 @@ function tcToday(){
   const d = new Date();
   return d.toLocaleDateString('en-GB');
 }
+function tcDefaultStudyYear(){
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = d.getMonth() + 1;
+  return m >= 8 ? y + '-' + (y + 1) : (y - 1) + '-' + y;
+}
+async function getTeacherControlActiveTrackerSettings(){
+  try{
+    if(db){
+      const snap = await dbRef('teacherControlCenter/settings/tracker').once('value');
+      const s = snap.val() || {};
+      return {
+        term: s.activeSavingTerm || s.activeTerm || s.term || localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'term3',
+        studyYear: s.activeSavingStudyYear || s.activeStudyYear || s.studyYear || localStorage.getItem('ACTIVE_STUDY_YEAR') || tcDefaultStudyYear()
+      };
+    }
+  }catch(err){
+    console.warn('Could not read active Teacher Center term settings:', err);
+  }
+  return {
+    term: localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'term3',
+    studyYear: localStorage.getItem('ACTIVE_STUDY_YEAR') || tcDefaultStudyYear()
+  };
+}
 async function findTeacherControlStudent(studentId){
   try{
     if(!studentId || !db) return null;
@@ -2023,7 +2047,9 @@ async function saveDLPerformanceToTeacherControl(record){
     const total = Number(record.total || 0);
     const today = record.date || tcToday();
     const now = Date.now();
-    const term = record.term || localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'Term 3';
+    const trackerSettings = await getTeacherControlActiveTrackerSettings();
+    const term = record.term || trackerSettings.term || 'term3';
+    const studyYear = record.studyYear || trackerSettings.studyYear || tcDefaultStudyYear();
     const recordId = record.recordKey || ('dl_' + tcCleanKey(lessonKey || 'lesson') + '_' + tcCleanKey(record.stationId || record.activityName || 'station') + '_' + now);
 
     const data = {
@@ -2042,6 +2068,9 @@ async function saveDLPerformanceToTeacherControl(record){
       sourceLessonKey: lessonKey || '',
       sourceStudentId: sid,
       term: term,
+      studyYear: studyYear,
+      activeSavingTerm: term,
+      activeSavingStudyYear: studyYear,
       date: today,
       updated: today,
       updatedAt: now,
@@ -5079,7 +5108,9 @@ body{
   const students = snap.val() || {};
   const lessonMax = getLessonMaxMark();
   const lessonTitle = lessonMeta.lessonTitle || lessonKey || 'DL Lesson';
-  const term = localStorage.getItem('ACTIVE_TERM') || localStorage.getItem('selectedTerm') || 'Term 3';
+  const trackerSettings = await getTeacherControlActiveTrackerSettings();
+  const term = trackerSettings.term || 'term3';
+  const studyYear = trackerSettings.studyYear || tcDefaultStudyYear();
 
   let saved = 0;
   let skipped = 0;
@@ -5122,6 +5153,7 @@ body{
       score: finalScore,
       total: lessonMax,
       term: term,
+      studyYear: studyYear,
       notes: 'Final DL lesson mark',
       recordKey: recordKey
     });
