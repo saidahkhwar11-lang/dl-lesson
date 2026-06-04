@@ -5574,16 +5574,10 @@ window.clearTrackerData = async function(){
   if(!requireConnection()) return;
 
   if(!confirm(
-    'Clear ONLY the online live lesson tracker for the next class?
-
-' +
-    '✅ Final DL marks will be saved first.
-' +
-    '✅ Teacher Center records will stay.
-' +
-    '✅ Saved lesson/library will stay.
-
-' +
+    'Clear ONLY the online live lesson tracker for the next class?\n\n' +
+    '✅ Final DL marks will be saved first.\n' +
+    '✅ Teacher Center records will stay.\n' +
+    '✅ Saved lesson/library will stay.\n\n' +
     'This only removes today\'s live student attempts from this active lesson.'
   )) return;
 
