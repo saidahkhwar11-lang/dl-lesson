@@ -629,11 +629,7 @@ async function initFirebase(){
 
     // Read DL Lesson station tracker directly. This lets Teacher Control count
     // one completed DL lesson as one activity without changing the DL Lesson page.
-    lessonsRef=db.ref("lessons");
-    lessonsRef.on("value",snap=>{
-      lessonsData=snap.exists()?snap.val():{};
-      refreshAll();
-    });
+    
 
     const snap=await controlRef.get();
     if(!snap.exists()) await controlRef.set({classes:{},records:{},settings:{tracker:{term:'term1',studyYear:defaultStudyYear(),activeTerm:'term1',activeSavingTerm:'term1',activeStudyYear:defaultStudyYear(),activeSavingStudyYear:defaultStudyYear(),termStarts:{}}}});
