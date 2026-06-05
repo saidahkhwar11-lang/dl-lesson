@@ -5429,6 +5429,260 @@ function downloadCertificate(info){
 
 
 
+
+
+<script>
+/* ============================================================
+   FINAL FIX - Skill Clash Activate Activity Button
+   Fixes:
+   1) Purple Activate Activity button always opens/closes the panel.
+   2) Saved activity library reloads safely.
+   3) Activate for Selected Classes does not break if archive/helpers fail.
+   4) Writes active activity to all needed Firebase paths.
+   ============================================================ */
+(function(){
+  function scKey(v){
+    try{ if(typeof safeClassKey === 'function') return safeClassKey(v); }catch(e){}
+    return String(v || '').trim().replace(/\//g,'-').replace(/[^a-zA-Z0-9_-]/g,'_');
+  }
+
+  function scDisplay(v){
+    try{ if(typeof classDisplay === 'function') return classDisplay(v); }catch(e){}
+    return String(v || '').replace('-', '/');
+  }
+
+  function scEscape(v){
+    try{ if(typeof escapeHtml === 'function') return escapeHtml(v); }catch(e){}
+    return String(v == null ? '' : v)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;')
+      .replace(/'/g,'&#039;');
+  }
+
+  function scHub(){
+    try{ if(typeof hubRef !== 'undefined' && hubRef) return hubRef; }catch(e){}
+    try{ if(window.hubRef) return window.hubRef; }catch(e){}
+    try{ if(typeof firebase !== 'undefined' && firebase.database) return firebase.database().ref('skillClashHubClean'); }catch(e){}
+    return null;
+  }
+
+  function scBuildActiveActivity(a, groupNo, activationId){
+    a = a || {};
+    const groupKey = 'group' + groupNo;
+    const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+
+    const groupTask = isReading
+      ? 'Each student receives one paragraph from the same full text.'
+      : (a.taskType === 'same'
+        ? (a.sameTask || a.groupTask || 'Activity assigned. Follow the instructions.')
+        : ((a.groupTasks || {})[groupKey] || a.groupTask || 'Activity assigned. Follow the instructions.'));
+
+    const groupTaskImage = isReading
+      ? ''
+      : (a.taskType === 'same'
+        ? (a.mainImage || '')
+        : ((a.groupTaskImages || {})[groupKey] || ''));
+
+    const hybridLink = a.taskType === 'same'
+      ? (a.sameHybridLink || '')
+      : ((a.groupTaskLinks || {})[groupKey] || '');
+
+    const attachedFile = a.taskType === 'same'
+      ? (a.sameAttachedFile || null)
+      : ((a.groupTaskFiles || {})[groupKey] || null);
+
+    return {
+      id: a.id || '',
+      activationId: activationId,
+      title: a.title || 'Activity',
+      instructions: a.instructions || '',
+      activityType: isReading ? 'readingParagraph' : (a.activityType || 'writing'),
+      readingWorkMode: isReading ? 'paragraph' : '',
+      taskType: a.taskType || 'same',
+      mainImage: a.mainImage || '',
+      groupTask: groupTask,
+      groupTaskImage: groupTaskImage,
+      hybridLink: hybridLink,
+      attachedFile: attachedFile,
+      paragraphReading: isReading ? (a.paragraphReading || []) : [],
+      readingText: isReading ? (a.readingText || '') : '',
+      readingQuestions: isReading ? (a.readingQuestions || []) : [],
+      criteria: isReading ? ['Read and understand my text','Answer all questions','Share idea with my group','Write summary'] : (a.criteria || []),
+      votingCriteria: a.votingCriteria || [],
+      assignedAt: Date.now(),
+      assignedBy: 'Ms. Saidah Khwar'
+    };
+  }
+
+  window.toggleActivationPanel = function(){
+    const panel = document.getElementById('dashboardActivationPanel');
+    if(!panel){
+      alert('Activation panel was not found on this page.');
+      return;
+    }
+    panel.classList.toggle('hidden');
+    if(!panel.classList.contains('hidden')){
+      if(typeof window.loadDashboardActivityLibrary === 'function') window.loadDashboardActivityLibrary();
+      panel.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+  };
+
+  window.loadDashboardActivityLibrary = async function(){
+    const ref = scHub();
+    const sel = document.getElementById('dashboardSavedActivities');
+    if(!sel) return;
+    if(!ref){
+      sel.innerHTML = '<option value="">Firebase is not ready</option>';
+      return;
+    }
+
+    sel.innerHTML = '<option value="">Loading saved activities...</option>';
+    try{
+      const snap = await ref.child('activityLibrary').once('value');
+      const data = snap.val() || {};
+      const ids = Object.keys(data).sort(function(a,b){
+        return Number((data[b]||{}).savedAt || (data[b]||{}).createdAt || 0) - Number((data[a]||{}).savedAt || (data[a]||{}).createdAt || 0);
+      });
+      let html = '<option value="">Choose saved activity</option>';
+      ids.forEach(function(id){
+        const a = data[id] || {};
+        html += '<option value="' + scEscape(id) + '">' + scEscape(a.title || 'Activity') + '</option>';
+      });
+      sel.innerHTML = html;
+      if(typeof window.previewDashboardActivity === 'function') window.previewDashboardActivity();
+    }catch(err){
+      console.warn('Skill Clash library load failed:', err);
+      sel.innerHTML = '<option value="">Could not load library</option>';
+    }
+  };
+
+  window.previewDashboardActivity = async function(){
+    const ref = scHub();
+    const sel = document.getElementById('dashboardSavedActivities');
+    const box = document.getElementById('dashboardActivityPreview');
+    if(!sel || !box) return;
+    const id = sel.value || '';
+    if(!id){
+      box.innerHTML = 'Choose an activity to preview.';
+      return;
+    }
+    try{
+      const snap = await ref.child('activityLibrary/' + id).once('value');
+      const a = snap.val() || {};
+      box.innerHTML = '<b>' + scEscape(a.title || 'Activity') + '</b><br>' +
+        'Type: ' + scEscape(a.activityType || 'writing') + '<br>' +
+        scEscape((a.instructions || '').slice(0,220));
+    }catch(e){
+      box.innerHTML = 'Preview could not load.';
+    }
+  };
+
+  window.activateSavedActivityForSelectedClasses = async function(){
+    const ref = scHub();
+    if(!ref){
+      alert('Firebase is not ready. Refresh the page and try again.');
+      return;
+    }
+
+    const activityId = (document.getElementById('dashboardSavedActivities') || {}).value || '';
+    if(!activityId){
+      alert('Choose an activity from the library.');
+      return;
+    }
+
+    const classes = Array.from(document.querySelectorAll('.dashboardAssignClass:checked')).map(function(x){return scKey(x.value);});
+    if(!classes.length){
+      alert('Choose at least one class.');
+      return;
+    }
+
+    const btn = Array.from(document.querySelectorAll('button')).find(function(b){ return (b.textContent || '').includes('Activate for Selected Classes'); });
+    const oldText = btn ? btn.textContent : '';
+    if(btn){ btn.disabled = true; btn.textContent = 'Activating...'; }
+
+    try{
+      const snap = await ref.child('activityLibrary/' + activityId).once('value');
+      const a = snap.val();
+      if(!a){
+        alert('Activity not found.');
+        return;
+      }
+
+      a.id = activityId;
+      const isReading = (a.activityType === 'readingParagraph' || a.activityType === 'reading');
+      if(isReading && (!a.paragraphReading || !a.paragraphReading.length)){
+        alert('This reading activity has no paragraphs/questions. Open it in Activity Builder, divide the text, add questions, then save again.');
+        return;
+      }
+
+      const activationId = 'act_' + Date.now();
+      const changedAt = Date.now();
+      const updates = {};
+
+      for(const cls of classes){
+        try{
+          if(typeof window.archiveSkillClassWork === 'function'){
+            const term = (typeof scArchiveTerm === 'function') ? scArchiveTerm() : 'term3';
+            await window.archiveSkillClassWork(cls, term, 'Auto archive before new activity activation');
+          }
+        }catch(e){
+          console.warn('Archive skipped for class ' + cls, e);
+        }
+
+        for(let g = 1; g <= 10; g++){
+          updates['classes/' + cls + '/groups/group' + g + '/students'] = {};
+        }
+
+        const classActive = scBuildActiveActivity(a, 1, activationId);
+        classActive.assignedClasses = classes;
+        classActive.assignedToText = classes.map(scDisplay).join(', ');
+        classActive.activeActivityChangedAt = changedAt;
+
+        updates['classes/' + cls + '/activeActivity'] = classActive;
+        updates['classes/' + cls + '/currentActivity'] = classActive;
+
+        for(let i = 1; i <= 10; i++){
+          const groupActive = scBuildActiveActivity(a, i, activationId);
+          groupActive.activeActivityChangedAt = changedAt;
+          updates['classes/' + cls + '/activeActivityGroups/group' + i] = groupActive;
+          updates['classes/' + cls + '/assignedActivities/group' + i] = groupActive;
+        }
+
+        updates['classes/' + cls + '/settings/stage'] = 'work';
+        updates['classes/' + cls + '/settings/voteSystem'] = 'battle';
+        updates['classes/' + cls + '/settings/resultsReleased'] = false;
+        updates['classes/' + cls + '/settings/activeActivityId'] = activityId;
+        updates['classes/' + cls + '/settings/activationId'] = activationId;
+        updates['classes/' + cls + '/settings/activeActivityChangedAt'] = changedAt;
+      }
+
+      updates['activityLibrary/' + activityId + '/lastActivatedAt'] = changedAt;
+      updates['activityLibrary/' + activityId + '/lastActivatedClasses'] = classes;
+
+      await ref.update(updates);
+
+      try{
+        window.latestTeacherActivityForPopup = {title:a.title || 'Activity', instructions:a.instructions || ''};
+        window.latestTeacherAssignedTo = classes.map(scDisplay).join(', ');
+        if(typeof updateTimerPopupActivity === 'function') updateTimerPopupActivity();
+      }catch(e){}
+
+      alert('✅ Activity activated for: ' + classes.map(scDisplay).join(', '));
+      const panel = document.getElementById('dashboardActivationPanel');
+      if(panel) panel.classList.add('hidden');
+      if(typeof renderTeacherDashboard === 'function') renderTeacherDashboard(true);
+    }catch(err){
+      console.error('Skill Clash activation failed:', err);
+      alert('Activation failed. Check Console for details. Error: ' + (err && err.message ? err.message : err));
+    }finally{
+      if(btn){ btn.disabled = false; btn.textContent = oldText || '✅ Activate for Selected Classes'; }
+    }
+  };
+})();
+</script>
+
 </body>
 </html>`;
 
