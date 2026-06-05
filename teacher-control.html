@@ -373,7 +373,30 @@ td.commentCol{background:#fffdf5;min-width:240px}
           <div id="activeSavingTermBox" class="status good" style="margin-top:10px;">Active saving term: loading...</div>
         </div>
         <button class="secondary" onclick="downloadClassCSV()">⬇️ Download Tracker Excel/CSV</button>
-        <button class="danger" onclick="clearDLRecordsOnly()">🧹 Clear DL Lesson Records</button>
+
+        <div class="status" style="margin-top:12px;">
+          <b>🧹 Safe Marks Cleaner</b><br>
+          Choose exactly which marks to delete. Students, classes, passwords, daily attendance, and other mark types will stay.
+        </div>
+        <div class="grid" style="align-items:end;">
+          <div>
+            <label>Marks to clear</label>
+            <select id="marksCleanerType">
+              <option value="reading">Reading Rush marks only</option>
+              <option value="skill">Skill Clash marks only</option>
+              <option value="dl">DL Lesson marks only</option>
+              <option value="all">All marks: DL Lesson + Skill Clash + Reading Rush</option>
+            </select>
+          </div>
+          <div>
+            <label>Scope</label>
+            <select id="marksCleanerScope">
+              <option value="selected">Selected class only</option>
+              <option value="all">All classes</option>
+            </select>
+          </div>
+        </div>
+        <button class="danger" onclick="clearSelectedMarksSafely()">🧹 Clear Selected Marks</button>
         <div id="classRecordsTable"></div>
       </div>
     </section>
@@ -1685,5 +1708,430 @@ window.addEventListener("load",()=>{
   renderStats();
 };
 </script>
+
+
+<script>
+/* ============================================================
+   FINAL FIX - Teacher Tracker reading marks + Daily Tracker
+   - Reads Reading Rush from records, performance, and activityRecords
+   - Daily tracker accepts Secure Hub / app daily presence fields and class student login fields
+   ============================================================ */
+(function(){
+  function tcKey(v){
+    if(typeof cleanKey === 'function') return cleanKey(v || '');
+    return String(v || '').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_').replace(/-/g,'_');
+  }
+  function tcIsoFromTime(t){
+    const n=Number(t||0); if(!n) return '';
+    const d=new Date(n);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function tcIsSelectedDate(t){
+    try{return tcIsoFromTime(t) === getSelectedDailyDate();}catch(e){return false;}
+  }
+  function tcLooksReading(record, key){
+    const txt = String((key||'') + ' ' + (record && (record.program||record.app||record.page||record.source||record.activityType||record.activityName||record.displayName||record.recordId) || '')).toLowerCase();
+    return txt.includes('reading') || txt.includes('rush');
+  }
+  function tcPushRecord(arr, seen, record, fallback){
+    if(!record || typeof record !== 'object') return;
+    if(typeof pushUniqueNonDLRecord === 'function') pushUniqueNonDLRecord(arr, seen, record, fallback || {});
+  }
+
+  window.allRecordsArray = function(){
+    const arr=[]; const seen={};
+    const records=(controlData && controlData.records) || {};
+    Object.keys(records).forEach(classId=>{
+      Object.keys(records[classId]||{}).forEach(studentId=>{
+        Object.keys(records[classId][studentId]||{}).forEach(recordId=>{
+          tcPushRecord(arr, seen, records[classId][studentId][recordId], {classId,studentId,recordId});
+        });
+      });
+    });
+
+    const perf=(controlData && controlData.performance) || {};
+    Object.keys(perf).forEach(classId=>{
+      Object.keys(perf[classId]||{}).forEach(studentId=>{
+        Object.keys(perf[classId][studentId]||{}).forEach(programId=>{
+          const item=perf[classId][studentId][programId];
+          if(item && typeof item === 'object'){
+            tcPushRecord(arr, seen, Object.assign({}, item, {activityType:item.activityType || (tcLooksReading(item,programId)?'Reading Rush':programId)}), {classId,studentId,recordId:programId});
+          }
+        });
+      });
+    });
+
+    const activityRecords=(controlData && controlData.activityRecords) || {};
+    Object.keys(activityRecords).forEach(programId=>{
+      Object.keys(activityRecords[programId]||{}).forEach(classId=>{
+        Object.keys(activityRecords[programId][classId]||{}).forEach(studentId=>{
+          const box=activityRecords[programId][classId][studentId];
+          if(!box || typeof box !== 'object') return;
+          if(box.score !== undefined || box.total !== undefined || box.activityName || box.activityType){
+            tcPushRecord(arr, seen, Object.assign({}, box, {activityType:box.activityType || programId}), {classId,studentId,recordId:programId});
+          }else{
+            Object.keys(box).forEach(recordId=>{
+              const rec=box[recordId];
+              if(rec && typeof rec === 'object') tcPushRecord(arr, seen, Object.assign({}, rec, {activityType:rec.activityType || programId}), {classId,studentId,recordId});
+            });
+          }
+        });
+      });
+    });
+
+    if(typeof addDLFullLessonRecords === 'function') addDLFullLessonRecords(arr, seen);
+    return arr;
+  };
+
+  window.getStoredDailyData = function(classId, student){
+    const dateKey = getSelectedDailyDate();
+    const sidOptions = [student && student.id, student && student.password, tcKey(student && student.id), tcKey(student && student.password)].filter(Boolean);
+    const dailyRoot = (controlData && (controlData.dailyAttendance || controlData.dailyTracker || controlData.attendance)) || {};
+    const candidates=[];
+    function add(v){ if(v && typeof v === 'object') candidates.push(v); }
+
+    sidOptions.forEach(sid=>{
+      add(dailyRoot?.[dateKey]?.[classId]?.[sid]);
+      add(dailyRoot?.[dateKey]?.[tcKey(classId)]?.[sid]);
+      add(dailyRoot?.[classId]?.[dateKey]?.[sid]);
+      add(dailyRoot?.[tcKey(classId)]?.[dateKey]?.[sid]);
+    });
+
+    const cls = ((controlData && controlData.classes) || {})[classId] || ((controlData && controlData.classes) || {})[tcKey(classId)] || {};
+    const students = cls.students || {};
+    sidOptions.forEach(sid=>add(students[sid]));
+
+    const onlineRoots = [controlData?.onlineStudents, controlData?.studentActivity, controlData?.studentSessions, controlData?.liveStudents];
+    onlineRoots.forEach(root=>{
+      sidOptions.forEach(sid=>{
+        add(root?.[dateKey]?.[classId]?.[sid]);
+        add(root?.[dateKey]?.[tcKey(classId)]?.[sid]);
+        add(root?.[classId]?.[sid]);
+        add(root?.[tcKey(classId)]?.[sid]);
+        add(root?.[sid]);
+      });
+    });
+
+    const merged={};
+    candidates.forEach(c=>Object.assign(merged,c));
+    return Object.keys(merged).length ? merged : null;
+  };
+
+  window.getDailyRowsForClass = function(classId){
+    const cls=getClasses()[classId];
+    if(!cls) return [];
+    const students=Object.values(cls.students||{}).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||'')));
+    return students.map(st=>{
+      const stored=window.getStoredDailyData(classId, st) || {};
+      const possibleTimes=[
+        stored.firstLoginAt, stored.loginAt, stored.loginTimeMs, stored.loginTime,
+        stored.lastSeenAt, stored.lastSeen, stored.updatedAt, stored.time, stored.joinedAt
+      ].map(Number).filter(Boolean);
+      const todays=possibleTimes.filter(tcIsSelectedDate);
+      const loginTime=todays.length ? Math.min.apply(null, todays) : 0;
+      const isPresent=Boolean(loginTime || stored.attendance === 'present' || stored.present === true || stored.online === true || stored.status === 'online');
+      const activityCount=isPresent ? Math.max(1, Number(stored.activityCount || stored.openCount || stored.actionsCount || stored.visits || 0)) : 0;
+      const level=getDailyActivityLevel(isPresent, activityCount);
+      return {
+        name:st.name || stored.name || 'Student',
+        id:st.password || st.id || stored.studentId || stored.id,
+        isPresent,
+        loginTime:loginTime || Number(stored.loginAt || stored.firstLoginAt || stored.lastSeenAt || 0),
+        activityCount,
+        levelText:level.text,
+        levelClass:level.cls
+      };
+    });
+  };
+})();
+</script>
+
+
+<script>
+/* ============================================================
+   ONE-TIME CLEAN START TOOL: CLEAR ALL READING RUSH MARKS
+   - Removes Reading Rush from Teacher Tracker records
+   - Removes visible Reading_Rush cards from student/teacher performance
+   - Removes Reading Rush activity history
+   - Removes Reading Rush certificates only
+   - Keeps students, classes, DL Lesson, Skill Clash, Daily Attendance
+   ============================================================ */
+(function(){
+  function rrCleanKey(v){
+    if(typeof cleanKey === 'function') return cleanKey(v || '');
+    return String(v || '').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_').replace(/-/g,'_');
+  }
+  function rrLooksReadingRush(obj, key){
+    const txt = String(
+      (key || '') + ' ' +
+      (obj && (obj.program || obj.app || obj.page || obj.source || obj.activityType || obj.activityName || obj.activity || obj.displayName || obj.recordId || obj.title || obj.notes || obj.comment) || '')
+    ).toLowerCase();
+    return txt.includes('reading_rush') || txt.includes('reading rush') || txt.includes('reading') || txt.includes('rush');
+  }
+  async function rrRemoveReadingChildren(rootPath){
+    const snap = await db.ref(rootPath).once('value');
+    const data = snap.val() || {};
+    const updates = {};
+    let count = 0;
+
+    Object.keys(data).forEach(classId=>{
+      Object.keys(data[classId] || {}).forEach(studentId=>{
+        Object.keys(data[classId][studentId] || {}).forEach(recordId=>{
+          const item = data[classId][studentId][recordId];
+          if(rrLooksReadingRush(item, recordId)){
+            updates[rootPath + '/' + classId + '/' + studentId + '/' + recordId] = null;
+            count++;
+          }
+        });
+      });
+    });
+
+    if(count) await db.ref().update(updates);
+    return count;
+  }
+
+  window.clearAllReadingRushRecords = async function(){
+    try{
+      if(!db){ alert('Firebase is not connected yet. Open Teacher Tracker again and wait for connection.'); return; }
+      const msg = 'This will clear ALL OLD Reading Rush marks for ALL classes.\n\nIt will remove Reading Rush from:\n- Teacher Tracker records\n- Student visible performance card\n- Reading Rush history\n- Reading Rush certificates\n\nIt will NOT remove students, classes, DL Lesson, Skill Clash, or Daily Attendance.\n\nContinue?';
+      if(!confirm(msg)) return;
+
+      const confirmText = prompt('Type CLEAR READING RUSH to confirm:');
+      if(String(confirmText || '').trim().toUpperCase() !== 'CLEAR READING RUSH'){
+        alert('Cancelled. Nothing was deleted.');
+        return;
+      }
+
+      const updates = {};
+      let recordsCount = 0;
+      let performanceCount = 0;
+      let certificateCount = 0;
+
+      // 1) Remove Reading Rush detailed history root completely.
+      updates['teacherControlCenter/activityRecords/Reading_Rush'] = null;
+
+      // 2) Remove Reading Rush rows from the main records path.
+      const recSnap = await db.ref('teacherControlCenter/records').once('value');
+      const recData = recSnap.val() || {};
+      Object.keys(recData).forEach(classId=>{
+        Object.keys(recData[classId] || {}).forEach(studentId=>{
+          Object.keys(recData[classId][studentId] || {}).forEach(recordId=>{
+            const rec = recData[classId][studentId][recordId];
+            if(rrLooksReadingRush(rec, recordId)){
+              updates['teacherControlCenter/records/' + classId + '/' + studentId + '/' + recordId] = null;
+              recordsCount++;
+            }
+          });
+        });
+      });
+
+      // 3) Remove Reading Rush visible/latest performance rows.
+      const perfSnap = await db.ref('teacherControlCenter/performance').once('value');
+      const perfData = perfSnap.val() || {};
+      Object.keys(perfData).forEach(classId=>{
+        Object.keys(perfData[classId] || {}).forEach(studentId=>{
+          Object.keys(perfData[classId][studentId] || {}).forEach(key=>{
+            const item = perfData[classId][studentId][key];
+            if(rrLooksReadingRush(item, key)){
+              updates['teacherControlCenter/performance/' + classId + '/' + studentId + '/' + key] = null;
+              performanceCount++;
+            }
+          });
+        });
+      });
+
+      // 4) Remove Reading Rush certificates only.
+      const certSnap = await db.ref('teacherControlCenter/certificates').once('value');
+      const certData = certSnap.val() || {};
+      Object.keys(certData).forEach(classId=>{
+        Object.keys(certData[classId] || {}).forEach(studentId=>{
+          Object.keys(certData[classId][studentId] || {}).forEach(certId=>{
+            const cert = certData[classId][studentId][certId];
+            if(rrLooksReadingRush(cert, certId)){
+              updates['teacherControlCenter/certificates/' + classId + '/' + studentId + '/' + certId] = null;
+              certificateCount++;
+            }
+          });
+        });
+      });
+
+      await db.ref().update(updates);
+      if(typeof renderStats === 'function') renderStats();
+      if(typeof renderClassRecords === 'function') renderClassRecords();
+      if(typeof renderIndividualRecord === 'function') renderIndividualRecord();
+
+      alert('✅ Reading Rush clean start complete.\n\nDeleted from main records: ' + recordsCount + '\nDeleted from performance cards: ' + performanceCount + '\nDeleted Reading Rush certificates: ' + certificateCount + '\nDeleted activityRecords/Reading_Rush history.\n\nNew class-based collections will now start fresh.');
+    }catch(err){
+      console.error(err);
+      alert('Could not clear Reading Rush records: ' + (err && err.message ? err.message : err));
+    }
+  };
+})();
+</script>
+
+
+
+<script>
+/* ============================================================
+   SELECTIVE MARKS CLEANER
+   - Clear Reading Rush, Skill Clash, DL Lesson, or all selected
+   - Scope: selected class or all classes
+   - Keeps classes, students, passwords, daily attendance, and settings
+   ============================================================ */
+(function(){
+  function mcText(obj, key){
+    return String(
+      (key || '') + ' ' +
+      ((obj && typeof obj === 'object') ? [
+        obj.program, obj.app, obj.page, obj.source, obj.activityType,
+        obj.activityName, obj.activity, obj.displayName, obj.recordId,
+        obj.title, obj.notes, obj.comment, obj.type
+      ].filter(Boolean).join(' ') : '')
+    ).toLowerCase();
+  }
+
+  function mcCategoryOf(obj, key){
+    const txt = mcText(obj, key).replace(/[_-]+/g, ' ');
+    if(txt.includes('reading rush') || (txt.includes('reading') && txt.includes('rush'))) return 'reading';
+    if(txt.includes('skill clash') || txt.includes('skill') || txt.includes('clash') || txt.includes('battle')) return 'skill';
+    if(txt.includes('dl lesson') || txt === 'dl' || txt.includes(' dl ') || txt.includes('digital lesson') || txt.includes('station')) return 'dl';
+
+    // Many old DL rows did not save a clear program name. If it has score/total but not reading/skill, treat it as DL.
+    if(obj && typeof obj === 'object' && (obj.score !== undefined || obj.total !== undefined || obj.finalScore !== undefined || obj.fullMark !== undefined)) return 'dl';
+    return '';
+  }
+
+  function mcShouldDelete(obj, key, cleanerType){
+    const cat = mcCategoryOf(obj, key);
+    if(cleanerType === 'all') return cat === 'reading' || cat === 'skill' || cat === 'dl';
+    return cat === cleanerType;
+  }
+
+  function mcLabel(type){
+    if(type === 'reading') return 'Reading Rush';
+    if(type === 'skill') return 'Skill Clash';
+    if(type === 'dl') return 'DL Lesson';
+    return 'DL Lesson + Skill Clash + Reading Rush';
+  }
+
+  function mcScopeClasses(rootData, scope, selectedClass){
+    if(scope === 'all') return Object.keys(rootData || {});
+    return selectedClass ? [selectedClass] : [];
+  }
+
+  async function mcScanThreeLevel(rootPath, cleanerType, scope, selectedClass, updates){
+    const snap = await db.ref(rootPath).once('value');
+    const data = snap.val() || {};
+    let count = 0;
+    mcScopeClasses(data, scope, selectedClass).forEach(classId=>{
+      Object.keys(data[classId] || {}).forEach(studentId=>{
+        Object.keys(data[classId][studentId] || {}).forEach(recordId=>{
+          const item = data[classId][studentId][recordId];
+          if(mcShouldDelete(item, recordId, cleanerType)){
+            updates[rootPath + '/' + classId + '/' + studentId + '/' + recordId] = null;
+            count++;
+          }
+        });
+      });
+    });
+    return count;
+  }
+
+  async function mcScanActivityRecords(cleanerType, scope, selectedClass, updates){
+    const snap = await db.ref('teacherControlCenter/activityRecords').once('value');
+    const data = snap.val() || {};
+    let count = 0;
+
+    Object.keys(data).forEach(programId=>{
+      const rootCat = mcCategoryOf({program:programId, activityType:programId}, programId);
+      const rootMatches = cleanerType === 'all' ? !!rootCat : rootCat === cleanerType;
+
+      Object.keys(data[programId] || {}).forEach(classId=>{
+        if(scope !== 'all' && classId !== selectedClass) return;
+
+        if(rootMatches){
+          updates['teacherControlCenter/activityRecords/' + programId + '/' + classId] = null;
+          count++;
+          return;
+        }
+
+        Object.keys(data[programId][classId] || {}).forEach(studentId=>{
+          function walk(node, path){
+            if(!node || typeof node !== 'object') return;
+            const looksRecord = node.score !== undefined || node.total !== undefined || node.activityName || node.activityType || node.program || node.source || node.page;
+            if(looksRecord){
+              if(mcShouldDelete(Object.assign({program:programId}, node), path.split('/').pop(), cleanerType)){
+                updates[path] = null;
+                count++;
+              }
+              return;
+            }
+            Object.keys(node).forEach(k=>walk(node[k], path + '/' + k));
+          }
+          walk(data[programId][classId][studentId], 'teacherControlCenter/activityRecords/' + programId + '/' + classId + '/' + studentId);
+        });
+      });
+    });
+
+    return count;
+  }
+
+  window.clearSelectedMarksSafely = async function(){
+    try{
+      if(!db){ alert('Firebase is not connected yet. Wait until Teacher Tracker says connected.'); return; }
+
+      const cleanerType = document.getElementById('marksCleanerType')?.value || 'reading';
+      const scope = document.getElementById('marksCleanerScope')?.value || 'selected';
+      const selectedClass = document.getElementById('recordsClassSelect')?.value || '';
+
+      if(scope !== 'all' && !selectedClass){
+        alert('Choose a class first, or change scope to All classes.');
+        return;
+      }
+
+      const label = mcLabel(cleanerType);
+      const scopeText = scope === 'all' ? 'ALL classes' : 'selected class only';
+      const warning = 'This will clear ' + label + ' marks from ' + scopeText + '.\n\nIt will remove matching marks from:\n- Teacher Tracker records\n- Latest performance cards\n- Activity history\n- Matching certificates if any\n\nIt will NOT delete students, classes, passwords, daily attendance, or other unselected mark types.\n\nContinue?';
+      if(!confirm(warning)) return;
+
+      const expected = cleanerType === 'all' ? 'CLEAR ALL MARKS' : ('CLEAR ' + label.toUpperCase());
+      const typed = prompt('Type exactly: ' + expected);
+      if(String(typed || '').trim().toUpperCase() !== expected){
+        alert('Cancelled. Nothing was deleted.');
+        return;
+      }
+
+      const updates = {};
+      let recordsCount = 0;
+      let performanceCount = 0;
+      let certificatesCount = 0;
+      let activityCount = 0;
+
+      recordsCount += await mcScanThreeLevel('teacherControlCenter/records', cleanerType, scope, selectedClass, updates);
+      performanceCount += await mcScanThreeLevel('teacherControlCenter/performance', cleanerType, scope, selectedClass, updates);
+      certificatesCount += await mcScanThreeLevel('teacherControlCenter/certificates', cleanerType, scope, selectedClass, updates);
+      activityCount += await mcScanActivityRecords(cleanerType, scope, selectedClass, updates);
+
+      if(!Object.keys(updates).length){
+        alert('No matching ' + label + ' marks were found for this scope.');
+        return;
+      }
+
+      await db.ref().update(updates);
+
+      if(typeof renderStats === 'function') renderStats();
+      if(typeof renderClassRecords === 'function') renderClassRecords();
+      if(typeof renderIndividualRecord === 'function') renderIndividualRecord();
+      if(typeof renderDailyTracker === 'function') renderDailyTracker();
+
+      alert('✅ Marks cleaner complete.\n\nCleared: ' + label + '\nScope: ' + scopeText + '\n\nMain records deleted: ' + recordsCount + '\nPerformance cards deleted: ' + performanceCount + '\nActivity history deleted: ' + activityCount + '\nCertificates deleted: ' + certificatesCount + '\n\nStudents, classes, passwords, daily attendance, and unselected marks stayed safe.');
+    }catch(err){
+      console.error(err);
+      alert('Could not clear selected marks: ' + (err && err.message ? err.message : err));
+    }
+  };
+})();
+</script>
+
 </body>
 </html>
