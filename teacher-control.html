@@ -1059,20 +1059,54 @@ function allRecordsArray(){
   });
 
   // Extra Reading Rush/activity-history compatibility path
+  // Supports both old flat rows and new nested history rows, for example:
+  // activityRecords/Reading_Rush/classId/studentId/collectionId/recordId
   const activityRecords=controlData.activityRecords || {};
+
+  function looksLikeSavedRecord(obj){
+    if(!obj || typeof obj !== 'object') return false;
+    return obj.score !== undefined ||
+           obj.total !== undefined ||
+           obj.activityName ||
+           obj.activityType ||
+           obj.program ||
+           obj.page ||
+           obj.source;
+  }
+
+  function addNestedActivityRecords(node, meta){
+    if(!node || typeof node !== 'object') return;
+
+    if(looksLikeSavedRecord(node)){
+      pushUniqueNonDLRecord(arr, seen, {
+        ...node,
+        activityType: node.activityType || meta.programId,
+        program: node.program || meta.programId
+      }, {
+        classId: meta.classId,
+        studentId: meta.studentId,
+        recordId: meta.recordId || meta.programId
+      });
+      return;
+    }
+
+    Object.keys(node).forEach(childKey=>{
+      addNestedActivityRecords(node[childKey], {
+        ...meta,
+        recordId: childKey
+      });
+    });
+  }
+
   Object.keys(activityRecords).forEach(programId=>{
     Object.keys(activityRecords[programId]||{}).forEach(classId=>{
       Object.keys(activityRecords[programId][classId]||{}).forEach(studentId=>{
-        const item=activityRecords[programId][classId][studentId];
-        if(item && typeof item === 'object'){
-          if(item.score !== undefined || item.activityName || item.activityType){
-            pushUniqueNonDLRecord(arr, seen, {...item, activityType:item.activityType || programId}, {classId,studentId,recordId:programId});
-          }else{
-            Object.keys(item).forEach(recordId=>{
-              pushUniqueNonDLRecord(arr, seen, {...item[recordId], activityType:item[recordId]?.activityType || programId}, {classId,studentId,recordId});
-            });
-          }
-        }
+        addNestedActivityRecords(activityRecords[programId][classId][studentId], {
+          programId,
+          classId,
+          studentId,
+          recordId: programId
+        });
       });
     });
   });
@@ -1490,7 +1524,9 @@ async function saveStudentPerformance(record){
     studyYear:record.studyYear || record.activeSavingStudyYear || record.activeStudyYear || getActiveStudyYear(),
     activeSavingStudyYear:record.studyYear || record.activeSavingStudyYear || record.activeStudyYear || getActiveStudyYear(),
     date:record.date||today(),
-    time:Date.now()
+    time:record.time || record.savedAt || record.updatedAt || record.createdAt || Date.now(),
+    savedAt:record.savedAt || record.time || record.updatedAt || record.createdAt || Date.now(),
+    updatedAt:Date.now()
   };
   await db.ref("teacherControlCenter/records/"+classId+"/"+studentId+"/"+recordId).set(finalRecord);
 }
