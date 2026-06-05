@@ -3882,5 +3882,219 @@ async function saveReadingRushToTeacherControl(s){
 })();
 </script>
 
+
+
+<script>
+/* ============================================================
+   FINAL FIX - Reading Rush marks + daily tracker connection
+   - NO deletion of old Reading Rush tracker rows
+   - Secure Hub keeps one latest visible Reading_Rush row
+   - Teacher Tracker keeps history under records + activityRecords
+   - Daily tracker gets a real present/login row when student joins/refreshes/saves
+   ============================================================ */
+(function(){
+  function rrCleanKey(v){
+    return String(v || '').trim()
+      .replace(/[.#$\[\]\/]/g,'_')
+      .replace(/\s+/g,'_')
+      .replace(/-/g,'_') || 'unknown';
+  }
+  function rrTodayISO(){
+    const d = new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  async function rrGetTrackerSettings(){
+    try{
+      if(!db) return {};
+      const snap = await db.ref('teacherControlCenter/settings/tracker').once('value');
+      return snap.val() || {};
+    }catch(e){ return {}; }
+  }
+  function rrCollection(s){
+    return (s && s.collections && s.currentCollectionId) ? (s.collections[s.currentCollectionId] || {}) : {};
+  }
+  function rrCollectionTitleFinal(s){
+    const col = rrCollection(s);
+    return col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection';
+  }
+  function rrTotalsFinal(s, studentId){
+    const col = rrCollection(s);
+    const paragraphs = col.paragraphs || [];
+    const totalQuestions = paragraphs.reduce(function(sum,p){ return sum + ((p.questions || []).length); },0);
+    const results = Object.values(((s.paragraphResults || {})[studentId] || {}));
+    const correctAnswers = results.reduce(function(sum,r){ return sum + Number(r.score || 0); },0);
+    const percentage = totalQuestions ? Math.round((correctAnswers / totalQuestions) * 100) : 0;
+    return {correctAnswers,totalQuestions,percentage};
+  }
+  async function rrSaveDailyPresence(student){
+    try{
+      if(!db || !student) return;
+      const id = rrCleanKey(student.id || student.studentId || student.password || '');
+      if(!id || id === 'unknown') return;
+      const classId = rrCleanKey(student.classId || student.cls || student.className || '');
+      if(!classId || classId === 'unknown') return;
+      const dateKey = rrTodayISO();
+      const now = Date.now();
+      const ref = db.ref('teacherControlCenter/dailyAttendance/' + dateKey + '/' + classId + '/' + id);
+      const snap = await ref.once('value');
+      const old = snap.val() || {};
+      await ref.update({
+        id:id,
+        studentId:id,
+        password:id,
+        name:student.name || old.name || '',
+        classId:classId,
+        className:student.cls || student.className || old.className || '',
+        attendance:'present',
+        present:true,
+        firstLoginAt: old.firstLoginAt || old.loginAt || now,
+        loginAt: old.loginAt || now,
+        lastSeenAt: now,
+        updatedAt: now,
+        activityCount: Number(old.activityCount || 0) + 1,
+        source:'Reading Rush'
+      });
+    }catch(e){ console.warn('Reading Rush daily presence save skipped:', e); }
+  }
+  async function rrClearReadingRushCertificatesFinal(classId, studentId){
+    try{
+      if(!db || !classId || !studentId) return;
+      const ref = db.ref('teacherControlCenter/certificates/' + classId + '/' + studentId);
+      const snap = await ref.once('value');
+      const certs = snap.val() || {};
+      const updates = {};
+      Object.keys(certs).forEach(function(k){
+        const c = certs[k] || {};
+        const txt = String(k + ' ' + (c.source||'') + ' ' + (c.activityType||'')).toLowerCase();
+        if(txt.includes('reading') || txt.includes('rush')) updates[k] = null;
+      });
+      if(Object.keys(updates).length) await ref.update(updates);
+    }catch(e){}
+  }
+  async function rrSaveFullMarkCertificateFinal(record){
+    await rrClearReadingRushCertificatesFinal(record.classId, record.studentId);
+    if(Number(record.score) !== Number(record.total) || Number(record.total) <= 0) return;
+    const certId = rrCleanKey('Reading_Rush_Full_Mark_' + record.collectionId + '_' + record.studentId);
+    await db.ref('teacherControlCenter/certificates/' + record.classId + '/' + record.studentId + '/' + certId).set({
+      certificateId:certId,
+      source:'Reading Rush',
+      activityType:'Reading Rush',
+      certificateTitle:'Reading Rush Achievement Certificate',
+      reason:'Full mark in Reading Rush collection',
+      activityName:record.activityName,
+      studentId:record.studentId,
+      studentName:record.studentName,
+      classId:record.classId,
+      className:record.className,
+      score:record.score,
+      total:record.total,
+      correct:record.score,
+      questionsTotal:record.total,
+      percentage:100,
+      date:new Date().toLocaleDateString('en-GB'),
+      issuedAt:Date.now(),
+      status:'issued'
+    });
+  }
+
+  window.saveReadingRushRecordForStudent = async function(s, student){
+    try{
+      if(!db || !s || !student) return null;
+      const id = rrCleanKey(student.id || student.studentId || student.password || '');
+      if(!id || id === 'unknown') return null;
+      const classId = rrCleanKey(student.classId || student.cls || student.className || '');
+      if(!classId || classId === 'unknown') return null;
+
+      const settings = await rrGetTrackerSettings();
+      const activeTerm = settings.activeSavingTerm || settings.activeTerm || settings.term || 'term1';
+      const studyYear = settings.activeSavingStudyYear || settings.activeStudyYear || settings.studyYear || '';
+      const colId = rrCleanKey(s.currentCollectionId || 'reading_rush_collection');
+      const title = rrCollectionTitleFinal(s);
+      const totals = rrTotalsFinal(s, id);
+      const now = Date.now();
+      const recordId = 'reading_rush_' + colId + '_' + id + '_' + now;
+      const latestRecordId = 'reading_rush_latest_' + colId + '_' + id;
+
+      const record = {
+        recordId:recordId,
+        latestRecordId:latestRecordId,
+        page:'Reading Rush',
+        source:'Reading Rush',
+        program:'Reading Rush',
+        app:'Reading Rush',
+        activityType:'Reading Rush',
+        activityName:title,
+        displayName:title + ' - ' + totals.correctAnswers + '/' + totals.totalQuestions,
+        score:Number(totals.correctAnswers || 0),
+        total:Number(totals.totalQuestions || 0),
+        correct:Number(totals.correctAnswers || 0),
+        questionsTotal:Number(totals.totalQuestions || 0),
+        percentage:Number(totals.percentage || 0),
+        classId:classId,
+        className:student.cls || student.className || '',
+        studentId:id,
+        password:id,
+        studentName:student.name || '',
+        collectionId:colId,
+        completed:(((s.studentProgress || {})[id] || {}).done === true) || s.stage === 'final',
+        status:'Saved',
+        term:activeTerm,
+        activeTerm:activeTerm,
+        studyYear:studyYear,
+        date:new Date().toLocaleDateString('en-GB'),
+        time:now,
+        updatedAt:now,
+        savedAt:now,
+        mode:'individual_test',
+        notes:'Final collection mark only. Teacher Tracker history is kept; old rows are not deleted.'
+      };
+
+      const updates = {};
+      updates['teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush'] = Object.assign({}, record, {recordId:latestRecordId});
+      updates['teacherControlCenter/records/' + classId + '/' + id + '/' + recordId] = record;
+      updates['teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + recordId] = record;
+      await db.ref().update(updates);
+      await rrSaveDailyPresence(Object.assign({}, student, {id:id, studentId:id, classId:classId}));
+      await rrSaveFullMarkCertificateFinal(record);
+      return record;
+    }catch(err){
+      console.warn('Reading Rush final collection record save skipped:', err);
+      return null;
+    }
+  };
+
+  window.saveReadingRushToTeacherControl = async function(s){
+    if(!s || !currentUser) return null;
+    const id = rrCleanKey(currentUser.id || currentUser.studentId || currentUser.password || '');
+    if(!id || id === 'unknown') return null;
+    const progress = ((s.studentProgress || {})[id]) || {};
+    if(progress.done !== true && progress.completed !== true && s.stage !== 'final'){
+      await rrSaveDailyPresence(currentUser);
+      return null;
+    }
+    const st = ((s.students || {})[id]) || currentUser;
+    return window.saveReadingRushRecordForStudent(s, st);
+  };
+
+  window.saveReadingRushFinalMarksAndCertificates = async function(s){
+    const students = Object.values((s && s.students) || {});
+    for(const st of students){ await window.saveReadingRushRecordForStudent(s, st); }
+  };
+
+  const oldStudentJoin = window.studentJoin;
+  window.studentJoin = async function(){
+    const result = oldStudentJoin ? await oldStudentJoin.apply(this, arguments) : undefined;
+    try{ if(currentUser) await rrSaveDailyPresence(currentUser); }catch(e){}
+    return result;
+  };
+  const oldStudentRefresh = window.studentRefresh;
+  window.studentRefresh = function(){
+    const result = oldStudentRefresh ? oldStudentRefresh.apply(this, arguments) : undefined;
+    try{ if(currentUser && currentUser.role === 'student') rrSaveDailyPresence(currentUser); }catch(e){}
+    return result;
+  };
+})();
+</script>
+
 </body>
 </html>
