@@ -1464,9 +1464,26 @@ async function saveScheduledReadingRushToTeacherControl(s, assignment, col){
       updatedAt: Date.now()
     };
 
-    await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush_' + assignment.collectionId).set(record);
-    await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
-    await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + assignment.collectionId).set(record);
+    const settings = await rrGetTrackerSettingsForScheduled();
+    const now = Date.now();
+    record.term = record.term || settings.activeSavingTerm || settings.activeTerm || settings.term || 'term1';
+    record.studyYear = record.studyYear || settings.activeSavingStudyYear || settings.activeStudyYear || settings.studyYear || '';
+    record.program = 'Reading Rush';
+    record.programKey = 'reading';
+    record.time = record.time || now;
+    record.createdAt = record.createdAt || now;
+    record.savedAt = record.savedAt || now;
+    record.updatedAt = now;
+
+    const historyId = 'Reading_Rush_Scheduled_' + rrSafeKeyForScheduled(assignment.collectionId) + '_' + rrSafeKeyForScheduled(id) + '_' + now;
+    record.recordId = historyId;
+
+    await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(Object.assign({}, record, {
+      recordId:'Reading_Rush_Latest_' + rrSafeKeyForScheduled(assignment.collectionId) + '_' + rrSafeKeyForScheduled(id),
+      historyRecordId: historyId
+    }));
+    await db.ref('teacherControlCenter/records/' + classId + '/' + id + '/' + historyId).set(record);
+    await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrSafeKeyForScheduled(assignment.collectionId) + '/' + historyId).set(record);
   }catch(err){
     console.warn('Scheduled Reading Rush tracker save skipped:', err);
   }
@@ -1902,6 +1919,41 @@ function lessonPlanHTML(plan, forDownload=false){
     return col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection';
   }
 
+  async function rrTrackerSettings(){
+    try{
+      if(!db) return {};
+      const snap = await db.ref('teacherControlCenter/settings/tracker').once('value');
+      return snap.val() || {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function rrActiveTerm(settings){
+    return (settings && (settings.activeSavingTerm || settings.activeTerm || settings.term)) || 'term1';
+  }
+
+  function rrActiveStudyYear(settings){
+    return (settings && (settings.activeSavingStudyYear || settings.activeStudyYear || settings.studyYear)) || '';
+  }
+
+  function rrUniqueRecordId(colId, studentId){
+    return 'Reading_Rush_Final_' + rrKey(colId) + '_' + rrKey(studentId) + '_' + Date.now();
+  }
+
+  function rrLatestRecordId(colId, studentId){
+    return 'Reading_Rush_Latest_' + rrKey(colId) + '_' + rrKey(studentId);
+  }
+
+  function rrRecordText(totals){
+    return totals.correctAnswers + '/' + totals.totalQuestions;
+  }
+
+  function rrSafeNumber(v){
+    const n = Number(v || 0);
+    return isNaN(n) ? 0 : n;
+  }
+
   function rrTotals(s, studentId){
     const col = rrCol(s);
     const paragraphs = col.paragraphs || [];
@@ -1932,22 +1984,11 @@ function lessonPlanHTML(plan, forDownload=false){
     });
     if(Object.keys(perfUpdates).length) await perfRef.update(perfUpdates);
 
-    // Clean per-paragraph / old timestamp history rows that may appear in Teacher Center.
-    const recordsRef = db.ref('teacherControlCenter/records/' + classId + '/' + studentId);
-    const recSnap = await recordsRef.once('value');
-    const recs = recSnap.val() || {};
-    const recUpdates = {};
-    Object.keys(recs).forEach(function(k){
-      const r = recs[k] || {};
-      const isRR =
-        k.indexOf('reading_rush') === 0 ||
-        k.indexOf('Reading_Rush') === 0 ||
-        String(r.page || '').toLowerCase() === 'reading rush' ||
-        String(r.source || '').toLowerCase() === 'reading rush' ||
-        String(r.activityType || '').toLowerCase() === 'reading rush';
-      if(isRR) recUpdates[k] = null;
-    });
-    if(Object.keys(recUpdates).length) await recordsRef.update(recUpdates);
+    // IMPORTANT:
+    // Do NOT clean teacherControlCenter/records here.
+    // The Teacher Tracker needs Reading Rush history so every new collection/test
+    // can be added to the weighted total, even when the student already has old marks.
+    // We only clean extra Secure Hub visible rows above, keeping /Reading_Rush as latest.
   }
 
   async function rrClearReadingRushCertificates(classId, studentId){
@@ -2023,21 +2064,31 @@ function lessonPlanHTML(plan, forDownload=false){
       const colId = s.currentCollectionId || 'reading_rush_collection';
       const title = rrTitle(s);
       const totals = rrTotals(s, id);
+      const settings = await rrTrackerSettings();
+      const now = Date.now();
 
-      const recordId = 'Reading_Rush_Final_' + rrKey(colId) + '_' + rrKey(id);
+      // Unique history row: this is what makes the Teacher Tracker ADD the new mark
+      // even if the student already had Reading Rush marks before.
+      const recordId = rrUniqueRecordId(colId, id);
+
+      // Stable latest row: this is only for the student's Secure Hub visible card.
+      const latestRecordId = rrLatestRecordId(colId, id);
 
       const record = {
         recordId: recordId,
+        latestRecordId: latestRecordId,
         page: 'Reading Rush',
         source: 'Reading Rush',
+        program: 'Reading Rush',
+        programKey: 'reading',
         activityType: 'Reading Rush',
         activityName: title,
-        displayName: title + ' - ' + totals.correctAnswers + '/' + totals.totalQuestions,
-        score: Number(totals.correctAnswers || 0),
-        total: Number(totals.totalQuestions || 0),
-        correct: Number(totals.correctAnswers || 0),
-        questionsTotal: Number(totals.totalQuestions || 0),
-        percentage: Number(totals.percentage || 0),
+        displayName: title + ' - ' + rrRecordText(totals),
+        score: rrSafeNumber(totals.correctAnswers),
+        total: rrSafeNumber(totals.totalQuestions),
+        correct: rrSafeNumber(totals.correctAnswers),
+        questionsTotal: rrSafeNumber(totals.totalQuestions),
+        percentage: rrSafeNumber(totals.percentage),
         classId: classId,
         className: student.cls || student.className || '',
         studentId: id,
@@ -2045,22 +2096,32 @@ function lessonPlanHTML(plan, forDownload=false){
         collectionId: colId,
         completed: ((s.studentProgress || {})[id] || {}).done === true,
         status: 'Saved',
-        date: new Date().toLocaleDateString('en-GB'),
-        updatedAt: Date.now(),
+        term: rrActiveTerm(settings),
+        studyYear: rrActiveStudyYear(settings),
+        activeSavingTerm: rrActiveTerm(settings),
+        activeSavingStudyYear: rrActiveStudyYear(settings),
+        date: new Date(now).toLocaleDateString('en-GB'),
+        updatedAt: now,
+        createdAt: now,
+        savedAt: now,
+        time: now,
         mode: 'individual_test',
-        note: 'Final collection mark only. Paragraph rows are not saved.'
+        note: 'Final collection mark only. Saved as a new Teacher Tracker history row.'
       };
 
       await rrCleanOldReadingRushRows(classId, id);
 
-      // ONE visible Secure Hub row only.
-      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
+      // ONE visible Secure Hub row only. This can overwrite because Secure Hub should show latest.
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(Object.assign({}, record, {
+        recordId: latestRecordId,
+        historyRecordId: recordId
+      }));
 
-      // ONE teacher-center record per student + collection, overwritten when the same student retakes the same collection.
+      // Teacher Tracker history: NEVER overwrite old Reading Rush marks.
       await db.ref('teacherControlCenter/records/' + classId + '/' + id + '/' + recordId).set(record);
 
-      // Keep one collection-level archive, not per paragraph.
-      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId)).set(record);
+      // Collection archive: keep a new attempt under the collection.
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId) + '/' + recordId).set(record);
 
       await rrSaveFullMarkCertificate(record);
       return record;
@@ -3210,6 +3271,41 @@ async function saveReadingRushToTeacherControl(s){
     return col.title || (s && s.currentCollectionTitle) || 'Reading Rush Collection';
   }
 
+  async function rrTrackerSettings(){
+    try{
+      if(!db) return {};
+      const snap = await db.ref('teacherControlCenter/settings/tracker').once('value');
+      return snap.val() || {};
+    }catch(e){
+      return {};
+    }
+  }
+
+  function rrActiveTerm(settings){
+    return (settings && (settings.activeSavingTerm || settings.activeTerm || settings.term)) || 'term1';
+  }
+
+  function rrActiveStudyYear(settings){
+    return (settings && (settings.activeSavingStudyYear || settings.activeStudyYear || settings.studyYear)) || '';
+  }
+
+  function rrUniqueRecordId(colId, studentId){
+    return 'Reading_Rush_Final_' + rrKey(colId) + '_' + rrKey(studentId) + '_' + Date.now();
+  }
+
+  function rrLatestRecordId(colId, studentId){
+    return 'Reading_Rush_Latest_' + rrKey(colId) + '_' + rrKey(studentId);
+  }
+
+  function rrRecordText(totals){
+    return totals.correctAnswers + '/' + totals.totalQuestions;
+  }
+
+  function rrSafeNumber(v){
+    const n = Number(v || 0);
+    return isNaN(n) ? 0 : n;
+  }
+
   function rrTotals(s, studentId){
     const col = rrCol(s);
     const paragraphs = col.paragraphs || [];
@@ -3240,22 +3336,11 @@ async function saveReadingRushToTeacherControl(s){
     });
     if(Object.keys(perfUpdates).length) await perfRef.update(perfUpdates);
 
-    // Clean per-paragraph / old timestamp history rows that may appear in Teacher Center.
-    const recordsRef = db.ref('teacherControlCenter/records/' + classId + '/' + studentId);
-    const recSnap = await recordsRef.once('value');
-    const recs = recSnap.val() || {};
-    const recUpdates = {};
-    Object.keys(recs).forEach(function(k){
-      const r = recs[k] || {};
-      const isRR =
-        k.indexOf('reading_rush') === 0 ||
-        k.indexOf('Reading_Rush') === 0 ||
-        String(r.page || '').toLowerCase() === 'reading rush' ||
-        String(r.source || '').toLowerCase() === 'reading rush' ||
-        String(r.activityType || '').toLowerCase() === 'reading rush';
-      if(isRR) recUpdates[k] = null;
-    });
-    if(Object.keys(recUpdates).length) await recordsRef.update(recUpdates);
+    // IMPORTANT:
+    // Do NOT clean teacherControlCenter/records here.
+    // The Teacher Tracker needs Reading Rush history so every new collection/test
+    // can be added to the weighted total, even when the student already has old marks.
+    // We only clean extra Secure Hub visible rows above, keeping /Reading_Rush as latest.
   }
 
   async function rrClearReadingRushCertificates(classId, studentId){
@@ -3331,21 +3416,31 @@ async function saveReadingRushToTeacherControl(s){
       const colId = s.currentCollectionId || 'reading_rush_collection';
       const title = rrTitle(s);
       const totals = rrTotals(s, id);
+      const settings = await rrTrackerSettings();
+      const now = Date.now();
 
-      const recordId = 'Reading_Rush_Final_' + rrKey(colId) + '_' + rrKey(id);
+      // Unique history row: this is what makes the Teacher Tracker ADD the new mark
+      // even if the student already had Reading Rush marks before.
+      const recordId = rrUniqueRecordId(colId, id);
+
+      // Stable latest row: this is only for the student's Secure Hub visible card.
+      const latestRecordId = rrLatestRecordId(colId, id);
 
       const record = {
         recordId: recordId,
+        latestRecordId: latestRecordId,
         page: 'Reading Rush',
         source: 'Reading Rush',
+        program: 'Reading Rush',
+        programKey: 'reading',
         activityType: 'Reading Rush',
         activityName: title,
-        displayName: title + ' - ' + totals.correctAnswers + '/' + totals.totalQuestions,
-        score: Number(totals.correctAnswers || 0),
-        total: Number(totals.totalQuestions || 0),
-        correct: Number(totals.correctAnswers || 0),
-        questionsTotal: Number(totals.totalQuestions || 0),
-        percentage: Number(totals.percentage || 0),
+        displayName: title + ' - ' + rrRecordText(totals),
+        score: rrSafeNumber(totals.correctAnswers),
+        total: rrSafeNumber(totals.totalQuestions),
+        correct: rrSafeNumber(totals.correctAnswers),
+        questionsTotal: rrSafeNumber(totals.totalQuestions),
+        percentage: rrSafeNumber(totals.percentage),
         classId: classId,
         className: student.cls || student.className || '',
         studentId: id,
@@ -3353,22 +3448,32 @@ async function saveReadingRushToTeacherControl(s){
         collectionId: colId,
         completed: ((s.studentProgress || {})[id] || {}).done === true,
         status: 'Saved',
-        date: new Date().toLocaleDateString('en-GB'),
-        updatedAt: Date.now(),
+        term: rrActiveTerm(settings),
+        studyYear: rrActiveStudyYear(settings),
+        activeSavingTerm: rrActiveTerm(settings),
+        activeSavingStudyYear: rrActiveStudyYear(settings),
+        date: new Date(now).toLocaleDateString('en-GB'),
+        updatedAt: now,
+        createdAt: now,
+        savedAt: now,
+        time: now,
         mode: 'individual_test',
-        note: 'Final collection mark only. Paragraph rows are not saved.'
+        note: 'Final collection mark only. Saved as a new Teacher Tracker history row.'
       };
 
       await rrCleanOldReadingRushRows(classId, id);
 
-      // ONE visible Secure Hub row only.
-      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(record);
+      // ONE visible Secure Hub row only. This can overwrite because Secure Hub should show latest.
+      await db.ref('teacherControlCenter/performance/' + classId + '/' + id + '/Reading_Rush').set(Object.assign({}, record, {
+        recordId: latestRecordId,
+        historyRecordId: recordId
+      }));
 
-      // ONE teacher-center record per student + collection, overwritten when the same student retakes the same collection.
+      // Teacher Tracker history: NEVER overwrite old Reading Rush marks.
       await db.ref('teacherControlCenter/records/' + classId + '/' + id + '/' + recordId).set(record);
 
-      // Keep one collection-level archive, not per paragraph.
-      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId)).set(record);
+      // Collection archive: keep a new attempt under the collection.
+      await db.ref('teacherControlCenter/activityRecords/Reading_Rush/' + classId + '/' + id + '/' + rrKey(colId) + '/' + recordId).set(record);
 
       await rrSaveFullMarkCertificate(record);
       return record;
