@@ -1704,22 +1704,26 @@ function renderParagraphTimers(s){
 
   wrap.innerHTML = paragraphs.map((p,i)=>{
     const totalQ = (p.questions || []).length;
-    let doneQ = 0;
+    let paragraphMark = 0;
 
     const r = paragraphResultForStudent(s,currentUser.id,i);
+
     if(r){
-      doneQ = Number(r.total || totalQ);
-    }else if(pr.done || i < Number(pr.paraIndex || 0)){
-      doneQ = totalQ;
-    }else if(i === Number(pr.paraIndex || 0)){
-      doneQ = Object.keys(paragraphAnswers || {}).length;
+      paragraphMark = Number(r.score || 0);
+    }else if(i === Number(pr.paraIndex || 0) && !pr.done){
+      /* Live preview only for the current paragraph before final submit.
+         Saved mark still comes from paragraphResults after Submit. */
+      const questions = p.questions || [];
+      paragraphMark = questions.reduce((sum,q,qi)=>{
+        return sum + (paragraphAnswers && paragraphAnswers[qi] === q.correct ? 1 : 0);
+      },0);
     }
 
     return `
       <div class="paragraphTimerCard">
         <b>P${i+1}</b>
-        <div class="timerClock" style="font-size:17px">${doneQ}/${totalQ}</div>
-        <span class="doneCount" style="font-size:11px">questions done</span>
+        <div class="timerClock" style="font-size:17px">${paragraphMark}/${totalQ}</div>
+        <span class="doneCount" style="font-size:11px">paragraph mark</span>
       </div>
     `;
   }).join('');
