@@ -814,6 +814,83 @@ function recordScore(record){
   return {score:isNaN(score)?0:score,total:isNaN(total)?0:total};
 }
 
+function normalizeActivityTitleForAttempt(record){
+  const title = String(
+    record.lessonTitle ||
+    record.collectionTitle ||
+    record.activityName ||
+    record.activity ||
+    record.title ||
+    record.name ||
+    record.recordTitle ||
+    PROGRAM_WEIGHTS[normalizeProgramName(record)].label
+  )
+  .toLowerCase()
+  .replace(/reading[_\s-]*rush[_\s-]*final/gi,'reading rush')
+  .replace(/final\s*(mark|score|attempt)?/gi,'')
+  .replace(/attempt\s*\d+/gi,'')
+  .replace(/[^a-z0-9\u0600-\u06FF]+/g,' ')
+  .trim();
+
+  return title || 'untitled_activity';
+}
+
+function firstAttemptKey(record){
+  const programKey = normalizeProgramName(record);
+  return [
+    normalizeClassForCompare(record.classId || record.className || ''),
+    normalizeStudentForCompare(record.studentId || record.password || record.id || ''),
+    programKey,
+    cleanKey(normalizeActivityTitleForAttempt(record)),
+    normalizeTerm(record.term || record.activeSavingTerm || record.activeTerm || getActiveTerm()),
+    String(record.studyYear || record.activeSavingStudyYear || record.activeStudyYear || getStudyYear())
+  ].join('|');
+}
+
+function firstAttemptTime(record){
+  return Number(record.time || record.savedAt || record.createdAt || record.updatedAt || 0) || 0;
+}
+
+function keepFirstAttemptOnly(records){
+  const firstByLesson = {};
+  (records || []).forEach(record=>{
+    if(!record) return;
+    const key = firstAttemptKey(record);
+    const current = firstByLesson[key];
+    const recordTime = firstAttemptTime(record);
+
+    if(!current){
+      firstByLesson[key] = record;
+      return;
+    }
+
+    const currentTime = firstAttemptTime(current);
+
+    // Keep the earliest attempt. If one record has no time, keep the one that appeared first.
+    if(recordTime && (!currentTime || recordTime < currentTime)){
+      firstByLesson[key] = record;
+    }
+  });
+
+  return Object.values(firstByLesson);
+}
+
+function hasFirstAttemptAlready(recordsObj, newRecord){
+  const newKey = firstAttemptKey(newRecord);
+  let found = false;
+
+  Object.keys(recordsObj || {}).forEach(recordId=>{
+    const oldRecord = recordsObj[recordId];
+    if(!oldRecord || typeof oldRecord !== 'object') return;
+    const normalizedOld = normalizeIncomingRecordTerm(oldRecord);
+    if(firstAttemptKey(normalizedOld) === newKey){
+      found = true;
+    }
+  });
+
+  return found;
+}
+
 function pushUniqueRecord(arr, seen, record, fallback){
   if(!record) return;
   const classId = cleanKey(record.classId || record.className || fallback?.classId || 'unknown_class');
@@ -1156,11 +1233,17 @@ function studentRecordsForClass(classId, student, options={}){
   const sid1=normalizeStudentForCompare(student.id);
   const sid2=normalizeStudentForCompare(student.password);
   const includeAllTerms=options && options.allTerms;
-  return classRecords(classId).filter(r=>{
+
+  const matched = classRecords(classId).filter(r=>{
     const rid=normalizeStudentForCompare(r.studentId || r.password || r.id);
     const sameStudent = rid===sid1 || rid===sid2;
     return sameStudent && (includeAllTerms || recordMatchesCurrentTerm(r));
   });
+
+  // FINAL RULE:
+  // For the same student + same lesson/activity title + same program + same term/year,
+  // Teacher Tracker counts ONLY the first attempt. Later attempts stay ignored here.
+  return keepFirstAttemptOnly(matched);
 }
 
 function buildPerformanceSummary(records){
@@ -1549,9 +1632,23 @@ async function saveStudentPerformance(record){
     date:record.date||today(),
     time:record.time || record.savedAt || record.updatedAt || record.createdAt || Date.now(),
     savedAt:record.savedAt || record.time || record.updatedAt || record.createdAt || Date.now(),
-    updatedAt:Date.now()
+    updatedAt:Date.now(),
+    attemptRule:'first_attempt_only',
+    attemptKey:''
   };
+
+  finalRecord.attemptKey = firstAttemptKey(finalRecord);
+
+  // Do not save a second Teacher Tracker attempt for the same lesson/activity title.
+  const existingSnap = await db.ref("teacherControlCenter/records/"+classId+"/"+studentId).get();
+  const existing = existingSnap.exists() ? existingSnap.val() : {};
+  if(hasFirstAttemptAlready(existing, finalRecord)){
+    console.log("Teacher Tracker skipped duplicate attempt:", finalRecord.activityName || finalRecord.activity || finalRecord.title || recordId);
+    return {saved:false, reason:'duplicate_attempt_ignored', attemptKey:finalRecord.attemptKey};
+  }
+
   await db.ref("teacherControlCenter/records/"+classId+"/"+studentId+"/"+recordId).set(finalRecord);
+  return {saved:true, attemptKey:finalRecord.attemptKey};
 }
 
 function toCSV(rows){
