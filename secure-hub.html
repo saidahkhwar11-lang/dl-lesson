@@ -197,64 +197,6 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 .hero p{font-size:15px!important}
 @media(max-width:900px){.studentWindows{grid-template-columns:1fr!important}.certList{max-height:none}}
 
-
-
-/* ===== LEARNING MISSION AGENDA REDESIGN ===== */
-.missionShell{display:grid;gap:18px;margin:16px 0 22px}
-.missionBanner{
-  position:relative;overflow:hidden;
-  background:linear-gradient(135deg,#fff7fb 0%,#eef6ff 45%,#f8f2ff 100%);
-  border:2px solid #eadcff;border-radius:32px;padding:24px;
-  box-shadow:0 14px 32px rgba(80,92,170,.12);
-}
-.missionBanner:before{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;background:radial-gradient(circle,#ffd7ef,transparent 65%);opacity:.8}
-.missionBanner:after{content:"";position:absolute;left:-80px;bottom:-90px;width:260px;height:260px;background:radial-gradient(circle,#dce8ff,transparent 65%);opacity:.9}
-.missionBanner>*{position:relative;z-index:1}
-.missionKicker{display:inline-flex;gap:7px;align-items:center;border-radius:999px;padding:7px 11px;background:white;border:1px solid #dfe8ff;color:#294a99;font-weight:900;font-size:12px;margin-bottom:10px}
-.missionTitle{font-family:Quicksand,sans-serif;font-size:34px;color:#203a78;margin:0 0 8px}
-.missionSubtitle{color:#506080;line-height:1.55;font-weight:700;max-width:850px}
-.missionMetaGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:16px}
-.missionMeta{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:11px}
-.missionMeta .label{font-size:11px;color:#7b88aa;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.missionMeta .value{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px;font-weight:900;margin-top:4px}
-.missionPanel{background:white;border:2px solid #e4eaff;border-radius:28px;padding:18px;box-shadow:0 8px 22px rgba(36,59,107,.08)}
-.missionPanel h2{font-family:Quicksand,sans-serif;color:#203a78;margin-bottom:9px;font-size:25px}
-.keywordCloud{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.keywordChip{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900}
-.ticketGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:12px}
-.teamTicket{border:2px solid #eadcff;border-radius:24px;padding:15px;background:linear-gradient(135deg,#fff,#fff7fb);cursor:pointer;transition:.2s;position:relative;overflow:hidden}
-.teamTicket:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(80,92,170,.13)}
-.teamTicket.selected{border-color:#7d5cff;box-shadow:0 0 0 4px #efe9ff}
-.teamTicket.full{opacity:.62;cursor:not-allowed}
-.teamTicket .teamEmoji{font-size:34px;margin-bottom:5px}
-.teamTicket .teamName{font-family:Quicksand,sans-serif;font-size:22px;color:#203a78;font-weight:900}
-.teamTicket .motto{font-size:12px;color:#607197;font-weight:800;margin:5px 0 8px;line-height:1.35}
-.teamTicket .small{font-size:12px;color:#506080;font-weight:800;line-height:1.5}
-.teamBadge{display:inline-block;border-radius:999px;background:#eef4ff;border:1px solid #d7e3ff;color:#294a99;padding:4px 8px;font-size:11px;font-weight:900;margin-top:6px}
-.leaderBtn{border:none;border-radius:12px;background:linear-gradient(135deg,#ff9eca,#b35cff);color:white;padding:8px 10px;font-family:Quicksand,sans-serif;font-weight:900;margin-top:8px;cursor:pointer;width:100%}
-.pathway{display:grid;gap:12px;counter-reset:station}
-.stationCard{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:linear-gradient(135deg,#ffffff,#f8fbff);border:1px solid #dfe8ff;border-radius:22px;padding:14px}
-.stationNumber{width:48px;height:48px;border-radius:18px;background:linear-gradient(135deg,#2f63d9,#7d5cff);color:white;font-family:Quicksand,sans-serif;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.stationTitle{font-family:Quicksand,sans-serif;font-size:21px;color:#203a78;font-weight:900;margin-bottom:3px}
-.stationText{color:#607197;font-size:13px;font-weight:700;line-height:1.45}
-.stationPill{display:inline-block;margin:5px 5px 0 0;border-radius:999px;padding:5px 8px;background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;font-size:11px;font-weight:900}
-.startStationBtn{white-space:nowrap;border:none;border-radius:15px;padding:11px 14px;background:linear-gradient(135deg,#1fb66d,#20c997);color:white;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer}
-.emptyMission{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:22px;padding:18px;font-weight:800;line-height:1.55}
-.missionProgress{height:14px;border-radius:999px;background:#eef4ff;overflow:hidden;border:1px solid #d7e3ff;margin:10px 0}
-.missionProgressBar{height:100%;width:0%;background:linear-gradient(90deg,#2f63d9,#ff9eca);border-radius:999px;transition:.3s}
-.builderGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.builderCard{background:#fff;border:1px solid #dfe8ff;border-radius:22px;padding:14px;margin-bottom:12px}
-.builderCard h3{font-family:Quicksand,sans-serif;color:#203a78;margin-bottom:8px}
-.builderCard textarea{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px;font-size:14px;font-family:Inter,sans-serif;min-height:76px;resize:vertical}
-.stationBuilder{background:#f8fbff;border:1px dashed #bcd0ff;border-radius:20px;padding:12px;margin:10px 0}
-.teacherMissionActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.teacherMissionActions button{border:none;border-radius:14px;padding:10px 12px;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer;background:#3f67d8;color:white}
-.teacherMissionActions .save{background:#1fb66d}.teacherMissionActions .danger{background:#ef5267}.teacherMissionActions .soft{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}
-.platformQuickGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
-.platformQuick{background:white;border:1px solid #dfe8ff;border-radius:20px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 6px 16px rgba(36,59,107,.06)}
-.platformQuick b{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px}
-@media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
-
 </style>
 </head>
 
@@ -295,8 +237,8 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 
 <div id="studentHub" class="hidden">
   <div class="hero">
-    <h1>🌟 Today's Learning Mission</h1>
-    <p>Your lesson is now a guided journey. Choose your team ticket, follow the stations, and keep your marks and certificates in your hub.</p>
+    <h1>🎮 DL Learning Hub</h1>
+    <p>Choose your activity. Your marks are saved automatically in the Teacher Control Center.</p>
   </div>
 
   <div class="topBar">
@@ -307,8 +249,32 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
     <button class="logoutBtn" onclick="logoutAll()">Logout</button>
   </div>
 
-  <div id="studentMissionArea" class="missionShell">
-    <div class="emptyMission">Loading today's mission...</div>
+  <h2 class="sectionTitle">👩‍🎓 Student Activities</h2>
+
+  <div class="grid">
+    <div class="card" onclick="openPage('DL-Lesson-Tracker.html')">
+      <div class="emoji">📘</div>
+      <h2>DL Lesson</h2>
+      <p>Interactive stations, live trackers, timers, and classroom lesson activities.</p>
+    </div>
+
+    <div class="card" onclick="openPage('Skill-Clash3-Tracker.html')">
+      <div class="emoji">⚔️</div>
+      <h2>Skill Clash</h2>
+      <p>Debate battles, group writing, voting rounds, and competitions.</p>
+    </div>
+
+    <div class="card" onclick="openPage('Reading-Rush-Tracker.html')">
+      <div class="emoji">📚</div>
+      <h2>Reading Rush</h2>
+      <p>Reading collections, paragraph races, comprehension, and vocabulary challenges.</p>
+    </div>
+
+    <div class="card" onclick="openPage('imposter.html')">
+      <div class="emoji">🕵️</div>
+      <h2>Classroom Imposter</h2>
+      <p>Fun-only classroom guessing game. No marks are saved.</p>
+    </div>
   </div>
 
   <div class="studentWindows">
@@ -346,91 +312,50 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 
 <div id="teacherHub" class="hidden">
   <div class="hero">
-    <h1>👩‍🏫 Mission Control</h1>
-    <p>Create today's lesson agenda, group tickets, and station journey for your students.</p>
+    <h1>👩‍🏫 Teacher Hub</h1>
+    <p>Create classes, manage records, and open any activity page to build lessons for students.</p>
   </div>
 
   <div class="topBar">
     <div class="userBox">
       <b>Welcome, Teacher</b><br>
-      <span>Build the daily mission + open activity builders</span>
+      <span>Control room + activity builders</span>
     </div>
     <button class="logoutBtn" onclick="logoutAll()">Logout</button>
   </div>
 
-  <div class="missionPanel">
-    <h2>🌟 Today's Mission Builder</h2>
-    <div class="builderGrid">
-      <div>
-        <label>Class</label>
-        <select id="missionClassSelect" onchange="loadTeacherMissionForClass()"></select>
-      </div>
-      <div>
-        <label>Day</label>
-        <input id="missionDay" placeholder="Sunday">
-      </div>
-      <div>
-        <label>Date</label>
-        <input id="missionDate" type="date">
-      </div>
-      <div>
-        <label>Subject</label>
-        <input id="missionSubject" value="English">
-      </div>
+  <h2 class="sectionTitle">👩‍🏫 Teacher Pages</h2>
+
+  <div class="grid">
+    <div class="card teacherCard" onclick="openPage('teacher-control.html')">
+      <div class="emoji">📊</div>
+      <h2>Teacher Control</h2>
+      <p>Add classes, upload student Excel files, and check class/student performance records.</p>
     </div>
 
-    <div class="builderGrid">
-      <div class="builderCard">
-        <h3>📌 Lesson Identity</h3>
-        <label>Lesson Title</label>
-        <input id="missionLessonTitle" placeholder="Example: Online Shopping and Smart Customers">
-        <label>Main Objectives</label>
-        <textarea id="missionObjectives" placeholder="Students will be able to..."></textarea>
-      </div>
-      <div class="builderCard">
-        <h3>🎯 Success & Vocabulary</h3>
-        <label>Success Criteria</label>
-        <textarea id="missionSuccess" placeholder="I can identify the main idea..."></textarea>
-        <label>Keywords</label>
-        <input id="missionKeywords" placeholder="refund, customer, browse, delivery">
-      </div>
+    <div class="card teacherCard" onclick="openPage('DL-Lesson-Tracker.html')">
+      <div class="emoji">📘</div>
+      <h2>DL Lesson Builder</h2>
+      <p>Open DL lesson page to create/edit lessons, stations, images, questions, and activities.</p>
     </div>
 
-    <div class="builderGrid">
-      <div>
-        <label>Team Mode</label>
-        <select id="missionGroupCount" onchange="renderMissionTeamPreview()">
-          <option value="0">Individual Mode - No Groups</option>
-          <option value="1">1 Group</option><option value="2">2 Groups</option><option value="3">3 Groups</option><option value="4">4 Groups</option>
-          <option value="5">5 Groups</option><option value="6">6 Groups</option><option value="7">7 Groups</option><option value="8">8 Groups</option>
-        </select>
-      </div>
-      <div>
-        <label>Maximum Students Per Ticket</label>
-        <select id="missionMaxTeamSize">
-          <option value="0">No Limit</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option>
-        </select>
-      </div>
+    <div class="card teacherCard" onclick="openPage('Skill-Clash3-Tracker.html')">
+      <div class="emoji">⚔️</div>
+      <h2>Skill Clash Builder</h2>
+      <p>Open Skill Clash to create writing, reading, debate, voting, and group activities.</p>
     </div>
-    <div id="missionTeamPreview" class="ticketGrid"></div>
 
-    <h2 style="margin-top:16px">🚀 Station Journey</h2>
-    <div id="missionStationBuilder"></div>
-    <div class="teacherMissionActions">
-      <button class="soft" onclick="addMissionStation()">➕ Add Station</button>
-      <button class="save" onclick="saveTeacherMission()">✅ Save & Activate Mission</button>
-      <button class="danger" onclick="clearTeacherMission()">🧹 Clear Active Mission</button>
+    <div class="card teacherCard" onclick="openPage('Reading-Rush-Tracker.html')">
+      <div class="emoji">📚</div>
+      <h2>Reading Rush Builder</h2>
+      <p>Open Reading Rush to create reading collections, questions, lesson plans, and live races.</p>
     </div>
-    <div id="missionSaveMsg" class="status good hidden"></div>
-  </div>
 
-  <h2 class="sectionTitle" style="margin-top:20px">⚡ Quick Builder Links</h2>
-  <div class="platformQuickGrid">
-    <div class="platformQuick" onclick="openPage('teacher-control.html')">📊<br><b>Teacher Control</b></div>
-    <div class="platformQuick" onclick="openPage('DL-Lesson-Tracker.html')">📘<br><b>DL Lesson</b></div>
-    <div class="platformQuick" onclick="openPage('Skill-Clash3-Tracker.html')">⚔️<br><b>Skill Clash</b></div>
-    <div class="platformQuick" onclick="openPage('Reading-Rush-Tracker.html')">📚<br><b>Reading Rush</b></div>
-    <div class="platformQuick" onclick="openPage('imposter.html')">🕵️<br><b>Imposter</b></div>
+    <div class="card teacherCard" onclick="openPage('imposter.html')">
+      <div class="emoji">🕵️</div>
+      <h2>Classroom Imposter</h2>
+      <p>Open the fun game page for classroom speaking, guessing, and discussion.</p>
+    </div>
   </div>
 
   <div class="footer">Teacher access is protected.</div>
@@ -907,64 +832,6 @@ function buildCertificateHTML(c, session){
   .sign{margin-top:34px;border-top:2px solid #cfdcff;padding-top:8px;min-width:220px}
   .printBtn{position:fixed;top:12px;right:12px;background:#2f63d9;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
   @media print{.printBtn{display:none}body{background:white}.cert{margin:0;min-height:auto}}
-
-
-/* ===== LEARNING MISSION AGENDA REDESIGN ===== */
-.missionShell{display:grid;gap:18px;margin:16px 0 22px}
-.missionBanner{
-  position:relative;overflow:hidden;
-  background:linear-gradient(135deg,#fff7fb 0%,#eef6ff 45%,#f8f2ff 100%);
-  border:2px solid #eadcff;border-radius:32px;padding:24px;
-  box-shadow:0 14px 32px rgba(80,92,170,.12);
-}
-.missionBanner:before{content:"";position:absolute;right:-70px;top:-70px;width:220px;height:220px;background:radial-gradient(circle,#ffd7ef,transparent 65%);opacity:.8}
-.missionBanner:after{content:"";position:absolute;left:-80px;bottom:-90px;width:260px;height:260px;background:radial-gradient(circle,#dce8ff,transparent 65%);opacity:.9}
-.missionBanner>*{position:relative;z-index:1}
-.missionKicker{display:inline-flex;gap:7px;align-items:center;border-radius:999px;padding:7px 11px;background:white;border:1px solid #dfe8ff;color:#294a99;font-weight:900;font-size:12px;margin-bottom:10px}
-.missionTitle{font-family:Quicksand,sans-serif;font-size:34px;color:#203a78;margin:0 0 8px}
-.missionSubtitle{color:#506080;line-height:1.55;font-weight:700;max-width:850px}
-.missionMetaGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:16px}
-.missionMeta{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:11px}
-.missionMeta .label{font-size:11px;color:#7b88aa;font-weight:900;text-transform:uppercase;letter-spacing:.03em}
-.missionMeta .value{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px;font-weight:900;margin-top:4px}
-.missionPanel{background:white;border:2px solid #e4eaff;border-radius:28px;padding:18px;box-shadow:0 8px 22px rgba(36,59,107,.08)}
-.missionPanel h2{font-family:Quicksand,sans-serif;color:#203a78;margin-bottom:9px;font-size:25px}
-.keywordCloud{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-.keywordChip{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:900}
-.ticketGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-top:12px}
-.teamTicket{border:2px solid #eadcff;border-radius:24px;padding:15px;background:linear-gradient(135deg,#fff,#fff7fb);cursor:pointer;transition:.2s;position:relative;overflow:hidden}
-.teamTicket:hover{transform:translateY(-3px);box-shadow:0 12px 24px rgba(80,92,170,.13)}
-.teamTicket.selected{border-color:#7d5cff;box-shadow:0 0 0 4px #efe9ff}
-.teamTicket.full{opacity:.62;cursor:not-allowed}
-.teamTicket .teamEmoji{font-size:34px;margin-bottom:5px}
-.teamTicket .teamName{font-family:Quicksand,sans-serif;font-size:22px;color:#203a78;font-weight:900}
-.teamTicket .motto{font-size:12px;color:#607197;font-weight:800;margin:5px 0 8px;line-height:1.35}
-.teamTicket .small{font-size:12px;color:#506080;font-weight:800;line-height:1.5}
-.teamBadge{display:inline-block;border-radius:999px;background:#eef4ff;border:1px solid #d7e3ff;color:#294a99;padding:4px 8px;font-size:11px;font-weight:900;margin-top:6px}
-.leaderBtn{border:none;border-radius:12px;background:linear-gradient(135deg,#ff9eca,#b35cff);color:white;padding:8px 10px;font-family:Quicksand,sans-serif;font-weight:900;margin-top:8px;cursor:pointer;width:100%}
-.pathway{display:grid;gap:12px;counter-reset:station}
-.stationCard{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;background:linear-gradient(135deg,#ffffff,#f8fbff);border:1px solid #dfe8ff;border-radius:22px;padding:14px}
-.stationNumber{width:48px;height:48px;border-radius:18px;background:linear-gradient(135deg,#2f63d9,#7d5cff);color:white;font-family:Quicksand,sans-serif;font-size:20px;font-weight:900;display:flex;align-items:center;justify-content:center}
-.stationTitle{font-family:Quicksand,sans-serif;font-size:21px;color:#203a78;font-weight:900;margin-bottom:3px}
-.stationText{color:#607197;font-size:13px;font-weight:700;line-height:1.45}
-.stationPill{display:inline-block;margin:5px 5px 0 0;border-radius:999px;padding:5px 8px;background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;font-size:11px;font-weight:900}
-.startStationBtn{white-space:nowrap;border:none;border-radius:15px;padding:11px 14px;background:linear-gradient(135deg,#1fb66d,#20c997);color:white;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer}
-.emptyMission{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:22px;padding:18px;font-weight:800;line-height:1.55}
-.missionProgress{height:14px;border-radius:999px;background:#eef4ff;overflow:hidden;border:1px solid #d7e3ff;margin:10px 0}
-.missionProgressBar{height:100%;width:0%;background:linear-gradient(90deg,#2f63d9,#ff9eca);border-radius:999px;transition:.3s}
-.builderGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
-.builderCard{background:#fff;border:1px solid #dfe8ff;border-radius:22px;padding:14px;margin-bottom:12px}
-.builderCard h3{font-family:Quicksand,sans-serif;color:#203a78;margin-bottom:8px}
-.builderCard textarea{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px;font-size:14px;font-family:Inter,sans-serif;min-height:76px;resize:vertical}
-.stationBuilder{background:#f8fbff;border:1px dashed #bcd0ff;border-radius:20px;padding:12px;margin:10px 0}
-.teacherMissionActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
-.teacherMissionActions button{border:none;border-radius:14px;padding:10px 12px;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer;background:#3f67d8;color:white}
-.teacherMissionActions .save{background:#1fb66d}.teacherMissionActions .danger{background:#ef5267}.teacherMissionActions .soft{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}
-.platformQuickGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
-.platformQuick{background:white;border:1px solid #dfe8ff;border-radius:20px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 6px 16px rgba(36,59,107,.06)}
-.platformQuick b{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px}
-@media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
-
 </style>
 </head>
 <body>
@@ -1098,7 +965,6 @@ function openStudentHub(session){
   byId("studentHub").classList.remove("hidden");
   byId("studentDisplay").innerText=session.name;
   byId("classDisplay").innerText=session.className+" • ID: "+session.studentId;
-  loadStudentMission(session);
   loadStudentHubWindows(session);
 }
 
@@ -1106,7 +972,6 @@ function openTeacherHub(){
   byId("loginScreen").classList.add("hidden");
   byId("studentHub").classList.add("hidden");
   byId("teacherHub").classList.remove("hidden");
-  setTimeout(setupMissionBuilder, 200);
 }
 
 function logoutAll(){
@@ -1118,234 +983,6 @@ function logoutAll(){
 function openPage(page){
   window.open(page, "_blank");
 }
-
-
-/* ===== LEARNING MISSION AGENDA SYSTEM ===== */
-const MISSION_PATH_BASE = "teacherControlCenter/lessonMissions";
-const MISSION_PLATFORM_LINKS = {
-  dl:"DL-Lesson-Tracker.html",
-  reading:"Reading-Rush-Tracker.html",
-  skill:"Skill-Clash3-Tracker.html",
-  imposter:"imposter.html",
-  alef:"https://www.alefed.com",
-  custom:"",
-  instructions:""
-};
-const MISSION_PLATFORM_LABELS = {
-  dl:"📘 DL Lesson",
-  reading:"📚 Reading Rush",
-  skill:"⚔️ Skill Clash",
-  imposter:"🕵️ Imposter",
-  alef:"🎯 ALEF",
-  custom:"🔗 Custom Link",
-  instructions:"📝 Instructions Only"
-};
-const MISSION_TEAMS = [
-  {emoji:"👑",name:"Queens",motto:"Leading with confidence.",style:"linear-gradient(135deg,#fff,#fff2cc)"},
-  {emoji:"💎",name:"Diamonds",motto:"Strong minds shine together.",style:"linear-gradient(135deg,#fff,#eef6ff)"},
-  {emoji:"🌸",name:"Blossoms",motto:"Growing smarter every day.",style:"linear-gradient(135deg,#fff,#fff0f7)"},
-  {emoji:"🦋",name:"Butterflies",motto:"Ready to shine and fly.",style:"linear-gradient(135deg,#fff,#f0fbff)"},
-  {emoji:"✨",name:"Stars",motto:"Reaching higher together.",style:"linear-gradient(135deg,#fff,#f8f2ff)"},
-  {emoji:"🌹",name:"Roses",motto:"Blooming through knowledge.",style:"linear-gradient(135deg,#fff,#fff1f1)"},
-  {emoji:"🌷",name:"Tulips",motto:"Learning with elegance.",style:"linear-gradient(135deg,#fff,#fff7fb)"},
-  {emoji:"🌈",name:"Rainbows",motto:"Bringing color to learning.",style:"linear-gradient(135deg,#fff,#f2fff8)"}
-];
-let CURRENT_MISSION = null;
-let MISSION_STATIONS = [];
-let CURRENT_STUDENT_TEAM = null;
-
-function missionDefaultDate(){
-  const d=new Date();
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-}
-function missionDayName(){return new Date().toLocaleDateString('en-US',{weekday:'long'});}
-function missionClassPath(classId){return `${MISSION_PATH_BASE}/${classId}/active`;}
-function missionMemberPath(classId, studentId){return `${MISSION_PATH_BASE}/${classId}/active/members/${safeKey(studentId)}`;}
-function missionStationDoneKey(index){return `mission_station_done_${index}`;}
-function missionStationProgress(classId, studentId){return `${MISSION_PATH_BASE}/${classId}/active/progress/${safeKey(studentId)}`;}
-function platformOptions(selected){
-  return Object.keys(MISSION_PLATFORM_LABELS).map(k=>`<option value="${k}" ${selected===k?'selected':''}>${MISSION_PLATFORM_LABELS[k]}</option>`).join('');
-}
-function defaultMissionStations(){
-  return [
-    {name:"Brain Warm-Up",time:"5 minutes",platform:"dl",instructions:"Go to DL Lesson, watch the starter video, and answer the starter question.",link:""},
-    {name:"Reading Challenge",time:"10 minutes",platform:"reading",instructions:"Go to Reading Rush, read the text carefully, and answer the questions.",link:""},
-    {name:"Deep Learning",time:"10 minutes",platform:"dl",instructions:"Return to DL Lesson and complete Activity 2 by following the instructions.",link:""},
-    {name:"Exit Ticket",time:"10 minutes",platform:"alef",instructions:"Complete today's ALEF lesson to finish the mission.",link:"https://www.alefed.com"}
-  ];
-}
-function setupMissionBuilder(){
-  if(!byId('missionClassSelect')) return;
-  const list=Object.values(classes||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-  byId('missionClassSelect').innerHTML=list.length ? list.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('') : '<option value="">No classes</option>';
-  if(byId('missionDate') && !byId('missionDate').value) byId('missionDate').value=missionDefaultDate();
-  if(byId('missionDay') && !byId('missionDay').value) byId('missionDay').value=missionDayName();
-  if(!MISSION_STATIONS.length) MISSION_STATIONS=defaultMissionStations();
-  renderMissionStationBuilder();
-  renderMissionTeamPreview();
-  loadTeacherMissionForClass();
-}
-function renderMissionTeamPreview(){
-  const box=byId('missionTeamPreview'); if(!box) return;
-  const count=Number(byId('missionGroupCount')?.value||0);
-  if(count<=0){box.innerHTML='<div class="emptyMission">Individual Mode selected: students will go directly to the lesson mission without team tickets.</div>';return;}
-  box.innerHTML=MISSION_TEAMS.slice(0,count).map(t=>`<div class="teamTicket" style="background:${t.style}"><div class="teamEmoji">${t.emoji}</div><div class="teamName">${t.name}</div><div class="motto">${t.motto}</div><span class="teamBadge">Student-choice ticket</span></div>`).join('');
-}
-function renderMissionStationBuilder(){
-  const box=byId('missionStationBuilder'); if(!box) return;
-  box.innerHTML=MISSION_STATIONS.map((s,i)=>`<div class="stationBuilder">
-    <div class="builderGrid">
-      <div><label>Station Name</label><input value="${esc(s.name)}" onchange="MISSION_STATIONS[${i}].name=this.value"></div>
-      <div><label>Time</label><input value="${esc(s.time)}" onchange="MISSION_STATIONS[${i}].time=this.value" placeholder="5 minutes"></div>
-      <div><label>Platform</label><select onchange="MISSION_STATIONS[${i}].platform=this.value;renderMissionStationBuilder()">${platformOptions(s.platform)}</select></div>
-      <div><label>Custom Link / ALEF Link</label><input value="${esc(s.link||'')}" onchange="MISSION_STATIONS[${i}].link=this.value" placeholder="Optional URL"></div>
-    </div>
-    <label>Student Instructions</label>
-    <textarea onchange="MISSION_STATIONS[${i}].instructions=this.value">${esc(s.instructions)}</textarea>
-    <button class="logoutBtn" style="margin-top:8px" onclick="removeMissionStation(${i})">Remove Station</button>
-  </div>`).join('');
-}
-function addMissionStation(){MISSION_STATIONS.push({name:"New Station",time:"5 minutes",platform:"instructions",instructions:"Write student instructions here.",link:""});renderMissionStationBuilder();}
-function removeMissionStation(i){MISSION_STATIONS.splice(i,1);renderMissionStationBuilder();}
-async function loadTeacherMissionForClass(){
-  if(!db || !byId('missionClassSelect')) return;
-  const classId=byId('missionClassSelect').value; if(!classId) return;
-  const snap=await db.ref(missionClassPath(classId)).get();
-  if(!snap.exists()) return;
-  const m=snap.val()||{};
-  byId('missionDay').value=m.day||missionDayName();
-  byId('missionDate').value=m.date||missionDefaultDate();
-  byId('missionSubject').value=m.subject||'English';
-  byId('missionLessonTitle').value=m.lessonTitle||'';
-  byId('missionObjectives').value=m.objectives||'';
-  byId('missionSuccess').value=m.successCriteria||'';
-  byId('missionKeywords').value=m.keywords||'';
-  byId('missionGroupCount').value=String(m.groupCount??0);
-  byId('missionMaxTeamSize').value=String(m.maxTeamSize??0);
-  MISSION_STATIONS=Array.isArray(m.stations)&&m.stations.length?m.stations:defaultMissionStations();
-  renderMissionTeamPreview();renderMissionStationBuilder();
-}
-async function saveTeacherMission(){
-  if(!db){alert('Firebase not ready.');return;}
-  const classId=byId('missionClassSelect').value; if(!classId){alert('Choose class.');return;}
-  const cls=(classes||{})[classId]||{};
-  const mission={
-    active:true,
-    classId,
-    className:cls.name||classId,
-    day:byId('missionDay').value||missionDayName(),
-    date:byId('missionDate').value||missionDefaultDate(),
-    subject:byId('missionSubject').value||'English',
-    lessonTitle:byId('missionLessonTitle').value||'Today\'s English Mission',
-    objectives:byId('missionObjectives').value||'',
-    successCriteria:byId('missionSuccess').value||'',
-    keywords:byId('missionKeywords').value||'',
-    groupCount:Number(byId('missionGroupCount').value||0),
-    maxTeamSize:Number(byId('missionMaxTeamSize').value||0),
-    teams:MISSION_TEAMS.slice(0,Number(byId('missionGroupCount').value||0)),
-    stations:MISSION_STATIONS,
-    updatedAt:Date.now()
-  };
-  await db.ref(missionClassPath(classId)).update(mission);
-  const msg=byId('missionSaveMsg');
-  if(msg){msg.classList.remove('hidden');msg.innerHTML='✅ Mission saved and activated for '+esc(mission.className)+'. Students will see it after login.';}
-}
-async function clearTeacherMission(){
-  const classId=byId('missionClassSelect')?.value; if(!classId) return;
-  if(!confirm('Clear the active mission for this class? Student marks and certificates will NOT be deleted.')) return;
-  await db.ref(missionClassPath(classId)).remove();
-  const msg=byId('missionSaveMsg'); if(msg){msg.classList.remove('hidden');msg.className='status good';msg.innerHTML='✅ Active mission cleared. Marks and certificates were not touched.';}
-}
-async function loadStudentMission(session){
-  const area=byId('studentMissionArea'); if(!area || !db || !session) return;
-  const snap=await db.ref(missionClassPath(session.classId)).get();
-  if(!snap.exists()){
-    area.innerHTML=`<div class="emptyMission"><b>🌸 No mission activated yet.</b><br>Your teacher has not activated today\'s Learning Mission for ${esc(session.className)}. You can still open the activity pages below.</div>${fallbackActivityCards()}`;
-    return;
-  }
-  CURRENT_MISSION=snap.val()||{};
-  renderStudentMission(session);
-  db.ref(missionClassPath(session.classId)).on('value', s=>{CURRENT_MISSION=s.val(); if(CURRENT_MISSION) renderStudentMission(session);});
-}
-function fallbackActivityCards(){
-  return `<div class="platformQuickGrid"><div class="platformQuick" onclick="openPage('DL-Lesson-Tracker.html')">📘<br><b>DL Lesson</b></div><div class="platformQuick" onclick="openPage('Skill-Clash3-Tracker.html')">⚔️<br><b>Skill Clash</b></div><div class="platformQuick" onclick="openPage('Reading-Rush-Tracker.html')">📚<br><b>Reading Rush</b></div><div class="platformQuick" onclick="openPage('imposter.html')">🕵️<br><b>Imposter</b></div></div>`;
-}
-function renderStudentMission(session){
-  const area=byId('studentMissionArea'); if(!area || !CURRENT_MISSION) return;
-  const members=CURRENT_MISSION.members||{};
-  const myMember=members[safeKey(session.studentId)]||{};
-  CURRENT_STUDENT_TEAM=myMember.teamIndex;
-  const teamHTML=renderStudentTeams(session, members);
-  const stationHTML=renderStudentStations(session);
-  const keywords=String(CURRENT_MISSION.keywords||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const doneCount=Object.values((CURRENT_MISSION.progress||{})[safeKey(session.studentId)]||{}).filter(Boolean).length;
-  const stationCount=(CURRENT_MISSION.stations||[]).length||1;
-  const pct=Math.round(doneCount/stationCount*100);
-  area.innerHTML=`
-    <div class="missionBanner">
-      <div class="missionKicker">🌟 MISSION OF THE DAY</div>
-      <h1 class="missionTitle">${esc(CURRENT_MISSION.lessonTitle||'Today\'s Learning Mission')}</h1>
-      <div class="missionSubtitle">Good work, <b>${esc(session.name)}</b>. Follow the stations in order and use each page as part of today\'s lesson journey.</div>
-      <div class="missionMetaGrid">
-        <div class="missionMeta"><div class="label">Day</div><div class="value">${esc(CURRENT_MISSION.day||'')}</div></div>
-        <div class="missionMeta"><div class="label">Date</div><div class="value">${esc(CURRENT_MISSION.date||'')}</div></div>
-        <div class="missionMeta"><div class="label">Subject</div><div class="value">${esc(CURRENT_MISSION.subject||'English')}</div></div>
-        <div class="missionMeta"><div class="label">Progress</div><div class="value">${pct}%</div></div>
-      </div>
-      <div class="missionProgress"><div class="missionProgressBar" style="width:${pct}%"></div></div>
-    </div>
-    <div class="missionPanel"><h2>🎯 Objectives</h2><div class="feedbackBox">${esc(CURRENT_MISSION.objectives||'Follow the lesson stations and complete each task carefully.')}</div><h2>⭐ Success Criteria</h2><div class="feedbackBox">${esc(CURRENT_MISSION.successCriteria||'I can complete the lesson tasks and show my understanding.')}</div>${keywords.length?`<div class="keywordCloud">${keywords.map(k=>`<span class="keywordChip">${esc(k)}</span>`).join('')}</div>`:''}</div>
-    ${teamHTML}
-    <div class="missionPanel"><h2>🚀 Learning Journey</h2><div class="pathway">${stationHTML}</div></div>`;
-}
-function renderStudentTeams(session, members){
-  const count=Number(CURRENT_MISSION.groupCount||0);
-  if(count<=0) return '';
-  const max=Number(CURRENT_MISSION.maxTeamSize||0);
-  const teams=(CURRENT_MISSION.teams||MISSION_TEAMS).slice(0,count);
-  return `<div class="missionPanel"><h2>🎫 Choose Your Team Ticket</h2><div class="ticketGrid">${teams.map((t,i)=>{
-    const teamMembers=Object.values(members||{}).filter(m=>Number(m.teamIndex)===i);
-    const full=max>0 && teamMembers.length>=max && Number(CURRENT_STUDENT_TEAM)!==i;
-    const leader=teamMembers.find(m=>m.leader);
-    const selected=Number(CURRENT_STUDENT_TEAM)===i;
-    return `<div class="teamTicket ${selected?'selected':''} ${full?'full':''}" style="background:${t.style||''}" onclick="${full?'':'joinMissionTeam('+i+')'}"><div class="teamEmoji">${t.emoji}</div><div class="teamName">${esc(t.name)}</div><div class="motto">${esc(t.motto)}</div><div class="small">👭 Members: ${teamMembers.length}${max?'/'+max:''}<br>👑 Leader: ${leader?esc(leader.name):'Not selected yet'}</div>${selected?'<span class="teamBadge">My Ticket</span>':''}${selected&&!leader?'<button class="leaderBtn" onclick="event.stopPropagation();becomeMissionLeader()">👑 I am Today\'s Leader</button>':''}</div>`;
-  }).join('')}</div></div>`;
-}
-async function joinMissionTeam(index){
-  const session=CURRENT_STUDENT_SESSION; if(!session||!CURRENT_MISSION) return;
-  const ref=db.ref(missionMemberPath(session.classId,session.studentId));
-  await ref.update({teamIndex:index,name:session.name,studentId:session.studentId,classId:session.classId,joinedAt:Date.now(),leader:false});
-}
-async function becomeMissionLeader(){
-  const session=CURRENT_STUDENT_SESSION; if(!session||CURRENT_STUDENT_TEAM===null||typeof CURRENT_STUDENT_TEAM==='undefined') return;
-  const members=CURRENT_MISSION.members||{};
-  const updates={};
-  Object.keys(members).forEach(k=>{if(Number(members[k].teamIndex)===Number(CURRENT_STUDENT_TEAM)) updates[`members/${k}/leader`]=false;});
-  updates[`members/${safeKey(session.studentId)}/leader`]=true;
-  updates[`members/${safeKey(session.studentId)}/teamIndex`]=Number(CURRENT_STUDENT_TEAM);
-  updates[`members/${safeKey(session.studentId)}/name`]=session.name;
-  updates[`members/${safeKey(session.studentId)}/studentId`]=session.studentId;
-  await db.ref(missionClassPath(session.classId)).update(updates);
-}
-function renderStudentStations(session){
-  const stations=CURRENT_MISSION.stations||[];
-  if(!stations.length) return '<div class="emptyMission">No stations added yet.</div>';
-  const progress=(CURRENT_MISSION.progress||{})[safeKey(session.studentId)]||{};
-  return stations.map((s,i)=>{
-    const done=progress[i]===true;
-    const label=MISSION_PLATFORM_LABELS[s.platform]||'📝 Activity';
-    return `<div class="stationCard"><div class="stationNumber">${done?'✓':i+1}</div><div><div class="stationTitle">${esc(s.name||('Station '+(i+1)))}</div><div class="stationText">${esc(s.instructions||'Follow your teacher instructions.')}</div><span class="stationPill">⏱ ${esc(s.time||'')}</span><span class="stationPill">${esc(label)}</span></div><button class="startStationBtn" onclick="startMissionStation(${i})">${done?'Open Again':'Start Station'}</button></div>`;
-  }).join('');
-}
-async function startMissionStation(index){
-  const session=CURRENT_STUDENT_SESSION; if(!session||!CURRENT_MISSION) return;
-  const s=(CURRENT_MISSION.stations||[])[index]||{};
-  await db.ref(`${missionStationProgress(session.classId,session.studentId)}/${index}`).set(true);
-  let link=s.link||MISSION_PLATFORM_LINKS[s.platform]||'';
-  if(s.platform==='instructions' || !link){alert(s.instructions||'Follow your teacher instructions.');return;}
-  window.open(link,'_blank');
-}
-
   initFirebase();
   
 </script>
