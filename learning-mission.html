@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DL Secure Learning Hub</title>
+<title>Learning Mission Platform</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
@@ -282,6 +282,16 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 
 @media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
 
+/* ===== V3 CLEAN STUDENT MISSION FLOW ===== */
+.studentHiddenPlatform{display:none!important}
+.bigInstructionBox{min-height:150px!important;line-height:1.55!important;font-size:14px!important;background:white!important}
+.stationBuilder{padding:18px!important;margin:14px 0!important}
+.stationBuilderHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.stationStepBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:#efe9ff;color:#5531ad;border:1px solid #d8c7ff;padding:7px 11px;font-family:Quicksand,sans-serif;font-weight:900}
+.teacherHint{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:16px;padding:10px 12px;font-size:12px;font-weight:800;margin-top:8px}
+.startStationBtn{background:linear-gradient(135deg,#7d5cff,#2f63d9)!important}
+.markDoneBtn{background:#eafff3!important;color:#176b45!important;border-color:#9fe4bd!important}
+
 </style>
 </head>
 
@@ -290,8 +300,8 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 
 <div id="loginScreen" class="loginWrap">
   <div class="loginCard">
-    <h1>🎮 DL Learning Hub</h1>
-    <p>Students login with ID only. Teachers login to create classes and activities.</p>
+    <h1>🌸 Learning Mission</h1>
+    <p>Students login with ID only. Teachers create today’s guided lesson mission.</p>
 
     <div class="tabs">
       <button id="studentTab" class="tabBtn active" onclick="showLoginTab('student')">👩‍🎓 Student</button>
@@ -439,7 +449,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
         <label>Team Mode</label>
         <select id="missionGroupCount" onchange="renderMissionTeamPreview()">
           <option value="0">Individual Mode - No Groups</option>
-          <option value="1">1 Group</option><option value="2">2 Groups</option><option value="3">3 Groups</option><option value="4">4 Groups</option>
+          <option value="1">1 Group</option><option value="2">2 Groups</option><option value="3">3 Groups</option><option value="4" selected>4 Groups</option>
           <option value="5">5 Groups</option><option value="6">6 Groups</option><option value="7">7 Groups</option><option value="8">8 Groups</option>
         </select>
       </div>
@@ -1032,6 +1042,16 @@ function buildCertificateHTML(c, session){
 
 @media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
 
+/* ===== V3 CLEAN STUDENT MISSION FLOW ===== */
+.studentHiddenPlatform{display:none!important}
+.bigInstructionBox{min-height:150px!important;line-height:1.55!important;font-size:14px!important;background:white!important}
+.stationBuilder{padding:18px!important;margin:14px 0!important}
+.stationBuilderHeader{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.stationStepBadge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;background:#efe9ff;color:#5531ad;border:1px solid #d8c7ff;padding:7px 11px;font-family:Quicksand,sans-serif;font-weight:900}
+.teacherHint{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:16px;padding:10px 12px;font-size:12px;font-weight:800;margin-top:8px}
+.startStationBtn{background:linear-gradient(135deg,#7d5cff,#2f63d9)!important}
+.markDoneBtn{background:#eafff3!important;color:#176b45!important;border-color:#9fe4bd!important}
+
 </style>
 </head>
 <body>
@@ -1271,15 +1291,19 @@ function renderMissionTeamPreview(){
 function renderMissionStationBuilder(){
   const box=byId('missionStationBuilder'); if(!box) return;
   box.innerHTML=MISSION_STATIONS.map((s,i)=>`<div class="stationBuilder">
-    <div class="builderGrid">
-      <div><label>Station Name</label><input value="${esc(s.name)}" onchange="MISSION_STATIONS[${i}].name=this.value"></div>
-      <div><label>Time</label><input value="${esc(s.time)}" onchange="MISSION_STATIONS[${i}].time=this.value" placeholder="5 minutes"></div>
-      <div><label>Platform</label><select onchange="MISSION_STATIONS[${i}].platform=this.value;renderMissionStationBuilder()">${platformOptions(s.platform)}</select></div>
-      <div><label>Custom Link / ALEF Link</label><input value="${esc(s.link||'')}" onchange="MISSION_STATIONS[${i}].link=this.value" placeholder="Optional URL"></div>
+    <div class="stationBuilderHeader">
+      <span class="stationStepBadge">🚀 Step ${i+1}</span>
+      <button class="logoutBtn" style="margin:0" onclick="removeMissionStation(${i})">Remove Station</button>
     </div>
-    <label>Student Instructions</label>
-    <textarea onchange="MISSION_STATIONS[${i}].instructions=this.value">${esc(s.instructions)}</textarea>
-    <button class="logoutBtn" style="margin-top:8px" onclick="removeMissionStation(${i})">Remove Station</button>
+    <div class="builderGrid">
+      <div><label>Station Name students will see</label><input value="${esc(s.name)}" onchange="MISSION_STATIONS[${i}].name=this.value" placeholder="Example: Reading Challenge"></div>
+      <div><label>Time</label><input value="${esc(s.time)}" onchange="MISSION_STATIONS[${i}].time=this.value" placeholder="10 minutes"></div>
+      <div><label>Connected Page (teacher only)</label><select onchange="MISSION_STATIONS[${i}].platform=this.value;renderMissionStationBuilder()">${platformOptions(s.platform)}</select></div>
+      <div><label>Custom Link / ALEF Link</label><input value="${esc(s.link||'')}" onchange="MISSION_STATIONS[${i}].link=this.value" placeholder="Only needed for ALEF or custom links"></div>
+    </div>
+    <label>What students must do in this step</label>
+    <textarea class="bigInstructionBox" onchange="MISSION_STATIONS[${i}].instructions=this.value" placeholder="Write clear student instructions here. Example: Open the reading activity, read the text carefully, answer all questions, then come back and mark this step done.">${esc(s.instructions)}</textarea>
+    <div class="teacherHint">Students will NOT see the platform name. They will only see this station title, your instructions, time, and a Start Activity button.</div>
   </div>`).join('');
 }
 function addMissionStation(){MISSION_STATIONS.push({name:"New Station",time:"5 minutes",platform:"instructions",instructions:"Write student instructions here.",link:""});renderMissionStationBuilder();}
@@ -1334,7 +1358,7 @@ async function saveTeacherMission(freshStart){
     await db.ref(missionClassPath(classId)).update(mission);
   }
   const msg=byId('missionSaveMsg');
-  if(msg){msg.classList.remove('hidden');msg.innerHTML='✅ Mission saved and activated for '+esc(mission.className)+'. Students will see it after login.';}
+  if(msg){msg.classList.remove('hidden');msg.innerHTML='✅ Mission saved and activated for '+esc(mission.className)+'. Students will see it after login. Choose 1-8 Groups if you want team tickets to appear.';}
 }
 async function clearTeacherMission(){
   const classId=byId('missionClassSelect')?.value; if(!classId) return;
@@ -1352,7 +1376,7 @@ async function loadStudentMission(session){
   const area=byId('studentMissionArea'); if(!area || !db || !session) return;
   const snap=await db.ref(missionClassPath(session.classId)).get();
   if(!snap.exists()){
-    area.innerHTML=`<div class="emptyMission"><b>🌸 No mission activated yet.</b><br>Your teacher has not activated today\'s Learning Mission for ${esc(session.className)}. You can still open the activity pages below.</div>${fallbackActivityCards()}`;
+    area.innerHTML=`<div class="emptyMission"><b>🌸 No mission activated yet.</b><br>Your teacher has not activated today\'s Learning Mission for ${esc(session.className)} yet. Please wait for your teacher to start the mission.</div>${fallbackActivityCards()}`;
     return;
   }
   CURRENT_MISSION=snap.val()||{};
@@ -1360,7 +1384,9 @@ async function loadStudentMission(session){
   db.ref(missionClassPath(session.classId)).on('value', s=>{CURRENT_MISSION=s.val(); if(CURRENT_MISSION) renderStudentMission(session);});
 }
 function fallbackActivityCards(){
-  return `<div class="platformQuickGrid"><div class="platformQuick" onclick="openPage('DL-Lesson-Tracker.html')">📘<br><b>DL Lesson</b></div><div class="platformQuick" onclick="openPage('Skill-Clash3-Tracker.html')">⚔️<br><b>Skill Clash</b></div><div class="platformQuick" onclick="openPage('Reading-Rush-Tracker.html')">📚<br><b>Reading Rush</b></div><div class="platformQuick" onclick="openPage('imposter.html')">🕵️<br><b>Imposter</b></div></div>`;
+  // V3: do not show separate platform cards to students.
+  // Students should only follow the teacher's mission steps.
+  return ``;
 }
 function renderStudentMission(session){
   const area=byId('studentMissionArea'); if(!area || !CURRENT_MISSION) return;
@@ -1453,7 +1479,7 @@ function renderStudentStations(session){
   return stations.map((s,i)=>{
     const done=progress[i]===true;
     const label=MISSION_PLATFORM_LABELS[s.platform]||'📝 Activity';
-    return `<div class="journeyStep"><div class="journeyIcon ${done?'done':''}">${stationIcon(s.platform,done)}</div><div><div class="journeyTitle">${esc(s.name||('Station '+(i+1)))}</div><div class="journeyDetails">${esc(s.instructions||'Follow your teacher instructions.')}</div><span class="stationPill">Step ${i+1}</span><span class="stationPill">⏱ ${esc(s.time||'')}</span><span class="stationPill">${esc(label)}</span></div><div class="journeyActions"><button class="startStationBtn" onclick="startMissionStation(${i})">${done?'Open Again':'Start Station'}</button>${done?'':'<button class="markDoneBtn" onclick="markMissionStationDone('+i+')">Mark Done</button>'}</div></div>`;
+    return `<div class="journeyStep"><div class="journeyIcon ${done?'done':''}">${stationIcon(s.platform,done)}</div><div><div class="journeyTitle">${esc(s.name||('Station '+(i+1)))}</div><div class="journeyDetails">${esc(s.instructions||'Follow your teacher instructions.')}</div><span class="stationPill">Step ${i+1}</span><span class="stationPill">⏱ ${esc(s.time||'')}</span></div><div class="journeyActions"><button class="startStationBtn" onclick="startMissionStation(${i})">${done?'Open Activity Again':'Start Activity'}</button>${done?'':'<button class="markDoneBtn" onclick="markMissionStationDone('+i+')">✅ I finished this step</button>'}</div></div>`;
   }).join('');
 }
 async function markMissionStationDone(index){
@@ -1464,9 +1490,21 @@ async function markMissionStationDone(index){
 async function startMissionStation(index){
   const session=CURRENT_STUDENT_SESSION; if(!session||!CURRENT_MISSION) return;
   const s=(CURRENT_MISSION.stations||[])[index]||{};
-  await db.ref(`${missionStationProgress(session.classId,session.studentId)}/${index}`).set(true);
   let link=s.link||MISSION_PLATFORM_LINKS[s.platform]||'';
-  if(s.platform==='instructions' || !link){alert(s.instructions||'Follow your teacher instructions.');return;}
+
+  // V3: opening a page does NOT complete the step automatically.
+  // Student clicks “I finished this step” after completing the task.
+  if(s.platform==='instructions' || !link){
+    alert(s.instructions||'Follow your teacher instructions.');
+    return;
+  }
+
+  // Keep session available for DL Lesson, Reading Rush, Skill Clash, and Imposter.
+  try{
+    localStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify(session));
+    sessionStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify(session));
+  }catch(e){}
+
   window.open(link,'_blank');
 }
 
