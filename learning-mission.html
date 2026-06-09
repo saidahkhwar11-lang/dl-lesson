@@ -1832,6 +1832,165 @@ async function startMissionStation(index){
 }
 
 
+/* ===== V5: TRUE STUDENT TICKET FLOW + TEACHER GROUP MONITOR ===== */
+let V5_TEACHER_GROUP_SELECTED = null;
+let V5_TEACHER_TIMER_INTERVAL = null;
+let V5_TEACHER_TIMER_REMAINING = 0;
+let V5_STUDENT_TIMER_INTERVAL = null;
+let V5_STUDENT_TIMER_REMAINING = 0;
+
+function v5pct(n,d){ return d>0 ? Math.round((Number(n||0)/Number(d))*100) : 0; }
+function v5teamMembers(index){ return Object.values((CURRENT_MISSION&&CURRENT_MISSION.members)||{}).filter(m=>Number(m.teamIndex)===Number(index)); }
+function v5progressForStudent(id){ return ((CURRENT_MISSION&&CURRENT_MISSION.progress)||{})[safeKey(id)] || {}; }
+function v5studentDoneCount(id){ return Object.values(v5progressForStudent(id)).filter(Boolean).length; }
+function v5totalStations(){ return ((CURRENT_MISSION&&CURRENT_MISSION.stations)||[]).length || 1; }
+function v5teamPct(index){ const members=v5teamMembers(index); if(!members.length) return 0; const total=members.length*v5totalStations(); const done=members.reduce((s,m)=>s+v5studentDoneCount(m.studentId),0); return v5pct(done,total); }
+function v5myTeamIndex(session){ const m=((CURRENT_MISSION&&CURRENT_MISSION.members)||{})[safeKey(session.studentId)]||{}; return (typeof m.teamIndex==='number' || String(m.teamIndex||'')!=='') ? Number(m.teamIndex) : null; }
+function v5myMember(session){ return ((CURRENT_MISSION&&CURRENT_MISSION.members)||{})[safeKey(session.studentId)]||null; }
+function v5team(index){ return ((CURRENT_MISSION&&CURRENT_MISSION.teams)||MISSION_TEAMS)[Number(index)] || MISSION_TEAMS[0]; }
+function v5firstIncompleteStation(session){ const stations=(CURRENT_MISSION&&CURRENT_MISSION.stations)||[]; const p=v5progressForStudent(session.studentId); for(let i=0;i<stations.length;i++){ if(p[i]!==true) return i; } return Math.max(0,stations.length-1); }
+function v5format(sec){ sec=Math.max(0,Number(sec||0)); const m=Math.floor(sec/60), s=sec%60; return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'); }
+function v5minutes(t){ const n=parseInt(String(t||'5').match(/\d+/)?.[0]||'5',10); return Math.max(1,n); }
+function v5list(text){ return String(text||'').split(/\n|,/).map(x=>x.trim()).filter(Boolean); }
+function v5stationEmoji(platform){ return ({dl:'🧠',reading:'📖',skill:'👭',imposter:'🎭',alef:'🎯',custom:'🔗',instructions:'📝'}[platform] || '🚀'); }
+
+const V5_EXTRA_CSS = document.createElement('style');
+V5_EXTRA_CSS.textContent = `
+body{padding:12px!important;background:linear-gradient(135deg,#fff7fb,#f8fbff,#f7f0ff)!important}
+.hero{padding:14px 18px!important;border-radius:22px!important;margin-bottom:14px!important;background:linear-gradient(135deg,#fff,#fff7fb)!important;color:#0b246b!important;text-align:left!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;border:1px solid #eadcff!important;box-shadow:0 10px 24px rgba(100,70,180,.10)!important}
+.hero h1{font-size:30px!important;margin:0!important;color:#0b246b!important}.hero p{font-size:14px!important;margin:4px 0 0!important;color:#304170!important}
+.topBar{margin-bottom:12px!important}.userBox{border-radius:16px!important}.missionBanner{padding:16px!important;border-radius:22px!important}.missionTitle{font-size:28px!important}.missionSubtitle{font-size:14px!important}.missionMetaGrid{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))!important}.missionMeta{padding:10px!important;border-radius:16px!important}.missionProgress{height:10px!important}
+.studentWindows{margin-top:14px!important}
+.v5GateWrap{display:grid;gap:14px}.v5TopSteps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.v5TopStep{background:white;border:1px solid #e6dcff;border-radius:20px;padding:14px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 18px rgba(60,50,110,.06)}.v5TopStep.active{border-color:#ff6fa5;background:linear-gradient(135deg,#fff,#fff2f7)}.v5TopStepNum{width:42px;height:42px;border-radius:999px;background:linear-gradient(135deg,#ff4f87,#8a5cf6);color:white;display:flex;align-items:center;justify-content:center;font-family:Quicksand,sans-serif;font-weight:900;font-size:18px}.v5TopStepTitle{font-family:Quicksand,sans-serif;font-size:18px;color:#0b246b;font-weight:900}.v5TopStepText{font-size:12px;color:#506080;font-weight:700}
+.v5TicketCard{border:2px solid #eadcff;border-radius:22px;padding:18px;background:white;cursor:pointer;transition:.2s;min-height:190px;text-align:center}.v5TicketCard:hover{transform:translateY(-3px);box-shadow:0 14px 24px rgba(80,70,160,.12)}.v5TicketCard.selected{border-color:#ff4f87;box-shadow:0 0 0 4px #ffe6f0}.v5TicketEmoji{font-size:54px}.v5TicketName{font-family:Quicksand,sans-serif;font-size:22px;color:#0b246b;font-weight:900}.v5TicketInfo{font-size:13px;font-weight:800;color:#304170;line-height:1.6}.v5JoinBtn{margin-top:10px;border:0;border-radius:14px;padding:10px 14px;background:linear-gradient(135deg,#ff4f87,#8a5cf6);color:white;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer;width:100%}.v5JoinBtn.disabled{background:#eef1fb;color:#667;cursor:not-allowed}.v5TeamMeetGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-top:12px}.v5MemberCard{background:linear-gradient(135deg,#fff,#fff7fb);border:1px solid #f4cfe0;border-radius:20px;text-align:center;padding:14px;min-height:130px}.v5Avatar{font-size:38px}.v5LeaderBtn{border:1px solid #f6bf78;background:#fff8df;color:#9b4a0d;border-radius:12px;padding:8px 10px;font-weight:900;cursor:pointer;margin-top:8px}.v5StartMissionBtn{border:0;border-radius:16px;background:linear-gradient(135deg,#ff4f87,#8a5cf6);color:#fff;font-family:Quicksand,sans-serif;font-size:16px;font-weight:900;padding:14px 26px;float:right;cursor:pointer}.v5Notice{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:16px;padding:12px;font-weight:850;margin:8px 0}
+.v5MissionGrid{display:grid;grid-template-columns:370px 1fr;gap:16px}.v5Sidebar{display:grid;gap:10px}.v5StepItem{display:grid;grid-template-columns:auto auto 1fr auto;gap:12px;align-items:center;border:1px solid #dfe8ff;background:white;border-radius:20px;padding:12px;cursor:pointer}.v5StepItem.active{border-color:#ff4f87;background:linear-gradient(135deg,#fff,#fff7fb)}.v5StepNum{width:36px;height:36px;border-radius:999px;background:#8a5cf6;color:white;display:flex;align-items:center;justify-content:center;font-weight:900}.v5StepEmoji{font-size:30px}.v5StepTitle{font-family:Quicksand,sans-serif;font-weight:900;color:#0b246b;font-size:16px}.v5StepNote{font-size:12px;color:#506080;font-weight:700}.v5CurrentPanel{background:white;border:1px solid #eadcff;border-radius:24px;padding:16px;box-shadow:0 8px 18px rgba(60,50,110,.06)}.v5ActivityHead{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}.v5ActivityTitle{font-family:Quicksand,sans-serif;font-size:24px;color:#0b246b;font-weight:900}.v5ActivityGrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:14px}.v5ActivityBox{border:1px solid #e4eaff;border-radius:18px;padding:14px;background:linear-gradient(135deg,#fff,#fbfdff)}.v5ActivityBox h3{font-family:Quicksand,sans-serif;color:#0b246b;margin-bottom:8px}.v5TimerBar{display:flex;align-items:center;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap}.v5TimerDisplay{font-family:Quicksand,sans-serif;font-size:34px;font-weight:900;color:#0b246b;border:1px solid #eadcff;border-radius:16px;padding:10px 28px;background:#fff}.v5Btn{border:0;border-radius:14px;background:linear-gradient(135deg,#ff4f87,#8a5cf6);color:white;font-family:Quicksand,sans-serif;font-weight:900;padding:12px 18px;cursor:pointer}.v5Btn.soft{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}.v5Btn.green{background:#1fb66d}.v5MyTicket{background:linear-gradient(135deg,#fff7fb,#fff);border:1px solid #f4cfe0;border-radius:20px;padding:14px;margin-bottom:12px}.v5SmallPill{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 9px;font-size:11px;font-weight:900;margin:2px}.bigKeywords .keywordChip{font-size:13px;padding:9px 14px;background:#fff0f7;color:#db2766;border-color:#ffd1e3}
+.v5TeacherMonitor{background:white;border:2px solid #e4eaff;border-radius:26px;padding:16px;margin:16px 0;box-shadow:0 8px 22px rgba(36,59,107,.08)}.v5MetricGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:10px 0}.v5Metric{background:linear-gradient(135deg,#fff,#f8fbff);border:1px solid #dfe8ff;border-radius:18px;padding:12px}.v5Metric b{font-family:Quicksand,sans-serif;font-size:24px;color:#0b246b}.v5GroupTicketRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:12px}.v5TeacherTicket{border:1px solid #dfe8ff;border-radius:18px;padding:12px;background:white;cursor:pointer}.v5TeacherTicket.selected{border-color:#8a5cf6;box-shadow:0 0 0 3px #eee8ff}.v5TeacherDetailGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}.v5MiniTable{width:100%;border-collapse:collapse;font-size:13px}.v5MiniTable th,.v5MiniTable td{padding:9px;border-bottom:1px solid #edf2ff;text-align:left}.v5MiniTable th{background:#eef4ff;color:#0b246b}.v5MiniProgress{height:9px;background:#eef4ff;border-radius:99px;overflow:hidden}.v5MiniProgress > div{height:100%;background:linear-gradient(90deg,#1fb66d,#ffcb3d);border-radius:99px}.v5BuilderSectionTitle{font-family:Quicksand,sans-serif;font-size:18px;color:#0b246b;margin:14px 0 8px;display:flex;align-items:center;gap:8px}.stationBuilder{background:#fbfdff!important;border:2px solid #e4eaff!important;border-radius:22px!important;padding:16px!important}.bigInstructionBox{min-height:150px!important;font-size:15px!important;line-height:1.5!important}.stationBuilderHeader{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.stationStepBadge{background:linear-gradient(135deg,#ff4f87,#8a5cf6);color:white;border-radius:999px;padding:8px 12px;font-weight:900;font-family:Quicksand,sans-serif}
+@media(max-width:900px){.v5TopSteps,.v5MissionGrid,.v5ActivityGrid,.v5TeacherDetailGrid{grid-template-columns:1fr}.hero{display:block!important}.v5StartMissionBtn{float:none;width:100%;margin-top:12px}}
+`;
+document.head.appendChild(V5_EXTRA_CSS);
+
+function renderMissionStationBuilder(){
+  const box=byId('missionStationBuilder'); if(!box) return;
+  box.innerHTML=`<div class="v5Notice">💡 Build each lesson step clearly. Students will see the title, description, objectives, key words, instructions, and timer. The technical platform name is only for you.</div>` + MISSION_STATIONS.map((s,i)=>`<div class="stationBuilder">
+    <div class="stationBuilderHeader"><span class="stationStepBadge">Step ${i+1}: ${esc(s.name||'Activity')}</span><button class="logoutBtn" style="margin:0" onclick="removeMissionStation(${i})">Remove</button></div>
+    <div class="builderGrid">
+      <div><label>Student Step Title</label><input value="${esc(s.name||'')}" onchange="MISSION_STATIONS[${i}].name=this.value" placeholder="Brain Warm-Up"></div>
+      <div><label>Timer / Time</label><input value="${esc(s.time||'')}" onchange="MISSION_STATIONS[${i}].time=this.value" placeholder="5 minutes"></div>
+      <div><label>Connected Page (teacher only)</label><select onchange="MISSION_STATIONS[${i}].platform=this.value;renderMissionStationBuilder()">${platformOptions(s.platform)}</select></div>
+      <div><label>Custom / ALEF Link</label><input value="${esc(s.link||'')}" onchange="MISSION_STATIONS[${i}].link=this.value" placeholder="Only for ALEF or custom links"></div>
+    </div>
+    <div class="v5BuilderSectionTitle">🌸 Activity Description</div>
+    <textarea class="bigInstructionBox" onchange="MISSION_STATIONS[${i}].description=this.value" placeholder="Short description students see when this activity opens.">${esc(s.description||'')}</textarea>
+    <div class="builderGrid">
+      <div><div class="v5BuilderSectionTitle">🎯 Activity Objectives</div><textarea class="bigInstructionBox" onchange="MISSION_STATIONS[${i}].objective=this.value" placeholder="Write each objective on a new line.">${esc(s.objective||'')}</textarea></div>
+      <div><div class="v5BuilderSectionTitle">🔑 Activity Key Words</div><textarea class="bigInstructionBox" onchange="MISSION_STATIONS[${i}].keywords=this.value" placeholder="reading, main idea, context clues">${esc(s.keywords||'')}</textarea></div>
+    </div>
+    <div class="v5BuilderSectionTitle">📋 Student Instructions</div>
+    <textarea class="bigInstructionBox" onchange="MISSION_STATIONS[${i}].instructions=this.value" placeholder="1. Open the activity.\n2. Complete the task.\n3. Return to the mission page.\n4. Mark the step as done.">${esc(s.instructions||'')}</textarea>
+  </div>`).join('');
+}
+
+function setupMissionBuilder(){
+  if(!byId('missionClassSelect')) return;
+  const list=Object.values(classes||{}).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  byId('missionClassSelect').innerHTML=list.length ? list.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('') : '<option value="">No classes</option>';
+  if(byId('missionDate') && !byId('missionDate').value) byId('missionDate').value=missionDefaultDate();
+  if(byId('missionDay') && !byId('missionDay').value) byId('missionDay').value=missionDayName();
+  if(byId('missionGroupCount') && !byId('missionGroupCount').dataset.v5Defaulted){ byId('missionGroupCount').value='5'; byId('missionGroupCount').dataset.v5Defaulted='yes'; }
+  if(!MISSION_STATIONS.length) MISSION_STATIONS=defaultMissionStations();
+  renderMissionStationBuilder();
+  renderMissionTeamPreview();
+  ensureTeacherMonitorBox();
+  loadTeacherMissionForClass();
+}
+
+async function loadTeacherMissionForClass(){
+  if(!db || !byId('missionClassSelect')) return;
+  const classId=byId('missionClassSelect').value; if(!classId) return;
+  const snap=await db.ref(missionClassPath(classId)).get();
+  if(snap.exists()){
+    const m=snap.val()||{};
+    byId('missionDay').value=m.day||missionDayName();
+    byId('missionDate').value=m.date||missionDefaultDate();
+    byId('missionSubject').value=m.subject||'English';
+    if(byId('missionTheme')) byId('missionTheme').value=m.theme||'blossom';
+    byId('missionLessonTitle').value=m.lessonTitle||'';
+    byId('missionObjectives').value=m.objectives||'';
+    byId('missionSuccess').value=m.successCriteria||'';
+    byId('missionKeywords').value=m.keywords||'';
+    byId('missionGroupCount').value=String(m.groupCount??5);
+    byId('missionMaxTeamSize').value=String(m.maxTeamSize??5);
+    MISSION_STATIONS=Array.isArray(m.stations)&&m.stations.length?m.stations:defaultMissionStations();
+  }
+  renderMissionTeamPreview();renderMissionStationBuilder();ensureTeacherMonitorBox();renderTeacherMissionMonitor();
+  db.ref(missionClassPath(classId)).off();
+  db.ref(missionClassPath(classId)).on('value',s=>{ CURRENT_MISSION=s.val(); renderTeacherMissionMonitor(); });
+}
+
+function ensureTeacherMonitorBox(){
+  if(byId('teacherMissionMonitor')) return;
+  const quick=document.querySelector('#teacherHub .sectionTitle');
+  const div=document.createElement('div'); div.id='teacherMissionMonitor'; div.className='v5TeacherMonitor';
+  if(quick) quick.parentNode.insertBefore(div, quick); else byId('teacherHub').appendChild(div);
+}
+
+function renderTeacherMissionMonitor(){
+  const box=byId('teacherMissionMonitor'); if(!box) return;
+  const classId=byId('missionClassSelect')?.value;
+  if(!classId){box.innerHTML='<h2>📊 Mission Monitoring Dashboard</h2><div class="v5Notice">Choose a class to see group progress.</div>';return;}
+  const m=CURRENT_MISSION; if(!m){box.innerHTML='<h2>📊 Mission Monitoring Dashboard</h2><div class="v5Notice">No active mission loaded yet.</div>';return;}
+  const teams=(m.teams||[]).slice(0,Number(m.groupCount||0));
+  const members=Object.values(m.members||{});
+  const totalStations=(m.stations||[]).length||1;
+  const doneAll=members.reduce((sum,mm)=>sum+Object.values((m.progress||{})[safeKey(mm.studentId)]||{}).filter(Boolean).length,0);
+  const avg=members.length?v5pct(doneAll,members.length*totalStations):0;
+  if(V5_TEACHER_GROUP_SELECTED===null && teams.length) V5_TEACHER_GROUP_SELECTED=0;
+  box.innerHTML=`<h2>📊 Mission Monitoring Dashboard</h2><div class="miniLoading">Click any group ticket to see each member performance in every activity.</div>
+    <div class="v5MetricGrid"><div class="v5Metric">Groups<br><b>${teams.length}</b></div><div class="v5Metric">Students Joined<br><b>${members.length}</b></div><div class="v5Metric">Average Progress<br><b>${avg}%</b><div class="v5MiniProgress"><div style="width:${avg}%"></div></div></div><div class="v5Metric">Activities<br><b>${totalStations}</b></div></div>
+    <div class="v5GroupTicketRow">${teams.map((t,i)=>{const ms=members.filter(mm=>Number(mm.teamIndex)===i);const leader=ms.find(mm=>mm.leader);const pct=v5teamPct(i);return `<div class="v5TeacherTicket ${Number(V5_TEACHER_GROUP_SELECTED)===i?'selected':''}" onclick="V5_TEACHER_GROUP_SELECTED=${i};renderTeacherMissionMonitor()" style="background:${t.style||'white'}"><b>${t.emoji} ${esc(t.name)}</b><div class="teamMemberList">Members: ${ms.length}${m.maxTeamSize?'/'+m.maxTeamSize:''}<br>Leader: ${leader?esc(leader.name):'Not selected'}<br>Progress: ${pct}%<div class="v5MiniProgress"><div style="width:${pct}%"></div></div></div></div>`}).join('')}</div>
+    ${teams.length?renderTeacherGroupDetails(V5_TEACHER_GROUP_SELECTED):'<div class="v5Notice">Individual mode: no group tickets to monitor.</div>'}`;
+}
+
+function renderTeacherGroupDetails(index){
+  const teams=(CURRENT_MISSION.teams||[]); const t=teams[index]||{}; const members=v5teamMembers(index); const stations=CURRENT_MISSION.stations||[]; const total=stations.length||1;
+  return `<div class="v5TeacherDetailGrid"><div class="missionPanel"><h2>${t.emoji||'🎫'} ${esc(t.name||'Group')} Members</h2><table class="v5MiniTable"><thead><tr><th>Student</th><th>Progress</th></tr></thead><tbody>${members.length?members.map(m=>{const done=v5studentDoneCount(m.studentId);const pct=v5pct(done,total);return `<tr><td>${m.leader?'👑 ':''}${esc(m.name)}</td><td>${done}/${total}<div class="v5MiniProgress"><div style="width:${pct}%"></div></div></td></tr>`}).join(''):'<tr><td colspan="2">No members yet</td></tr>'}</tbody></table></div><div class="missionPanel"><h2>📋 Activity Performance</h2><table class="v5MiniTable"><thead><tr><th>Activity</th><th>Complete</th></tr></thead><tbody>${stations.map((s,i)=>{const complete=members.filter(m=>v5progressForStudent(m.studentId)[i]===true).length;const pct=members.length?v5pct(complete,members.length):0;return `<tr><td>${i+1}. ${esc(s.name)}</td><td>${complete}/${members.length}<div class="v5MiniProgress"><div style="width:${pct}%"></div></div></td></tr>`}).join('')}</tbody></table></div></div>`;
+}
+
+function renderStudentMission(session){
+  const area=byId('studentMissionArea'); if(!area || !CURRENT_MISSION) return;
+  const groupCount=Number(CURRENT_MISSION.groupCount||0);
+  const myIndex=v5myTeamIndex(session);
+  const needsTicket=groupCount>0 && myIndex===null;
+  const windows=document.querySelector('.studentWindows'); if(windows) windows.style.display=needsTicket?'none':'grid';
+  if(needsTicket){ area.innerHTML=renderStudentTicketGate(session); return; }
+  area.innerHTML=renderStudentMissionHome(session);
+}
+
+function renderStudentTicketGate(session){
+  const teams=(CURRENT_MISSION.teams||MISSION_TEAMS).slice(0,Number(CURRENT_MISSION.groupCount||0));
+  const max=Number(CURRENT_MISSION.maxTeamSize||0);
+  return `<div class="v5GateWrap"><div class="v5TopSteps"><div class="v5TopStep active"><div class="v5TopStepNum">1</div><div><div class="v5TopStepTitle">Choose Your Group</div><div class="v5TopStepText">Pick a group ticket to join.</div></div></div><div class="v5TopStep"><div class="v5TopStepNum">2</div><div><div class="v5TopStepTitle">Meet Your Team</div><div class="v5TopStepText">Choose today's leader.</div></div></div><div class="v5TopStep"><div class="v5TopStepNum">3</div><div><div class="v5TopStepTitle">Start Mission</div><div class="v5TopStepText">Begin your journey.</div></div></div></div><div class="missionPanel"><h2>🎫 Step 1: Choose Your Group Ticket</h2><div class="v5Notice">You can only join one group. First come, first served.</div><div class="ticketGrid">${teams.map((t,i)=>{const ms=v5teamMembers(i);const leader=ms.find(m=>m.leader);const full=max>0 && ms.length>=max;return `<div class="v5TicketCard ${full?'full':''}" style="background:${t.style||'white'}"><div class="v5TicketEmoji">${t.emoji}</div><div class="v5TicketName">${esc(t.name)}</div><div class="v5TicketInfo"><b>${ms.length}${max?'/'+max:''}</b> Members<br>👑 Leader: ${leader?esc(leader.name):'Not selected yet'}</div><button class="v5JoinBtn ${full?'disabled':''}" onclick="${full?'':'joinMissionTeam('+i+')'}">${full?'Full':'Join Group'}</button></div>`}).join('')}</div></div></div>`;
+}
+
+function renderStudentMissionHome(session){
+  const stations=CURRENT_MISSION.stations||[]; if(ACTIVE_MISSION_STATION_INDEX<0) ACTIVE_MISSION_STATION_INDEX=v5firstIncompleteStation(session);
+  const myIndex=v5myTeamIndex(session); const team=myIndex!==null?v5team(myIndex):null; const groupCount=Number(CURRENT_MISSION.groupCount||0);
+  const p=v5progressForStudent(session.studentId); const done=Object.values(p).filter(Boolean).length; const pct=v5pct(done,stations.length||1);
+  const keys=v5list(CURRENT_MISSION.keywords||'');
+  return `<div class="missionBanner ${missionThemeClass(CURRENT_MISSION.theme||'blossom')}"><div class="missionKicker">${esc(MISSION_THEME_LABELS[CURRENT_MISSION.theme]||'🌸 Learning Mission')}</div><h1 class="missionTitle">${esc(CURRENT_MISSION.lessonTitle||'Today’s English Mission')}</h1><div class="missionSubtitle">Welcome, <b>${esc(session.name)}</b>. ${team?`Your group is <b>${team.emoji} ${esc(team.name)}</b>.`: 'This is an individual mission.'}</div><div class="missionMetaGrid"><div class="missionMeta"><div class="label">Day</div><div class="value">${esc(CURRENT_MISSION.day||'')}</div></div><div class="missionMeta"><div class="label">Date</div><div class="value">${esc(CURRENT_MISSION.date||'')}</div></div><div class="missionMeta"><div class="label">Subject</div><div class="value">${esc(CURRENT_MISSION.subject||'English')}</div></div><div class="missionMeta"><div class="label">Mission Progress</div><div class="value">${pct}%</div></div></div><div class="missionProgress"><div class="missionProgressBar" style="width:${pct}%"></div></div></div><div class="missionPanel"><h2>🎯 Objectives</h2><div class="feedbackBox">${esc(CURRENT_MISSION.objectives||'Follow the lesson stations and complete each task carefully.')}</div><h2>🔑 Key Words</h2>${keys.length?`<div class="keywordCloud bigKeywords">${keys.map(k=>`<span class="keywordChip">${esc(k)}</span>`).join('')}</div>`:'<div class="feedbackBox">Your teacher will add key words for today’s mission.</div>'}</div><div class="v5MissionGrid"><div><div class="v5MyTicket">${team?`<h2>${team.emoji} Your Group Ticket</h2><div class="teamMemberList">${esc(team.name)} • ${esc(team.motto||'')}<br>👭 Members: ${v5teamMembers(myIndex).length}${CURRENT_MISSION.maxTeamSize?'/'+CURRENT_MISSION.maxTeamSize:''}<br>👑 Leader: ${v5teamMembers(myIndex).find(m=>m.leader)?.name||'Not selected yet'}</div>${!v5teamMembers(myIndex).some(m=>m.leader)?'<button class="v5LeaderBtn" onclick="becomeMissionLeader()">👑 I am Today’s Leader</button>':''}`:'<h2>Individual Mission</h2><div class="teamMemberList">Work independently through the mission steps.</div>'}</div><div class="missionPanel"><h2>🧭 Mission Steps</h2><div class="v5Sidebar">${stations.map((s,i)=>{const isDone=p[i]===true;return `<div class="v5StepItem ${ACTIVE_MISSION_STATION_INDEX===i?'active':''}" onclick="openMissionStationPanel(${i})"><div class="v5StepNum">${isDone?'✓':i+1}</div><div class="v5StepEmoji">${v5stationEmoji(s.platform)}</div><div><div class="v5StepTitle">${esc(s.name||'Activity')}</div><div class="v5StepNote">${esc(s.description||s.instructions||'Follow instructions.')} ${s.time?' • ⏱ '+esc(s.time):''}</div></div><div>${isDone?'✅':'›'}</div></div>`}).join('')}</div></div></div>${renderV5CurrentActivity(session)}</div>${pct>=100?'<div class="missionPanel" style="text-align:center"><h2>🏆 Mission Complete!</h2><div class="feedbackBox good">Beautiful work! You completed today’s learning journey.</div></div>':''}`;
+}
+
+function renderV5CurrentActivity(session){
+  const stations=CURRENT_MISSION.stations||[]; if(!stations.length) return '<div class="v5CurrentPanel">No activities added yet.</div>';
+  const i=Math.max(0,Math.min(ACTIVE_MISSION_STATION_INDEX,stations.length-1)); const s=stations[i]; const p=v5progressForStudent(session.studentId); const isDone=p[i]===true; const mins=v5minutes(s.time); const objectives=v5list(s.objective||'Complete this activity carefully.'); const keys=v5list(s.keywords||CURRENT_MISSION.keywords||'');
+  if(!V5_STUDENT_TIMER_REMAINING) V5_STUDENT_TIMER_REMAINING=mins*60;
+  return `<div class="v5CurrentPanel"><div class="v5ActivityHead"><div><div class="v5ActivityTitle">${v5stationEmoji(s.platform)} Step ${i+1}: ${esc(s.name||'Activity')}</div><div class="miniLoading">⏱ ${esc(s.time||mins+' minutes')} ${isDone?' • ✅ Completed':''}</div></div><div><button class="v5Btn soft" onclick="openMissionStationPanel(${Math.max(0,i-1)})">‹ Previous</button> <button class="v5Btn soft" onclick="openMissionStationPanel(${Math.min(stations.length-1,i+1)})">Next ›</button></div></div><div class="v5ActivityGrid"><div class="v5ActivityBox"><h3>🌸 Activity Description</h3><div>${esc(s.description||s.instructions||'Follow your teacher instructions.')}</div></div><div class="v5ActivityBox"><h3>🎯 Objectives</h3><div>${objectives.map(x=>'• '+esc(x)).join('<br>')}</div></div><div class="v5ActivityBox"><h3>🔑 Key Words</h3>${keys.length?`<div class="keywordCloud bigKeywords">${keys.map(k=>`<span class="keywordChip">${esc(k)}</span>`).join('')}</div>`:'No key words for this step.'}</div></div><div class="v5ActivityBox" style="margin-top:12px"><h3>📋 Instructions</h3><div>${esc(s.instructions||'Complete the task, then return here and mark it done.').replace(/\n/g,'<br>')}</div></div><div class="v5TimerBar"><button class="v5Btn" onclick="startV5StudentTimer(${i})">▶ Start Timer</button><div id="v5StudentTimer" class="v5TimerDisplay">${v5format(mins*60)}</div><button class="v5Btn soft" onclick="resetV5StudentTimer(${i})">↻ Reset</button><button class="v5Btn" onclick="startMissionStation(${i})">🚀 Open Activity</button><button class="v5Btn green" onclick="markMissionStationDone(${i})">✅ Mark as Done</button></div></div>`;
+}
+function openMissionStationPanel(index){ ACTIVE_MISSION_STATION_INDEX=index; if(V5_STUDENT_TIMER_INTERVAL){clearInterval(V5_STUDENT_TIMER_INTERVAL);V5_STUDENT_TIMER_INTERVAL=null;} V5_STUDENT_TIMER_REMAINING=0; renderStudentMission(CURRENT_STUDENT_SESSION); }
+function startV5StudentTimer(index){ const s=(CURRENT_MISSION.stations||[])[index]||{}; if(V5_STUDENT_TIMER_INTERVAL) clearInterval(V5_STUDENT_TIMER_INTERVAL); V5_STUDENT_TIMER_REMAINING=v5minutes(s.time)*60; const box=byId('v5StudentTimer'); if(box) box.innerText=v5format(V5_STUDENT_TIMER_REMAINING); V5_STUDENT_TIMER_INTERVAL=setInterval(()=>{V5_STUDENT_TIMER_REMAINING=Math.max(0,V5_STUDENT_TIMER_REMAINING-1); const b=byId('v5StudentTimer'); if(b)b.innerText=v5format(V5_STUDENT_TIMER_REMAINING); if(V5_STUDENT_TIMER_REMAINING<=0){clearInterval(V5_STUDENT_TIMER_INTERVAL);V5_STUDENT_TIMER_INTERVAL=null;alert('⏰ Time is finished.');}},1000); }
+function resetV5StudentTimer(index){ if(V5_STUDENT_TIMER_INTERVAL) clearInterval(V5_STUDENT_TIMER_INTERVAL); V5_STUDENT_TIMER_INTERVAL=null; const s=(CURRENT_MISSION.stations||[])[index]||{}; V5_STUDENT_TIMER_REMAINING=v5minutes(s.time)*60; const box=byId('v5StudentTimer'); if(box) box.innerText=v5format(V5_STUDENT_TIMER_REMAINING); }
+
+
   initFirebase();
   
 </script>
