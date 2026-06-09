@@ -4359,5 +4359,225 @@ async function saveReadingRushToTeacherControl(s){
   };
 })();
 </script>
+<script>
+/* ============================================================
+   ULTIMATE FIX - stop returning to previous Reading Rush collection
+   Cause: some older patches still read the global currentCollectionId or
+   the dropdown value first. This patch always uses the selected CLASS session.
+   ============================================================ */
+(function(){
+  function k(v){
+    if(typeof safeKey === 'function') return safeKey(v || '');
+    return String(v || '').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_').replace(/-/g,'_');
+  }
+  function e(v){
+    if(typeof esc === 'function') return esc(v || '');
+    return String(v || '').replace(/[&<>\'\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function activeClassName(s){
+    const el=document.getElementById('activeClassSelect');
+    return (el && el.value) || (s && s.activeClass) || '9/1';
+  }
+  function classKeyFromName(name){ return k(name || ''); }
+  function studentClassKey(st){ return k((st && (st.classId || st.cls || st.className || st.class || '')) || ''); }
+  function ensureSessions(s){ s.classSessions = s.classSessions || {}; return s.classSessions; }
+  function fallbackSession(s){
+    return {stage:(s&&s.stage)||'waiting',currentCollectionId:(s&&s.currentCollectionId)||null,currentCollectionTitle:(s&&s.currentCollectionTitle)||'',roundStartTime:(s&&s.roundStartTime)||null,final:!!(s&&s.final),boss:!!(s&&s.boss)};
+  }
+  function getSession(s,classKey){
+    const sessions=ensureSessions(s);
+    return sessions[classKey] || fallbackSession(s);
+  }
+  function setSession(s,classKey,data){
+    const sessions=ensureSessions(s);
+    sessions[classKey]=Object.assign({}, getSession(s,classKey), data || {});
+    return sessions[classKey];
+  }
+  function studentSession(s){
+    if(!currentUser) return fallbackSession(s);
+    return getSession(s, studentClassKey(currentUser));
+  }
+  function collectionFor(s,sess){
+    const id=(sess && sess.currentCollectionId) || (s && s.currentCollectionId);
+    return (s && s.collections && id) ? s.collections[id] : null;
+  }
+  function cloneWithSession(s,sess){
+    const c=JSON.parse(JSON.stringify(s || {}));
+    c.stage=(sess && sess.stage) || 'waiting';
+    c.currentCollectionId=(sess && sess.currentCollectionId) || null;
+    c.currentCollectionTitle=(sess && sess.currentCollectionTitle) || '';
+    c.roundStartTime=(sess && sess.roundStartTime) || null;
+    c.final=!!(sess && sess.final);
+    c.boss=!!(sess && sess.boss);
+    return c;
+  }
+  function isStudentInClass(st,classKey){ return studentClassKey(st) === k(classKey); }
+  function shuffleIndexes(length, seedText){
+    const arr=Array.from({length:length},function(_,i){return i;});
+    let h=2166136261;
+    String(seedText || '').split('').forEach(function(ch){ h ^= ch.charCodeAt(0); h = Math.imul(h,16777619); });
+    for(let i=arr.length-1;i>0;i--){ h=(Math.imul(h,1664525)+1013904223)>>>0; const j=h%(i+1); const t=arr[i]; arr[i]=arr[j]; arr[j]=t; }
+    return arr;
+  }
+  function clearClassLive(s,classKey){
+    s.answers=s.answers||{}; s.paragraphResults=s.paragraphResults||{}; s.studentProgress=s.studentProgress||{};
+    Object.values(s.students||{}).forEach(function(st){
+      if(!isStudentInClass(st,classKey)) return;
+      const id=String(st.id || st.studentId || '').trim();
+      if(!id) return;
+      delete s.answers[id];
+      delete s.paragraphResults[id];
+      delete s.studentProgress[id];
+    });
+    if(s.scheduledCollections) delete s.scheduledCollections[classKey];
+  }
+  function initProgressForClass(s,classKey,sess){
+    const col=collectionFor(s,sess); const paragraphs=(col&&col.paragraphs)||[];
+    if(!paragraphs.length) return;
+    s.studentProgress=s.studentProgress||{};
+    Object.values(s.students||{}).forEach(function(st){
+      if(!isStudentInClass(st,classKey)) return;
+      const id=String(st.id || st.studentId || '').trim();
+      if(!id) return;
+      st.group='individual'; st.mode='individual_test';
+      s.studentProgress[id]={paraIndex:0,qIndex:0,done:false,completed:false,order:shuffleIndexes(paragraphs.length,id+'_'+sess.currentCollectionId+'_'+Number(sess.roundStartTime||0)),mode:'individual_test'};
+    });
+  }
+  function getSelectedCollectionFromClassSession(s,classKey){
+    const sess=getSession(s,classKey);
+    if(sess.currentCollectionId && s.collections && s.collections[sess.currentCollectionId]) return sess.currentCollectionId;
+    const sel=document.getElementById('editCollectionSelect');
+    if(sel && sel.value && s.collections && s.collections[sel.value]) return sel.value;
+    if(s.currentCollectionId && s.collections && s.collections[s.currentCollectionId]) return s.currentCollectionId;
+    return '';
+  }
+  function syncPreview(s,sess){
+    s.currentCollectionId=sess.currentCollectionId || null;
+    s.currentCollectionTitle=sess.currentCollectionTitle || '';
+    s.stage=sess.stage || 'waiting';
+    s.roundStartTime=sess.roundStartTime || null;
+    s.final=!!sess.final;
+    s.boss=!!sess.boss;
+  }
+
+  window.selectCollection = async function(id){
+    if(window.event && window.event.stopPropagation) window.event.stopPropagation();
+    const s=await getState();
+    const col=s.collections && s.collections[id];
+    if(!col){ alert('Collection not found.'); return; }
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    s.activeClass=activeClass;
+    const sess=setSession(s,classKey,{stage:'waiting',currentCollectionId:id,currentCollectionTitle:col.title||'',roundStartTime:null,final:false,boss:false});
+    syncPreview(s,sess);
+    if(typeof buildLessonPlanObject === 'function') s.lessonPlan=buildLessonPlanObject(s);
+    await setState(s);
+    const sel=document.getElementById('editCollectionSelect'); if(sel) sel.value=id;
+    if(typeof renderCollections === 'function') renderCollections(cloneWithSession(s,sess));
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    alert('✅ Selected "' + (col.title || 'Collection') + '" for Class ' + activeClass + '. Now click Start New Collection Cleanly.');
+  };
+
+  window.startCollectionChallenge = async function(){
+    const s=await getState();
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    const colId=getSelectedCollectionFromClassSession(s,classKey);
+    const col=(s.collections && colId) ? s.collections[colId] : null;
+    if(!col || !col.paragraphs || !col.paragraphs.length){ alert('Select a collection with paragraphs first for Class ' + activeClass + '.'); return; }
+    const ok=confirm('Start a FRESH session for Class ' + activeClass + ' using:\n\n' + (col.title || 'Selected Collection') + '\n\nThis clears only old live progress for this class. Saved marks and the library stay safe.');
+    if(!ok) return;
+    s.activeClass=activeClass;
+    clearClassLive(s,classKey);
+    const sess=setSession(s,classKey,{stage:'playing',currentCollectionId:colId,currentCollectionTitle:col.title||'',roundStartTime:Date.now(),final:false,boss:false});
+    initProgressForClass(s,classKey,sess);
+    syncPreview(s,sess);
+    await setState(s);
+    const sel=document.getElementById('editCollectionSelect'); if(sel) sel.value=colId;
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    alert('✅ Fresh session started for Class ' + activeClass + ' with: ' + (col.title || 'Selected Collection'));
+  };
+
+  window.currentPQ = function(s){
+    const sess=studentSession(s);
+    const col=collectionFor(s,sess);
+    const pr=s && s.studentProgress && currentUser ? s.studentProgress[currentUser.id] : null;
+    if(!col || !pr) return {p:null,q:null,pr:null,total:0,actualIndex:0,position:0,order:[],session:sess};
+    const paragraphs=col.paragraphs || [];
+    const order=(pr.order && pr.order.length===paragraphs.length) ? pr.order : paragraphs.map(function(_,i){return i;});
+    const pos=Math.min(Number(pr.paraIndex||0), Math.max(0, order.length-1));
+    const actualIndex=Number(order[pos] || 0);
+    const p=paragraphs[actualIndex];
+    const q=(p && p.questions || [])[pr.qIndex || 0];
+    return {p:p,q:q,pr:pr,total:paragraphs.length,actualIndex:actualIndex,position:pos,order:order,session:sess};
+  };
+
+  window.submitAnswer = async function(){
+    if(currentUser && currentUser.recoveryMode && typeof submitRecoveryAnswer === 'function') return submitRecoveryAnswer();
+    const s=await getState();
+    const sess=studentSession(s);
+    const scoped=cloneWithSession(s,sess);
+    const d=window.currentPQ(scoped);
+    const p=d.p; const questions=(p&&p.questions)||[];
+    if(!p || !questions.length) return;
+    const missing=questions.map(function(q,i){return paragraphAnswers[i] ? null : (i+1);}).filter(Boolean);
+    if(missing.length){ alert('Please answer all questions before submitting. Missing: Q' + missing.join(', Q')); return; }
+    s.studentProgress=s.studentProgress||{}; s.paragraphResults=s.paragraphResults||{};
+    const pr=s.studentProgress[currentUser.id] || {paraIndex:0,qIndex:0,done:false,order:d.order||[]};
+    const actualParaIndex=Number(d.actualIndex||0);
+    const resultKey='p'+actualParaIndex;
+    s.paragraphResults[currentUser.id]=s.paragraphResults[currentUser.id]||{};
+    const alreadySaved=!!s.paragraphResults[currentUser.id][resultKey];
+    let paragraphScore=0; const selectedAnswers={}; const skillSummary={};
+    questions.forEach(function(q,qi){
+      const selected=paragraphAnswers[qi]; const correct=selected===q.correct; const skill=q.skill||'unknown';
+      selectedAnswers[qi]=selected;
+      skillSummary[skill]=skillSummary[skill]||{skill:skill,total:0,correct:0};
+      skillSummary[skill].total+=1;
+      if(correct){ paragraphScore+=1; skillSummary[skill].correct+=1; }
+    });
+    s.paragraphResults[currentUser.id][resultKey]={studentId:currentUser.id,student:currentUser.name,group:'individual',mode:'individual_test',collectionId:sess.currentCollectionId,collectionTitle:sess.currentCollectionTitle,paraIndex:actualParaIndex,paragraphPosition:Number(pr.paraIndex||0),paragraphId:p.id||resultKey,paragraphTitle:p.title||('Paragraph '+(actualParaIndex+1)),score:paragraphScore,total:questions.length,selectedAnswers:selectedAnswers,skillSummary:skillSummary,submittedAt:Date.now()};
+    pr.score=Number(pr.score||0)+(alreadySaved?0:paragraphScore);
+    pr.lastParagraphScore=paragraphScore; pr.lastParagraphTotal=questions.length; pr.qIndex=0;
+    pr.paraIndex=Number(pr.paraIndex||0)+1;
+    const totalParas=Number(d.total || (d.order&&d.order.length) || 0);
+    if(pr.paraIndex>=totalParas){ pr.done=true; pr.completed=true; pr.completedAt=Date.now(); pr.paraIndex=Math.max(0,totalParas-1); pr.qIndex=questions.length; }
+    else{ pr.done=false; pr.completed=false; }
+    pr.mode='individual_test';
+    s.studentProgress[currentUser.id]=pr;
+    if(s.students && s.students[currentUser.id]){ s.students[currentUser.id].group='individual'; s.students[currentUser.id].mode='individual_test'; }
+    syncPreview(s,sess);
+    await setState(s);
+    if(typeof saveReadingRushToTeacherControl === 'function') await saveReadingRushToTeacherControl(cloneWithSession(s,sess));
+    const resultBox=document.getElementById('studentResultBox');
+    const nextText=pr.done ? 'You finished the full reading test 🎉' : 'Saved. Moving to the next paragraph.';
+    if(resultBox) resultBox.innerHTML='<div class="status '+(paragraphScore===questions.length?'good':'bad')+'">✅ Paragraph submitted and saved.<br>Score: <b>'+paragraphScore+'/'+questions.length+'</b><br>'+e(nextText)+'</div>';
+    paragraphAnswers={}; selectedAnswer='';
+    studentRefresh();
+  };
+
+  const previousStudentRefresh = window.studentRefresh;
+  window.studentRefresh = function(){
+    const s=stateCache || defaultState();
+    if(!currentUser){ return; }
+    const sess=studentSession(s);
+    const scoped=cloneWithSession(s,sess);
+    // Force all older UI code to see the student's class collection, not the old global one.
+    const oldCache=stateCache;
+    stateCache=scoped;
+    try{
+      if(typeof previousStudentRefresh === 'function') previousStudentRefresh();
+    }finally{
+      stateCache=oldCache;
+    }
+    try{
+      const col=collectionFor(s,sess);
+      const title=(col&&col.title)||sess.currentCollectionTitle||'Current Reading Test';
+      const titleEl=document.getElementById('studentRoundTitle'); if(titleEl) titleEl.innerText=title;
+    }catch(err){}
+  };
+})();
+</script>
+
 </body>
 </html>
