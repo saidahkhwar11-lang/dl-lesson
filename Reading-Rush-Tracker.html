@@ -4108,5 +4108,256 @@ async function saveReadingRushToTeacherControl(s){
 })();
 </script>
 
+
+
+<script>
+/* ============================================================
+   FINAL CLEAN COLLECTION SWITCH PATCH
+   - Switching/starting a new collection clears LIVE work only for selected class
+   - Keeps collection library, Teacher Tracker marks, Secure Hub marks, certificates
+   - Reset is class-only and no longer deletes the collection library or other classes
+   ============================================================ */
+(function(){
+  function rrKey(v){
+    if(typeof safeKey === 'function') return safeKey(v || '');
+    return String(v || '').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_');
+  }
+  function rrEsc(v){
+    if(typeof esc === 'function') return esc(v || '');
+    return String(v || '').replace(/[&<>\'\"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];});
+  }
+  function activeClassName(s){
+    const el=document.getElementById('activeClassSelect');
+    return (el && el.value) || (s && s.activeClass) || '9/1';
+  }
+  function classKeyFromName(name){ return rrKey(name || ''); }
+  function studentClassKey(st){ return rrKey((st && (st.classId || st.cls || st.className || st.class || '')) || ''); }
+  function ensureSessions(s){ s.classSessions = s.classSessions || {}; return s.classSessions; }
+  function fallbackSession(s){
+    return {
+      stage:(s && s.stage) || 'waiting',
+      currentCollectionId:(s && s.currentCollectionId) || null,
+      currentCollectionTitle:(s && s.currentCollectionTitle) || '',
+      roundStartTime:(s && s.roundStartTime) || null,
+      final:!!(s && s.final),
+      boss:!!(s && s.boss)
+    };
+  }
+  function getSession(s,classKey){
+    const sessions=ensureSessions(s);
+    return sessions[classKey] || fallbackSession(s);
+  }
+  function setSession(s,classKey,data){
+    const sessions=ensureSessions(s);
+    sessions[classKey]=Object.assign({}, getSession(s,classKey), data || {});
+    return sessions[classKey];
+  }
+  function selectedCollectionId(s,classKey){
+    const sel=document.getElementById('editCollectionSelect');
+    const sess=getSession(s,classKey);
+    return (sel && sel.value) || sess.currentCollectionId || s.currentCollectionId || '';
+  }
+  function collectionForSession(s,sess){
+    const id=(sess && sess.currentCollectionId) || s.currentCollectionId;
+    return (s.collections && id) ? s.collections[id] : null;
+  }
+  function isStudentInClass(st,classKey){
+    return studentClassKey(st) === rrKey(classKey);
+  }
+  function shuffleIndexes(length, seedText){
+    const arr=Array.from({length:length}, function(_,i){return i;});
+    let h=2166136261;
+    String(seedText || '').split('').forEach(function(ch){ h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); });
+    for(let i=arr.length-1;i>0;i--){
+      h = (Math.imul(h, 1664525) + 1013904223) >>> 0;
+      const j = h % (i+1);
+      const tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+    }
+    return arr;
+  }
+  function clearLiveWorkForClass(s,classKey){
+    s.answers=s.answers || {};
+    s.paragraphResults=s.paragraphResults || {};
+    s.studentProgress=s.studentProgress || {};
+    s.scores=s.scores || {};
+
+    Object.values(s.students || {}).forEach(function(st){
+      if(!isStudentInClass(st,classKey)) return;
+      const id=String(st.id || st.studentId || '').trim();
+      if(!id) return;
+      delete s.answers[id];
+      delete s.paragraphResults[id];
+      delete s.studentProgress[id];
+    });
+
+    // Old recovery/scheduled assignments for this class can block students or show the previous collection.
+    // Clear only pending/live assignments for this class. Saved tracker marks and certificates are not stored here.
+    if(s.scheduledCollections) delete s.scheduledCollections[classKey];
+
+    // Individual test mode does not need old group scores.
+    s.scores = {};
+  }
+  function initProgressForClass(s,classKey,sess){
+    const col=collectionForSession(s,sess);
+    const paragraphs=(col && col.paragraphs) || [];
+    if(!paragraphs.length) return;
+    s.studentProgress=s.studentProgress || {};
+    Object.values(s.students || {}).forEach(function(st){
+      if(!isStudentInClass(st,classKey)) return;
+      const id=String(st.id || st.studentId || '').trim();
+      if(!id) return;
+      st.group='individual';
+      st.mode='individual_test';
+      s.studentProgress[id]={
+        paraIndex:0,
+        qIndex:0,
+        done:false,
+        completed:false,
+        order:shuffleIndexes(paragraphs.length, id + '_' + sess.currentCollectionId + '_' + Number(sess.roundStartTime || 0)),
+        mode:'individual_test'
+      };
+    });
+  }
+  function syncGlobalPreview(s,sess){
+    s.currentCollectionId = sess.currentCollectionId || null;
+    s.currentCollectionTitle = sess.currentCollectionTitle || '';
+    s.stage = sess.stage || 'waiting';
+    s.roundStartTime = sess.roundStartTime || null;
+    s.final = !!sess.final;
+    s.boss = !!sess.boss;
+  }
+  function patchTeacherButtons(){
+    document.querySelectorAll('button[onclick="startCollectionChallenge()"],button[onclick="window.startCollectionChallenge()"],button').forEach(function(btn){
+      const oc=btn.getAttribute('onclick') || '';
+      if(oc.includes('startCollectionChallenge')) btn.textContent='🚀 Start New Collection Cleanly';
+      if(oc.includes('stopChallenge')) btn.textContent='🏆 End & Save Current Class';
+      if(oc.includes('resetGame')) btn.textContent='🧹 Reset Current Class Only';
+    });
+  }
+  window.addEventListener('load', patchTeacherButtons);
+  setTimeout(patchTeacherButtons, 500);
+
+  window.selectCollection = async function(id){
+    if(window.event && window.event.stopPropagation) window.event.stopPropagation();
+    const s=await getState();
+    const col=s.collections && s.collections[id];
+    if(!col){ alert('Collection not found.'); return; }
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    s.activeClass=activeClass;
+    const sess=setSession(s,classKey,{
+      stage:'waiting',
+      currentCollectionId:id,
+      currentCollectionTitle:col.title || '',
+      roundStartTime:null,
+      final:false,
+      boss:false
+    });
+    syncGlobalPreview(s,sess);
+    if(typeof buildLessonPlanObject === 'function') s.lessonPlan=buildLessonPlanObject(s);
+    await setState(s);
+    if(typeof renderCollections === 'function') renderCollections(s);
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    patchTeacherButtons();
+    alert('✅ Selected "' + (col.title || 'Collection') + '" for Class ' + activeClass + '. Click Start New Collection Cleanly to begin.');
+  };
+
+  window.startCollectionChallenge = async function(){
+    const s=await getState();
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    const colId=selectedCollectionId(s,classKey);
+    const col=(s.collections && colId) ? s.collections[colId] : null;
+    if(!col || !col.paragraphs || !col.paragraphs.length){
+      alert('Select a collection with paragraphs first for Class ' + activeClass + '.');
+      return;
+    }
+
+    const ok=confirm('Start a FRESH session for Class ' + activeClass + ' using:\n\n' + (col.title || 'Selected Collection') + '\n\nThis clears only old live progress for this class. Saved tracker marks, Secure Hub marks, certificates, and the library will stay.');
+    if(!ok) return;
+
+    s.activeClass=activeClass;
+    clearLiveWorkForClass(s,classKey);
+    const sess=setSession(s,classKey,{
+      stage:'playing',
+      currentCollectionId:colId,
+      currentCollectionTitle:col.title || '',
+      roundStartTime:Date.now(),
+      final:false,
+      boss:false
+    });
+    initProgressForClass(s,classKey,sess);
+    syncGlobalPreview(s,sess);
+    await setState(s);
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    patchTeacherButtons();
+    alert('✅ Fresh Reading Rush session started for Class ' + activeClass + ' only. Other classes were not touched.');
+  };
+
+  window.stopChallenge = async function(){
+    const s=await getState();
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    const sess=setSession(s,classKey,{
+      stage:'final',
+      final:true,
+      boss:false,
+      roundStartTime:null,
+      archivedAt:Date.now()
+    });
+    s.activeClass=activeClass;
+    syncGlobalPreview(s,sess);
+
+    const scoped=JSON.parse(JSON.stringify(s));
+    syncGlobalPreview(scoped,sess);
+    const students=Object.values(s.students || {}).filter(function(st){ return isStudentInClass(st,classKey); });
+    for(const st of students){
+      try{
+        if(typeof window.saveReadingRushRecordForStudent === 'function') await window.saveReadingRushRecordForStudent(scoped, st);
+      }catch(err){ console.warn('Reading Rush save skipped:', err); }
+    }
+    await setState(s);
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    patchTeacherButtons();
+    alert('✅ Ended and saved marks for Class ' + activeClass + '. You can now select another collection and start cleanly.');
+  };
+
+  window.resetGame = async function(){
+    const s=await getState();
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    if(!confirm('Reset live Reading Rush session for Class ' + activeClass + ' only?\n\nThis will NOT delete saved collections, Teacher Tracker marks, Secure Hub marks, certificates, or other classes.')) return;
+    s.activeClass=activeClass;
+    clearLiveWorkForClass(s,classKey);
+    const oldSess=getSession(s,classKey);
+    const sess=setSession(s,classKey,{
+      stage:'waiting',
+      currentCollectionId:oldSess.currentCollectionId || s.currentCollectionId || null,
+      currentCollectionTitle:oldSess.currentCollectionTitle || s.currentCollectionTitle || '',
+      roundStartTime:null,
+      final:false,
+      boss:false
+    });
+    syncGlobalPreview(s,sess);
+    await setState(s);
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    patchTeacherButtons();
+    alert('✅ Current class live session reset. Library and saved marks are safe.');
+  };
+
+  const oldSaveActiveClass = window.saveActiveClass;
+  window.saveActiveClass = async function(){
+    const s=await getState();
+    const activeClass=activeClassName(s);
+    const classKey=classKeyFromName(activeClass);
+    s.activeClass=activeClass;
+    const sess=getSession(s,classKey);
+    syncGlobalPreview(s,sess);
+    await setState(s);
+    if(typeof teacherRefresh === 'function') teacherRefresh();
+    patchTeacherButtons();
+  };
+})();
+</script>
 </body>
 </html>
