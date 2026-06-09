@@ -1702,17 +1702,22 @@ function renderParagraphTimers(s){
     done:false
   };
 
+  const order = (pr.order && pr.order.length) ? pr.order : paragraphs.map((_,i)=>i);
+  const currentPosition = Number(pr.paraIndex || 0);
+  const currentActualIndex = Number(order[Math.min(currentPosition, Math.max(0, order.length - 1))] || 0);
+
   wrap.innerHTML = paragraphs.map((p,i)=>{
     const totalQ = (p.questions || []).length;
     let paragraphMark = 0;
 
+    // Saved results are stored by ACTUAL paragraph index: p0, p1, p2...
     const r = paragraphResultForStudent(s,currentUser.id,i);
 
     if(r){
       paragraphMark = Number(r.score || 0);
-    }else if(i === Number(pr.paraIndex || 0) && !pr.done){
-      /* Live preview only for the current paragraph before final submit.
-         Saved mark still comes from paragraphResults after Submit. */
+    }else if(i === currentActualIndex && !pr.done){
+      /* Live preview for the current paragraph only.
+         This must NOT change pr.paraIndex or completion logic. */
       const questions = p.questions || [];
       paragraphMark = questions.reduce((sum,q,qi)=>{
         return sum + (paragraphAnswers && paragraphAnswers[qi] === q.correct ? 1 : 0);
@@ -3142,8 +3147,11 @@ async function saveReadingRushToTeacherControl(s){
     pr.score = Number(pr.score || 0) + (alreadySaved ? 0 : paragraphScore);
     pr.lastParagraphScore = paragraphScore; pr.lastParagraphTotal = questions.length; pr.qIndex = 0;
     pr.paraIndex = Number(pr.paraIndex || 0) + 1;
-    const col = rrCollection(s);
-    const totalParas = (col && col.paragraphs || []).length;
+    /* IMPORTANT FIX:
+       In class-scoped mode, rrCollection(s) can point to the global/old collection,
+       so it may think the test has only 1 paragraph and mark the student done early.
+       Use currentPQ's class-session total instead. */
+    const totalParas = Number(d.total || (d.order && d.order.length) || 0);
     if(pr.paraIndex >= totalParas){ pr.done = true; pr.completed = true; pr.completedAt = Date.now(); pr.paraIndex = Math.max(0,totalParas-1); pr.qIndex = questions.length; }
     else{ pr.done = false; pr.completed = false; }
     pr.mode = 'individual_test';
