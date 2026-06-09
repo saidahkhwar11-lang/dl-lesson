@@ -253,6 +253,33 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
 .platformQuickGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
 .platformQuick{background:white;border:1px solid #dfe8ff;border-radius:20px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 6px 16px rgba(36,59,107,.06)}
 .platformQuick b{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px}
+
+.themeSelect{border:2px solid #eadcff!important;background:#fff7fb!important;font-weight:900!important;color:#203a78!important}
+.missionBanner.theme-blossom{background:linear-gradient(135deg,#fff7fb 0%,#fff0f7 45%,#eef6ff 100%)}
+.missionBanner.theme-diamond{background:linear-gradient(135deg,#ffffff 0%,#eef6ff 45%,#f8faff 100%)}
+.missionBanner.theme-rainbow{background:linear-gradient(135deg,#fff7fb 0%,#f8f2ff 30%,#eef6ff 65%,#f2fff8 100%)}
+.missionBanner.theme-princess{background:linear-gradient(135deg,#fff7fb 0%,#fff2cc 45%,#f8f2ff 100%)}
+.missionBanner.theme-galaxy{background:linear-gradient(135deg,#2f3677 0%,#7d5cff 55%,#ff9eca 100%);color:white}
+.missionBanner.theme-galaxy .missionTitle,.missionBanner.theme-galaxy .missionSubtitle{color:white}
+.missionBanner.theme-galaxy .missionMeta{background:rgba(255,255,255,.92)}
+.missionBanner.theme-adventure{background:linear-gradient(135deg,#eef6ff 0%,#eafff3 50%,#fff8df 100%)}
+.teamSummaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.teamSummaryCard{border:1px solid #dfe8ff;border-radius:22px;padding:14px;background:linear-gradient(135deg,#fff,#f8fbff);box-shadow:0 6px 16px rgba(36,59,107,.06)}
+.teamSummaryCard b{font-family:Quicksand,sans-serif;color:#203a78;font-size:18px}
+.teamMemberList{font-size:12px;color:#506080;font-weight:800;line-height:1.55;margin-top:8px}
+.teamMemberName{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 7px;margin:2px}
+.journeyMap{display:grid;gap:12px;position:relative}
+.journeyStep{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border:1px solid #dfe8ff;border-radius:26px;padding:15px;background:linear-gradient(135deg,#fff,#f8fbff);position:relative;overflow:hidden}
+.journeyStep:not(:last-child):after{content:'↓';position:absolute;left:31px;bottom:-20px;color:#7d5cff;font-size:24px;font-weight:900;z-index:3}
+.journeyIcon{width:54px;height:54px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9eca,#7d5cff);color:white;font-size:24px;box-shadow:0 8px 16px rgba(125,92,255,.18)}
+.journeyIcon.done{background:linear-gradient(135deg,#1fb66d,#20c997)}
+.journeyTitle{font-family:Quicksand,sans-serif;font-size:22px;color:#203a78;font-weight:900}
+.journeyDetails{color:#607197;font-size:13px;font-weight:750;line-height:1.45;margin-top:4px}
+.journeyActions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.markDoneBtn{border:none;border-radius:12px;padding:8px 10px;background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer}
+.teacherMiniMonitor{background:linear-gradient(135deg,#fff7fb,#eef6ff);border:1px solid #eadcff;border-radius:22px;padding:14px;margin-top:12px}
+@media(max-width:780px){.journeyStep{grid-template-columns:1fr}.journeyActions{align-items:stretch}.journeyStep:not(:last-child):after{display:none}}
+
 @media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
 
 </style>
@@ -377,6 +404,17 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
         <label>Subject</label>
         <input id="missionSubject" value="English">
       </div>
+      <div>
+        <label>Mission Theme</label>
+        <select id="missionTheme" class="themeSelect">
+          <option value="blossom">🌸 Blossom Academy</option>
+          <option value="diamond">💎 Diamond Dreams</option>
+          <option value="rainbow">🌈 Rainbow Learning</option>
+          <option value="princess">👑 Princess Academy</option>
+          <option value="galaxy">✨ Galaxy Mission</option>
+          <option value="adventure">📚 English Adventure</option>
+        </select>
+      </div>
     </div>
 
     <div class="builderGrid">
@@ -418,7 +456,9 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
     <div id="missionStationBuilder"></div>
     <div class="teacherMissionActions">
       <button class="soft" onclick="addMissionStation()">➕ Add Station</button>
-      <button class="save" onclick="saveTeacherMission()">✅ Save & Activate Mission</button>
+      <button class="save" onclick="saveTeacherMission(false)">✅ Save & Activate Mission</button>
+      <button class="soft" onclick="saveTeacherMission(true)">🎫 Save as Fresh Mission</button>
+      <button class="soft" onclick="resetMissionTeamsOnly()">🔄 Reset Tickets Only</button>
       <button class="danger" onclick="clearTeacherMission()">🧹 Clear Active Mission</button>
     </div>
     <div id="missionSaveMsg" class="status good hidden"></div>
@@ -963,6 +1003,33 @@ function buildCertificateHTML(c, session){
 .platformQuickGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:14px}
 .platformQuick{background:white;border:1px solid #dfe8ff;border-radius:20px;padding:14px;text-align:center;cursor:pointer;box-shadow:0 6px 16px rgba(36,59,107,.06)}
 .platformQuick b{font-family:Quicksand,sans-serif;color:#203a78;font-size:17px}
+
+.themeSelect{border:2px solid #eadcff!important;background:#fff7fb!important;font-weight:900!important;color:#203a78!important}
+.missionBanner.theme-blossom{background:linear-gradient(135deg,#fff7fb 0%,#fff0f7 45%,#eef6ff 100%)}
+.missionBanner.theme-diamond{background:linear-gradient(135deg,#ffffff 0%,#eef6ff 45%,#f8faff 100%)}
+.missionBanner.theme-rainbow{background:linear-gradient(135deg,#fff7fb 0%,#f8f2ff 30%,#eef6ff 65%,#f2fff8 100%)}
+.missionBanner.theme-princess{background:linear-gradient(135deg,#fff7fb 0%,#fff2cc 45%,#f8f2ff 100%)}
+.missionBanner.theme-galaxy{background:linear-gradient(135deg,#2f3677 0%,#7d5cff 55%,#ff9eca 100%);color:white}
+.missionBanner.theme-galaxy .missionTitle,.missionBanner.theme-galaxy .missionSubtitle{color:white}
+.missionBanner.theme-galaxy .missionMeta{background:rgba(255,255,255,.92)}
+.missionBanner.theme-adventure{background:linear-gradient(135deg,#eef6ff 0%,#eafff3 50%,#fff8df 100%)}
+.teamSummaryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:12px}
+.teamSummaryCard{border:1px solid #dfe8ff;border-radius:22px;padding:14px;background:linear-gradient(135deg,#fff,#f8fbff);box-shadow:0 6px 16px rgba(36,59,107,.06)}
+.teamSummaryCard b{font-family:Quicksand,sans-serif;color:#203a78;font-size:18px}
+.teamMemberList{font-size:12px;color:#506080;font-weight:800;line-height:1.55;margin-top:8px}
+.teamMemberName{display:inline-block;background:#eef4ff;border:1px solid #d7e3ff;border-radius:999px;padding:4px 7px;margin:2px}
+.journeyMap{display:grid;gap:12px;position:relative}
+.journeyStep{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;border:1px solid #dfe8ff;border-radius:26px;padding:15px;background:linear-gradient(135deg,#fff,#f8fbff);position:relative;overflow:hidden}
+.journeyStep:not(:last-child):after{content:'↓';position:absolute;left:31px;bottom:-20px;color:#7d5cff;font-size:24px;font-weight:900;z-index:3}
+.journeyIcon{width:54px;height:54px;border-radius:20px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#ff9eca,#7d5cff);color:white;font-size:24px;box-shadow:0 8px 16px rgba(125,92,255,.18)}
+.journeyIcon.done{background:linear-gradient(135deg,#1fb66d,#20c997)}
+.journeyTitle{font-family:Quicksand,sans-serif;font-size:22px;color:#203a78;font-weight:900}
+.journeyDetails{color:#607197;font-size:13px;font-weight:750;line-height:1.45;margin-top:4px}
+.journeyActions{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.markDoneBtn{border:none;border-radius:12px;padding:8px 10px;background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;font-family:Quicksand,sans-serif;font-weight:900;cursor:pointer}
+.teacherMiniMonitor{background:linear-gradient(135deg,#fff7fb,#eef6ff);border:1px solid #eadcff;border-radius:22px;padding:14px;margin-top:12px}
+@media(max-width:780px){.journeyStep{grid-template-columns:1fr}.journeyActions{align-items:stretch}.journeyStep:not(:last-child):after{display:none}}
+
 @media(max-width:780px){.stationCard{grid-template-columns:1fr}.startStationBtn{width:100%}.missionTitle{font-size:27px}}
 
 </style>
@@ -1140,6 +1207,16 @@ const MISSION_PLATFORM_LABELS = {
   custom:"🔗 Custom Link",
   instructions:"📝 Instructions Only"
 };
+const MISSION_THEME_LABELS = {
+  blossom:"🌸 Blossom Academy",
+  diamond:"💎 Diamond Dreams",
+  rainbow:"🌈 Rainbow Learning",
+  princess:"👑 Princess Academy",
+  galaxy:"✨ Galaxy Mission",
+  adventure:"📚 English Adventure"
+};
+function missionThemeClass(theme){return "theme-" + String(theme || "blossom").replace(/[^a-z0-9_-]/gi,"");}
+
 const MISSION_TEAMS = [
   {emoji:"👑",name:"Queens",motto:"Leading with confidence.",style:"linear-gradient(135deg,#fff,#fff2cc)"},
   {emoji:"💎",name:"Diamonds",motto:"Strong minds shine together.",style:"linear-gradient(135deg,#fff,#eef6ff)"},
@@ -1216,6 +1293,7 @@ async function loadTeacherMissionForClass(){
   byId('missionDay').value=m.day||missionDayName();
   byId('missionDate').value=m.date||missionDefaultDate();
   byId('missionSubject').value=m.subject||'English';
+  if(byId('missionTheme')) byId('missionTheme').value=m.theme||'blossom';
   byId('missionLessonTitle').value=m.lessonTitle||'';
   byId('missionObjectives').value=m.objectives||'';
   byId('missionSuccess').value=m.successCriteria||'';
@@ -1225,7 +1303,7 @@ async function loadTeacherMissionForClass(){
   MISSION_STATIONS=Array.isArray(m.stations)&&m.stations.length?m.stations:defaultMissionStations();
   renderMissionTeamPreview();renderMissionStationBuilder();
 }
-async function saveTeacherMission(){
+async function saveTeacherMission(freshStart){
   if(!db){alert('Firebase not ready.');return;}
   const classId=byId('missionClassSelect').value; if(!classId){alert('Choose class.');return;}
   const cls=(classes||{})[classId]||{};
@@ -1236,6 +1314,7 @@ async function saveTeacherMission(){
     day:byId('missionDay').value||missionDayName(),
     date:byId('missionDate').value||missionDefaultDate(),
     subject:byId('missionSubject').value||'English',
+    theme:byId('missionTheme')?.value||'blossom',
     lessonTitle:byId('missionLessonTitle').value||'Today\'s English Mission',
     objectives:byId('missionObjectives').value||'',
     successCriteria:byId('missionSuccess').value||'',
@@ -1246,7 +1325,14 @@ async function saveTeacherMission(){
     stations:MISSION_STATIONS,
     updatedAt:Date.now()
   };
-  await db.ref(missionClassPath(classId)).update(mission);
+  if(freshStart){
+    mission.members = {};
+    mission.progress = {};
+    mission.freshStartedAt = Date.now();
+    await db.ref(missionClassPath(classId)).set(mission);
+  }else{
+    await db.ref(missionClassPath(classId)).update(mission);
+  }
   const msg=byId('missionSaveMsg');
   if(msg){msg.classList.remove('hidden');msg.innerHTML='✅ Mission saved and activated for '+esc(mission.className)+'. Students will see it after login.';}
 }
@@ -1255,6 +1341,12 @@ async function clearTeacherMission(){
   if(!confirm('Clear the active mission for this class? Student marks and certificates will NOT be deleted.')) return;
   await db.ref(missionClassPath(classId)).remove();
   const msg=byId('missionSaveMsg'); if(msg){msg.classList.remove('hidden');msg.className='status good';msg.innerHTML='✅ Active mission cleared. Marks and certificates were not touched.';}
+}
+async function resetMissionTeamsOnly(){
+  const classId=byId('missionClassSelect')?.value; if(!classId) return;
+  if(!confirm('Reset team tickets, leaders, and mission progress for this class? Marks and certificates will NOT be touched.')) return;
+  await db.ref(missionClassPath(classId)).update({members:{},progress:{},ticketsResetAt:Date.now()});
+  const msg=byId('missionSaveMsg'); if(msg){msg.classList.remove('hidden');msg.className='status good';msg.innerHTML='✅ Team tickets and mission progress reset only. Marks and certificates were not touched.';}
 }
 async function loadStudentMission(session){
   const area=byId('studentMissionArea'); if(!area || !db || !session) return;
@@ -1274,30 +1366,53 @@ function renderStudentMission(session){
   const area=byId('studentMissionArea'); if(!area || !CURRENT_MISSION) return;
   const members=CURRENT_MISSION.members||{};
   const myMember=members[safeKey(session.studentId)]||{};
-  CURRENT_STUDENT_TEAM=myMember.teamIndex;
+  CURRENT_STUDENT_TEAM=(typeof myMember.teamIndex==='number') ? myMember.teamIndex : myMember.teamIndex;
   const teamHTML=renderStudentTeams(session, members);
+  const dashboardHTML=renderTeamDashboard(members);
   const stationHTML=renderStudentStations(session);
   const keywords=String(CURRENT_MISSION.keywords||'').split(',').map(x=>x.trim()).filter(Boolean);
-  const doneCount=Object.values((CURRENT_MISSION.progress||{})[safeKey(session.studentId)]||{}).filter(Boolean).length;
+  const progressObj=(CURRENT_MISSION.progress||{})[safeKey(session.studentId)]||{};
+  const doneCount=Object.values(progressObj).filter(Boolean).length;
   const stationCount=(CURRENT_MISSION.stations||[]).length||1;
   const pct=Math.round(doneCount/stationCount*100);
+  const myTeam = (CURRENT_MISSION.teams||MISSION_TEAMS)[Number(CURRENT_STUDENT_TEAM)] || null;
+  const theme=CURRENT_MISSION.theme||'blossom';
+  const teamLine=myTeam ? `${myTeam.emoji} ${myTeam.name}` : (Number(CURRENT_MISSION.groupCount||0)>0 ? 'Choose your ticket to start' : 'Individual Mission');
   area.innerHTML=`
-    <div class="missionBanner">
-      <div class="missionKicker">🌟 MISSION OF THE DAY</div>
+    <div class="missionBanner ${missionThemeClass(theme)}">
+      <div class="missionKicker">${esc(MISSION_THEME_LABELS[theme]||'🌟 Mission of the Day')}</div>
       <h1 class="missionTitle">${esc(CURRENT_MISSION.lessonTitle||'Today\'s Learning Mission')}</h1>
-      <div class="missionSubtitle">Good work, <b>${esc(session.name)}</b>. Follow the stations in order and use each page as part of today\'s lesson journey.</div>
+      <div class="missionSubtitle">Welcome, <b>${esc(session.name)}</b>. Your team is <b>${esc(teamLine)}</b>. Follow the journey step by step and use each activity page as part of today\'s lesson.</div>
       <div class="missionMetaGrid">
         <div class="missionMeta"><div class="label">Day</div><div class="value">${esc(CURRENT_MISSION.day||'')}</div></div>
         <div class="missionMeta"><div class="label">Date</div><div class="value">${esc(CURRENT_MISSION.date||'')}</div></div>
         <div class="missionMeta"><div class="label">Subject</div><div class="value">${esc(CURRENT_MISSION.subject||'English')}</div></div>
-        <div class="missionMeta"><div class="label">Progress</div><div class="value">${pct}%</div></div>
+        <div class="missionMeta"><div class="label">Mission Progress</div><div class="value">${pct}%</div></div>
       </div>
       <div class="missionProgress"><div class="missionProgressBar" style="width:${pct}%"></div></div>
     </div>
     <div class="missionPanel"><h2>🎯 Objectives</h2><div class="feedbackBox">${esc(CURRENT_MISSION.objectives||'Follow the lesson stations and complete each task carefully.')}</div><h2>⭐ Success Criteria</h2><div class="feedbackBox">${esc(CURRENT_MISSION.successCriteria||'I can complete the lesson tasks and show my understanding.')}</div>${keywords.length?`<div class="keywordCloud">${keywords.map(k=>`<span class="keywordChip">${esc(k)}</span>`).join('')}</div>`:''}</div>
     ${teamHTML}
-    <div class="missionPanel"><h2>🚀 Learning Journey</h2><div class="pathway">${stationHTML}</div></div>`;
+    ${dashboardHTML}
+    <div class="missionPanel"><h2>🗺️ Learning Journey Map</h2><div class="journeyMap">${stationHTML}</div></div>
+    ${pct>=100?'<div class="missionPanel" style="text-align:center"><h2>🏆 Mission Complete!</h2><div class="feedbackBox good">Beautiful work! You completed today\'s learning journey. Your real marks and certificates will still come from DL Lesson, Reading Rush, and Skill Clash as usual.</div></div>':''}`;
 }
+
+function renderTeamDashboard(members){
+  const count=Number(CURRENT_MISSION.groupCount||0);
+  if(count<=0) return '';
+  const teams=(CURRENT_MISSION.teams||MISSION_TEAMS).slice(0,count);
+  const progress=CURRENT_MISSION.progress||{};
+  const totalStations=(CURRENT_MISSION.stations||[]).length||1;
+  return `<div class="missionPanel"><h2>👭 Team Dashboard</h2><div class="teamSummaryGrid">${teams.map((t,i)=>{
+    const teamMembers=Object.values(members||{}).filter(m=>Number(m.teamIndex)===i);
+    const leader=teamMembers.find(m=>m.leader);
+    const doneTotal=teamMembers.reduce((sum,m)=>sum+Object.values(progress[safeKey(m.studentId)]||{}).filter(Boolean).length,0);
+    const teamPct=teamMembers.length?Math.round(doneTotal/(teamMembers.length*totalStations)*100):0;
+    return `<div class="teamSummaryCard" style="background:${t.style||'white'}"><b>${t.emoji} ${esc(t.name)}</b><div class="teamMemberList">👑 Leader: ${leader?esc(leader.name):'Not selected'}<br>⭐ Team Progress: ${teamPct}%<div class="missionProgress"><div class="missionProgressBar" style="width:${teamPct}%"></div></div>${teamMembers.length?teamMembers.map(m=>`<span class="teamMemberName">${m.leader?'👑 ':''}${esc(m.name)}</span>`).join(''):'No members yet'}</div></div>`;
+  }).join('')}</div></div>`;
+}
+
 function renderStudentTeams(session, members){
   const count=Number(CURRENT_MISSION.groupCount||0);
   if(count<=0) return '';
@@ -1327,6 +1442,10 @@ async function becomeMissionLeader(){
   updates[`members/${safeKey(session.studentId)}/studentId`]=session.studentId;
   await db.ref(missionClassPath(session.classId)).update(updates);
 }
+function stationIcon(platform, done){
+  if(done) return '✓';
+  return ({dl:'🧠',reading:'📖',skill:'🤝',imposter:'🎭',alef:'🎯',custom:'🔗',instructions:'📝'}[platform] || '🚀');
+}
 function renderStudentStations(session){
   const stations=CURRENT_MISSION.stations||[];
   if(!stations.length) return '<div class="emptyMission">No stations added yet.</div>';
@@ -1334,9 +1453,14 @@ function renderStudentStations(session){
   return stations.map((s,i)=>{
     const done=progress[i]===true;
     const label=MISSION_PLATFORM_LABELS[s.platform]||'📝 Activity';
-    return `<div class="stationCard"><div class="stationNumber">${done?'✓':i+1}</div><div><div class="stationTitle">${esc(s.name||('Station '+(i+1)))}</div><div class="stationText">${esc(s.instructions||'Follow your teacher instructions.')}</div><span class="stationPill">⏱ ${esc(s.time||'')}</span><span class="stationPill">${esc(label)}</span></div><button class="startStationBtn" onclick="startMissionStation(${i})">${done?'Open Again':'Start Station'}</button></div>`;
+    return `<div class="journeyStep"><div class="journeyIcon ${done?'done':''}">${stationIcon(s.platform,done)}</div><div><div class="journeyTitle">${esc(s.name||('Station '+(i+1)))}</div><div class="journeyDetails">${esc(s.instructions||'Follow your teacher instructions.')}</div><span class="stationPill">Step ${i+1}</span><span class="stationPill">⏱ ${esc(s.time||'')}</span><span class="stationPill">${esc(label)}</span></div><div class="journeyActions"><button class="startStationBtn" onclick="startMissionStation(${i})">${done?'Open Again':'Start Station'}</button>${done?'':'<button class="markDoneBtn" onclick="markMissionStationDone('+i+')">Mark Done</button>'}</div></div>`;
   }).join('');
 }
+async function markMissionStationDone(index){
+  const session=CURRENT_STUDENT_SESSION; if(!session||!CURRENT_MISSION) return;
+  await db.ref(`${missionStationProgress(session.classId,session.studentId)}/${index}`).set(true);
+}
+
 async function startMissionStation(index){
   const session=CURRENT_STUDENT_SESSION; if(!session||!CURRENT_MISSION) return;
   const s=(CURRENT_MISSION.stations||[])[index]||{};
