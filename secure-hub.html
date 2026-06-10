@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -270,6 +271,12 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <p>Reading collections, paragraph races, comprehension, and vocabulary challenges.</p>
     </div>
 
+    <div class="card" onclick="openPage('Exam-Page.html')">
+      <div class="emoji">📝</div>
+      <h2>Exam Page</h2>
+      <p>Revision exams, grammar checks, vocabulary practice, and reading simulations.</p>
+    </div>
+
     <div class="card" onclick="openPage('imposter.html')">
       <div class="emoji">🕵️</div>
       <h2>Classroom Imposter</h2>
@@ -289,7 +296,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
         </select>
       </div>
       <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
-      <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, and Reading Rush marks...</div>
+      <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...</div>
       <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
       <div id="studentNeededActions" class="actionList"></div>
     </div>
@@ -300,7 +307,7 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
         <span id="certificateTermLabel" class="miniLoading">Term 1</span>
       </div>
       <div class="miniLoading">
-        Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files.
+        Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
       </div>
       <div id="studentCertificatesList" class="certList"></div>
     </div>
@@ -343,6 +350,12 @@ input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px
       <div class="emoji">⚔️</div>
       <h2>Skill Clash Builder</h2>
       <p>Open Skill Clash to create writing, reading, debate, voting, and group activities.</p>
+    </div>
+
+    <div class="card teacherCard" onclick="openPage('Exam-Page.html?teacher=1')">
+      <div class="emoji">📝</div>
+      <h2>Exam Page Builder</h2>
+      <p>Create exam pages, add/delete sections, activate exams for classes, and track first attempts.</p>
     </div>
 
     <div class="card teacherCard" onclick="openPage('Reading-Rush-Tracker.html')">
@@ -686,7 +699,9 @@ async function loadStudentPerformanceWindow(session){
       return (
         notes.includes("Final DL lesson mark") ||
         type.includes("Skill Clash") ||
-        type.includes("Reading Rush")
+        type.includes("Reading Rush") ||
+        type.includes("Exam Page") ||
+        String(r.page || "").includes("Exam Page")
       );
     })
     .map(r=>{
@@ -694,6 +709,7 @@ async function loadStudentPerformanceWindow(session){
       if(String(r.notes || "").includes("Final DL lesson mark")) page = "DL Lesson";
       else if(String(r.activityType || "").includes("Skill Clash")) page = "Skill Clash";
       else if(String(r.activityType || "").includes("Reading Rush")) page = "Reading Rush";
+      else if(String(r.activityType || "").includes("Exam Page") || String(r.page || "").includes("Exam Page")) page = "Exam Page";
 
       return {
         page: page,
@@ -706,7 +722,7 @@ async function loadStudentPerformanceWindow(session){
     .sort((a,b)=> Number(b.record.time || 0) - Number(a.record.time || 0));
 
   for(const row of rows){
-    if(row.record){
+    if(row.record && row.page !== "Exam Page"){
       await autoCreateCertificateIfFull(row.record, session, row.page, selectedTerm);
     }
   }
