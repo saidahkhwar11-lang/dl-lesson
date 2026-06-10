@@ -200,10 +200,12 @@ tr:last-child td{border-bottom:none}
 th.dlCol{background:#eaf5ff;color:#175d9d}
 th.skillCol{background:#fff1e8;color:#9b4a0d}
 th.readingCol{background:#ecfff4;color:#167447}
+th.examCol{background:#fff7ed;color:#9a3412}
 th.finalCol{background:#f1ecff;color:#5531ad}
 td.dlCol{background:#f8fcff}
 td.skillCol{background:#fffaf6}
 td.readingCol{background:#f7fffa}
+td.examCol{background:#fffaf3}
 td.finalCol{background:#fbf9ff;font-weight:900}
 th.commentCol{background:#fff8e8;color:#8a5b00}
 td.commentCol{background:#fffdf5;min-width:240px}
@@ -278,7 +280,7 @@ td.commentCol{background:#fffdf5;min-width:240px}
   <div id="mainApp" class="hidden">
     <div class="hero">
       <h1>👩‍🏫 Teacher Control Center</h1>
-      <p>Create classes, upload student names and passwords by Excel, and keep class/student performance records for DL Lesson, Skill Clash, Imposter, and Reading Rush.</p>
+      <p>Create classes, upload student names and passwords by Excel, and keep class/student performance records for DL Lesson, Skill Clash, Imposter, Reading Rush, and Exam Page.</p>
     </div>
 
     <div id="connectionBox" class="card status">Connecting to Firebase...</div>
@@ -385,7 +387,8 @@ td.commentCol{background:#fffdf5;min-width:240px}
               <option value="reading">Reading Rush marks only</option>
               <option value="skill">Skill Clash marks only</option>
               <option value="dl">DL Lesson marks only</option>
-              <option value="all">All marks: DL Lesson + Skill Clash + Reading Rush</option>
+              <option value="exam">Exam Page marks only</option>
+              <option value="all">All marks: DL Lesson + Skill Clash + Reading Rush + Exam Page</option>
             </select>
           </div>
           <div>
@@ -558,7 +561,7 @@ function renderActiveSavingTermBox(){
   const activeYear=getActiveStudyYear();
   const started=getTermStart(activeTerm, activeYear);
   const startedText=started ? new Date(started).toLocaleString() : 'not set yet';
-  box.innerHTML='✅ Active saving term: <b>'+termLabel(activeTerm)+'</b> • Year: <b>'+esc(activeYear)+'</b><br><span style="font-size:12px;">New saved marks from DL Lesson, Skill Clash, and Reading Rush will go to this term. Started: '+esc(startedText)+'</span>';
+  box.innerHTML='✅ Active saving term: <b>'+termLabel(activeTerm)+'</b> • Year: <b>'+esc(activeYear)+'</b><br><span style="font-size:12px;">New saved marks from DL Lesson, Skill Clash, Reading Rush, and Exam Page will go to this term. Started: '+esc(startedText)+'</span>';
 }
 async function saveTrackerSettings(){
   const term=byId('termSelect')?.value || getCurrentTerm();
@@ -781,7 +784,8 @@ async function deleteStudent(classId,studentId){
 const PROGRAM_WEIGHTS = {
   dl: {label:'DL Lesson', weight:50},
   skill: {label:'Skill Clash', weight:20},
-  reading: {label:'Reading Rush', weight:30}
+  reading: {label:'Reading Rush', weight:30},
+  exam: {label:'Exam Page', weight:0}
 };
 
 function normalizeProgramName(record){
@@ -789,6 +793,7 @@ function normalizeProgramName(record){
     record.program || record.app || record.activityType || record.type || record.activityName || record.activity || ''
   ).toLowerCase();
 
+  if(raw.includes('exam')) return 'exam';
   if(raw.includes('reading') || raw.includes('rush')) return 'reading';
   if(raw.includes('skill') || raw.includes('clash') || raw.includes('debate') || raw.includes('battle')) return 'skill';
   if(raw.includes('dl') || raw.includes('lesson') || raw.includes('station')) return 'dl';
@@ -1251,6 +1256,7 @@ function buildPerformanceSummary(records){
     dl:{score:0,total:0,count:0,percent:0,weighted:0},
     skill:{score:0,total:0,count:0,percent:0,weighted:0},
     reading:{score:0,total:0,count:0,percent:0,weighted:0},
+    exam:{score:0,total:0,count:0,percent:0,weighted:0},
     totalScore:0,
     totalMarks:0,
     activities:records.length,
@@ -1334,6 +1340,14 @@ function performanceCommentsText(records){
     .join(' | ');
 }
 
+
+function examCellHtml(item){
+  return `<div class="programCell">
+    <span class="${scoreClass(item.percent)}">${item.percent}%</span>
+    <div class="raw">${item.score}/${item.total} • ${item.count} exam${item.count===1?'':'s'}</div>
+  </div>`;
+}
+
 function renderClassRecords(){
   const classId=byId("recordsClassSelect")?.value;
   const cls=getClasses()[classId];
@@ -1344,7 +1358,7 @@ function renderClassRecords(){
   const reportDate=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
 
   let classFinals=[];
-  let totals={dl:0,skill:0,reading:0,final:0,records:0};
+  let totals={dl:0,skill:0,reading:0,exam:0,final:0,records:0};
 
   const rows=students.map(st=>{
     const r=studentRecordsForClass(classId, st);
@@ -1352,6 +1366,7 @@ function renderClassRecords(){
     totals.dl += summary.dl.weighted;
     totals.skill += summary.skill.weighted;
     totals.reading += summary.reading.weighted;
+    totals.exam += summary.exam.percent;
     totals.final += summary.finalPercent;
     totals.records += r.length;
     if(r.length) classFinals.push(summary.finalPercent);
@@ -1362,6 +1377,7 @@ function renderClassRecords(){
       <td class="dlCol">${programCellHtml(summary.dl,'dl')}</td>
       <td class="skillCol">${programCellHtml(summary.skill,'skill')}</td>
       <td class="readingCol">${programCellHtml(summary.reading,'reading')}</td>
+      <td class="examCol">${examCellHtml(summary.exam)}</td>
       <td class="finalCol"><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
       <td class="commentCol">${performanceCommentsHtml(r)}</td>
       <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
@@ -1374,6 +1390,7 @@ function renderClassRecords(){
   const avgDL=Math.round(totals.dl/studentCount);
   const avgSkill=Math.round(totals.skill/studentCount);
   const avgReading=Math.round(totals.reading/studentCount);
+  const avgExam=Math.round(totals.exam/studentCount);
 
   box.innerHTML=`
   <div class="reportHeader">
@@ -1395,11 +1412,12 @@ function renderClassRecords(){
       <div class="summaryMini"><div class="miniLabel">Class DL Avg /50</div><div class="miniValue">${avgDL}/50</div></div>
       <div class="summaryMini"><div class="miniLabel">Skill Clash Avg /20</div><div class="miniValue">${avgSkill}/20</div></div>
       <div class="summaryMini"><div class="miniLabel">Reading Avg /30</div><div class="miniValue">${avgReading}/30</div></div>
+      <div class="summaryMini"><div class="miniLabel">Exam Page Avg</div><div class="miniValue">${avgExam}%</div></div>
       <div class="summaryMini"><div class="miniLabel">Final Term Avg</div><div class="miniValue">${classAvg}%</div></div>
     </div>
   </div>
   <div class="tableWrap"><table>
-    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="finalCol">Final Term 100%</th><th class="commentCol">Performance Comments</th><th>Last Activity</th><th>Date</th></tr></thead>
+    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="examCol">Exam Page</th><th class="finalCol">Final Term 100%</th><th class="commentCol">Performance Comments</th><th>Last Activity</th><th>Date</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
 }
