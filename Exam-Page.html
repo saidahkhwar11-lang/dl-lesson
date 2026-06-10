@@ -846,13 +846,55 @@
         <div><label>Choose Class</label><select id="builderClassSelect"></select></div>
         <div><label>Exam Library</label><select id="examLibrarySelect" onchange="loadExamFromSelect()"></select></div>
       </div>
-      <label>Exam Title</label><input id="builderExamTitle" placeholder="Example: EOT3 Grammar and Reading Review">
-      <label>Welcome Subtitle</label><textarea id="builderExamSubtitle" placeholder="Short student instructions"></textarea>
-      <div class="builder-grid">
+      <label>Exam Title</label>
+<input id="builderExamTitle" placeholder="Example: EOT3 Grammar and Reading Review">
+
+<label>Welcome Subtitle</label>
+<textarea id="builderExamSubtitle" placeholder="Short student instructions"></textarea>
+
+<div class="exam-status" style="margin-top:12px">
+  <h3>✨ Exam Generator</h3>
+
+  <textarea
+    id="examSpecInput"
+    placeholder="Paste your exam planner or revision specification here..."
+    style="min-height:140px"
+  ></textarea>
+
+  <button onclick="generateExamFromSpec()">
+    ✨ Generate Exam Draft
+  </button>
+</div>
+
+<div class="builder-grid">
         <div>
-          <h3>Sections</h3>
-          <div class="teacher-actions"><button onclick="addSection()">➕ Add Section</button><button onclick="deleteSection()" class="danger-solid">➖ Delete</button></div>
-          <div id="sectionList" class="builder-list"></div>
+         <h3>Sections</h3>
+
+<div class="teacher-actions">
+  <button onclick="addSection()">➕ Blank Section</button>
+
+  <button onclick="addVocabularySection()">
+    📚 Vocabulary
+  </button>
+
+  <button onclick="addGrammarSection()">
+    ✏️ Grammar
+  </button>
+
+  <button onclick="addReadingSection()">
+    📖 Reading
+  </button>
+
+  <button onclick="addWritingSection()">
+    📝 Writing
+  </button>
+
+  <button onclick="deleteSection()" class="danger-solid">
+    ➖ Delete
+  </button>
+</div>
+
+<div id="sectionList" class="builder-list"></div>
         </div>
         <div id="sectionEditor">
           <h3>Section Editor</h3>
@@ -1783,6 +1825,182 @@ document.getElementById('studentStrip').classList.remove('hidden');
       builderExam.parts.push({id:'sec_'+Date.now(),title:'New Section',shortTitle:'Part '+(builderExam.parts.length+1),marks:1,instructions:'Choose the correct answer.',leftLabel:'Text',leftContent:'<div class="reading-text"><h3>Title</h3><p>Write text here.</p></div>',questions:[{id:'q_'+Date.now(),points:1,skill:'Exam Skill',answer:'A',prompt:'Write your question here.',options:{A:'Option A',B:'Option B',C:'Option C'}}]});
       selectedSectionIndex=builderExam.parts.length-1; renderBuilder();
     }
+
+    function addVocabularySection(){
+  applySectionChanges(false);
+  builderExam.parts = builderExam.parts || [];
+
+  const n = builderExam.parts.length + 1;
+
+  builderExam.parts.push({
+    id:'vocab_'+Date.now(),
+    title:'Vocabulary Section',
+    shortTitle:'Part '+n,
+    marks:10,
+    instructions:'Choose the correct word from the word bank.',
+    leftLabel:'Word Bank',
+    leftContent:`
+      <ul class="word-bank">
+        <li>A. word1</li>
+        <li>B. word2</li>
+        <li>C. word3</li>
+        <li>D. word4</li>
+        <li>E. word5</li>
+      </ul>
+    `,
+    questions:[
+      {
+        id:'q_'+Date.now(),
+        points:2,
+        skill:'Vocabulary',
+        answer:'A',
+        promptStart:'Write the beginning of the sentence',
+        promptEnd:'write the end of the sentence.',
+        options:{
+          A:'word1',
+          B:'word2',
+          C:'word3',
+          D:'word4',
+          E:'word5'
+        }
+      }
+    ]
+  });
+
+  selectedSectionIndex = builderExam.parts.length - 1;
+  renderBuilder();
+}
+
+function addGrammarSection(){
+  applySectionChanges(false);
+  builderExam.parts = builderExam.parts || [];
+
+  const n = builderExam.parts.length + 1;
+
+  builderExam.parts.push({
+    id:'grammar_'+Date.now(),
+    title:'Grammar Section',
+    shortTitle:'Part '+n,
+    marks:10,
+    instructions:'Choose the correct answer A, B, or C.',
+    leftLabel:'Grammar Notes',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Grammar Focus</h3>
+        <p>Add the grammar rule or short example text here.</p>
+      </div>
+    `,
+    questions:[
+      {
+        id:'q_'+Date.now(),
+        points:2,
+        skill:'Grammar',
+        answer:'A',
+        prompt:'Write your grammar question here.',
+        options:{
+          A:'Option A',
+          B:'Option B',
+          C:'Option C'
+        }
+      }
+    ]
+  });
+
+  selectedSectionIndex = builderExam.parts.length - 1;
+  renderBuilder();
+}
+
+function addReadingSection(){
+  applySectionChanges(false);
+  builderExam.parts = builderExam.parts || [];
+
+  const n = builderExam.parts.length + 1;
+
+  builderExam.parts.push({
+    id:'reading_'+Date.now(),
+    title:'Reading Section',
+    shortTitle:'Part '+n,
+    marks:20,
+    instructions:'Read the text and choose the correct answer A, B, or C.',
+    leftLabel:'Reading Text',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Reading Title</h3>
+        <p>Paste your reading text here.</p>
+      </div>
+    `,
+    questions:[
+      {
+        id:'q_'+Date.now(),
+        points:4,
+        skill:'Reading: Detail',
+        answer:'A',
+        prompt:'Write your reading question here.',
+        options:{
+          A:'Answer A',
+          B:'Answer B',
+          C:'Answer C'
+        }
+      }
+    ]
+  });
+
+  selectedSectionIndex = builderExam.parts.length - 1;
+  renderBuilder();
+}
+
+function addWritingSection(){
+  applySectionChanges(false);
+  builderExam.parts = builderExam.parts || [];
+
+  const n = builderExam.parts.length + 1;
+
+  builderExam.parts.push({
+    id:'writing_'+Date.now(),
+    title:'Writing Section',
+    shortTitle:'Part '+n,
+    marks:20,
+    instructions:'Read the writing task and write your answer.',
+    leftLabel:'Writing Task',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Writing Task</h3>
+        <p>Write the task prompt here.</p>
+      </div>
+    `,
+    questions:[]
+  });
+
+  selectedSectionIndex = builderExam.parts.length - 1;
+  renderBuilder();
+}
+
+    function generateExamFromSpec(){
+  const specBox = document.getElementById('examSpecInput');
+  const spec = specBox ? specBox.value.trim() : '';
+
+  if(!spec){
+    alert('Please paste the exam topic or revision specification first.');
+    return;
+  }
+
+  builderExam.parts = [];
+
+  addVocabularySection();
+  addGrammarSection();
+  addReadingSection();
+  addWritingSection();
+
+  builderExam.title = document.getElementById('builderExamTitle').value || 'Generated Exam Draft';
+  builderExam.subtitle = spec;
+
+  document.getElementById('builderExamTitle').value = builderExam.title;
+  document.getElementById('builderExamSubtitle').value = spec;
+
+  renderBuilder();
+
+  alert('✅ Exam draft generated. Now edit each section before saving.');
+}
     function deleteSection(){
       if(!builderExam.parts || !builderExam.parts.length) return;
       if(!confirm('Delete this section?')) return;
