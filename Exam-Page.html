@@ -1623,13 +1623,27 @@
       document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle || 'Read carefully and answer all questions.';
       document.getElementById('examEyebrow').textContent='Exam Page • '+(currentExamMeta.title || 'Active Exam');
     }
-    function studentSession(){return getSecureHubStudent() || {studentId:'guest', password:'guest', name:'Guest Student', classId:'guest', className:'Guest Class'}}
+    
+function studentSession(){
+  const st = getSecureHubStudent();
+
+  if(st && (st.studentId || st.password) && st.classId){
+    return st;
+  }
+
+  alert("Please login from Student Hub first.");
+  location.href = "secure-hub.html";
+  return null;
+}
+    
     async function initExamFirebase(){
       try{
         if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
         db=firebase.database();
-        const st=studentSession();
-        document.getElementById('studentStrip').classList.remove('hidden');
+       const st = studentSession();
+if(!st) return;
+
+document.getElementById('studentStrip').classList.remove('hidden');
         document.getElementById('examStudentName').textContent=st.name || 'Student';
         document.getElementById('examStudentId').textContent=st.studentId || st.password || '';
         document.getElementById('examClassName').textContent=st.className || st.classId || '';
