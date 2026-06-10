@@ -1618,11 +1618,23 @@
     function getSecureHubStudent(){try{return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null')}catch(e){return null}}
     function isTeacherMode(){return sessionStorage.getItem('teacher_hub_login')==='yes' || sessionStorage.getItem('teacher_control_login')==='yes' || new URLSearchParams(location.search).get('teacher')==='1'}
     function setBuilderStatus(msg,good){const el=document.getElementById('builderStatus'); if(el){el.textContent=msg; el.style.background=good?'#ecfdf5':'#fffbeb'; el.style.color=good?'#166534':'#92400e'}}
-    function updateWelcomeText(){
-      document.getElementById('welcomeTitle').textContent=currentExamMeta.title || 'Welcome to Your Exam Page';
-      document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle || 'Read carefully and answer all questions.';
-      document.getElementById('examEyebrow').textContent='Exam Page • '+(currentExamMeta.title || 'Active Exam');
-    }
+   function updateWelcomeText(){
+  const titleEl = document.getElementById('welcomeTitle');
+  const subEl = document.getElementById('welcomeSubtitle');
+  const eyeEl = document.getElementById('examEyebrow');
+
+  if(titleEl){
+    titleEl.textContent = currentExamMeta.title || 'Welcome to Your Exam Page';
+  }
+
+  if(subEl){
+    subEl.textContent = currentExamMeta.subtitle || 'Read carefully and answer all questions.';
+  }
+
+  if(eyeEl){
+    eyeEl.textContent = 'Exam Page • ' + (currentExamMeta.title || 'Active Exam');
+  }
+}
     
 function studentSession(){
   const st = getSecureHubStudent();
