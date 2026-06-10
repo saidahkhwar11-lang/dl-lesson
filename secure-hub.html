@@ -520,8 +520,10 @@ async function loginStudent(){
     loginTime:Date.now()
   };
 
-  localStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(session));
-
+localStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify(session));
+localStorage.setItem('DL_SECURE_STUDENT_LOGIN', JSON.stringify(session));
+sessionStorage.setItem('DL_SECURE_STUDENT_LOGIN', JSON.stringify(session));
+  
   // ✅ DAILY TRACKER LOGIN SAVE
   try{
     const d=new Date();
