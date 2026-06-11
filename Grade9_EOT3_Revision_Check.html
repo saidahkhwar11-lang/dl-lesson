@@ -1,12 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Exam Page</title>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <title>Grade 9 General English EOT3 Revision Check</title>
   <style>
     :root {
       --bg: #faf8ff;
@@ -735,23 +732,6 @@
       margin-top: 14px;
     }
 
-
-    .student-strip,.teacher-panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:14px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
-    .student-strip{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;font-weight:900;color:var(--warm-purple-dark)}
-    .teacher-panel h2{margin-top:0}
-    .builder-grid{display:grid;grid-template-columns:280px 1fr;gap:14px}
-    .builder-list{display:grid;gap:8px}
-    .builder-item{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;cursor:pointer;font-weight:900}
-    .builder-item.active{background:var(--lavender);border-color:var(--warm-purple)}
-    .teacher-panel input,.teacher-panel textarea,.teacher-panel select{width:100%;border:1px solid var(--line);border-radius:14px;padding:10px;margin:5px 0 10px;font-size:15px}
-    .teacher-panel textarea{min-height:110px;resize:vertical;font-family:Arial,Helvetica,sans-serif}
-    .teacher-panel .json-box{min-height:220px;font-family:Consolas,monospace;font-size:13px}
-    .teacher-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    .teacher-actions button{width:auto}
-    .danger-solid{background:#ef4444;color:white;border-color:#ef4444}
-    .exam-status{font-weight:900;border-radius:14px;padding:10px;margin-top:8px;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-    @media(max-width:900px){.builder-grid{grid-template-columns:1fr}}
-
     @media (max-width: 980px) {
       body { font-size: 17px; }
 
@@ -825,82 +805,11 @@
 <body>
   <div class="page">
 
-    
-    <div id="studentStrip" class="student-strip hidden">
-      <div>👩‍🎓 <span id="examStudentName">Student</span></div>
-      <div>🆔 <span id="examStudentId">ID</span></div>
-      <div>🏫 <span id="examClassName">Class</span></div>
-<button onclick="location.href='index.html'">🏠 Student Hub</button>
-    </div>
-
-    <section id="teacherPanel" class="teacher-panel hidden">
-      <h2>📝 Exam Page Builder</h2>
-      <div class="exam-status" id="builderStatus">Create, save, and activate exams for each class.</div>
-      <div class="teacher-actions">
-        <button onclick="createNewExam()">➕ New Exam</button>
-        <button onclick="saveExamToLibrary()">💾 Save Exam</button>
-        <button onclick="activateExamForClass()">🚀 Activate for Class</button>
-        <button onclick="deleteSelectedExam()" class="danger-solid">🗑 Delete Exam</button>
-        <button onclick="location.href='secure-hub.html'">🏠 Hub</button>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label>Choose Class</label><select id="builderClassSelect"></select></div>
-        <div><label>Exam Library</label><select id="examLibrarySelect" onchange="loadExamFromSelect()"></select></div>
-      </div>
-      <label>Exam Title</label>
-<input id="builderExamTitle" placeholder="Example: EOT3 Grammar and Reading Review">
-
-<label>Welcome Subtitle</label>
-<textarea id="builderExamSubtitle" placeholder="Short student instructions"></textarea>
-
-<div class="builder-grid">
-        <div>
-         <h3>Sections</h3>
-
-<div class="teacher-actions">
-  <button onclick="addSection()">➕ Blank Section</button>
-
-  <button onclick="addVocabularySection()">
-    📚 Vocabulary
-  </button>
-
-  <button onclick="addGrammarSection()">
-    ✏️ Grammar
-  </button>
-
-  <button onclick="addReadingSection()">
-    📖 Reading
-  </button>
-
-  <button onclick="addWritingSection()">
-    📝 Writing
-  </button>
-
-  <button onclick="deleteSection()" class="danger-solid">
-    ➖ Delete
-  </button>
-</div>
-
-<div id="sectionList" class="builder-list"></div>
-        </div>
-        <div id="sectionEditor">
-          <h3>Section Editor</h3>
-          <label>Title</label><input id="secTitle">
-          <label>Short Title</label><input id="secShortTitle">
-          <label>Instructions</label><textarea id="secInstructions"></textarea>
-          <label>Left Label</label><input id="secLeftLabel">
-          <label>Left Content HTML</label><textarea id="secLeftContent"></textarea>
-          <label>Questions JSON</label><textarea id="secQuestions" class="json-box"></textarea>
-          <div class="teacher-actions"><button onclick="applySectionChanges()">✅ Apply Section Changes</button></div>
-        </div>
-      </div>
-    </section>
-
     <section id="welcomePage" class="welcome-wrap">
       <div class="welcome-card">
-        <span class="eyebrow" id="examEyebrow">Grade 9 General • EOT3 Revision Check</span>
-        <h1 id="welcomeTitle">Welcome to Your EOT3 Revision Check</h1>
-        <p class="welcome-sub" id="welcomeSubtitle">
+        <span class="eyebrow">Grade 9 General • EOT3 Revision Check</span>
+        <h1>Welcome to Your EOT3 Revision Check</h1>
+        <p class="welcome-sub">
           This practice reviews vocabulary, grammar, and reading skills for the Grade 9 General EOT3 English exam.
           Try your best, check your score, then practise the questions you missed.
         </p>
@@ -1011,7 +920,7 @@
       K:"conclude", L:"solve", M:"confusing", N:"familiar", O:"wedding"
     };
 
-    let parts = [
+    const parts = [
       {
         id: "p1",
         title: "Part 1: Vocabulary",
@@ -1151,37 +1060,30 @@
       }
     ];
 
-    let screens = [];
-    let allQuestions = [];
-    let totalQuestions = 0;
-    let totalMarks = 0;
+    const screens = [];
+    parts.forEach((part, partIndex) => {
+      screens.push({ type: "intro", partIndex });
+      if (part.id === "p1") {
+        screens.push({ type: "vocab", partIndex });
+      } else {
+        part.questions.forEach((q, questionIndex) => {
+          screens.push({ type: "question", partIndex, questionIndex, qid: q.id });
+        });
+      }
+    });
 
-    function rebuildExamArrays(){
-      screens = [];
-      parts.forEach((part, partIndex) => {
-        part.questions = Array.isArray(part.questions) ? part.questions : [];
-        screens.push({ type: "intro", partIndex });
-        if ((part.mode || part.id) === "vocab" || part.id === "p1") {
-          screens.push({ type: "vocab", partIndex });
-        } else {
-          part.questions.forEach((q, questionIndex) => {
-            screens.push({ type: "question", partIndex, questionIndex, qid: q.id });
-          });
-        }
-      });
-      allQuestions = parts.flatMap((part, partIndex) =>
-        (part.questions || []).map((q, questionIndex) => ({
-          ...q,
-          partId: part.id,
-          partTitle: part.title,
-          partIndex,
-          questionIndex
-        }))
-      );
-      totalQuestions = allQuestions.length;
-      totalMarks = allQuestions.reduce((sum, q) => sum + Number(q.points || 1), 0);
-    }
-    rebuildExamArrays();
+    const allQuestions = parts.flatMap((part, partIndex) =>
+      part.questions.map((q, questionIndex) => ({
+        ...q,
+        partId: part.id,
+        partTitle: part.title,
+        partIndex,
+        questionIndex
+      }))
+    );
+
+    const totalQuestions = allQuestions.length;
+    const totalMarks = allQuestions.reduce((sum, q) => sum + q.points, 0);
 
     let currentScreen = 0;
     let submitted = false;
@@ -1498,7 +1400,6 @@
       lastMissedIds = missed.map(q => q.id);
       tryWrongBtn.disabled = missed.length === 0;
       showResults(score, partStats, groupStats, missed);
-      saveExamResultFirstAttempt(score, totalMarks, partStats);
       renderRight();
       results.scrollIntoView({behavior: "smooth", block: "start"});
     }
@@ -1506,7 +1407,7 @@
     function showResults(score, partStats, groupStats, missed) {
       results.classList.add("show");
       const percent = Math.round((score / totalMarks) * 100);
-      document.getElementById("scoreText").textContent = `${score}/${totalMarks}`;
+      document.getElementById("scoreText").textContent = `${score}/100`;
       document.getElementById("percentText").textContent = `${percent}%`;
 
       const degrees = Math.round((score / totalMarks) * 360);
@@ -1628,379 +1529,6 @@
       }
     });
 
-
-
-    /* ===== Exam Page + Secure Hub connection ===== */
-    const FIREBASE_CONFIG = {
-      apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
-      authDomain:"online-english-lesson-grade-9.firebaseapp.com",
-      databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
-      projectId:"online-english-lesson-grade-9",
-      storageBucket:"online-english-lesson-grade-9.firebasestorage.app",
-      appId:"1:542666648554:web:5190c68ea73b3536dae093"
-    };
-    let db=null, examLibrary={}, activeExamId='', currentExamId='default_eot3', selectedSectionIndex=0;
-    let currentExamMeta={title:'Grade 9 EOT3 Revision Check', subtitle:'This practice helps you review vocabulary, grammar, and reading skills before the exam.'};
-    let builderExam={id:'', title:'', subtitle:'', parts:[]};
-
-    function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
-    function getSecureHubStudent(){try{return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null')}catch(e){return null}}
-    function isTeacherMode(){return sessionStorage.getItem('teacher_hub_login')==='yes' || sessionStorage.getItem('teacher_control_login')==='yes' || new URLSearchParams(location.search).get('teacher')==='1'}
-    function setBuilderStatus(msg,good){const el=document.getElementById('builderStatus'); if(el){el.textContent=msg; el.style.background=good?'#ecfdf5':'#fffbeb'; el.style.color=good?'#166534':'#92400e'}}
-   function updateWelcomeText(){
-  const titleEl = document.getElementById('welcomeTitle');
-  const subEl = document.getElementById('welcomeSubtitle');
-  const eyeEl = document.getElementById('examEyebrow');
-
-  if(titleEl){
-    titleEl.textContent = currentExamMeta.title || 'Welcome to Your Exam Page';
-  }
-
-  if(subEl){
-    subEl.textContent = currentExamMeta.subtitle || 'Read carefully and answer all questions.';
-  }
-
-  if(eyeEl){
-    eyeEl.textContent = 'Exam Page • ' + (currentExamMeta.title || 'Active Exam');
-  }
-}
-    
-function studentSession(){
-  const st = getSecureHubStudent();
-
-  if(st && (st.studentId || st.password) && st.classId){
-    return st;
-  }
-
-  alert("Please login from Student Hub first.");
-  location.href = "secure-hub.html";
-  return null;
-}
-    
-    async function initExamFirebase(){
-      try{
-        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-        db=firebase.database();
-
-        if(isTeacherMode()){
-          const panel=document.getElementById('teacherPanel');
-          if(panel) panel.classList.remove('hidden');
-          await loadBuilderData();
-
-          const strip=document.getElementById('studentStrip');
-          if(strip) strip.classList.add('hidden');
-          updateWelcomeText();
-          return;
-        }
-
-        const st = studentSession();
-        if(!st) return;
-
-        document.getElementById('studentStrip').classList.remove('hidden');
-        document.getElementById('examStudentName').textContent=st.name || 'Student';
-        document.getElementById('examStudentId').textContent=st.studentId || st.password || '';
-        document.getElementById('examClassName').textContent=st.className || st.classId || '';
-
-        await loadActiveExamForStudent(st);
-      }catch(err){console.warn('Exam Firebase skipped:',err)}
-    }
-    async function loadActiveExamForStudent(st){
-      if(!db) return;
-      const classId=safeKey(st.classId || st.className || 'guest');
-      const activeSnap=await db.ref('examPage/activeExams/'+classId).get();
-      if(activeSnap.exists()){
-        activeExamId=activeSnap.val().examId || activeSnap.val();
-        const examSnap=await db.ref('examPage/exams/'+activeExamId).get();
-        if(examSnap.exists()){
-          const ex=examSnap.val();
-          currentExamId=ex.id || activeExamId;
-          currentExamMeta={title:ex.title || 'Exam Page', subtitle:ex.subtitle || ''};
-          parts=Array.isArray(ex.parts) ? ex.parts : [];
-          rebuildExamArrays();
-          resetQuiz();
-        }
-      }
-      updateWelcomeText();
-    }
-    async function getActiveTermSettings(){
-      if(!db) return {term:'term1',studyYear:''};
-      const snap=await db.ref('teacherControlCenter/settings/tracker').get();
-      const t=snap.exists()?snap.val():{};
-      return {term:t.activeSavingTerm || t.activeTerm || t.term || 'term1', studyYear:t.activeSavingStudyYear || t.activeStudyYear || t.studyYear || ''};
-    }
-    async function saveExamResultFirstAttempt(score,total,partStats){
-      try{
-        if(!db) return;
-        const st=studentSession();
-        if(!st || !st.studentId || st.studentId==='guest') return;
-        const classId=safeKey(st.classId || st.className);
-        const studentId=safeKey(st.studentId || st.password);
-        const term=await getActiveTermSettings();
-        const recordId='exam_'+safeKey(currentExamId || currentExamMeta.title)+'_'+safeKey(term.term)+'_'+safeKey(term.studyYear || 'year');
-        const path='teacherControlCenter/records/'+classId+'/'+studentId+'/'+recordId;
-        const exists=await db.ref(path).get();
-        if(exists.exists()) return; // first attempt only
-        const now=Date.now();
-        const record={
-          recordId, page:'Exam Page', program:'Exam Page', activityType:'Exam Page', type:'exam',
-          activityName:currentExamMeta.title || 'Exam Page', title:currentExamMeta.title || 'Exam Page',
-          studentId, studentName:st.name || 'Student', classId, className:st.className || st.classId || classId,
-          score:Number(score||0), total:Number(total||0), percentage: total?Math.round((score/total)*100):0,
-          term:term.term, studyYear:term.studyYear, time:now, savedAt:now, date:new Date(now).toLocaleDateString('en-GB'),
-          notes:'First attempt only saved from Exam Page.', partStats
-        };
-        const updates={};
-        updates[path]=record;
-        updates['teacherControlCenter/activityRecords/Exam_Page/'+classId+'/'+studentId+'/'+recordId]=record;
-        await db.ref().update(updates);
-      }catch(err){console.warn('Exam result save failed:',err)}
-    }
-
-    async function loadBuilderData(){
-      const clsSnap=await db.ref('teacherControlCenter/classes').get();
-      const classes=clsSnap.exists()?clsSnap.val():{};
-      const classSelect=document.getElementById('builderClassSelect');
-      classSelect.innerHTML=Object.keys(classes).map(id=>`<option value="${id}">${classes[id].name||id}</option>`).join('') || '<option value="guest">No classes</option>';
-      const examsSnap=await db.ref('examPage/exams').get();
-      examLibrary=examsSnap.exists()?examsSnap.val():{};
-      renderExamLibrarySelect();
-      createNewExam(false);
-    }
-    function renderExamLibrarySelect(){
-      const sel=document.getElementById('examLibrarySelect');
-      const ids=Object.keys(examLibrary||{});
-      sel.innerHTML=ids.map(id=>`<option value="${id}">${examLibrary[id].title||id}</option>`).join('') || '<option value="">No saved exams yet</option>';
-    }
-    function createNewExam(clear=true){
-      builderExam={id:'exam_'+Date.now(), title:'New Exam Page', subtitle:'Read carefully and answer all questions.', parts:JSON.parse(JSON.stringify(parts||[]))};
-      selectedSectionIndex=0; renderBuilder(); if(clear) setBuilderStatus('New exam created. Edit sections then save.',true);
-    }
-    function loadExamFromSelect(){
-      const id=document.getElementById('examLibrarySelect').value;
-      if(!id || !examLibrary[id]) return;
-      builderExam=JSON.parse(JSON.stringify(examLibrary[id]));
-      builderExam.id=builderExam.id || id; selectedSectionIndex=0; renderBuilder(); setBuilderStatus('Loaded '+(builderExam.title||id),true);
-    }
-    function renderBuilder(){
-      document.getElementById('builderExamTitle').value=builderExam.title||'';
-      document.getElementById('builderExamSubtitle').value=builderExam.subtitle||'';
-      const list=document.getElementById('sectionList');
-      list.innerHTML=(builderExam.parts||[]).map((p,i)=>`<div class="builder-item ${i===selectedSectionIndex?'active':''}" onclick="selectSection(${i})">${i+1}. ${p.title||'Section'}</div>`).join('') || '<div class="exam-status">No sections yet.</div>';
-      loadSectionEditor();
-    }
-    window.selectSection=function(i){applySectionChanges(false); selectedSectionIndex=i; renderBuilder()}
-    function loadSectionEditor(){
-      const p=(builderExam.parts||[])[selectedSectionIndex] || {title:'',shortTitle:'',instructions:'',leftLabel:'Text',leftContent:'',questions:[]};
-      document.getElementById('secTitle').value=p.title||'';
-      document.getElementById('secShortTitle').value=p.shortTitle||'';
-      document.getElementById('secInstructions').value=p.instructions||'';
-      document.getElementById('secLeftLabel').value=p.leftLabel||'';
-      document.getElementById('secLeftContent').value=p.leftContent||'';
-      document.getElementById('secQuestions').value=JSON.stringify(p.questions||[],null,2);
-    }
-    function applySectionChanges(showMsg=true){
-      if(!builderExam.parts || !builderExam.parts.length) return;
-      try{
-        const qs=JSON.parse(document.getElementById('secQuestions').value||'[]');
-        builderExam.parts[selectedSectionIndex]={
-          id: builderExam.parts[selectedSectionIndex].id || 'sec_'+(selectedSectionIndex+1)+'_'+Date.now(),
-          title:document.getElementById('secTitle').value,
-          shortTitle:document.getElementById('secShortTitle').value || 'Part '+(selectedSectionIndex+1),
-          instructions:document.getElementById('secInstructions').value,
-          leftLabel:document.getElementById('secLeftLabel').value || 'Text',
-          leftContent:document.getElementById('secLeftContent').value,
-          marks:qs.reduce((a,q)=>a+Number(q.points||1),0),
-          questions:qs
-        };
-        if(showMsg) setBuilderStatus('Section changes applied.',true);
-      }catch(err){setBuilderStatus('Questions JSON has an error: '+err.message,false)}
-    }
-    function addSection(){
-      applySectionChanges(false);
-      builderExam.parts=builderExam.parts||[];
-      builderExam.parts.push({id:'sec_'+Date.now(),title:'New Section',shortTitle:'Part '+(builderExam.parts.length+1),marks:1,instructions:'Choose the correct answer.',leftLabel:'Text',leftContent:'<div class="reading-text"><h3>Title</h3><p>Write text here.</p></div>',questions:[{id:'q_'+Date.now(),points:1,skill:'Exam Skill',answer:'A',prompt:'Write your question here.',options:{A:'Option A',B:'Option B',C:'Option C'}}]});
-      selectedSectionIndex=builderExam.parts.length-1; renderBuilder();
-    }
-
-    function addVocabularySection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'vocab_'+Date.now(),
-    title:'Vocabulary Section',
-    shortTitle:'Part '+n,
-    marks:10,
-    instructions:'Choose the correct word from the word bank.',
-    leftLabel:'Word Bank',
-    leftContent:`
-      <ul class="word-bank">
-        <li>A. word1</li>
-        <li>B. word2</li>
-        <li>C. word3</li>
-        <li>D. word4</li>
-        <li>E. word5</li>
-      </ul>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:2,
-        skill:'Vocabulary',
-        answer:'A',
-        promptStart:'Write the beginning of the sentence',
-        promptEnd:'write the end of the sentence.',
-        options:{
-          A:'word1',
-          B:'word2',
-          C:'word3',
-          D:'word4',
-          E:'word5'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addGrammarSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'grammar_'+Date.now(),
-    title:'Grammar Section',
-    shortTitle:'Part '+n,
-    marks:10,
-    instructions:'Choose the correct answer A, B, or C.',
-    leftLabel:'Grammar Notes',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Grammar Focus</h3>
-        <p>Add the grammar rule or short example text here.</p>
-      </div>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:2,
-        skill:'Grammar',
-        answer:'A',
-        prompt:'Write your grammar question here.',
-        options:{
-          A:'Option A',
-          B:'Option B',
-          C:'Option C'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addReadingSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'reading_'+Date.now(),
-    title:'Reading Section',
-    shortTitle:'Part '+n,
-    marks:20,
-    instructions:'Read the text and choose the correct answer A, B, or C.',
-    leftLabel:'Reading Text',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Reading Title</h3>
-        <p>Paste your reading text here.</p>
-      </div>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:4,
-        skill:'Reading: Detail',
-        answer:'A',
-        prompt:'Write your reading question here.',
-        options:{
-          A:'Answer A',
-          B:'Answer B',
-          C:'Answer C'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addWritingSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'writing_'+Date.now(),
-    title:'Writing Section',
-    shortTitle:'Part '+n,
-    marks:20,
-    instructions:'Read the writing task and write your answer.',
-    leftLabel:'Writing Task',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Writing Task</h3>
-        <p>Write the task prompt here.</p>
-      </div>
-    `,
-    questions:[]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-   
-    function deleteSection(){
-      if(!builderExam.parts || !builderExam.parts.length) return;
-      if(!confirm('Delete this section?')) return;
-      builderExam.parts.splice(selectedSectionIndex,1); selectedSectionIndex=Math.max(0,selectedSectionIndex-1); renderBuilder();
-    }
-    async function saveExamToLibrary(){
-      applySectionChanges(false);
-      builderExam.title=document.getElementById('builderExamTitle').value || 'Exam Page';
-      builderExam.subtitle=document.getElementById('builderExamSubtitle').value || '';
-      builderExam.updatedAt=Date.now(); builderExam.id=builderExam.id || 'exam_'+Date.now();
-      await db.ref('examPage/exams/'+safeKey(builderExam.id)).set(builderExam);
-      examLibrary[safeKey(builderExam.id)]=builderExam; renderExamLibrarySelect();
-      document.getElementById('examLibrarySelect').value=safeKey(builderExam.id);
-      setBuilderStatus('Saved to Exam Library.',true);
-    }
-    async function activateExamForClass(){
-      await saveExamToLibrary();
-      const classId=document.getElementById('builderClassSelect').value;
-      await db.ref('examPage/activeExams/'+classId).set({examId:safeKey(builderExam.id),title:builderExam.title,activatedAt:Date.now()});
-      setBuilderStatus('Activated for selected class: '+classId,true);
-    }
-    async function deleteSelectedExam(){
-      const id=document.getElementById('examLibrarySelect').value;
-      if(!id || !confirm('Delete this exam from library?')) return;
-      await db.ref('examPage/exams/'+id).remove(); delete examLibrary[id]; renderExamLibrarySelect(); createNewExam(false); setBuilderStatus('Exam deleted.',true);
-    }
-
-    initExamFirebase();
-
     prevBtn.addEventListener("click", () => {
       if (currentScreen > 0) {
         currentScreen--;
@@ -2019,7 +1547,6 @@ function addWritingSection(){
     tryWrongBtn.addEventListener("click", goToFirstMissed);
     resetBtn.addEventListener("click", resetQuiz);
     startPracticeBtn.addEventListener("click", startPractice);
-
   </script>
 </body>
 </html>
