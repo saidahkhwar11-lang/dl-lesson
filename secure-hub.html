@@ -705,8 +705,8 @@ const revisionRecords = revisionSnap.exists()
       score: r.bestScore ?? r.score,
       total: r.total,
       percentage: r.bestPercentage ?? r.percentage,
-      term: r.term || selectedTerm,
-      updatedAt: r.updatedAt || r.createdAt || Date.now()
+     term: normalizeTerm(r.term || r.activeTerm || r.schoolTerm || selectedTerm),
+    updatedAt: r.updatedAt || r.createdAt || Date.now()
     }))
   : [];
 
