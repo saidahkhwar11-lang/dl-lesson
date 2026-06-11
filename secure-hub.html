@@ -692,9 +692,26 @@ async function loadStudentPerformanceWindow(session){
 
   const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
   const records = snap.exists() ? Object.values(snap.val() || {}) : [];
+  const revisionSnap = await db.ref(
+  `teacherControlCenter/revisionProgress/${classId}/${studentId}`
+).get();
 
-  const rows = records
-    .filter(r=> recordTerm(r) === selectedTerm)
+const revisionRecords = revisionSnap.exists()
+  ? Object.values(revisionSnap.val() || {}).map(r => ({
+      ...r,
+      activityType: "Exam Page Revision",
+      page: "Exam Page",
+      title: r.title || "Revision Practice",
+      score: r.bestScore ?? r.score,
+      total: r.total,
+      percentage: r.bestPercentage ?? r.percentage,
+      term: r.term || selectedTerm,
+      updatedAt: r.updatedAt || r.createdAt || Date.now()
+    }))
+  : [];
+
+const rows = records.concat(revisionRecords)
+  .filter(r=> recordTerm(r) === selectedTerm)
     .filter(r=>{
       const type = String(r.activityType || "");
       const notes = String(r.notes || "");
