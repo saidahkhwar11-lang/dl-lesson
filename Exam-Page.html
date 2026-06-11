@@ -914,6 +914,15 @@
     </select>
   </div>
 
+        <div class="teacher-box">
+  <label>Term</label>
+  <select id="examTerm">
+    <option value="term1">Term 1</option>
+    <option value="term2">Term 2</option>
+    <option value="term3">Term 3</option>
+  </select>
+</div>
+
   <div class="teacher-box">
     <label>Subtitle / Instructions</label>
     <input id="teacherExamSubtitle" placeholder="Short instructions shown to students">
@@ -1218,7 +1227,24 @@ function studentSession(){
 
 function rebuildExamArrays(){screens=[]; (parts||[]).forEach((part,partIndex)=>{part.questions=Array.isArray(part.questions)?part.questions:[]; screens.push({type:'intro',partIndex}); if((part.mode||part.id)==='vocab'||part.id==='p1') screens.push({type:'vocab',partIndex}); else part.questions.forEach((q,questionIndex)=>screens.push({type:'question',partIndex,questionIndex,qid:q.id}));}); allQuestions=(parts||[]).flatMap((part,partIndex)=>(part.questions||[]).map((q,questionIndex)=>({...q,partId:part.id,partTitle:part.title,partIndex,questionIndex}))); totalQuestions=allQuestions.length; totalMarks=allQuestions.reduce((s,q)=>s+Number(q.points||1),0); updateWelcomeText();}
 function updateWelcomeText(){document.getElementById('welcomeTitle').textContent=currentExamMeta.title||'Welcome to Your Exam Page'; document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle||'Read carefully and answer all questions.'; document.getElementById('examEyebrow').textContent=(isOfficialActiveExam?'Official Active Exam':'Revision Library')+' • '+(currentExamMeta.title||'Exam'); document.getElementById('startPracticeBtn').textContent=isOfficialActiveExam?'Start Exam':'Start Revision'; const ul=document.getElementById('partsSummary'); if(ul) ul.innerHTML=(parts||[]).map(p=>`<li>${p.shortTitle||p.title}</li>`).join(''); const pill=document.getElementById('examModePill'); if(pill){pill.textContent=isOfficialActiveExam?'Official Active Exam':'Revision Practice'; pill.className=isOfficialActiveExam?'mode-pill':'mode-pill revision';}}
-function loadExamObject(ex, official){currentExamId=ex.id||safeKey(ex.title)||'exam'; currentExamMeta={title:ex.title||'Exam Page',subtitle:ex.subtitle||''}; parts=Array.isArray(ex.parts)?ex.parts:parts; isOfficialActiveExam=!!official; rebuildExamArrays(); resetQuiz(false); closeStudentLibrary(); window.scrollTo({top:0,behavior:'smooth'});}
+function loadExamObject(ex, official){
+  currentExamId=ex.id||safeKey(ex.title)||'exam';
+
+  currentExamMeta={
+    title:ex.title||'Exam Page',
+    subtitle:ex.subtitle||'',
+    term:ex.term||'term1',
+    studyYear:ex.studyYear||''
+  };
+
+  parts=Array.isArray(ex.parts)?ex.parts:parts;
+  isOfficialActiveExam=!!official;
+  rebuildExamArrays();
+  resetQuiz(false);
+  closeStudentLibrary();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+  
 function setTeacherStatus(msg, good=true){
   const el=document.getElementById('teacherExamStatus');
   if(!el) return;
@@ -1414,6 +1440,7 @@ async function saveImportedOrCurrentExam(){
   createdAt:Date.now(),
   updatedAt:Date.now(),
   color: document.getElementById('examColor')?.value || '#8b5cf6'
+  term: document.getElementById('examTerm')?.value || 'term1',
 };
 
     await db.ref('examPage/exams/'+id).set(record);
@@ -1543,37 +1570,62 @@ async function saveRevisionProgressBest(score,total,partStats){
   try{
     const st=studentSession();
     if(!db||!st)return;
+
+const termSettings = {
+  term: currentExamMeta.term || 'term1',
+  studyYear: currentExamMeta.studyYear || ''
+};
+    
     const classId=safeKey(st.classId||st.className);
     const studentId=safeKey(st.studentId||st.password);
     const recordId='revision_'+safeKey(currentExamId||currentExamMeta.title);
     const pct=total?Math.round(score/total*100):0;
     const path='examPage/revisionProgress/'+classId+'/'+studentId+'/'+recordId;
+
     const old=await db.ref(path).get();
     const oldData=old.exists()?old.val():null;
     const oldBest=Number(oldData?.bestScore||0);
     const attempts=Number(oldData?.attempts||0)+1;
     const isBest=score>=oldBest;
+
     const record={
       type:'Revision Practice',
-      activityType:'Exam Revision',
+      activityType:'Exam Page Revision',
       title:currentExamMeta.title,
       score,
       total,
       percentage:pct,
       bestScore:isBest?score:oldBest,
       bestPercentage:isBest?pct:Number(oldData?.bestPercentage||0),
+      term:termSettings.term,
+      studyYear:termSettings.studyYear,
       attempts,
       studentName:st.name||'',
       studentId:st.studentId||st.password||'',
       classId:st.classId||'',
       className:st.className||'',
       partStats:isBest?partStats:(oldData?.partStats||partStats),
-      lastAttempt:{score,total,percentage:pct,partStats,createdAt:Date.now()},
+      lastAttempt:{
+        score,
+        total,
+        percentage:pct,
+        partStats,
+        term:termSettings.term,
+        studyYear:termSettings.studyYear,
+        createdAt:Date.now()
+      },
       updatedAt:Date.now()
     };
+
     await db.ref(path).set(record);
     await db.ref('teacherControlCenter/revisionProgress/'+classId+'/'+studentId+'/'+recordId).set(record);
-    showSaveNote(isBest?'Revision progress saved. New best score saved to Student Hub.':'Revision attempt saved. Your best score is still saved in Student Hub.',true);
+
+    showSaveNote(
+      isBest
+        ? 'Revision progress saved. New best score saved to Student Hub.'
+        : 'Revision attempt saved. Your best score is still saved in Student Hub.',
+      true
+    );
   }catch(err){
     console.warn('Save revision progress skipped:',err);
     showSaveNote('Could not save revision progress. Check Firebase connection.',false);
