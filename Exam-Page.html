@@ -1035,8 +1035,51 @@ window.answerState={};
 
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
-function getSecureHubStudent(){try{return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')||sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN')||'null')}catch(e){return null}}
-function studentSession(){const st=getSecureHubStudent(); if(st&&(st.studentId||st.password)&&st.classId) return st; alert('Please login from Student Hub first.'); location.href='secure-hub.html'; return null;}
+function getSecureHubStudent(){
+  const keys = [
+    'DL_SECURE_STUDENT_LOGIN',
+    'SECURE_HUB_STUDENT',
+    'studentSession',
+    'currentStudent',
+    'secureHubStudent'
+  ];
+
+  for(const key of keys){
+    try{
+      const data =
+        localStorage.getItem(key) ||
+        sessionStorage.getItem(key);
+
+      if(data){
+        const st = JSON.parse(data);
+        if(st && (st.studentId || st.id || st.password)){
+          return {
+            ...st,
+            studentId: st.studentId || st.id || st.password,
+            name: st.name || st.studentName || 'Student',
+            classId: st.classId || st.classKey || st.className || 'guest',
+            className: st.className || st.classId || 'Class'
+          };
+        }
+      }
+    }catch(e){}
+  }
+
+  return null;
+}
+
+function studentSession(){
+  const st = getSecureHubStudent();
+
+  if(st && st.studentId){
+    return st;
+  }
+
+  alert("Please open this page from Secure Hub using your student ID.");
+  location.href = "secure-hub.html";
+  return null;
+}
+  
 function rebuildExamArrays(){screens=[]; (parts||[]).forEach((part,partIndex)=>{part.questions=Array.isArray(part.questions)?part.questions:[]; screens.push({type:'intro',partIndex}); if((part.mode||part.id)==='vocab'||part.id==='p1') screens.push({type:'vocab',partIndex}); else part.questions.forEach((q,questionIndex)=>screens.push({type:'question',partIndex,questionIndex,qid:q.id}));}); allQuestions=(parts||[]).flatMap((part,partIndex)=>(part.questions||[]).map((q,questionIndex)=>({...q,partId:part.id,partTitle:part.title,partIndex,questionIndex}))); totalQuestions=allQuestions.length; totalMarks=allQuestions.reduce((s,q)=>s+Number(q.points||1),0); updateWelcomeText();}
 function updateWelcomeText(){document.getElementById('welcomeTitle').textContent=currentExamMeta.title||'Welcome to Your Exam Page'; document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle||'Read carefully and answer all questions.'; document.getElementById('examEyebrow').textContent=(isOfficialActiveExam?'Official Active Exam':'Revision Library')+' • '+(currentExamMeta.title||'Exam'); document.getElementById('startPracticeBtn').textContent=isOfficialActiveExam?'Start Exam':'Start Revision'; const ul=document.getElementById('partsSummary'); if(ul) ul.innerHTML=(parts||[]).map(p=>`<li>${p.shortTitle||p.title}</li>`).join(''); const pill=document.getElementById('examModePill'); if(pill){pill.textContent=isOfficialActiveExam?'Official Active Exam':'Revision Practice'; pill.className=isOfficialActiveExam?'mode-pill':'mode-pill revision';}}
 function loadExamObject(ex, official){currentExamId=ex.id||safeKey(ex.title)||'exam'; currentExamMeta={title:ex.title||'Exam Page',subtitle:ex.subtitle||''}; parts=Array.isArray(ex.parts)?ex.parts:parts; isOfficialActiveExam=!!official; rebuildExamArrays(); resetQuiz(false); closeStudentLibrary(); window.scrollTo({top:0,behavior:'smooth'});}
