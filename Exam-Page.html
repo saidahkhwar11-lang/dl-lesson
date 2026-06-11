@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Exam Page</title>
+  <title>Student Exam Page</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
-  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #faf8ff;
@@ -737,23 +734,6 @@
       margin-top: 14px;
     }
 
-
-    .student-strip,.teacher-panel{background:#fff;border:1px solid var(--line);border-radius:22px;padding:14px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
-    .student-strip{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;font-weight:900;color:var(--warm-purple-dark)}
-    .teacher-panel h2{margin-top:0}
-    .builder-grid{display:grid;grid-template-columns:280px 1fr;gap:14px}
-    .builder-list{display:grid;gap:8px}
-    .builder-item{border:1px solid var(--line);border-radius:14px;padding:10px;background:#fff;cursor:pointer;font-weight:900}
-    .builder-item.active{background:var(--lavender);border-color:var(--warm-purple)}
-    .teacher-panel input,.teacher-panel textarea,.teacher-panel select{width:100%;border:1px solid var(--line);border-radius:14px;padding:10px;margin:5px 0 10px;font-size:15px}
-    .teacher-panel textarea{min-height:110px;resize:vertical;font-family:Arial,Helvetica,sans-serif}
-    .teacher-panel .json-box{min-height:220px;font-family:Consolas,monospace;font-size:13px}
-    .teacher-actions{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
-    .teacher-actions button{width:auto}
-    .danger-solid{background:#ef4444;color:white;border-color:#ef4444}
-    .exam-status{font-weight:900;border-radius:14px;padding:10px;margin-top:8px;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
-    @media(max-width:900px){.builder-grid{grid-template-columns:1fr}}
-
     @media (max-width: 980px) {
       body { font-size: 17px; }
 
@@ -822,212 +802,91 @@
         max-height: none;
       }
     }
-  </style>
+  
+
+/* ===== Student Exam Page Additions ===== */
+.student-strip,.student-library-panel,.library-modal-card{background:#fff;border:1px solid var(--line);border-radius:22px;padding:12px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.student-strip{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;font-weight:900;color:var(--warm-purple-dark)}
+.student-name-pill{display:inline-flex;align-items:center;gap:8px;background:var(--lavender);border:1px solid #d7c7f4;border-radius:999px;padding:8px 12px}
+.student-library-panel{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 14px;background:linear-gradient(90deg,#fff,#f7f4ff)}
+.library-title-small{font-weight:900;color:var(--warm-purple-dark);font-size:1rem}
+.library-hint{font-size:.9rem;color:var(--muted);font-weight:700}
+.mode-pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:7px 11px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;font-weight:900;font-size:.9rem}
+.mode-pill.revision{background:#fff7ed;color:#9a3412;border-color:#fed7aa}
+.library-modal{position:fixed;inset:0;background:rgba(68,56,90,.35);z-index:999;display:none;align-items:center;justify-content:center;padding:18px}.library-modal.show{display:flex}
+.library-modal-card{width:min(760px,100%);max-height:82vh;overflow:auto;margin:0;padding:18px;border-radius:26px}
+.library-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.library-top h2{margin:0}
+.library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.library-item{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff,#f8f5ff);padding:13px}.library-item strong{display:block;color:var(--warm-purple-dark);font-size:1rem;margin-bottom:3px}.library-item p{margin:0 0 8px;font-size:.88rem;color:var(--muted);font-weight:700}.library-item button{padding:8px 12px;font-size:.88rem}.empty-library{border:1px dashed #c8b5f3;border-radius:18px;padding:16px;color:var(--muted);font-weight:800;text-align:center;background:#fff}
+.save-note{display:none;margin-top:10px;border-radius:14px;padding:10px 12px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;font-weight:900}.save-note.show{display:block}
+@media(max-width:700px){.library-grid{grid-template-columns:1fr}.student-library-panel{align-items:flex-start}}
+</style>
 </head>
 <body>
   <div class="page">
-
-    
     <div id="studentStrip" class="student-strip hidden">
-      <div>👩‍🎓 <span id="examStudentName">Student</span></div>
+      <div class="student-name-pill">👩‍🎓 <span id="examStudentName">Student</span></div>
       <div>🆔 <span id="examStudentId">ID</span></div>
       <div>🏫 <span id="examClassName">Class</span></div>
-<button onclick="location.href='index.html'">🏠 Student Hub</button>
+      <button onclick="location.href='secure-hub.html'">🏠 Student Hub</button>
     </div>
 
-    <section id="teacherPanel" class="teacher-panel hidden">
-      <h2>📝 Exam Page Builder</h2>
-      <div class="exam-status" id="builderStatus">Create, save, and activate exams for each class.</div>
-      <div class="teacher-actions">
-        <button onclick="createNewExam()">➕ New Exam</button>
-        <button onclick="saveExamToLibrary()">💾 Save Exam</button>
-        <button onclick="activateExamForClass()">🚀 Activate for Class</button>
-        <button onclick="deleteSelectedExam()" class="danger-solid">🗑 Delete Exam</button>
-        <button onclick="location.href='secure-hub.html'">🏠 Hub</button>
+    <div id="studentLibraryPanel" class="student-library-panel hidden">
+      <div>
+        <div class="library-title-small">📚 My Exam & Revision Library</div>
+        <div class="library-hint">Open revisions anytime. Revision saves best progress; official active exams save first attempt.</div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><label>Choose Class</label><select id="builderClassSelect"></select></div>
-        <div><label>Exam Library</label><select id="examLibrarySelect" onchange="loadExamFromSelect()"></select></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span id="examModePill" class="mode-pill">Official Active Exam</span>
+        <button onclick="openStudentLibrary()">📚 Open Library</button>
       </div>
-      <label>Exam Title</label>
-<input id="builderExamTitle" placeholder="Example: EOT3 Grammar and Reading Review">
-
-<label>Welcome Subtitle</label>
-<textarea id="builderExamSubtitle" placeholder="Short student instructions"></textarea>
-
-<div class="exam-status" style="margin-top:12px">
-  <h3>✨ Exam Generator</h3>
-
-<input id="examFileInput" type="file" accept=".txt,.pdf,.docx,.html,.png,.jpg,.jpeg">
-  
-  <button onclick="generateExamFromUploadedFile()">
-    ✨ Generate Exam From File
-  </button>
-
-  <div id="examGeneratorStatus" style="margin-top:8px;font-size:13px;">
-    Upload a revision file or exam planner, then generate the exam draft.
-  </div>
-</div>
-
-<div class="builder-grid">
-        <div>
-         <h3>Sections</h3>
-
-<div class="teacher-actions">
-  <button onclick="addSection()">➕ Blank Section</button>
-
-  <button onclick="addVocabularySection()">
-    📚 Vocabulary
-  </button>
-
-  <button onclick="addGrammarSection()">
-    ✏️ Grammar
-  </button>
-
-  <button onclick="addReadingSection()">
-    📖 Reading
-  </button>
-
-  <button onclick="addWritingSection()">
-    📝 Writing
-  </button>
-
-  <button onclick="deleteSection()" class="danger-solid">
-    ➖ Delete
-  </button>
-</div>
-
-<div id="sectionList" class="builder-list"></div>
-        </div>
-        <div id="sectionEditor">
-          <h3>Section Editor</h3>
-          <label>Title</label><input id="secTitle">
-          <label>Short Title</label><input id="secShortTitle">
-          <label>Instructions</label><textarea id="secInstructions"></textarea>
-          <label>Left Label</label><input id="secLeftLabel">
-          <label>Left Content HTML</label><textarea id="secLeftContent"></textarea>
-          <label>Questions JSON</label><textarea id="secQuestions" class="json-box"></textarea>
-          <div class="teacher-actions"><button onclick="applySectionChanges()">✅ Apply Section Changes</button></div>
-        </div>
-      </div>
-    </section>
+    </div>
 
     <section id="welcomePage" class="welcome-wrap">
       <div class="welcome-card">
-        <span class="eyebrow">Grade 9 General • EOT3 Revision Check</span>
-        <h1>Welcome to Your EOT3 Revision Check</h1>
-        <p class="welcome-sub">
-          This practice reviews vocabulary, grammar, and reading skills for the Grade 9 General EOT3 English exam.
-          Try your best, check your score, then practise the questions you missed.
-        </p>
-
+        <span class="eyebrow" id="examEyebrow">Grade 9 General • Exam Page</span>
+        <h1 id="welcomeTitle">Welcome to Your Exam Page</h1>
+        <p class="welcome-sub" id="welcomeSubtitle">Read carefully, answer all questions, and submit when you finish.</p>
         <div class="welcome-grid">
-          <div class="welcome-box">
-            <strong>What to do</strong>
-            <ul class="bullet-list">
-              <li>Read the text or word bank on the left.</li>
-              <li>Answer the questions on the right.</li>
-              <li>Use the top buttons to move through the practice.</li>
-              <li>Submit your answers when you finish.</li>
-            </ul>
-          </div>
-
-          <div class="welcome-box">
-            <strong>Helpful reminders</strong>
-            <ul class="bullet-list">
-              <li>Take your time and read carefully.</li>
-              <li>You can try again after you submit.</li>
-              <li>Wrong answers will stay hidden after submission.</li>
-              <li>You will get a score out of 100.</li>
-            </ul>
-          </div>
-
-          <div class="welcome-box">
-            <strong>Practice parts</strong>
-            <ul class="bullet-list">
-              <li>Part 1: Vocabulary</li>
-              <li>Part 2: Grammar</li>
-              <li>Part 3A, 3B, and 3C: Reading</li>
-            </ul>
-          </div>
-
-          <div class="welcome-box">
-            <strong>Before you start</strong>
-            <ul class="bullet-list">
-              <li>Find a quiet place.</li>
-              <li>Stay focused and do your best.</li>
-              <li>Use clues from the text.</li>
-              <li>Believe in yourself.</li>
-            </ul>
-          </div>
+          <div class="welcome-box"><strong>What to do</strong><ul class="bullet-list"><li>Read the text or word bank on the left.</li><li>Answer the questions on the right.</li><li>Use Previous and Next to move.</li><li>Submit your answers when you finish.</li></ul></div>
+          <div class="welcome-box"><strong>Helpful reminders</strong><ul class="bullet-list"><li>Take your time and read carefully.</li><li>Use clues from the text.</li><li>Check your answers before submitting.</li><li>Try your best.</li></ul></div>
+          <div class="welcome-box"><strong>Exam parts</strong><ul class="bullet-list" id="partsSummary"><li>Vocabulary</li><li>Grammar</li><li>Reading</li></ul></div>
+          <div class="welcome-box"><strong>Before you start</strong><ul class="bullet-list"><li>Find a quiet place.</li><li>Stay focused.</li><li>Read all instructions.</li><li>Believe in yourself.</li></ul></div>
         </div>
-
-        <button class="start-btn" id="startPracticeBtn">Start Revision Check</button>
+        <button class="start-btn" id="startPracticeBtn">Start</button>
       </div>
     </section>
 
     <section id="practiceArea">
-      <div class="topbar">
-        <div class="topbar-main">
-          <div class="progress-area">
-            <div class="progress-row">
-              <span id="progressText">Answered: 0 / 30</span>
-              <span id="screenText">Part 1 Instructions</span>
-            </div>
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
-            </div>
-          </div>
-
-          <div class="top-actions">
-            <button id="prevBtn">Previous</button>
-            <button id="nextBtn">Next</button>
-            <button id="submitBtn">Submit Answers</button>
-            <button id="tryWrongBtn" disabled>Try Again</button>
-            <button class="danger" id="resetBtn">Start Over</button>
-          </div>
-        </div>
-      </div>
-
-      <main class="exam-shell" id="practiceTop">
-        <aside class="left-panel" id="leftPanel"></aside>
-        <section class="right-panel" id="rightPanel"></section>
-      </main>
-
-      <section class="results" id="results">
-        <div class="score-card">
-          <div class="score-circle" id="scoreCircle">
-            <div>
-              <strong id="scoreText">0/100</strong>
-              <span id="percentText">0%</span>
-            </div>
-          </div>
-          <div>
-            <h2>Your Result</h2>
-            <div class="readiness" id="readinessBadge">Readiness level</div>
-            <p id="mainFeedback"></p>
-            <p id="nextStepFeedback"></p>
-            <div class="try-message" id="tryAgainMessage">
-              Wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.
-            </div>
-          </div>
-        </div>
-
-        <div class="breakdown" id="partBreakdown"></div>
-        <div class="teacher-note" id="mistakeFeedback"></div>
-      </section>
+      <div class="topbar"><div class="topbar-main"><div class="progress-area"><div class="progress-row"><span id="progressText">Answered: 0 / 0</span><span id="screenText">Instructions</span></div><div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div></div><div class="top-actions"><button id="prevBtn">Previous</button><button id="nextBtn">Next</button><button id="submitBtn">Submit Answers</button><button id="tryWrongBtn" disabled>Try Again</button><button class="danger" id="resetBtn">Start Over</button></div></div></div>
+      <main class="exam-shell" id="practiceTop"><aside class="left-panel" id="leftPanel"></aside><section class="right-panel" id="rightPanel"></section></main>
+      <section class="results" id="results"><div class="score-card"><div class="score-circle" id="scoreCircle"><div><strong id="scoreText">0/100</strong><span id="percentText">0%</span></div></div><div><h2>Your Result</h2><div class="readiness" id="readinessBadge">Readiness level</div><p id="mainFeedback"></p><p id="nextStepFeedback"></p><div class="try-message" id="tryAgainMessage">Wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.</div><div class="save-note" id="saveNote">Saved.</div></div></div><div class="breakdown" id="partBreakdown"></div><div class="teacher-note" id="mistakeFeedback"></div></section>
     </section>
-
   </div>
 
-  <script>
-    const vocabOptions = {
+  <div class="library-modal" id="studentLibraryModal">
+    <div class="library-modal-card">
+      <div class="library-top"><h2>📚 My Revision Library</h2><button class="danger" onclick="closeStudentLibrary()">Close</button></div>
+      <p class="library-hint">Revision mode saves your best progress to Student Hub. Assessment mode saves your official first attempt to Teacher Tracker.</p>
+      <div id="studentLibraryList" class="library-grid"></div>
+    </div>
+  </div>
+
+<script>
+const FIREBASE_CONFIG = {
+  apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
+  authDomain:"online-english-lesson-grade-9.firebaseapp.com",
+  databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
+  projectId:"online-english-lesson-grade-9",
+  storageBucket:"online-english-lesson-grade-9.firebasestorage.app",
+  appId:"1:542666648554:web:5190c68ea73b3536dae093"
+};
+let db=null;
+const vocabOptions = {
       A:"RSVP", B:"accept", C:"join", D:"review", E:"exchange",
       F:"connect", G:"brain", H:"graduation", I:"members", J:"practice",
       K:"conclude", L:"solve", M:"confusing", N:"familiar", O:"wedding"
     };
-
-    let parts = [
+let parts = [
       {
         id: "p1",
         title: "Part 1: Vocabulary",
@@ -1166,1108 +1025,90 @@
         ]
       }
     ];
+let currentExamId='default_revision_check';
+let currentExamMeta={title:'Grade 9 EOT3 Revision Check',subtitle:'This practice reviews vocabulary, grammar, and reading skills for the Grade 9 English exam.'};
+let isOfficialActiveExam=false;
+let studentLibrary={};
+let screens=[], allQuestions=[], totalQuestions=0, totalMarks=0;
+let currentScreen=0, submitted=false, lastMissedIds=[];
+window.answerState={};
 
-    let screens = [];
-    let allQuestions = [];
-    let totalQuestions = 0;
-    let totalMarks = 0;
+const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
+function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
+function getSecureHubStudent(){try{return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN')||sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN')||'null')}catch(e){return null}}
+function studentSession(){const st=getSecureHubStudent(); if(st&&(st.studentId||st.password)&&st.classId) return st; alert('Please login from Student Hub first.'); location.href='secure-hub.html'; return null;}
+function rebuildExamArrays(){screens=[]; (parts||[]).forEach((part,partIndex)=>{part.questions=Array.isArray(part.questions)?part.questions:[]; screens.push({type:'intro',partIndex}); if((part.mode||part.id)==='vocab'||part.id==='p1') screens.push({type:'vocab',partIndex}); else part.questions.forEach((q,questionIndex)=>screens.push({type:'question',partIndex,questionIndex,qid:q.id}));}); allQuestions=(parts||[]).flatMap((part,partIndex)=>(part.questions||[]).map((q,questionIndex)=>({...q,partId:part.id,partTitle:part.title,partIndex,questionIndex}))); totalQuestions=allQuestions.length; totalMarks=allQuestions.reduce((s,q)=>s+Number(q.points||1),0); updateWelcomeText();}
+function updateWelcomeText(){document.getElementById('welcomeTitle').textContent=currentExamMeta.title||'Welcome to Your Exam Page'; document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle||'Read carefully and answer all questions.'; document.getElementById('examEyebrow').textContent=(isOfficialActiveExam?'Official Active Exam':'Revision Library')+' • '+(currentExamMeta.title||'Exam'); document.getElementById('startPracticeBtn').textContent=isOfficialActiveExam?'Start Exam':'Start Revision'; const ul=document.getElementById('partsSummary'); if(ul) ul.innerHTML=(parts||[]).map(p=>`<li>${p.shortTitle||p.title}</li>`).join(''); const pill=document.getElementById('examModePill'); if(pill){pill.textContent=isOfficialActiveExam?'Official Active Exam':'Revision Practice'; pill.className=isOfficialActiveExam?'mode-pill':'mode-pill revision';}}
+function loadExamObject(ex, official){currentExamId=ex.id||safeKey(ex.title)||'exam'; currentExamMeta={title:ex.title||'Exam Page',subtitle:ex.subtitle||''}; parts=Array.isArray(ex.parts)?ex.parts:parts; isOfficialActiveExam=!!official; rebuildExamArrays(); resetQuiz(false); closeStudentLibrary(); window.scrollTo({top:0,behavior:'smooth'});}
+async function initStudentExamPage(){try{if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); db=firebase.database(); const st=studentSession(); if(!st)return; document.getElementById('studentStrip').classList.remove('hidden'); document.getElementById('studentLibraryPanel').classList.remove('hidden'); document.getElementById('examStudentName').textContent=st.name||'Student'; document.getElementById('examStudentId').textContent=st.studentId||st.password||''; document.getElementById('examClassName').textContent=st.className||st.classId||''; await loadStudentLibrary(); await loadActiveExamForStudent(st); }catch(err){console.warn('Student exam init skipped:',err); rebuildExamArrays();}}
+async function loadActiveExamForStudent(st){if(!db)return; const classId=safeKey(st.classId||st.className||'guest'); const snap=await db.ref('examPage/activeExams/'+classId).get(); if(snap.exists()){const active=snap.val(); const examId=active.examId||active; const exSnap=await db.ref('examPage/exams/'+examId).get(); if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true); else rebuildExamArrays();} else {isOfficialActiveExam=false; rebuildExamArrays();}}
+async function loadStudentLibrary(){if(!db)return; const snap=await db.ref('examPage/exams').get(); studentLibrary=snap.exists()?snap.val():{}; renderStudentLibrary();}
+function renderStudentLibrary(){const box=document.getElementById('studentLibraryList'); if(!box)return; const items=Object.entries(studentLibrary||{}).filter(([id,ex])=>ex && ex.visibleToStudents!==false); if(!items.length){box.className=''; box.innerHTML='<div class="empty-library">No revisions are shared yet.</div>'; return;} box.className='library-grid'; box.innerHTML=items.map(([id,ex])=>`<div class="library-item"><strong>${ex.title||'Untitled Revision'}</strong><p>${ex.subtitle||'Practice anytime from your library.'}</p><button onclick="openLibraryExam('${id}')">Open Revision</button></div>`).join('');}
+function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
+function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
+function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
+function startPractice(){welcomePage.classList.add('hidden'); practiceArea.style.display='block'; renderRight(); window.scrollTo({top:0,behavior:'smooth'});}
+function getQuestionById(qid){return allQuestions.find(q=>q.id===qid)} function getQuestionNumber(qid){return allQuestions.findIndex(q=>q.id===qid)+1}
+function renderLeft(part){leftPanel.innerHTML=`<div class="left-content-wrap"><div class="panel-label">${part.leftLabel||''}</div>${part.leftContent||''}</div>`}
+function renderRight(){const screen=screens[currentScreen]; if(!screen)return; const part=parts[screen.partIndex]; renderLeft(part); if(screen.type==='intro'){rightPanel.innerHTML=`<div class="intro-card"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-box"><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><p>This part has <strong>${(part.questions||[]).length}</strong> question${(part.questions||[]).length===1?'':'s'}.</p><p>Take your time, breathe, and do your best.</p></div>`;} else if(screen.type==='vocab') renderVocabPage(part); else {const q=part.questions[screen.questionIndex]; const selected=window.answerState[q.id]||null; rightPanel.innerHTML=`<div class="question-card" id="questionCard"><div class="instruction-box"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><div class="q-number"><span>Question ${getQuestionNumber(q.id)} of ${totalQuestions}</span><span>${q.points||1} marks</span></div><div class="q-title">${q.prompt||''}</div><div class="options">${Object.entries(q.options||{}).map(([letter,text])=>`<label class="option" id="option-${q.id}-${letter}"><input type="radio" name="${q.id}" value="${letter}" ${selected===letter?'checked':''} /><span><strong>${letter}.</strong> ${text}</span></label>`).join('')}</div><div class="q-meta">${q.skill||''}</div><div class="feedback-note" id="feedback-${q.id}"></div></div>`; updateQuestionVisual(q.id);} updateProgress(); updateButtons();}
+function renderVocabPage(part){rightPanel.innerHTML=`<div class="vocab-card"><div class="instruction-box"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><div class="q-number"><span>Questions 1–${part.questions.length}</span><span>Vocabulary</span></div><div class="vocab-list">${part.questions.map((q,index)=>{const selected=window.answerState[q.id]||'';return `<div class="vocab-row" id="vocab-row-${q.id}"><div class="vocab-sentence">${index+1}. ${q.promptStart||q.prompt||''} <select class="vocab-select" name="${q.id}"><option value="">Choose</option>${Object.entries(q.options||{}).map(([letter,text])=>`<option value="${letter}" ${selected===letter?'selected':''}>${letter}. ${text}</option>`).join('')}</select> ${q.promptEnd||''}</div><div class="vocab-mini-feedback" id="vocab-feedback-${q.id}"></div></div>`;}).join('')}</div></div>`; part.questions.forEach(q=>updateVocabVisual(q.id));}
+function updateButtons(){prevBtn.disabled=currentScreen===0; nextBtn.disabled=currentScreen===screens.length-1; nextBtn.textContent=currentScreen===screens.length-1?'End':'Next'}
+function updateProgress(){const answered=allQuestions.filter(q=>window.answerState[q.id]).length; const percent=totalQuestions?Math.round(answered/totalQuestions*100):0; progressText.textContent=`Answered: ${answered} / ${totalQuestions}`; progressFill.style.width=percent+'%'; const screen=screens[currentScreen], part=screen?parts[screen.partIndex]:{shortTitle:''}; screenText.textContent=screen?.type==='question'?`${part.shortTitle} • Question ${getQuestionNumber(screen.qid)}`:screen?.type==='vocab'?`${part.shortTitle} • Vocabulary`:`${part.shortTitle||''} Instructions`;}
+function updateVocabVisual(qid){const q=getQuestionById(qid), row=document.getElementById(`vocab-row-${qid}`), feedback=document.getElementById(`vocab-feedback-${qid}`); if(!q||!row||!feedback)return; const selected=window.answerState[qid]||null; row.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; if(!submitted)return; if(!selected){row.classList.add('unanswered');feedback.innerHTML='Choose one word, then submit again.';} else if(selected===q.answer){row.classList.add('correct');feedback.innerHTML='Correct. Great job!';} else {row.classList.add('incorrect');feedback.innerHTML='Try again. Read the whole sentence and choose a better word.';} feedback.classList.add('show');}
+function updateQuestionVisual(qid){const q=getQuestionById(qid), card=document.getElementById('questionCard'); if(!q||!card)return; const feedback=document.getElementById(`feedback-${qid}`), selected=window.answerState[qid]||null; card.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; Object.keys(q.options||{}).forEach(letter=>{const option=document.getElementById(`option-${qid}-${letter}`); if(option)option.classList.remove('correct-choice','wrong-choice');}); if(!submitted)return; if(!selected){card.classList.add('unanswered');feedback.innerHTML='<strong>Not answered yet.</strong> Choose one answer, then submit again.';} else if(selected===q.answer){card.classList.add('correct'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('correct-choice'); feedback.innerHTML='<strong>Correct.</strong> Great job!';} else {card.classList.add('incorrect'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('wrong-choice'); feedback.innerHTML='<strong>Try again.</strong> Reread carefully and choose a better answer.';} feedback.classList.add('show');}
+function skillGroup(skill=''){if(skill.includes('Vocabulary')&&!skill.includes('Context'))return'words'; if(skill.includes('Grammar'))return'grammar'; if(skill.includes('Detail'))return'find'; if(skill.includes('Inference')||skill.includes('Evidence Check')||skill.includes('Connection')||skill.includes('Vocabulary in Context'))return'clues'; if(skill.includes('Overall Meaning'))return'big'; return'other';}
+function readinessLevel(score){const pct=totalMarks?score/totalMarks*100:0; if(pct>=90)return{label:'Excellent readiness',cls:'excellent',main:'Amazing work. You are very ready.',next:'Next step: keep practising and check your answers carefully.'}; if(pct>=75)return{label:'Good readiness',cls:'good',main:'Good work. You understand many of the skills.',next:'Next step: fix the highlighted questions, then submit again.'}; if(pct>=60)return{label:'Keep practising',cls:'practice',main:'You are getting there. A little more practice will help.',next:'Next step: read slowly, look for proof in the text, and try again.'}; return{label:'Need more practice',cls:'support',main:'Do not worry. This practice shows what to work on next.',next:'Next step: practise one part at a time and ask for help when you need it.'};}
+async function submitQuiz(){submitted=true; let score=0; const partStats={}, groupStats={words:0,grammar:0,find:0,clues:0,big:0,other:0}, missed=[]; parts.forEach(part=>partStats[part.title]={score:0,total:(part.questions||[]).reduce((s,q)=>s+Number(q.points||1),0),correct:0,count:(part.questions||[]).length}); allQuestions.forEach(q=>{const selected=window.answerState[q.id]||null,isCorrect=selected===q.answer; if(isCorrect){score+=Number(q.points||1); partStats[q.partTitle].score+=Number(q.points||1); partStats[q.partTitle].correct+=1;} else {missed.push(q); groupStats[skillGroup(q.skill)]+=1;}}); lastMissedIds=missed.map(q=>q.id); tryWrongBtn.disabled=missed.length===0; showResults(score,partStats,groupStats,missed); if(isOfficialActiveExam) await saveOfficialExamFirstAttempt(score,totalMarks,partStats); else await saveRevisionProgressBest(score,totalMarks,partStats); renderRight(); results.scrollIntoView({behavior:'smooth',block:'start'});}
+function showResults(score,partStats,groupStats,missed){results.classList.add('show'); const percent=totalMarks?Math.round(score/totalMarks*100):0; document.getElementById('scoreText').textContent=`${score}/${totalMarks}`; document.getElementById('percentText').textContent=percent+'%'; const deg=totalMarks?Math.round(score/totalMarks*360):0; document.getElementById('scoreCircle').style.background=`radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${deg}deg, #ece8f5 ${deg}deg)`; const level=readinessLevel(score), badge=document.getElementById('readinessBadge'); badge.textContent=level.label; badge.className='readiness '+level.cls; document.getElementById('mainFeedback').textContent=level.main; document.getElementById('nextStepFeedback').textContent=level.next; document.getElementById('tryAgainMessage').textContent=missed.length===0?'Wonderful! You can try another version later.':'Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.'; document.getElementById('partBreakdown').innerHTML=Object.entries(partStats).map(([title,stat])=>{const pct=stat.total?Math.round(stat.score/stat.total*100):0; return `<div class="breakdown-card"><strong>${title}</strong><p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div></div>`;}).join(''); document.getElementById('mistakeFeedback').innerHTML=missed.length===0?`<h3>My Practice Tips</h3><p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>`:`<h3>My Practice Tips</h3><p>You have <strong>${missed.length}</strong> question${missed.length===1?'':'s'} to try again. Use these tips and keep going.</p><div class="kid-tips-grid">${groupStats.words>0?`<div class="kid-tip"><strong>Words to check: ${groupStats.words}</strong>Read the whole sentence. Ask yourself, “Which word fits best?”</div>`:''}${groupStats.grammar>0?`<div class="kid-tip"><strong>Grammar to check: ${groupStats.grammar}</strong>Look for time words and clues in the sentence.</div>`:''}${groupStats.find>0?`<div class="kid-tip"><strong>Find the proof: ${groupStats.find}</strong>Go back to the text. Find the sentence that shows the answer.</div>`:''}${groupStats.clues>0?`<div class="kid-tip"><strong>Use clues: ${groupStats.clues}</strong>The answer may be written in different words. Read around the question.</div>`:''}${groupStats.big>0?`<div class="kid-tip"><strong>Big idea: ${groupStats.big}</strong>Think about what the whole text is mostly about.</div>`:''}</div>`;}
+function showSaveNote(msg,good=true){const el=document.getElementById('saveNote'); el.textContent=msg; el.style.background=good?'#ecfdf5':'#fff7ed'; el.style.color=good?'#166534':'#9a3412'; el.style.borderColor=good?'#bbf7d0':'#fed7aa'; el.classList.add('show');}
+async function getActiveTermSettings(){if(!db)return{term:'term1',studyYear:''}; const snap=await db.ref('teacherControlCenter/settings/tracker').get(); const t=snap.exists()?snap.val():{}; return{term:t.activeSavingTerm||t.activeTerm||t.term||'term1',studyYear:t.activeSavingStudyYear||t.activeStudyYear||t.studyYear||''};}
 
-    function rebuildExamArrays(){
-      screens = [];
-      parts.forEach((part, partIndex) => {
-        part.questions = Array.isArray(part.questions) ? part.questions : [];
-        screens.push({ type: "intro", partIndex });
-        if ((part.mode || part.id) === "vocab" || part.id === "p1") {
-          screens.push({ type: "vocab", partIndex });
-        } else {
-          part.questions.forEach((q, questionIndex) => {
-            screens.push({ type: "question", partIndex, questionIndex, qid: q.id });
-          });
-        }
-      });
-      allQuestions = parts.flatMap((part, partIndex) =>
-        (part.questions || []).map((q, questionIndex) => ({
-          ...q,
-          partId: part.id,
-          partTitle: part.title,
-          partIndex,
-          questionIndex
-        }))
-      );
-      totalQuestions = allQuestions.length;
-      totalMarks = allQuestions.reduce((sum, q) => sum + Number(q.points || 1), 0);
-    }
-    rebuildExamArrays();
-
-    let currentScreen = 0;
-    let submitted = false;
-    let lastMissedIds = [];
-    window.answerState = {};
-
-    const startPracticeBtn = document.getElementById("startPracticeBtn");
-    const welcomePage = document.getElementById("welcomePage");
-    const practiceArea = document.getElementById("practiceArea");
-    const leftPanel = document.getElementById("leftPanel");
-    const rightPanel = document.getElementById("rightPanel");
-    const progressText = document.getElementById("progressText");
-    const screenText = document.getElementById("screenText");
-    const progressFill = document.getElementById("progressFill");
-    const prevBtn = document.getElementById("prevBtn");
-    const nextBtn = document.getElementById("nextBtn");
-    const submitBtn = document.getElementById("submitBtn");
-    const tryWrongBtn = document.getElementById("tryWrongBtn");
-    const resetBtn = document.getElementById("resetBtn");
-    const results = document.getElementById("results");
-
-    function startPractice() {
-      welcomePage.classList.add("hidden");
-      practiceArea.style.display = "block";
-      renderRight();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function getQuestionById(qid) {
-      return allQuestions.find(q => q.id === qid);
-    }
-
-    function getQuestionNumber(qid) {
-      return allQuestions.findIndex(q => q.id === qid) + 1;
-    }
-
-    function renderLeft(part) {
-      leftPanel.innerHTML = `
-        <div class="left-content-wrap">
-          <div class="panel-label">${part.leftLabel}</div>
-          ${part.leftContent}
-        </div>
-      `;
-    }
-
-    function renderRight() {
-      const screen = screens[currentScreen];
-      const part = parts[screen.partIndex];
-      renderLeft(part);
-
-      if (screen.type === "intro") {
-        rightPanel.innerHTML = `
-          <div class="intro-card">
-            <div class="part-badge">${part.shortTitle}</div>
-            <h2>${part.title}</h2>
-            <div class="instruction-box">
-              <div class="instruction-title">Instructions</div>
-              <p>${part.instructions}</p>
-              <span class="mark-pill">${part.marks} marks</span>
-            </div>
-            <p>This part has <strong>${part.questions.length}</strong> question${part.questions.length === 1 ? "" : "s"}.</p>
-            <p>Take your time, breathe, and do your best.</p>
-          </div>
-        `;
-      } else if (screen.type === "vocab") {
-        renderVocabPage(part);
-      } else {
-        const q = part.questions[screen.questionIndex];
-        const globalNumber = getQuestionNumber(q.id);
-        const selected = window.answerState[q.id] || null;
-
-        rightPanel.innerHTML = `
-          <div class="question-card" id="questionCard">
-            <div class="instruction-box">
-              <div class="part-badge">${part.shortTitle}</div>
-              <h2>${part.title}</h2>
-              <div class="instruction-title">Instructions</div>
-              <p>${part.instructions}</p>
-              <span class="mark-pill">${part.marks} marks</span>
-            </div>
-
-            <div class="q-number">
-              <span>Question ${globalNumber} of ${totalQuestions}</span>
-              <span>${q.points} marks</span>
-            </div>
-            <div class="q-title">${q.prompt}</div>
-            <div class="options">
-              ${Object.entries(q.options).map(([letter, text]) => `
-                <label class="option" id="option-${q.id}-${letter}">
-                  <input type="radio" name="${q.id}" value="${letter}" ${selected === letter ? "checked" : ""} />
-                  <span><strong>${letter}.</strong> ${text}</span>
-                </label>
-              `).join("")}
-            </div>
-            <div class="q-meta">${q.skill}</div>
-            <div class="feedback-note" id="feedback-${q.id}"></div>
-          </div>
-        `;
-        updateQuestionVisual(q.id);
-      }
-
-      updateProgress();
-      updateButtons();
-    }
-
-    function renderVocabPage(part) {
-      rightPanel.innerHTML = `
-        <div class="vocab-card">
-          <div class="instruction-box">
-            <div class="part-badge">${part.shortTitle}</div>
-            <h2>${part.title}</h2>
-            <div class="instruction-title">Instructions</div>
-            <p>${part.instructions}</p>
-            <span class="mark-pill">${part.marks} marks</span>
-          </div>
-
-          <div class="q-number">
-            <span>Questions 1–5</span>
-            <span>2 marks each</span>
-          </div>
-
-          <div class="vocab-list">
-            ${part.questions.map((q, index) => {
-              const selected = window.answerState[q.id] || "";
-              return `
-                <div class="vocab-row" id="vocab-row-${q.id}">
-                  <div class="vocab-sentence">
-                    ${index + 1}. ${q.promptStart}
-                    <select class="vocab-select" name="${q.id}">
-                      <option value="">Choose</option>
-                      ${Object.entries(q.options).map(([letter, text]) => `
-                        <option value="${letter}" ${selected === letter ? "selected" : ""}>${letter}. ${text}</option>
-                      `).join("")}
-                    </select>
-                    ${q.promptEnd}
-                  </div>
-                  <div class="vocab-mini-feedback" id="vocab-feedback-${q.id}"></div>
-                </div>
-              `;
-            }).join("")}
-          </div>
-        </div>
-      `;
-      part.questions.forEach(q => updateVocabVisual(q.id));
-    }
-
-    function updateButtons() {
-      prevBtn.disabled = currentScreen === 0;
-      nextBtn.disabled = currentScreen === screens.length - 1;
-      nextBtn.textContent = currentScreen === screens.length - 1 ? "End" : "Next";
-    }
-
-    function updateProgress() {
-      const answered = allQuestions.filter(q => window.answerState[q.id]).length;
-      const percent = Math.round((answered / totalQuestions) * 100);
-      progressText.textContent = `Answered: ${answered} / ${totalQuestions}`;
-      progressFill.style.width = `${percent}%`;
-
-      const screen = screens[currentScreen];
-      const part = parts[screen.partIndex];
-
-      if (screen.type === "intro") {
-        screenText.textContent = `${part.shortTitle} Instructions`;
-      } else if (screen.type === "vocab") {
-        screenText.textContent = `${part.shortTitle} • Questions 1–5`;
-      } else {
-        const q = part.questions[screen.questionIndex];
-        screenText.textContent = `${part.shortTitle} • Question ${getQuestionNumber(q.id)}`;
-      }
-    }
-
-    function updateVocabVisual(qid) {
-      const q = getQuestionById(qid);
-      const row = document.getElementById(`vocab-row-${qid}`);
-      const feedback = document.getElementById(`vocab-feedback-${qid}`);
-      if (!q || !row || !feedback) return;
-
-      const selected = window.answerState[qid] || null;
-      row.classList.remove("correct", "incorrect", "unanswered");
-      feedback.classList.remove("show");
-      feedback.innerHTML = "";
-
-      if (!submitted) return;
-
-      if (!selected) {
-        row.classList.add("unanswered");
-        feedback.innerHTML = "Choose one word, then submit again.";
-        feedback.classList.add("show");
-      } else if (selected === q.answer) {
-        row.classList.add("correct");
-        feedback.innerHTML = "Correct. Great job!";
-        feedback.classList.add("show");
-      } else {
-        row.classList.add("incorrect");
-        feedback.innerHTML = "Try again. Read the whole sentence and choose a better word.";
-        feedback.classList.add("show");
-      }
-    }
-
-    function updateQuestionVisual(qid) {
-      const q = getQuestionById(qid);
-      const card = document.getElementById("questionCard");
-      if (!q || !card) return;
-
-      const feedback = document.getElementById(`feedback-${qid}`);
-      const selected = window.answerState[qid] || null;
-
-      card.classList.remove("correct", "incorrect", "unanswered");
-      feedback.classList.remove("show");
-      feedback.innerHTML = "";
-
-      Object.keys(q.options).forEach(letter => {
-        const option = document.getElementById(`option-${qid}-${letter}`);
-        if (option) option.classList.remove("correct-choice", "wrong-choice");
-      });
-
-      if (!submitted) return;
-
-      if (!selected) {
-        card.classList.add("unanswered");
-        feedback.innerHTML = `<strong>Not answered yet.</strong> Choose one answer, then submit again.`;
-        feedback.classList.add("show");
-        return;
-      }
-
-      if (selected === q.answer) {
-        card.classList.add("correct");
-        const option = document.getElementById(`option-${qid}-${selected}`);
-        if (option) option.classList.add("correct-choice");
-        feedback.innerHTML = `<strong>Correct.</strong> Great job!`;
-        feedback.classList.add("show");
-      } else {
-        card.classList.add("incorrect");
-        const option = document.getElementById(`option-${qid}-${selected}`);
-        if (option) option.classList.add("wrong-choice");
-        feedback.innerHTML = `<strong>Try again.</strong> Reread carefully and choose a better answer.`;
-        feedback.classList.add("show");
-      }
-    }
-
-    function skillGroup(skill) {
-      if (skill.includes("Vocabulary") && !skill.includes("Context")) return "words";
-      if (skill.includes("Grammar")) return "grammar";
-      if (skill.includes("Detail")) return "find";
-      if (skill.includes("Inference") || skill.includes("Evidence Check") || skill.includes("Connection") || skill.includes("Vocabulary in Context")) return "clues";
-      if (skill.includes("Overall Meaning")) return "big";
-      return "other";
-    }
-
-    function readinessLevel(score) {
-      if (score >= 90) {
-        return {
-          label: "Excellent readiness",
-          cls: "excellent",
-          main: "Amazing work. You are very ready.",
-          next: "Next step: keep practising and check your answers carefully."
-        };
-      }
-      if (score >= 75) {
-        return {
-          label: "Good readiness",
-          cls: "good",
-          main: "Good work. You understand many of the skills.",
-          next: "Next step: fix the highlighted questions, then submit again."
-        };
-      }
-      if (score >= 60) {
-        return {
-          label: "Keep practising",
-          cls: "practice",
-          main: "You are getting there. A little more practice will help.",
-          next: "Next step: read slowly, look for proof in the text, and try again."
-        };
-      }
-      return {
-        label: "Need more practice",
-        cls: "support",
-        main: "Do not worry. This practice shows what to work on next.",
-        next: "Next step: practise one part at a time and ask for help when you need it."
-      };
-    }
-
-    function submitQuiz() {
-      submitted = true;
-
-      let score = 0;
-      const partStats = {};
-      const groupStats = { words: 0, grammar: 0, find: 0, clues: 0, big: 0, other: 0 };
-      const missed = [];
-
-      parts.forEach(part => {
-        partStats[part.title] = {
-          score: 0,
-          total: part.questions.reduce((s, q) => s + q.points, 0),
-          correct: 0,
-          count: part.questions.length
-        };
-      });
-
-      allQuestions.forEach(q => {
-        const selected = window.answerState[q.id] || null;
-        const isCorrect = selected === q.answer;
-
-        if (isCorrect) {
-          score += q.points;
-          partStats[q.partTitle].score += q.points;
-          partStats[q.partTitle].correct += 1;
-        } else {
-          missed.push(q);
-          groupStats[skillGroup(q.skill)] += 1;
-        }
-      });
-
-      lastMissedIds = missed.map(q => q.id);
-      tryWrongBtn.disabled = missed.length === 0;
-      showResults(score, partStats, groupStats, missed);
-      saveExamResultFirstAttempt(score, totalMarks, partStats);
-      renderRight();
-      results.scrollIntoView({behavior: "smooth", block: "start"});
-    }
-
-    function showResults(score, partStats, groupStats, missed) {
-      results.classList.add("show");
-      const percent = Math.round((score / totalMarks) * 100);
-      document.getElementById("scoreText").textContent = `${score}/${totalMarks}`;
-      document.getElementById("percentText").textContent = `${percent}%`;
-
-      const degrees = Math.round((score / totalMarks) * 360);
-      document.getElementById("scoreCircle").style.background =
-        `radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${degrees}deg, #ece8f5 ${degrees}deg)`;
-
-      const level = readinessLevel(score);
-      const badge = document.getElementById("readinessBadge");
-      badge.textContent = level.label;
-      badge.className = `readiness ${level.cls}`;
-      document.getElementById("mainFeedback").textContent = level.main;
-      document.getElementById("nextStepFeedback").textContent = level.next;
-
-      document.getElementById("tryAgainMessage").textContent = missed.length === 0
-        ? "Wonderful! You can try another version later."
-        : "Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.";
-
-      const partBreakdown = document.getElementById("partBreakdown");
-      partBreakdown.innerHTML = Object.entries(partStats).map(([title, stat]) => {
-        const pct = Math.round((stat.score / stat.total) * 100);
-        return `
-          <div class="breakdown-card">
-            <strong>${title}</strong>
-            <p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p>
-            <div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div>
-          </div>
-        `;
-      }).join("");
-
-      const mistakeFeedback = document.getElementById("mistakeFeedback");
-      if (missed.length === 0) {
-        mistakeFeedback.innerHTML = `
-          <h3>My Practice Tips</h3>
-          <p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>
-        `;
-      } else {
-        mistakeFeedback.innerHTML = `
-          <h3>My Practice Tips</h3>
-          <p>You have <strong>${missed.length}</strong> question${missed.length === 1 ? "" : "s"} to try again. Use these tips and keep going.</p>
-          <div class="kid-tips-grid">
-            ${groupStats.words > 0 ? `
-              <div class="kid-tip">
-                <strong>Words to check: ${groupStats.words}</strong>
-                Read the whole sentence. Ask yourself, “Which word fits best?”
-              </div>
-            ` : ""}
-            ${groupStats.grammar > 0 ? `
-              <div class="kid-tip">
-                <strong>Grammar to check: ${groupStats.grammar}</strong>
-                Look for time words and clues in the sentence.
-              </div>
-            ` : ""}
-            ${groupStats.find > 0 ? `
-              <div class="kid-tip">
-                <strong>Find the proof: ${groupStats.find}</strong>
-                Go back to the text. Find the sentence that shows the answer.
-              </div>
-            ` : ""}
-            ${groupStats.clues > 0 ? `
-              <div class="kid-tip">
-                <strong>Use clues: ${groupStats.clues}</strong>
-                The answer may be written in different words. Read around the question.
-              </div>
-            ` : ""}
-            ${groupStats.big > 0 ? `
-              <div class="kid-tip">
-                <strong>Big idea: ${groupStats.big}</strong>
-                Think about what the whole text is mostly about.
-              </div>
-            ` : ""}
-          </div>
-        `;
-      }
-    }
-
-    function goToFirstMissed() {
-      if (lastMissedIds.length === 0) return;
-      const firstMissed = lastMissedIds[0];
-      let index = -1;
-
-      if (Number(firstMissed.replace("q", "")) <= 5) {
-        index = screens.findIndex(s => s.type === "vocab");
-      } else {
-        index = screens.findIndex(s => s.type === "question" && s.qid === firstMissed);
-      }
-
-      if (index >= 0) {
-        currentScreen = index;
-        renderRight();
-        document.getElementById("practiceTop").scrollIntoView({behavior: "smooth", block: "start"});
-      }
-    }
-
-    function resetQuiz() {
-      window.answerState = {};
-      currentScreen = 0;
-      submitted = false;
-      lastMissedIds = [];
-      results.classList.remove("show");
-      tryWrongBtn.disabled = true;
-      welcomePage.classList.remove("hidden");
-      practiceArea.style.display = "none";
-      window.scrollTo({top: 0, behavior: "smooth"});
-    }
-
-    document.addEventListener("change", e => {
-      if (e.target.matches("input[type='radio'], select.vocab-select")) {
-        window.answerState[e.target.name] = e.target.value;
-        submitted = false;
-        results.classList.remove("show");
-        tryWrongBtn.disabled = true;
-        updateProgress();
-
-        if (e.target.matches("select.vocab-select")) {
-          updateVocabVisual(e.target.name);
-        } else {
-          updateQuestionVisual(e.target.name);
-        }
-      }
-    });
-
-
-
-    /* ===== Exam Page + Secure Hub connection ===== */
-    const FIREBASE_CONFIG = {
-      apiKey:"AIzaSyAe9rRwly1MvZh889dVq33RGyUbj4FVcQI",
-      authDomain:"online-english-lesson-grade-9.firebaseapp.com",
-      databaseURL:"https://online-english-lesson-grade-9-default-rtdb.firebaseio.com",
-      projectId:"online-english-lesson-grade-9",
-      storageBucket:"online-english-lesson-grade-9.firebasestorage.app",
-      appId:"1:542666648554:web:5190c68ea73b3536dae093"
+async function saveRevisionProgressBest(score,total,partStats){
+  try{
+    const st=studentSession();
+    if(!db||!st)return;
+    const classId=safeKey(st.classId||st.className);
+    const studentId=safeKey(st.studentId||st.password);
+    const recordId='revision_'+safeKey(currentExamId||currentExamMeta.title);
+    const pct=total?Math.round(score/total*100):0;
+    const path='examPage/revisionProgress/'+classId+'/'+studentId+'/'+recordId;
+    const old=await db.ref(path).get();
+    const oldData=old.exists()?old.val():null;
+    const oldBest=Number(oldData?.bestScore||0);
+    const attempts=Number(oldData?.attempts||0)+1;
+    const isBest=score>=oldBest;
+    const record={
+      type:'Revision Practice',
+      activityType:'Exam Revision',
+      title:currentExamMeta.title,
+      score,
+      total,
+      percentage:pct,
+      bestScore:isBest?score:oldBest,
+      bestPercentage:isBest?pct:Number(oldData?.bestPercentage||0),
+      attempts,
+      studentName:st.name||'',
+      studentId:st.studentId||st.password||'',
+      classId:st.classId||'',
+      className:st.className||'',
+      partStats:isBest?partStats:(oldData?.partStats||partStats),
+      lastAttempt:{score,total,percentage:pct,partStats,createdAt:Date.now()},
+      updatedAt:Date.now()
     };
-    let db=null, examLibrary={}, activeExamId='', currentExamId='default_eot3', selectedSectionIndex=0;
-    let currentExamMeta={title:'Grade 9 EOT3 Revision Check', subtitle:'This practice helps you review vocabulary, grammar, and reading skills before the exam.'};
-    let builderExam={id:'', title:'', subtitle:'', parts:[]};
-
-    function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
-    function getSecureHubStudent(){try{return JSON.parse(localStorage.getItem('DL_SECURE_STUDENT_LOGIN') || sessionStorage.getItem('DL_SECURE_STUDENT_LOGIN') || 'null')}catch(e){return null}}
-    function isTeacherMode(){return sessionStorage.getItem('teacher_hub_login')==='yes' || sessionStorage.getItem('teacher_control_login')==='yes' || new URLSearchParams(location.search).get('teacher')==='1'}
-    function setBuilderStatus(msg,good){const el=document.getElementById('builderStatus'); if(el){el.textContent=msg; el.style.background=good?'#ecfdf5':'#fffbeb'; el.style.color=good?'#166534':'#92400e'}}
-   function updateWelcomeText(){
-  const titleEl = document.getElementById('welcomeTitle');
-  const subEl = document.getElementById('welcomeSubtitle');
-  const eyeEl = document.getElementById('examEyebrow');
-
-  if(titleEl){
-    titleEl.textContent = currentExamMeta.title || 'Welcome to Your Exam Page';
-  }
-
-  if(subEl){
-    subEl.textContent = currentExamMeta.subtitle || 'Read carefully and answer all questions.';
-  }
-
-  if(eyeEl){
-    eyeEl.textContent = 'Exam Page • ' + (currentExamMeta.title || 'Active Exam');
+    await db.ref(path).set(record);
+    await db.ref('teacherControlCenter/revisionProgress/'+classId+'/'+studentId+'/'+recordId).set(record);
+    showSaveNote(isBest?'Revision progress saved. New best score saved to Student Hub.':'Revision attempt saved. Your best score is still saved in Student Hub.',true);
+  }catch(err){
+    console.warn('Save revision progress skipped:',err);
+    showSaveNote('Could not save revision progress. Check Firebase connection.',false);
   }
 }
-    
-function studentSession(){
-  const st = getSecureHubStudent();
-
-  if(st && (st.studentId || st.password) && st.classId){
-    return st;
-  }
-
-  alert("Please login from Student Hub first.");
-  location.href = "secure-hub.html";
-  return null;
-}
-    
-    async function initExamFirebase(){
-      try{
-        if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-        db=firebase.database();
-       const st = studentSession();
-if(!st) return;
-
-document.getElementById('studentStrip').classList.remove('hidden');
-        document.getElementById('examStudentName').textContent=st.name || 'Student';
-        document.getElementById('examStudentId').textContent=st.studentId || st.password || '';
-        document.getElementById('examClassName').textContent=st.className || st.classId || '';
-        if(isTeacherMode()){
-          document.getElementById('teacherPanel').classList.remove('hidden');
-          await loadBuilderData();
-        }
-        await loadActiveExamForStudent(st);
-      }catch(err){console.warn('Exam Firebase skipped:',err)}
-    }
-    async function loadActiveExamForStudent(st){
-      if(!db) return;
-      const classId=safeKey(st.classId || st.className || 'guest');
-      const activeSnap=await db.ref('examPage/activeExams/'+classId).get();
-      if(activeSnap.exists()){
-        activeExamId=activeSnap.val().examId || activeSnap.val();
-        const examSnap=await db.ref('examPage/exams/'+activeExamId).get();
-        if(examSnap.exists()){
-          const ex=examSnap.val();
-          currentExamId=ex.id || activeExamId;
-          currentExamMeta={title:ex.title || 'Exam Page', subtitle:ex.subtitle || ''};
-          parts=Array.isArray(ex.parts) ? ex.parts : [];
-          rebuildExamArrays();
-          resetQuiz();
-        }
-      }
-      updateWelcomeText();
-    }
-    async function getActiveTermSettings(){
-      if(!db) return {term:'term1',studyYear:''};
-      const snap=await db.ref('teacherControlCenter/settings/tracker').get();
-      const t=snap.exists()?snap.val():{};
-      return {term:t.activeSavingTerm || t.activeTerm || t.term || 'term1', studyYear:t.activeSavingStudyYear || t.activeStudyYear || t.studyYear || ''};
-    }
-    async function saveExamResultFirstAttempt(score,total,partStats){
-      try{
-        if(!db) return;
-        const st=studentSession();
-        if(!st || !st.studentId || st.studentId==='guest') return;
-        const classId=safeKey(st.classId || st.className);
-        const studentId=safeKey(st.studentId || st.password);
-        const term=await getActiveTermSettings();
-        const recordId='exam_'+safeKey(currentExamId || currentExamMeta.title)+'_'+safeKey(term.term)+'_'+safeKey(term.studyYear || 'year');
-        const path='teacherControlCenter/records/'+classId+'/'+studentId+'/'+recordId;
-        const exists=await db.ref(path).get();
-        if(exists.exists()) return; // first attempt only
-        const now=Date.now();
-        const record={
-          recordId, page:'Exam Page', program:'Exam Page', activityType:'Exam Page', type:'exam',
-          activityName:currentExamMeta.title || 'Exam Page', title:currentExamMeta.title || 'Exam Page',
-          studentId, studentName:st.name || 'Student', classId, className:st.className || st.classId || classId,
-          score:Number(score||0), total:Number(total||0), percentage: total?Math.round((score/total)*100):0,
-          term:term.term, studyYear:term.studyYear, time:now, savedAt:now, date:new Date(now).toLocaleDateString('en-GB'),
-          notes:'First attempt only saved from Exam Page.', partStats
-        };
-        const updates={};
-        updates[path]=record;
-        updates['teacherControlCenter/activityRecords/Exam_Page/'+classId+'/'+studentId+'/'+recordId]=record;
-        await db.ref().update(updates);
-      }catch(err){console.warn('Exam result save failed:',err)}
-    }
-
-    async function loadBuilderData(){
-      const clsSnap=await db.ref('teacherControlCenter/classes').get();
-      const classes=clsSnap.exists()?clsSnap.val():{};
-      const classSelect=document.getElementById('builderClassSelect');
-      classSelect.innerHTML=Object.keys(classes).map(id=>`<option value="${id}">${classes[id].name||id}</option>`).join('') || '<option value="guest">No classes</option>';
-      const examsSnap=await db.ref('examPage/exams').get();
-      examLibrary=examsSnap.exists()?examsSnap.val():{};
-      renderExamLibrarySelect();
-      createNewExam(false);
-    }
-    function renderExamLibrarySelect(){
-      const sel=document.getElementById('examLibrarySelect');
-      const ids=Object.keys(examLibrary||{});
-      sel.innerHTML=ids.map(id=>`<option value="${id}">${examLibrary[id].title||id}</option>`).join('') || '<option value="">No saved exams yet</option>';
-    }
-    function createNewExam(clear=true){
-      builderExam={id:'exam_'+Date.now(), title:'New Exam Page', subtitle:'Read carefully and answer all questions.', parts:JSON.parse(JSON.stringify(parts||[]))};
-      selectedSectionIndex=0; renderBuilder(); if(clear) setBuilderStatus('New exam created. Edit sections then save.',true);
-    }
-    function loadExamFromSelect(){
-      const id=document.getElementById('examLibrarySelect').value;
-      if(!id || !examLibrary[id]) return;
-      builderExam=JSON.parse(JSON.stringify(examLibrary[id]));
-      builderExam.id=builderExam.id || id; selectedSectionIndex=0; renderBuilder(); setBuilderStatus('Loaded '+(builderExam.title||id),true);
-    }
-    function renderBuilder(){
-      document.getElementById('builderExamTitle').value=builderExam.title||'';
-      document.getElementById('builderExamSubtitle').value=builderExam.subtitle||'';
-      const list=document.getElementById('sectionList');
-      list.innerHTML=(builderExam.parts||[]).map((p,i)=>`<div class="builder-item ${i===selectedSectionIndex?'active':''}" onclick="selectSection(${i})">${i+1}. ${p.title||'Section'}</div>`).join('') || '<div class="exam-status">No sections yet.</div>';
-      loadSectionEditor();
-    }
-    window.selectSection=function(i){applySectionChanges(false); selectedSectionIndex=i; renderBuilder()}
-    function loadSectionEditor(){
-      const p=(builderExam.parts||[])[selectedSectionIndex] || {title:'',shortTitle:'',instructions:'',leftLabel:'Text',leftContent:'',questions:[]};
-      document.getElementById('secTitle').value=p.title||'';
-      document.getElementById('secShortTitle').value=p.shortTitle||'';
-      document.getElementById('secInstructions').value=p.instructions||'';
-      document.getElementById('secLeftLabel').value=p.leftLabel||'';
-      document.getElementById('secLeftContent').value=p.leftContent||'';
-      document.getElementById('secQuestions').value=JSON.stringify(p.questions||[],null,2);
-    }
-    function applySectionChanges(showMsg=true){
-      if(!builderExam.parts || !builderExam.parts.length) return;
-      try{
-        const qs=JSON.parse(document.getElementById('secQuestions').value||'[]');
-        builderExam.parts[selectedSectionIndex]={
-          id: builderExam.parts[selectedSectionIndex].id || 'sec_'+(selectedSectionIndex+1)+'_'+Date.now(),
-          title:document.getElementById('secTitle').value,
-          shortTitle:document.getElementById('secShortTitle').value || 'Part '+(selectedSectionIndex+1),
-          instructions:document.getElementById('secInstructions').value,
-          leftLabel:document.getElementById('secLeftLabel').value || 'Text',
-          leftContent:document.getElementById('secLeftContent').value,
-          marks:qs.reduce((a,q)=>a+Number(q.points||1),0),
-          questions:qs
-        };
-        if(showMsg) setBuilderStatus('Section changes applied.',true);
-      }catch(err){setBuilderStatus('Questions JSON has an error: '+err.message,false)}
-    }
-    function addSection(){
-      applySectionChanges(false);
-      builderExam.parts=builderExam.parts||[];
-      builderExam.parts.push({id:'sec_'+Date.now(),title:'New Section',shortTitle:'Part '+(builderExam.parts.length+1),marks:1,instructions:'Choose the correct answer.',leftLabel:'Text',leftContent:'<div class="reading-text"><h3>Title</h3><p>Write text here.</p></div>',questions:[{id:'q_'+Date.now(),points:1,skill:'Exam Skill',answer:'A',prompt:'Write your question here.',options:{A:'Option A',B:'Option B',C:'Option C'}}]});
-      selectedSectionIndex=builderExam.parts.length-1; renderBuilder();
-    }
-
-    function addVocabularySection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'vocab_'+Date.now(),
-    title:'Vocabulary Section',
-    shortTitle:'Part '+n,
-    marks:10,
-    instructions:'Choose the correct word from the word bank.',
-    leftLabel:'Word Bank',
-    leftContent:`
-      <ul class="word-bank">
-        <li>A. word1</li>
-        <li>B. word2</li>
-        <li>C. word3</li>
-        <li>D. word4</li>
-        <li>E. word5</li>
-      </ul>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:2,
-        skill:'Vocabulary',
-        answer:'A',
-        promptStart:'Write the beginning of the sentence',
-        promptEnd:'write the end of the sentence.',
-        options:{
-          A:'word1',
-          B:'word2',
-          C:'word3',
-          D:'word4',
-          E:'word5'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addGrammarSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'grammar_'+Date.now(),
-    title:'Grammar Section',
-    shortTitle:'Part '+n,
-    marks:10,
-    instructions:'Choose the correct answer A, B, or C.',
-    leftLabel:'Grammar Notes',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Grammar Focus</h3>
-        <p>Add the grammar rule or short example text here.</p>
-      </div>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:2,
-        skill:'Grammar',
-        answer:'A',
-        prompt:'Write your grammar question here.',
-        options:{
-          A:'Option A',
-          B:'Option B',
-          C:'Option C'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addReadingSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'reading_'+Date.now(),
-    title:'Reading Section',
-    shortTitle:'Part '+n,
-    marks:20,
-    instructions:'Read the text and choose the correct answer A, B, or C.',
-    leftLabel:'Reading Text',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Reading Title</h3>
-        <p>Paste your reading text here.</p>
-      </div>
-    `,
-    questions:[
-      {
-        id:'q_'+Date.now(),
-        points:4,
-        skill:'Reading: Detail',
-        answer:'A',
-        prompt:'Write your reading question here.',
-        options:{
-          A:'Answer A',
-          B:'Answer B',
-          C:'Answer C'
-        }
-      }
-    ]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-function addWritingSection(){
-  applySectionChanges(false);
-  builderExam.parts = builderExam.parts || [];
-
-  const n = builderExam.parts.length + 1;
-
-  builderExam.parts.push({
-    id:'writing_'+Date.now(),
-    title:'Writing Section',
-    shortTitle:'Part '+n,
-    marks:20,
-    instructions:'Read the writing task and write your answer.',
-    leftLabel:'Writing Task',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Writing Task</h3>
-        <p>Write the task prompt here.</p>
-      </div>
-    `,
-    questions:[]
-  });
-
-  selectedSectionIndex = builderExam.parts.length - 1;
-  renderBuilder();
-}
-
-   
-    function deleteSection(){
-      if(!builderExam.parts || !builderExam.parts.length) return;
-      if(!confirm('Delete this section?')) return;
-      builderExam.parts.splice(selectedSectionIndex,1); selectedSectionIndex=Math.max(0,selectedSectionIndex-1); renderBuilder();
-    }
-    async function saveExamToLibrary(){
-      applySectionChanges(false);
-      builderExam.title=document.getElementById('builderExamTitle').value || 'Exam Page';
-      builderExam.subtitle=document.getElementById('builderExamSubtitle').value || '';
-      builderExam.updatedAt=Date.now(); builderExam.id=builderExam.id || 'exam_'+Date.now();
-      await db.ref('examPage/exams/'+safeKey(builderExam.id)).set(builderExam);
-      examLibrary[safeKey(builderExam.id)]=builderExam; renderExamLibrarySelect();
-      document.getElementById('examLibrarySelect').value=safeKey(builderExam.id);
-      setBuilderStatus('Saved to Exam Library.',true);
-    }
-    async function activateExamForClass(){
-      await saveExamToLibrary();
-      const classId=document.getElementById('builderClassSelect').value;
-      await db.ref('examPage/activeExams/'+classId).set({examId:safeKey(builderExam.id),title:builderExam.title,activatedAt:Date.now()});
-      setBuilderStatus('Activated for selected class: '+classId,true);
-    }
-    async function deleteSelectedExam(){
-      const id=document.getElementById('examLibrarySelect').value;
-      if(!id || !confirm('Delete this exam from library?')) return;
-      await db.ref('examPage/exams/'+id).remove(); delete examLibrary[id]; renderExamLibrarySelect(); createNewExam(false); setBuilderStatus('Exam deleted.',true);
-    }
-
-    initExamFirebase();
-
-    prevBtn.addEventListener("click", () => {
-      if (currentScreen > 0) {
-        currentScreen--;
-        renderRight();
-      }
-    });
-
-    nextBtn.addEventListener("click", () => {
-      if (currentScreen < screens.length - 1) {
-        currentScreen++;
-        renderRight();
-      }
-    });
-
-    submitBtn.addEventListener("click", submitQuiz);
-    tryWrongBtn.addEventListener("click", goToFirstMissed);
-    resetBtn.addEventListener("click", resetQuiz);
-    startPracticeBtn.addEventListener("click", startPractice);
-    async function readUploadedExamFile(){
-  const input = document.getElementById('examFileInput');
-  const file = input && input.files ? input.files[0] : null;
-
-  if(!file){
-    alert('Please upload a revision file or exam planner first.');
-    return '';
-  }
-
-  const name = file.name.toLowerCase();
-
-  if(name.endsWith('.txt') || name.endsWith('.html')){
-    return await file.text();
-  }
-
-  if(name.endsWith('.docx')){
-    const buffer = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({arrayBuffer: buffer});
-    return result.value || '';
-  }
-      if(name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg')){
-  const status = document.getElementById('examGeneratorStatus');
-  if(status) status.textContent = 'Reading image text with OCR...';
-
-  const result = await Tesseract.recognize(file, 'eng');
-  return result.data.text || '';
-}
-
-  if(name.endsWith('.pdf')){
-    const buffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
-    let text = '';
-
-    for(let i = 1; i <= pdf.numPages; i++){
-      const page = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      text += content.items.map(item => item.str).join(' ') + '\n';
-    }
-
-    return text;
-  }
-
-  alert('Unsupported file type. Use PDF, DOCX, TXT, or HTML.');
-  return '';
-}
-
-function extractWordsFromText(text){
-  const stopWords = ['about','there','their','which','where','would','could','should','because','students','teacher','answer','question','english','revision','section'];
-  return text
-    .replace(/[^\w\s-]/g,' ')
-    .split(/\s+/)
-    .map(w => w.trim())
-    .filter(w => w.length > 4)
-    .filter(w => !stopWords.includes(w.toLowerCase()))
-    .filter((w,i,arr) => arr.indexOf(w) === i)
-    .slice(0,10);
-}
-
-function makeWordBank(words){
-  return `
-    <ul class="word-bank">
-      ${words.map((w,i)=>`<li>${String.fromCharCode(65+i)}. ${w}</li>`).join('')}
-    </ul>
-  `;
-}
-
-function getShortReadingText(text){
-  const clean = text.replace(/\s+/g,' ').trim();
-  return clean.length > 1200 ? clean.slice(0,1200) + '...' : clean;
-}
-
-    function parseQuestionsFromText(text){
-  const blocks = text.split(/Q\d+\.|Question\s*\d+\.?/i).slice(1);
-
-  const questions = [];
-
-  blocks.forEach((block, index)=>{
-    const clean = block.trim();
-
-    const answerMatch = clean.match(/Answer\s*:\s*([ABC])/i);
-    const answer = answerMatch ? answerMatch[1].toUpperCase() : 'A';
-
-    const aMatch = clean.match(/A[\)\.]\s*([\s\S]*?)(?=B[\)\.])/i);
-    const bMatch = clean.match(/B[\)\.]\s*([\s\S]*?)(?=C[\)\.])/i);
-    const cMatch = clean.match(/C[\)\.]\s*([\s\S]*?)(?=Answer\s*:|$)/i);
-
-    if(!aMatch || !bMatch || !cMatch) return;
-
-    const prompt = clean
-      .split(/A[\)\.]/i)[0]
-      .replace(/\s+/g,' ')
-      .trim();
-
-    questions.push({
-      id:'q_file_'+Date.now()+'_'+index,
-      points:2,
-      skill:'Imported Question',
-      answer:answer,
-      prompt:prompt,
-      options:{
-        A:aMatch[1].replace(/\s+/g,' ').trim(),
-        B:bMatch[1].replace(/\s+/g,' ').trim(),
-        C:cMatch[1].replace(/\s+/g,' ').trim()
-      }
-    });
-  });
-
-  return questions;
-}
-async function generateExamFromUploadedFile(){
-  const status = document.getElementById('examGeneratorStatus');
-  if(status) status.textContent = 'Reading file and creating exam draft...';
-
-  const text = await readUploadedExamFile();
-
-  if(!text.trim()){
-    if(status) status.textContent = 'No readable text found in the file.';
-    return;
-  }
-
-  const words = extractWordsFromText(text);
-  const importedQuestions = parseQuestionsFromText(text);
-  const finalWords = words.length ? words : ['vocabulary','grammar','reading','writing','practice'];
-  const readingText = getShortReadingText(text);
-
-  builderExam = {
-    id:'exam_'+Date.now(),
-    title:document.getElementById('builderExamTitle').value || 'Generated Exam From Revision File',
-    subtitle:'Generated from uploaded revision file. Please review and edit before activation.',
-    parts:[]
-  };
-
-  builderExam.parts.push({
-    id:'vocab_'+Date.now(),
-    title:'Vocabulary Section',
-    shortTitle:'Part 1',
-    marks:10,
-    instructions:'Choose the correct word from the word bank.',
-    leftLabel:'Word Bank',
-    leftContent:makeWordBank(finalWords),
-    questions:finalWords.slice(0,5).map((w,i)=>({
-      id:'q_vocab_'+Date.now()+'_'+i,
-      points:2,
-      skill:'Vocabulary',
-      answer:'A',
-      promptStart:'Choose the best word for this sentence:',
-      promptEnd:'__________.',
-      options:{
-        A:w,
-        B:finalWords[(i+1)%finalWords.length],
-        C:finalWords[(i+2)%finalWords.length]
-      }
-    }))
-  });
-
-  builderExam.parts.push({
-    id:'grammar_'+Date.now(),
-    title:'Grammar Section',
-    shortTitle:'Part 2',
-    marks:10,
-    instructions:'Choose the correct answer A, B, or C.',
-    leftLabel:'Grammar Focus',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Grammar Review</h3>
-        <p>Edit this grammar section based on your uploaded planner.</p>
-      </div>
-    `,
-    questions:[
-      {
-        id:'q_grammar_1_'+Date.now(),
-        points:2,
-        skill:'Grammar',
-        answer:'A',
-        prompt:'Choose the correct answer.',
-        options:{A:'Correct option',B:'Wrong option',C:'Wrong option'}
-      }
-    ]
-  });
-
-  builderExam.parts.push({
-    id:'reading_'+Date.now(),
-    title:'Reading Section',
-    shortTitle:'Part 3',
-    marks:20,
-    instructions:'Read the text and choose the correct answer.',
-    leftLabel:'Reading Text',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Reading Text</h3>
-        <p>${readingText}</p>
-      </div>
-    `,
-    questions: importedQuestions.length ? importedQuestions : [
-      {
-        id:'q_read_1_'+Date.now(),
-        points:4,
-        skill:'Reading: Main Idea',
-        answer:'A',
-        prompt:'What is the main idea of the text?',
-        options:{A:'Edit correct answer',B:'Edit option B',C:'Edit option C'}
-      },
-      {
-        id:'q_read_2_'+Date.now(),
-        points:4,
-        skill:'Reading: Detail',
-        answer:'A',
-        prompt:'Which detail is mentioned in the text?',
-        options:{A:'Edit correct answer',B:'Edit option B',C:'Edit option C'}
-      }
-]
-  });
-
-  builderExam.parts.push({
-    id:'writing_'+Date.now(),
-    title:'Writing Section',
-    shortTitle:'Part 4',
-    marks:20,
-    instructions:'Read the task and write your response.',
-    leftLabel:'Writing Task',
-    leftContent:`
-      <div class="reading-text">
-        <h3>Writing Task</h3>
-        <p>Edit this writing task based on the uploaded revision file.</p>
-      </div>
-    `,
-    questions:[]
-  });
-
-  selectedSectionIndex = 0;
-
-  document.getElementById('builderExamTitle').value = builderExam.title;
-  document.getElementById('builderExamSubtitle').value = builderExam.subtitle;
-
-  renderBuilder();
-
-  if(status){
-    status.textContent = '✅ Exam draft generated. Review sections, edit answers, then click Save Exam.';
-  }
-
-  alert('✅ Exam draft generated. Review/edit it, then click Save Exam.');
-}
-  </script>
+async function saveOfficialExamFirstAttempt(score,total,partStats){try{const st=studentSession(); if(!db||!st)return; const classId=safeKey(st.classId||st.className), studentId=safeKey(st.studentId||st.password); const term=await getActiveTermSettings(); const recordId='exam_'+safeKey(currentExamId)+'_'+safeKey(term.term)+'_'+safeKey(term.studyYear||'year'); const path='teacherControlCenter/records/'+classId+'/'+studentId+'/'+recordId; const old=await db.ref(path).get(); if(old.exists()){showSaveNote('First attempt already saved. This try is practice only.',false); return;} const pct=total?Math.round(score/total*100):0; const record={type:'Exam Page',activityType:'Exam Page',title:currentExamMeta.title,score,total,percentage:pct,term:term.term,studyYear:term.studyYear,studentName:st.name||'',studentId:st.studentId||st.password||'',classId:st.classId||'',className:st.className||'',firstAttempt:true,partStats,createdAt:Date.now()}; await db.ref(path).set(record); await db.ref('examPage/studentHistory/'+classId+'/'+studentId+'/'+recordId).set(record); await db.ref('teacherControlCenter/studentExamHistory/'+classId+'/'+studentId+'/'+recordId).set(record); showSaveNote('Official first attempt saved to Teacher Tracker and Student Hub.',true);}catch(err){console.warn('Save official exam skipped:',err); showSaveNote('Could not save official mark. Check Firebase connection.',false);}}
+function goToFirstMissed(){if(lastMissedIds.length===0)return; const first=lastMissedIds[0]; let index=screens.findIndex(s=>s.type==='question'&&s.qid===first); if(index<0) index=screens.findIndex(s=>s.type==='vocab'); if(index>=0){currentScreen=index; renderRight(); document.getElementById('practiceTop').scrollIntoView({behavior:'smooth',block:'start'});}}
+function resetQuiz(showWelcome=true){window.answerState={}; currentScreen=0; submitted=false; lastMissedIds=[]; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; welcomePage.classList.remove('hidden'); practiceArea.style.display='none'; if(showWelcome) window.scrollTo({top:0,behavior:'smooth'}); updateWelcomeText();}
+document.addEventListener('change',e=>{if(e.target.matches("input[type='radio'], select.vocab-select")){window.answerState[e.target.name]=e.target.value; submitted=false; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; updateProgress(); if(e.target.matches('select.vocab-select')) updateVocabVisual(e.target.name); else updateQuestionVisual(e.target.name);}});
+prevBtn.addEventListener('click',()=>{if(currentScreen>0){currentScreen--; renderRight();}}); nextBtn.addEventListener('click',()=>{if(currentScreen<screens.length-1){currentScreen++; renderRight();}}); submitBtn.addEventListener('click',submitQuiz); tryWrongBtn.addEventListener('click',goToFirstMissed); resetBtn.addEventListener('click',()=>resetQuiz(true)); startPracticeBtn.addEventListener('click',startPractice);
+rebuildExamArrays(); initStudentExamPage();
+</script>
 </body>
 </html>
