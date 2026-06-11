@@ -8,6 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
+  <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     :root {
       --bg: #faf8ff;
@@ -857,8 +858,8 @@
 <div class="exam-status" style="margin-top:12px">
   <h3>✨ Exam Generator</h3>
 
-  <input id="examFileInput" type="file" accept=".txt,.pdf,.docx,.html">
-
+<input id="examFileInput" type="file" accept=".txt,.pdf,.docx,.html,.png,.jpg,.jpeg">
+  
   <button onclick="generateExamFromUploadedFile()">
     ✨ Generate Exam From File
   </button>
@@ -2045,6 +2046,13 @@ function addWritingSection(){
     const result = await mammoth.extractRawText({arrayBuffer: buffer});
     return result.value || '';
   }
+      if(name.endsWith('.png') || name.endsWith('.jpg') || name.endsWith('.jpeg')){
+  const status = document.getElementById('examGeneratorStatus');
+  if(status) status.textContent = 'Reading image text with OCR...';
+
+  const result = await Tesseract.recognize(file, 'eng');
+  return result.data.text || '';
+}
 
   if(name.endsWith('.pdf')){
     const buffer = await file.arrayBuffer();
@@ -2089,6 +2097,44 @@ function getShortReadingText(text){
   return clean.length > 1200 ? clean.slice(0,1200) + '...' : clean;
 }
 
+    function parseQuestionsFromText(text){
+  const blocks = text.split(/Q\d+\.|Question\s*\d+\.?/i).slice(1);
+
+  const questions = [];
+
+  blocks.forEach((block, index)=>{
+    const clean = block.trim();
+
+    const answerMatch = clean.match(/Answer\s*:\s*([ABC])/i);
+    const answer = answerMatch ? answerMatch[1].toUpperCase() : 'A';
+
+    const aMatch = clean.match(/A[\)\.]\s*([\s\S]*?)(?=B[\)\.])/i);
+    const bMatch = clean.match(/B[\)\.]\s*([\s\S]*?)(?=C[\)\.])/i);
+    const cMatch = clean.match(/C[\)\.]\s*([\s\S]*?)(?=Answer\s*:|$)/i);
+
+    if(!aMatch || !bMatch || !cMatch) return;
+
+    const prompt = clean
+      .split(/A[\)\.]/i)[0]
+      .replace(/\s+/g,' ')
+      .trim();
+
+    questions.push({
+      id:'q_file_'+Date.now()+'_'+index,
+      points:2,
+      skill:'Imported Question',
+      answer:answer,
+      prompt:prompt,
+      options:{
+        A:aMatch[1].replace(/\s+/g,' ').trim(),
+        B:bMatch[1].replace(/\s+/g,' ').trim(),
+        C:cMatch[1].replace(/\s+/g,' ').trim()
+      }
+    });
+  });
+
+  return questions;
+}
 async function generateExamFromUploadedFile(){
   const status = document.getElementById('examGeneratorStatus');
   if(status) status.textContent = 'Reading file and creating exam draft...';
@@ -2101,6 +2147,7 @@ async function generateExamFromUploadedFile(){
   }
 
   const words = extractWordsFromText(text);
+  const importedQuestions = parseQuestionsFromText(text);
   const finalWords = words.length ? words : ['vocabulary','grammar','reading','writing','practice'];
   const readingText = getShortReadingText(text);
 
@@ -2172,7 +2219,7 @@ async function generateExamFromUploadedFile(){
         <p>${readingText}</p>
       </div>
     `,
-    questions:[
+    questions: importedQuestions.length ? importedQuestions : [
       {
         id:'q_read_1_'+Date.now(),
         points:4,
@@ -2189,7 +2236,7 @@ async function generateExamFromUploadedFile(){
         prompt:'Which detail is mentioned in the text?',
         options:{A:'Edit correct answer',B:'Edit option B',C:'Edit option C'}
       }
-    ]
+]
   });
 
   builderExam.parts.push({
