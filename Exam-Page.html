@@ -1427,7 +1427,7 @@ async function saveImportedOrCurrentExam(){
       return;
     }
 
-    const record={
+   const record={
   id,
   title,
   subtitle,
@@ -1439,8 +1439,8 @@ async function saveImportedOrCurrentExam(){
   sourceLastModified:importedExamDraft?.sourceLastModified || 0,
   createdAt:Date.now(),
   updatedAt:Date.now(),
-  color: document.getElementById('examColor')?.value || '#8b5cf6'
-  term: document.getElementById('examTerm')?.value || 'term1',
+  color: document.getElementById('examColor')?.value || '#8b5cf6',
+  term: document.getElementById('examTerm')?.value || 'term1'
 };
 
     await db.ref('examPage/exams/'+id).set(record);
