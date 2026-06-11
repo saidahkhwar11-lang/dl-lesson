@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Student Exam Page</title>
+  <title>Exam Page</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
   <style>
@@ -876,6 +876,50 @@
 <body>
 
 <div class="page">
+
+    <section id="teacherPanel" class="teacher-panel hidden">
+      <h2>📝 Exam Library Manager</h2>
+      <p class="library-hint">Add revision pages you designed separately, then assign each page as Revision or Assessment.</p>
+
+      <div class="teacher-mini-grid">
+        <div class="teacher-box">
+          <label>Saved Library</label>
+          <select id="teacherExamSelect" onchange="teacherSelectionChanged()"></select>
+        </div>
+        <div class="teacher-box">
+          <label>Choose Class</label>
+          <select id="teacherClassSelect"></select>
+        </div>
+        <div class="teacher-box">
+          <label>Import Revision HTML Page</label>
+          <input id="teacherImportFile" type="file" accept=".html,.htm" onchange="importRevisionHtmlFile(event)">
+        </div>
+      </div>
+
+      <div class="teacher-mini-grid">
+        <div class="teacher-box">
+          <label>Title</label>
+          <input id="teacherExamTitle" placeholder="Example: Grade 9 Grammar Revision">
+        </div>
+        <div class="teacher-box" style="grid-column:span 2">
+          <label>Subtitle / Instructions</label>
+          <input id="teacherExamSubtitle" placeholder="Short instructions shown to students">
+        </div>
+      </div>
+
+      <div class="teacher-actions">
+        <button onclick="saveImportedOrCurrentExam()">💾 Save to Library</button>
+        <button onclick="previewTeacherSelectedExam()">👁 Preview</button>
+        <button onclick="assignTeacherSelectedAsRevision()">📚 Assign as Revision</button>
+        <button onclick="assignTeacherSelectedAsAssessment()">📝 Assign as Assessment</button>
+        <button onclick="toggleTeacherSelectedVisibility()">👁 Show / Hide</button>
+        <button class="danger" onclick="deleteTeacherSelectedExam()">🗑 Delete</button>
+        <button onclick="location.href='secure-hub.html'">🏠 Teacher Hub</button>
+      </div>
+
+      <div class="teacher-status" id="teacherExamStatus">Loading library...</div>
+    </section>
+
     <div id="studentStrip" class="student-strip hidden">
       <div class="student-name-pill">👩‍🎓 <span id="examStudentName">Student</span></div>
       <div>🆔 <span id="examStudentId">ID</span></div>
@@ -1137,6 +1181,7 @@ function getSecureHubStudent(){
 function isTeacherMode(){
   const q = new URLSearchParams(location.search);
   return q.get('teacher') === '1' ||
+    sessionStorage.getItem('DL_SECURE_TEACHER_LOGIN') === 'yes' ||
     sessionStorage.getItem('teacher_hub_login') === 'yes' ||
     sessionStorage.getItem('teacher_control_login') === 'yes' ||
     localStorage.getItem('teacher_hub_login') === 'yes' ||
@@ -1204,73 +1249,202 @@ async function initExamPage(){
 
 async function loadTeacherExamLibrary(){
   if(!db) return;
+
+  const classSnap = await db.ref('teacherControlCenter/classes').get();
+  const classes = classSnap.exists() ? classSnap.val() : {};
+  const classSelect = document.getElementById('teacherClassSelect');
+  if(classSelect){
+    const classItems = Object.values(classes || {}).sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id)));
+    classSelect.innerHTML = classItems.length
+      ? classItems.map(c=>`<option value="${c.id || safeKey(c.name)}">${c.name || c.id}</option>`).join('')
+      : '<option value="">No classes found</option>';
+  }
+
   const snap=await db.ref('examPage/exams').get();
   studentLibrary=snap.exists()?snap.val():{};
   const sel=document.getElementById('teacherExamSelect');
   if(!sel) return;
-  const items=Object.entries(studentLibrary||{});
+  const items=Object.entries(studentLibrary||{}).sort((a,b)=>String(a[1]?.title||a[0]).localeCompare(String(b[1]?.title||b[0])));
   sel.innerHTML=items.length
-    ? items.map(([id,ex])=>`<option value="${id}">${ex.title||id}</option>`).join('')
-    : '<option value="">No exams saved yet</option>';
-  setTeacherStatus(items.length ? 'Library loaded.' : 'No saved exams yet. You can save this current exam to the library.');
+    ? items.map(([id,ex])=>`<option value="${id}">${ex.visibleToStudents===false?'🚫 ':'📄 '}${ex.title||id}</option>`).join('')
+    : '<option value="">No pages saved yet</option>';
+  teacherSelectionChanged();
+  setTeacherStatus(items.length ? 'Library loaded. Choose a page, then assign as Revision or Assessment.' : 'No pages saved yet. Import an HTML revision page, then Save to Library.');
 }
 
-async function saveCurrentExamToLibrary(){
+function teacherSelectionChanged(){
+  const id=document.getElementById('teacherExamSelect')?.value;
+  const ex=studentLibrary[id];
+  const titleBox=document.getElementById('teacherExamTitle');
+  const subBox=document.getElementById('teacherExamSubtitle');
+  if(ex){
+    if(titleBox) titleBox.value=ex.title||'';
+    if(subBox) subBox.value=ex.subtitle||'';
+  }
+}
+
+let importedExamDraft=null;
+
+function readJsExpression(text, marker){
+  const startMarker=text.indexOf(marker);
+  if(startMarker<0) return '';
+  const eq=text.indexOf('=', startMarker);
+  if(eq<0) return '';
+  let i=eq+1;
+  while(i<text.length && /\s/.test(text[i])) i++;
+  const opener=text[i];
+  const closer=opener==='['?']':opener==='{'?'}':'';
+  if(!closer) return '';
+  let depth=0, inStr='', esc=false;
+  for(let j=i;j<text.length;j++){
+    const ch=text[j];
+    if(inStr){
+      if(esc){esc=false; continue;}
+      if(ch==='\\'){esc=true; continue;}
+      if(ch===inStr){inStr=''; continue;}
+      continue;
+    }
+    if(ch==='"' || ch==="'" || ch==='`'){inStr=ch; continue;}
+    if(ch===opener) depth++;
+    if(ch===closer){
+      depth--;
+      if(depth===0) return text.slice(i,j+1);
+    }
+  }
+  return '';
+}
+
+function parseRevisionHtmlToExam(html, fileName){
+  const titleMatch = html.match(/<title>([\s\S]*?)<\/title>/i) || html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+  const subMatch = html.match(/<p[^>]*class=["'][^"']*welcome-sub[^"']*["'][^>]*>([\s\S]*?)<\/p>/i);
+  const title = (titleMatch ? titleMatch[1] : fileName || 'Imported Revision').replace(/<[^>]*>/g,'').trim();
+  const subtitle = (subMatch ? subMatch[1] : 'Practice carefully and submit when you finish.').replace(/<[^>]*>/g,'').replace(/\s+/g,' ').trim();
+
+  let vocabExpr = readJsExpression(html, 'const vocabOptions') || readJsExpression(html, 'let vocabOptions') || '{}';
+  let partsExpr = readJsExpression(html, 'const parts') || readJsExpression(html, 'let parts');
+  if(!partsExpr) throw new Error('No parts array found. The revision page must contain const parts = [...] or let parts = [...].');
+
+  const parsedParts = Function('return (function(){ const vocabOptions='+vocabExpr+'; return '+partsExpr+'; })();')();
+  if(!Array.isArray(parsedParts) || !parsedParts.length) throw new Error('Parts array is empty.');
+
+  return {
+    id:'exam_'+safeKey(title)+'_'+Date.now(),
+    title,
+    subtitle,
+    parts:parsedParts,
+    visibleToStudents:true,
+    mode:'revision',
+    sourceFile:fileName||'',
+    createdAt:Date.now(),
+    updatedAt:Date.now()
+  };
+}
+
+async function importRevisionHtmlFile(event){
+  try{
+    const file=event.target.files && event.target.files[0];
+    if(!file) return;
+    const html=await file.text();
+    importedExamDraft=parseRevisionHtmlToExam(html,file.name);
+    document.getElementById('teacherExamTitle').value=importedExamDraft.title;
+    document.getElementById('teacherExamSubtitle').value=importedExamDraft.subtitle;
+    loadExamObject(importedExamDraft,false);
+    setTeacherStatus('Imported page preview loaded. Press Save to Library when ready.');
+  }catch(err){
+    console.warn(err);
+    importedExamDraft=null;
+    setTeacherStatus('Could not import this page: '+err.message,false);
+  }
+}
+
+async function saveImportedOrCurrentExam(){
   try{
     if(!db) return;
-    const id='exam_'+safeKey(currentExamMeta.title||'exam')+'_'+Date.now();
+    const title=document.getElementById('teacherExamTitle')?.value?.trim() || currentExamMeta.title || 'Imported Revision';
+    const subtitle=document.getElementById('teacherExamSubtitle')?.value?.trim() || currentExamMeta.subtitle || '';
+    const id = importedExamDraft?.id || 'exam_'+safeKey(title)+'_'+Date.now();
     const record={
+      ...(importedExamDraft||{}),
       id,
-      title:currentExamMeta.title||'Grade 9 EOT3 Revision Check',
-      subtitle:currentExamMeta.subtitle||'',
-      parts,
+      title,
+      subtitle,
+      parts:Array.isArray(importedExamDraft?.parts)?importedExamDraft.parts:parts,
       visibleToStudents:true,
-      mode:'assessment',
-      createdAt:Date.now(),
-      updatedAt:Date.now()
+      mode:'revision',
+      updatedAt:Date.now(),
+      createdAt:importedExamDraft?.createdAt || Date.now()
     };
     await db.ref('examPage/exams/'+id).set(record);
+    importedExamDraft=null;
     await loadTeacherExamLibrary();
     const sel=document.getElementById('teacherExamSelect');
     if(sel) sel.value=id;
-    setTeacherStatus('Saved to Exam Library.');
+    teacherSelectionChanged();
+    setTeacherStatus('Saved to Exam Library. You can now assign it as Revision or Assessment.');
   }catch(err){
     console.warn(err);
-    setTeacherStatus('Could not save exam. Check Firebase connection.',false);
+    setTeacherStatus('Could not save page. Check Firebase connection.',false);
   }
 }
 
 function previewTeacherSelectedExam(){
   const id=document.getElementById('teacherExamSelect')?.value;
   const ex=studentLibrary[id];
-  if(!ex){
-    setTeacherStatus('Choose an exam first.',false);
-    return;
-  }
+  if(!ex){ setTeacherStatus('Choose a page first.',false); return; }
   loadExamObject({id,...ex},false);
   setTeacherStatus('Preview loaded. Teacher preview does not save marks.');
 }
 
-async function activateTeacherSelectedExam(){
+async function assignTeacherSelectedAsRevision(){
+  try{
+    const id=document.getElementById('teacherExamSelect')?.value;
+    if(!id || !studentLibrary[id]){ setTeacherStatus('Choose a page first.',false); return; }
+    await db.ref('examPage/exams/'+id).update({visibleToStudents:true,mode:'revision',updatedAt:Date.now()});
+    await loadTeacherExamLibrary();
+    document.getElementById('teacherExamSelect').value=id;
+    setTeacherStatus('Assigned as Revision. Students can open it anytime from their Revision Library.');
+  }catch(err){ console.warn(err); setTeacherStatus('Could not assign as revision.',false); }
+}
+
+async function assignTeacherSelectedAsAssessment(){
   try{
     const id=document.getElementById('teacherExamSelect')?.value;
     const cls=document.getElementById('teacherClassSelect')?.value;
-    if(!id || !cls){
-      setTeacherStatus('Choose an exam and class first.',false);
-      return;
-    }
+    if(!id || !cls){ setTeacherStatus('Choose a page and class first.',false); return; }
     const ex=studentLibrary[id]||{};
-    await db.ref('examPage/activeExams/'+safeKey(cls)).set({
-      examId:id,
-      title:ex.title||id,
-      activatedAt:Date.now()
-    });
-    setTeacherStatus('Activated for class '+cls.replace('_','/')+'.');
-  }catch(err){
-    console.warn(err);
-    setTeacherStatus('Could not activate exam. Check Firebase connection.',false);
-  }
+    await db.ref('examPage/exams/'+id).update({mode:'assessment',updatedAt:Date.now()});
+    await db.ref('examPage/activeExams/'+safeKey(cls)).set({examId:id,title:ex.title||id,mode:'assessment',activatedAt:Date.now()});
+    setTeacherStatus('Assigned as Assessment for this class. First attempt will be saved officially.');
+  }catch(err){ console.warn(err); setTeacherStatus('Could not assign as assessment.',false); }
 }
+
+async function toggleTeacherSelectedVisibility(){
+  try{
+    const id=document.getElementById('teacherExamSelect')?.value;
+    const ex=studentLibrary[id];
+    if(!ex){ setTeacherStatus('Choose a page first.',false); return; }
+    const next=ex.visibleToStudents===false;
+    await db.ref('examPage/exams/'+id).update({visibleToStudents:next,updatedAt:Date.now()});
+    await loadTeacherExamLibrary();
+    document.getElementById('teacherExamSelect').value=id;
+    setTeacherStatus(next?'Page is visible to students.':'Page is hidden from student library.');
+  }catch(err){ console.warn(err); setTeacherStatus('Could not update visibility.',false); }
+}
+
+async function deleteTeacherSelectedExam(){
+  try{
+    const id=document.getElementById('teacherExamSelect')?.value;
+    if(!id){ setTeacherStatus('Choose a page first.',false); return; }
+    if(!confirm('Delete this page from the Exam Library?')) return;
+    await db.ref('examPage/exams/'+id).remove();
+    await loadTeacherExamLibrary();
+    setTeacherStatus('Deleted from library.');
+  }catch(err){ console.warn(err); setTeacherStatus('Could not delete page.',false); }
+}
+
+// Backward-compatible name kept in case an old button still calls it.
+async function saveCurrentExamToLibrary(){ return saveImportedOrCurrentExam(); }
+async function activateTeacherSelectedExam(){ return assignTeacherSelectedAsAssessment(); }
 
 async function loadActiveExamForStudent(st){if(!db)return; const classId=safeKey(st.classId||st.className||'guest'); const snap=await db.ref('examPage/activeExams/'+classId).get(); if(snap.exists()){const active=snap.val(); const examId=active.examId||active; const exSnap=await db.ref('examPage/exams/'+examId).get(); if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true); else rebuildExamArrays();} else {isOfficialActiveExam=false; rebuildExamArrays();}}
 async function loadStudentLibrary(){if(!db)return; const snap=await db.ref('examPage/exams').get(); studentLibrary=snap.exists()?snap.val():{}; renderStudentLibrary();}
@@ -1334,7 +1508,53 @@ async function saveRevisionProgressBest(score,total,partStats){
     showSaveNote('Could not save revision progress. Check Firebase connection.',false);
   }
 }
-async function saveOfficialExamFirstAttempt(score,total,partStats){try{const st=studentSession(); if(!db||!st)return; const classId=safeKey(st.classId||st.className), studentId=safeKey(st.studentId||st.password); const term=await getActiveTermSettings(); const recordId='exam_'+safeKey(currentExamId)+'_'+safeKey(term.term)+'_'+safeKey(term.studyYear||'year'); const path='teacherControlCenter/records/'+classId+'/'+studentId+'/'+recordId; const old=await db.ref(path).get(); if(old.exists()){showSaveNote('First attempt already saved. This try is practice only.',false); return;} const pct=total?Math.round(score/total*100):0; const record={type:'Exam Page',activityType:'Exam Page',title:currentExamMeta.title,score,total,percentage:pct,term:term.term,studyYear:term.studyYear,studentName:st.name||'',studentId:st.studentId||st.password||'',classId:st.classId||'',className:st.className||'',firstAttempt:true,partStats,createdAt:Date.now()}; await db.ref(path).set(record); await db.ref('examPage/studentHistory/'+classId+'/'+studentId+'/'+recordId).set(record); await db.ref('teacherControlCenter/studentExamHistory/'+classId+'/'+studentId+'/'+recordId).set(record); showSaveNote('Official first attempt saved to Teacher Tracker and Student Hub.',true);}catch(err){console.warn('Save official exam skipped:',err); showSaveNote('Could not save official mark. Check Firebase connection.',false);}}
+async function saveOfficialExamFirstAttempt(score,total,partStats){
+  try{
+    const st=studentSession();
+    if(!db||!st)return;
+    const classId=safeKey(st.classId||st.className), studentId=safeKey(st.studentId||st.password);
+    const term=await getActiveTermSettings();
+    const recordId='exam_'+safeKey(currentExamId)+'_'+safeKey(term.term)+'_'+safeKey(term.studyYear||'year');
+    const path='teacherControlCenter/records/'+classId+'/'+studentId+'/'+recordId;
+    const old=await db.ref(path).get();
+    if(old.exists()){
+      showSaveNote('First attempt already saved. This try is practice only.',false);
+      return;
+    }
+    const pct=total?Math.round(score/total*100):0;
+    const record={type:'Exam Page',activityType:'Exam Page',page:'Exam Page',title:currentExamMeta.title,activityName:currentExamMeta.title,score,total,percentage:pct,term:term.term,studyYear:term.studyYear,studentName:st.name||'',studentId:st.studentId||st.password||'',classId:st.classId||'',className:st.className||'',firstAttempt:true,partStats,createdAt:Date.now(),time:Date.now(),updatedAt:Date.now()};
+    await db.ref(path).set(record);
+    await db.ref('examPage/studentHistory/'+classId+'/'+studentId+'/'+recordId).set(record);
+    await db.ref('teacherControlCenter/studentExamHistory/'+classId+'/'+studentId+'/'+recordId).set(record);
+
+    if(total>0 && score>=total){
+      const certId='exam_full_'+safeKey(currentExamId)+'_'+Date.now();
+      await db.ref('teacherControlCenter/certificates/'+classId+'/'+studentId+'/'+certId).set({
+        certificateId:certId,
+        certificateTitle:'Certificate of Achievement',
+        source:'Exam Page',
+        activityName:currentExamMeta.title,
+        studentId:st.studentId||st.password||'',
+        studentName:st.name||'',
+        classId:st.classId||'',
+        className:st.className||'',
+        term:term.term,
+        time:Date.now(),
+        issuedAt:Date.now(),
+        score,
+        total,
+        reason:'Full mark achieved in '+currentExamMeta.title,
+        date:new Date().toLocaleDateString('en-GB')
+      });
+      showSaveNote('Official first attempt saved. Full mark certificate added to Student Hub.',true);
+    }else{
+      showSaveNote('Official first attempt saved to Teacher Tracker and Student Hub.',true);
+    }
+  }catch(err){
+    console.warn('Save official exam skipped:',err);
+    showSaveNote('Could not save official mark. Check Firebase connection.',false);
+  }
+}
 function goToFirstMissed(){if(lastMissedIds.length===0)return; const first=lastMissedIds[0]; let index=screens.findIndex(s=>s.type==='question'&&s.qid===first); if(index<0) index=screens.findIndex(s=>s.type==='vocab'); if(index>=0){currentScreen=index; renderRight(); document.getElementById('practiceTop').scrollIntoView({behavior:'smooth',block:'start'});}}
 function resetQuiz(showWelcome=true){window.answerState={}; currentScreen=0; submitted=false; lastMissedIds=[]; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; welcomePage.classList.remove('hidden'); practiceArea.style.display='none'; if(showWelcome) window.scrollTo({top:0,behavior:'smooth'}); updateWelcomeText();}
 document.addEventListener('change',e=>{if(e.target.matches("input[type='radio'], select.vocab-select")){window.answerState[e.target.name]=e.target.value; submitted=false; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; updateProgress(); if(e.target.matches('select.vocab-select')) updateVocabVisual(e.target.name); else updateQuestionVisual(e.target.name);}});
