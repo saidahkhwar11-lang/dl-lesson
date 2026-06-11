@@ -6,6 +6,8 @@
   <title>Exam Page</title>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js"></script>
   <style>
     :root {
       --bg: #faf8ff;
@@ -855,15 +857,15 @@
 <div class="exam-status" style="margin-top:12px">
   <h3>✨ Exam Generator</h3>
 
-  <textarea
-    id="examSpecInput"
-    placeholder="Paste your exam planner or revision specification here..."
-    style="min-height:140px"
-  ></textarea>
+  <input id="examFileInput" type="file" accept=".txt,.pdf,.docx,.html">
 
-  <button onclick="generateExamFromSpec()">
-    ✨ Generate Exam Draft
+  <button onclick="generateExamFromUploadedFile()">
+    ✨ Generate Exam From File
   </button>
+
+  <div id="examGeneratorStatus" style="margin-top:8px;font-size:13px;">
+    Upload a revision file or exam planner, then generate the exam draft.
+  </div>
 </div>
 
 <div class="builder-grid">
@@ -1975,32 +1977,7 @@ function addWritingSection(){
   renderBuilder();
 }
 
-    function generateExamFromSpec(){
-  const specBox = document.getElementById('examSpecInput');
-  const spec = specBox ? specBox.value.trim() : '';
-
-  if(!spec){
-    alert('Please paste the exam topic or revision specification first.');
-    return;
-  }
-
-  builderExam.parts = [];
-
-  addVocabularySection();
-  addGrammarSection();
-  addReadingSection();
-  addWritingSection();
-
-  builderExam.title = document.getElementById('builderExamTitle').value || 'Generated Exam Draft';
-  builderExam.subtitle = spec;
-
-  document.getElementById('builderExamTitle').value = builderExam.title;
-  document.getElementById('builderExamSubtitle').value = spec;
-
-  renderBuilder();
-
-  alert('✅ Exam draft generated. Now edit each section before saving.');
-}
+   
     function deleteSection(){
       if(!builderExam.parts || !builderExam.parts.length) return;
       if(!confirm('Delete this section?')) return;
@@ -2048,6 +2025,202 @@ function addWritingSection(){
     tryWrongBtn.addEventListener("click", goToFirstMissed);
     resetBtn.addEventListener("click", resetQuiz);
     startPracticeBtn.addEventListener("click", startPractice);
+    async function readUploadedExamFile(){
+  const input = document.getElementById('examFileInput');
+  const file = input && input.files ? input.files[0] : null;
+
+  if(!file){
+    alert('Please upload a revision file or exam planner first.');
+    return '';
+  }
+
+  const name = file.name.toLowerCase();
+
+  if(name.endsWith('.txt') || name.endsWith('.html')){
+    return await file.text();
+  }
+
+  if(name.endsWith('.docx')){
+    const buffer = await file.arrayBuffer();
+    const result = await mammoth.extractRawText({arrayBuffer: buffer});
+    return result.value || '';
+  }
+
+  if(name.endsWith('.pdf')){
+    const buffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({data: buffer}).promise;
+    let text = '';
+
+    for(let i = 1; i <= pdf.numPages; i++){
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map(item => item.str).join(' ') + '\n';
+    }
+
+    return text;
+  }
+
+  alert('Unsupported file type. Use PDF, DOCX, TXT, or HTML.');
+  return '';
+}
+
+function extractWordsFromText(text){
+  const stopWords = ['about','there','their','which','where','would','could','should','because','students','teacher','answer','question','english','revision','section'];
+  return text
+    .replace(/[^\w\s-]/g,' ')
+    .split(/\s+/)
+    .map(w => w.trim())
+    .filter(w => w.length > 4)
+    .filter(w => !stopWords.includes(w.toLowerCase()))
+    .filter((w,i,arr) => arr.indexOf(w) === i)
+    .slice(0,10);
+}
+
+function makeWordBank(words){
+  return `
+    <ul class="word-bank">
+      ${words.map((w,i)=>`<li>${String.fromCharCode(65+i)}. ${w}</li>`).join('')}
+    </ul>
+  `;
+}
+
+function getShortReadingText(text){
+  const clean = text.replace(/\s+/g,' ').trim();
+  return clean.length > 1200 ? clean.slice(0,1200) + '...' : clean;
+}
+
+async function generateExamFromUploadedFile(){
+  const status = document.getElementById('examGeneratorStatus');
+  if(status) status.textContent = 'Reading file and creating exam draft...';
+
+  const text = await readUploadedExamFile();
+
+  if(!text.trim()){
+    if(status) status.textContent = 'No readable text found in the file.';
+    return;
+  }
+
+  const words = extractWordsFromText(text);
+  const finalWords = words.length ? words : ['vocabulary','grammar','reading','writing','practice'];
+  const readingText = getShortReadingText(text);
+
+  builderExam = {
+    id:'exam_'+Date.now(),
+    title:document.getElementById('builderExamTitle').value || 'Generated Exam From Revision File',
+    subtitle:'Generated from uploaded revision file. Please review and edit before activation.',
+    parts:[]
+  };
+
+  builderExam.parts.push({
+    id:'vocab_'+Date.now(),
+    title:'Vocabulary Section',
+    shortTitle:'Part 1',
+    marks:10,
+    instructions:'Choose the correct word from the word bank.',
+    leftLabel:'Word Bank',
+    leftContent:makeWordBank(finalWords),
+    questions:finalWords.slice(0,5).map((w,i)=>({
+      id:'q_vocab_'+Date.now()+'_'+i,
+      points:2,
+      skill:'Vocabulary',
+      answer:'A',
+      promptStart:'Choose the best word for this sentence:',
+      promptEnd:'__________.',
+      options:{
+        A:w,
+        B:finalWords[(i+1)%finalWords.length],
+        C:finalWords[(i+2)%finalWords.length]
+      }
+    }))
+  });
+
+  builderExam.parts.push({
+    id:'grammar_'+Date.now(),
+    title:'Grammar Section',
+    shortTitle:'Part 2',
+    marks:10,
+    instructions:'Choose the correct answer A, B, or C.',
+    leftLabel:'Grammar Focus',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Grammar Review</h3>
+        <p>Edit this grammar section based on your uploaded planner.</p>
+      </div>
+    `,
+    questions:[
+      {
+        id:'q_grammar_1_'+Date.now(),
+        points:2,
+        skill:'Grammar',
+        answer:'A',
+        prompt:'Choose the correct answer.',
+        options:{A:'Correct option',B:'Wrong option',C:'Wrong option'}
+      }
+    ]
+  });
+
+  builderExam.parts.push({
+    id:'reading_'+Date.now(),
+    title:'Reading Section',
+    shortTitle:'Part 3',
+    marks:20,
+    instructions:'Read the text and choose the correct answer.',
+    leftLabel:'Reading Text',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Reading Text</h3>
+        <p>${readingText}</p>
+      </div>
+    `,
+    questions:[
+      {
+        id:'q_read_1_'+Date.now(),
+        points:4,
+        skill:'Reading: Main Idea',
+        answer:'A',
+        prompt:'What is the main idea of the text?',
+        options:{A:'Edit correct answer',B:'Edit option B',C:'Edit option C'}
+      },
+      {
+        id:'q_read_2_'+Date.now(),
+        points:4,
+        skill:'Reading: Detail',
+        answer:'A',
+        prompt:'Which detail is mentioned in the text?',
+        options:{A:'Edit correct answer',B:'Edit option B',C:'Edit option C'}
+      }
+    ]
+  });
+
+  builderExam.parts.push({
+    id:'writing_'+Date.now(),
+    title:'Writing Section',
+    shortTitle:'Part 4',
+    marks:20,
+    instructions:'Read the task and write your response.',
+    leftLabel:'Writing Task',
+    leftContent:`
+      <div class="reading-text">
+        <h3>Writing Task</h3>
+        <p>Edit this writing task based on the uploaded revision file.</p>
+      </div>
+    `,
+    questions:[]
+  });
+
+  selectedSectionIndex = 0;
+
+  document.getElementById('builderExamTitle').value = builderExam.title;
+  document.getElementById('builderExamSubtitle').value = builderExam.subtitle;
+
+  renderBuilder();
+
+  if(status){
+    status.textContent = '✅ Exam draft generated. Review sections, edit answers, then click Save Exam.';
+  }
+
+  alert('✅ Exam draft generated. Review/edit it, then click Save Exam.');
+}
   </script>
 </body>
 </html>
