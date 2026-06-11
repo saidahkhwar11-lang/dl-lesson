@@ -822,6 +822,22 @@
 </style>
 </head>
 <body>
+
+<button onclick="checkStudentStorage()" style="
+position:fixed;
+top:10px;
+right:10px;
+z-index:99999;
+background:red;
+color:white;
+padding:10px 15px;
+border:none;
+border-radius:10px;
+font-weight:bold;
+">
+🔍 Check Login Storage
+</button>
+    
   <div class="page">
     <div id="studentStrip" class="student-strip hidden">
       <div class="student-name-pill">👩‍🎓 <span id="examStudentName">Student</span></div>
@@ -1066,6 +1082,12 @@ function getSecureHubStudent(){
   }
 
   return null;
+}
+
+  function checkStudentStorage(){
+  console.log("localStorage:", {...localStorage});
+  console.log("sessionStorage:", {...sessionStorage});
+  alert("Check Console: F12 → Console");
 }
 
 function studentSession(){
