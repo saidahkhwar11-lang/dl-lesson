@@ -897,16 +897,28 @@
       </div>
 
       <div class="teacher-mini-grid">
-        <div class="teacher-box">
-          <label>Title</label>
-          <input id="teacherExamTitle" placeholder="Example: Grade 9 Grammar Revision">
-        </div>
-        <div class="teacher-box" style="grid-column:span 2">
-          <label>Subtitle / Instructions</label>
-          <input id="teacherExamSubtitle" placeholder="Short instructions shown to students">
-        </div>
-      </div>
+  <div class="teacher-box">
+    <label>Title</label>
+    <input id="teacherExamTitle" placeholder="Example: Grade 9 Grammar Revision">
+  </div>
 
+  <div class="teacher-box">
+    <label>Revision Color</label>
+    <select id="examColor">
+      <option value="#8b5cf6">🟣 Purple</option>
+      <option value="#3b82f6">🔵 Blue</option>
+      <option value="#10b981">🟢 Green</option>
+      <option value="#f59e0b">🟠 Orange</option>
+      <option value="#ec4899">🌸 Pink</option>
+      <option value="#ef4444">🔴 Red</option>
+    </select>
+  </div>
+
+  <div class="teacher-box">
+    <label>Subtitle / Instructions</label>
+    <input id="teacherExamSubtitle" placeholder="Short instructions shown to students">
+  </div>
+</div>
       <div class="teacher-actions">
         <button onclick="saveImportedOrCurrentExam()">💾 Save to Library</button>
         <button onclick="previewTeacherSelectedExam()">👁 Preview</button>
@@ -1390,18 +1402,19 @@ async function saveImportedOrCurrentExam(){
     }
 
     const record={
-      id,
-      title,
-      subtitle,
-      parts:JSON.parse(JSON.stringify(sourceParts)),
-      visibleToStudents:true,
-      mode:'revision',
-      sourceFile:importedExamDraft?.sourceFile || '',
-      sourceSize:importedExamDraft?.sourceSize || 0,
-      sourceLastModified:importedExamDraft?.sourceLastModified || 0,
-      createdAt:Date.now(),
-      updatedAt:Date.now()
-    };
+  id,
+  title,
+  subtitle,
+  parts:JSON.parse(JSON.stringify(sourceParts)),
+  visibleToStudents:true,
+  mode:'revision',
+  sourceFile:importedExamDraft?.sourceFile || '',
+  sourceSize:importedExamDraft?.sourceSize || 0,
+  sourceLastModified:importedExamDraft?.sourceLastModified || 0,
+  createdAt:Date.now(),
+  updatedAt:Date.now(),
+  color: document.getElementById('examColor')?.value || '#8b5cf6'
+};
 
     await db.ref('examPage/exams/'+id).set(record);
 
@@ -1483,7 +1496,30 @@ async function activateTeacherSelectedExam(){ return assignTeacherSelectedAsAsse
 
 async function loadActiveExamForStudent(st){if(!db)return; const classId=safeKey(st.classId||st.className||'guest'); const snap=await db.ref('examPage/activeExams/'+classId).get(); if(snap.exists()){const active=snap.val(); const examId=active.examId||active; const exSnap=await db.ref('examPage/exams/'+examId).get(); if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true); else rebuildExamArrays();} else {isOfficialActiveExam=false; rebuildExamArrays();}}
 async function loadStudentLibrary(){if(!db)return; const snap=await db.ref('examPage/exams').get(); studentLibrary=snap.exists()?snap.val():{}; renderStudentLibrary();}
-function renderStudentLibrary(){const box=document.getElementById('studentLibraryList'); if(!box)return; const items=Object.entries(studentLibrary||{}).filter(([id,ex])=>ex && ex.visibleToStudents!==false); if(!items.length){box.className=''; box.innerHTML='<div class="empty-library">No revisions are shared yet.</div>'; return;} box.className='library-grid'; box.innerHTML=items.map(([id,ex])=>`<div class="library-item"><strong>${ex.title||'Untitled Revision'}</strong><p>${ex.subtitle||'Practice anytime from your library.'}</p><button onclick="openLibraryExam('${id}')">Open Revision</button></div>`).join('');}
+function renderStudentLibrary(){
+  const box=document.getElementById('studentLibraryList');
+  if(!box)return;
+
+  const items=Object.entries(studentLibrary||{})
+    .filter(([id,ex])=>ex && ex.visibleToStudents!==false);
+
+  if(!items.length){
+    box.className='';
+    box.innerHTML='<div class="empty-library">No revisions are shared yet.</div>';
+    return;
+  }
+
+  box.className='library-grid';
+
+  box.innerHTML=items.map(([id,ex])=>`
+    <div class="library-item" style="border-left:8px solid ${ex.color || '#8b5cf6'}">
+      <strong>${ex.title||'Untitled Revision'}</strong>
+      <p>${ex.subtitle||'Practice anytime from your library.'}</p>
+      <button onclick="openLibraryExam('${id}')">Open Revision</button>
+    </div>
+  `).join('');
+}
+  
 function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
 function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
 function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
