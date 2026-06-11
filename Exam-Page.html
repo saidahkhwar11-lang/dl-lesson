@@ -1341,15 +1341,30 @@ function parseRevisionHtmlToExam(html, fileName){
 }
 
 async function importRevisionHtmlFile(event){
+  // Always start clean so a failed/new import never saves the previous page by mistake.
+  importedExamDraft=null;
   try{
-    const file=event.target.files && event.target.files[0];
+    const input=event.target;
+    const file=input.files && input.files[0];
     if(!file) return;
+
+    setTeacherStatus('Importing '+file.name+' ...');
     const html=await file.text();
-    importedExamDraft=parseRevisionHtmlToExam(html,file.name);
-    document.getElementById('teacherExamTitle').value=importedExamDraft.title;
-    document.getElementById('teacherExamSubtitle').value=importedExamDraft.subtitle;
-    loadExamObject(importedExamDraft,false);
-    setTeacherStatus('Imported page preview loaded. Press Save to Library when ready.');
+    const freshDraft=parseRevisionHtmlToExam(html,file.name);
+
+    // Create a fresh id for this imported file. The final saved id is created again on Save.
+    freshDraft.id='draft_'+safeKey(freshDraft.title)+'_'+Date.now();
+    freshDraft.sourceFile=file.name;
+    freshDraft.sourceSize=file.size || 0;
+    freshDraft.sourceLastModified=file.lastModified || Date.now();
+
+    importedExamDraft=freshDraft;
+    document.getElementById('teacherExamTitle').value=freshDraft.title;
+    document.getElementById('teacherExamSubtitle').value=freshDraft.subtitle;
+
+    // Preview the newly imported file immediately.
+    loadExamObject(freshDraft,false);
+    setTeacherStatus('New page imported: '+freshDraft.title+'. Press Save to Library.');
   }catch(err){
     console.warn(err);
     importedExamDraft=null;
@@ -1360,27 +1375,47 @@ async function importRevisionHtmlFile(event){
 async function saveImportedOrCurrentExam(){
   try{
     if(!db) return;
+
     const title=document.getElementById('teacherExamTitle')?.value?.trim() || currentExamMeta.title || 'Imported Revision';
     const subtitle=document.getElementById('teacherExamSubtitle')?.value?.trim() || currentExamMeta.subtitle || '';
-    const id = importedExamDraft?.id || 'exam_'+safeKey(title)+'_'+Date.now();
+
+    // IMPORTANT: Always make a brand-new library id on every Save.
+    // This prevents the new import from overwriting or re-saving the previous page.
+    const id='exam_'+safeKey(title)+'_'+Date.now();
+    const sourceParts=Array.isArray(importedExamDraft?.parts) ? importedExamDraft.parts : parts;
+
+    if(!Array.isArray(sourceParts) || !sourceParts.length){
+      setTeacherStatus('Nothing to save. Import a revision HTML page first.',false);
+      return;
+    }
+
     const record={
-      ...(importedExamDraft||{}),
       id,
       title,
       subtitle,
-      parts:Array.isArray(importedExamDraft?.parts)?importedExamDraft.parts:parts,
+      parts:JSON.parse(JSON.stringify(sourceParts)),
       visibleToStudents:true,
       mode:'revision',
-      updatedAt:Date.now(),
-      createdAt:importedExamDraft?.createdAt || Date.now()
+      sourceFile:importedExamDraft?.sourceFile || '',
+      sourceSize:importedExamDraft?.sourceSize || 0,
+      sourceLastModified:importedExamDraft?.sourceLastModified || 0,
+      createdAt:Date.now(),
+      updatedAt:Date.now()
     };
+
     await db.ref('examPage/exams/'+id).set(record);
+
+    // Clear the imported draft and file input after a successful save.
     importedExamDraft=null;
+    const fileInput=document.getElementById('teacherImportFile');
+    if(fileInput) fileInput.value='';
+
     await loadTeacherExamLibrary();
     const sel=document.getElementById('teacherExamSelect');
     if(sel) sel.value=id;
     teacherSelectionChanged();
-    setTeacherStatus('Saved to Exam Library. You can now assign it as Revision or Assessment.');
+    loadExamObject(record,false);
+    setTeacherStatus('Saved NEW page to Exam Library: '+title+'. You can now assign it as Revision or Assessment.');
   }catch(err){
     console.warn(err);
     setTeacherStatus('Could not save page. Check Firebase connection.',false);
