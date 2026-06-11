@@ -819,26 +819,63 @@
 .library-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.library-item{border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#fff,#f8f5ff);padding:13px}.library-item strong{display:block;color:var(--warm-purple-dark);font-size:1rem;margin-bottom:3px}.library-item p{margin:0 0 8px;font-size:.88rem;color:var(--muted);font-weight:700}.library-item button{padding:8px 12px;font-size:.88rem}.empty-library{border:1px dashed #c8b5f3;border-radius:18px;padding:16px;color:var(--muted);font-weight:800;text-align:center;background:#fff}
 .save-note{display:none;margin-top:10px;border-radius:14px;padding:10px 12px;background:#ecfdf5;color:#166534;border:1px solid #bbf7d0;font-weight:900}.save-note.show{display:block}
 @media(max-width:700px){.library-grid{grid-template-columns:1fr}.student-library-panel{align-items:flex-start}}
+.teacher-panel{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  padding:16px;
+  margin-bottom:14px;
+  box-shadow:var(--shadow);
+}
+.teacher-panel h2{margin-top:0}
+.teacher-mini-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin:12px 0;
+}
+.teacher-box{
+  background:linear-gradient(180deg,#fff,#f7f4ff);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:12px;
+}
+.teacher-box label{
+  display:block;
+  font-weight:900;
+  color:var(--warm-purple-dark);
+  margin-bottom:5px;
+}
+.teacher-box select,.teacher-box input,.teacher-box textarea{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:10px;
+  font-size:15px;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.teacher-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.teacher-status{
+  border:1px solid #d7c7f4;
+  background:#f7f4ff;
+  color:var(--warm-purple-dark);
+  border-radius:16px;
+  padding:10px;
+  font-weight:900;
+  margin-top:10px;
+}
+@media(max-width:800px){.teacher-mini-grid{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
 
-<button onclick="checkStudentStorage()" style="
-position:fixed;
-top:10px;
-right:10px;
-z-index:99999;
-background:red;
-color:white;
-padding:10px 15px;
-border:none;
-border-radius:10px;
-font-weight:bold;
-">
-🔍 Check Login Storage
-</button>
-    
-  <div class="page">
+<div class="page">
     <div id="studentStrip" class="student-strip hidden">
       <div class="student-name-pill">👩‍🎓 <span id="examStudentName">Student</span></div>
       <div>🆔 <span id="examStudentId">ID</span></div>
@@ -1052,42 +1089,58 @@ window.answerState={};
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
 function getSecureHubStudent(){
-  const keys = [
+  const preferredKeys = [
     'DL_SECURE_STUDENT_LOGIN',
     'SECURE_HUB_STUDENT',
+    'STUDENT_SESSION',
     'studentSession',
     'currentStudent',
     'secureHubStudent'
   ];
 
-  for(const key of keys){
+  const readCandidate = (raw) => {
+    if(!raw) return null;
     try{
-      const data =
-        localStorage.getItem(key) ||
-        sessionStorage.getItem(key);
+      const st = JSON.parse(raw);
+      const studentId = st.studentId || st.id || st.password || st.studentPassword;
+      if(!studentId) return null;
+      const classId = st.classId || st.classKey || st.className || st.class || 'guest';
+      return {
+        ...st,
+        studentId,
+        name: st.name || st.studentName || st.fullName || 'Student',
+        classId,
+        className: st.className || classId || 'Class'
+      };
+    }catch(e){
+      return null;
+    }
+  };
 
-      if(data){
-        const st = JSON.parse(data);
-        if(st && (st.studentId || st.id || st.password)){
-          return {
-            ...st,
-            studentId: st.studentId || st.id || st.password,
-            name: st.name || st.studentName || 'Student',
-            classId: st.classId || st.classKey || st.className || 'guest',
-            className: st.className || st.classId || 'Class'
-          };
-        }
-      }
-    }catch(e){}
+  for(const key of preferredKeys){
+    const found = readCandidate(localStorage.getItem(key) || sessionStorage.getItem(key));
+    if(found) return found;
+  }
+
+  // Fallback: scan all storage keys. This helps if Secure Hub uses a different key name.
+  for(const store of [localStorage, sessionStorage]){
+    for(let i=0; i<store.length; i++){
+      const key = store.key(i);
+      const found = readCandidate(store.getItem(key));
+      if(found) return found;
+    }
   }
 
   return null;
 }
 
-  function checkStudentStorage(){
-  console.log("localStorage:", {...localStorage});
-  console.log("sessionStorage:", {...sessionStorage});
-  alert("Check Console: F12 → Console");
+function isTeacherMode(){
+  const q = new URLSearchParams(location.search);
+  return q.get('teacher') === '1' ||
+    sessionStorage.getItem('teacher_hub_login') === 'yes' ||
+    sessionStorage.getItem('teacher_control_login') === 'yes' ||
+    localStorage.getItem('teacher_hub_login') === 'yes' ||
+    localStorage.getItem('teacher_control_login') === 'yes';
 }
 
 function studentSession(){
@@ -1097,15 +1150,128 @@ function studentSession(){
     return st;
   }
 
+  if(isTeacherMode()){
+    return null;
+  }
+
   alert("Please open this page from Secure Hub using your student ID.");
   location.href = "secure-hub.html";
   return null;
 }
-  
+
 function rebuildExamArrays(){screens=[]; (parts||[]).forEach((part,partIndex)=>{part.questions=Array.isArray(part.questions)?part.questions:[]; screens.push({type:'intro',partIndex}); if((part.mode||part.id)==='vocab'||part.id==='p1') screens.push({type:'vocab',partIndex}); else part.questions.forEach((q,questionIndex)=>screens.push({type:'question',partIndex,questionIndex,qid:q.id}));}); allQuestions=(parts||[]).flatMap((part,partIndex)=>(part.questions||[]).map((q,questionIndex)=>({...q,partId:part.id,partTitle:part.title,partIndex,questionIndex}))); totalQuestions=allQuestions.length; totalMarks=allQuestions.reduce((s,q)=>s+Number(q.points||1),0); updateWelcomeText();}
 function updateWelcomeText(){document.getElementById('welcomeTitle').textContent=currentExamMeta.title||'Welcome to Your Exam Page'; document.getElementById('welcomeSubtitle').textContent=currentExamMeta.subtitle||'Read carefully and answer all questions.'; document.getElementById('examEyebrow').textContent=(isOfficialActiveExam?'Official Active Exam':'Revision Library')+' • '+(currentExamMeta.title||'Exam'); document.getElementById('startPracticeBtn').textContent=isOfficialActiveExam?'Start Exam':'Start Revision'; const ul=document.getElementById('partsSummary'); if(ul) ul.innerHTML=(parts||[]).map(p=>`<li>${p.shortTitle||p.title}</li>`).join(''); const pill=document.getElementById('examModePill'); if(pill){pill.textContent=isOfficialActiveExam?'Official Active Exam':'Revision Practice'; pill.className=isOfficialActiveExam?'mode-pill':'mode-pill revision';}}
 function loadExamObject(ex, official){currentExamId=ex.id||safeKey(ex.title)||'exam'; currentExamMeta={title:ex.title||'Exam Page',subtitle:ex.subtitle||''}; parts=Array.isArray(ex.parts)?ex.parts:parts; isOfficialActiveExam=!!official; rebuildExamArrays(); resetQuiz(false); closeStudentLibrary(); window.scrollTo({top:0,behavior:'smooth'});}
-async function initStudentExamPage(){try{if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); db=firebase.database(); const st=studentSession(); if(!st)return; document.getElementById('studentStrip').classList.remove('hidden'); document.getElementById('studentLibraryPanel').classList.remove('hidden'); document.getElementById('examStudentName').textContent=st.name||'Student'; document.getElementById('examStudentId').textContent=st.studentId||st.password||''; document.getElementById('examClassName').textContent=st.className||st.classId||''; await loadStudentLibrary(); await loadActiveExamForStudent(st); }catch(err){console.warn('Student exam init skipped:',err); rebuildExamArrays();}}
+function setTeacherStatus(msg, good=true){
+  const el=document.getElementById('teacherExamStatus');
+  if(!el) return;
+  el.textContent=msg;
+  el.style.background=good?'#ecfdf5':'#fff7ed';
+  el.style.color=good?'#166534':'#9a3412';
+  el.style.borderColor=good?'#bbf7d0':'#fed7aa';
+}
+
+async function initExamPage(){
+  try{
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
+
+    if(isTeacherMode()){
+      document.getElementById('teacherPanel')?.classList.remove('hidden');
+      document.getElementById('studentStrip')?.classList.add('hidden');
+      document.getElementById('studentLibraryPanel')?.classList.add('hidden');
+      await loadTeacherExamLibrary();
+      rebuildExamArrays();
+      return;
+    }
+
+    const st=studentSession();
+    if(!st) return;
+
+    document.getElementById('studentStrip').classList.remove('hidden');
+    document.getElementById('studentLibraryPanel').classList.remove('hidden');
+    document.getElementById('examStudentName').textContent=st.name||'Student';
+    document.getElementById('examStudentId').textContent=st.studentId||st.password||'';
+    document.getElementById('examClassName').textContent=st.className||st.classId||'';
+
+    await loadStudentLibrary();
+    await loadActiveExamForStudent(st);
+  }catch(err){
+    console.warn('Exam page init skipped:',err);
+    rebuildExamArrays();
+  }
+}
+
+async function loadTeacherExamLibrary(){
+  if(!db) return;
+  const snap=await db.ref('examPage/exams').get();
+  studentLibrary=snap.exists()?snap.val():{};
+  const sel=document.getElementById('teacherExamSelect');
+  if(!sel) return;
+  const items=Object.entries(studentLibrary||{});
+  sel.innerHTML=items.length
+    ? items.map(([id,ex])=>`<option value="${id}">${ex.title||id}</option>`).join('')
+    : '<option value="">No exams saved yet</option>';
+  setTeacherStatus(items.length ? 'Library loaded.' : 'No saved exams yet. You can save this current exam to the library.');
+}
+
+async function saveCurrentExamToLibrary(){
+  try{
+    if(!db) return;
+    const id='exam_'+safeKey(currentExamMeta.title||'exam')+'_'+Date.now();
+    const record={
+      id,
+      title:currentExamMeta.title||'Grade 9 EOT3 Revision Check',
+      subtitle:currentExamMeta.subtitle||'',
+      parts,
+      visibleToStudents:true,
+      mode:'assessment',
+      createdAt:Date.now(),
+      updatedAt:Date.now()
+    };
+    await db.ref('examPage/exams/'+id).set(record);
+    await loadTeacherExamLibrary();
+    const sel=document.getElementById('teacherExamSelect');
+    if(sel) sel.value=id;
+    setTeacherStatus('Saved to Exam Library.');
+  }catch(err){
+    console.warn(err);
+    setTeacherStatus('Could not save exam. Check Firebase connection.',false);
+  }
+}
+
+function previewTeacherSelectedExam(){
+  const id=document.getElementById('teacherExamSelect')?.value;
+  const ex=studentLibrary[id];
+  if(!ex){
+    setTeacherStatus('Choose an exam first.',false);
+    return;
+  }
+  loadExamObject({id,...ex},false);
+  setTeacherStatus('Preview loaded. Teacher preview does not save marks.');
+}
+
+async function activateTeacherSelectedExam(){
+  try{
+    const id=document.getElementById('teacherExamSelect')?.value;
+    const cls=document.getElementById('teacherClassSelect')?.value;
+    if(!id || !cls){
+      setTeacherStatus('Choose an exam and class first.',false);
+      return;
+    }
+    const ex=studentLibrary[id]||{};
+    await db.ref('examPage/activeExams/'+safeKey(cls)).set({
+      examId:id,
+      title:ex.title||id,
+      activatedAt:Date.now()
+    });
+    setTeacherStatus('Activated for class '+cls.replace('_','/')+'.');
+  }catch(err){
+    console.warn(err);
+    setTeacherStatus('Could not activate exam. Check Firebase connection.',false);
+  }
+}
+
 async function loadActiveExamForStudent(st){if(!db)return; const classId=safeKey(st.classId||st.className||'guest'); const snap=await db.ref('examPage/activeExams/'+classId).get(); if(snap.exists()){const active=snap.val(); const examId=active.examId||active; const exSnap=await db.ref('examPage/exams/'+examId).get(); if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true); else rebuildExamArrays();} else {isOfficialActiveExam=false; rebuildExamArrays();}}
 async function loadStudentLibrary(){if(!db)return; const snap=await db.ref('examPage/exams').get(); studentLibrary=snap.exists()?snap.val():{}; renderStudentLibrary();}
 function renderStudentLibrary(){const box=document.getElementById('studentLibraryList'); if(!box)return; const items=Object.entries(studentLibrary||{}).filter(([id,ex])=>ex && ex.visibleToStudents!==false); if(!items.length){box.className=''; box.innerHTML='<div class="empty-library">No revisions are shared yet.</div>'; return;} box.className='library-grid'; box.innerHTML=items.map(([id,ex])=>`<div class="library-item"><strong>${ex.title||'Untitled Revision'}</strong><p>${ex.subtitle||'Practice anytime from your library.'}</p><button onclick="openLibraryExam('${id}')">Open Revision</button></div>`).join('');}
@@ -1123,7 +1289,7 @@ function updateVocabVisual(qid){const q=getQuestionById(qid), row=document.getEl
 function updateQuestionVisual(qid){const q=getQuestionById(qid), card=document.getElementById('questionCard'); if(!q||!card)return; const feedback=document.getElementById(`feedback-${qid}`), selected=window.answerState[qid]||null; card.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; Object.keys(q.options||{}).forEach(letter=>{const option=document.getElementById(`option-${qid}-${letter}`); if(option)option.classList.remove('correct-choice','wrong-choice');}); if(!submitted)return; if(!selected){card.classList.add('unanswered');feedback.innerHTML='<strong>Not answered yet.</strong> Choose one answer, then submit again.';} else if(selected===q.answer){card.classList.add('correct'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('correct-choice'); feedback.innerHTML='<strong>Correct.</strong> Great job!';} else {card.classList.add('incorrect'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('wrong-choice'); feedback.innerHTML='<strong>Try again.</strong> Reread carefully and choose a better answer.';} feedback.classList.add('show');}
 function skillGroup(skill=''){if(skill.includes('Vocabulary')&&!skill.includes('Context'))return'words'; if(skill.includes('Grammar'))return'grammar'; if(skill.includes('Detail'))return'find'; if(skill.includes('Inference')||skill.includes('Evidence Check')||skill.includes('Connection')||skill.includes('Vocabulary in Context'))return'clues'; if(skill.includes('Overall Meaning'))return'big'; return'other';}
 function readinessLevel(score){const pct=totalMarks?score/totalMarks*100:0; if(pct>=90)return{label:'Excellent readiness',cls:'excellent',main:'Amazing work. You are very ready.',next:'Next step: keep practising and check your answers carefully.'}; if(pct>=75)return{label:'Good readiness',cls:'good',main:'Good work. You understand many of the skills.',next:'Next step: fix the highlighted questions, then submit again.'}; if(pct>=60)return{label:'Keep practising',cls:'practice',main:'You are getting there. A little more practice will help.',next:'Next step: read slowly, look for proof in the text, and try again.'}; return{label:'Need more practice',cls:'support',main:'Do not worry. This practice shows what to work on next.',next:'Next step: practise one part at a time and ask for help when you need it.'};}
-async function submitQuiz(){submitted=true; let score=0; const partStats={}, groupStats={words:0,grammar:0,find:0,clues:0,big:0,other:0}, missed=[]; parts.forEach(part=>partStats[part.title]={score:0,total:(part.questions||[]).reduce((s,q)=>s+Number(q.points||1),0),correct:0,count:(part.questions||[]).length}); allQuestions.forEach(q=>{const selected=window.answerState[q.id]||null,isCorrect=selected===q.answer; if(isCorrect){score+=Number(q.points||1); partStats[q.partTitle].score+=Number(q.points||1); partStats[q.partTitle].correct+=1;} else {missed.push(q); groupStats[skillGroup(q.skill)]+=1;}}); lastMissedIds=missed.map(q=>q.id); tryWrongBtn.disabled=missed.length===0; showResults(score,partStats,groupStats,missed); if(isOfficialActiveExam) await saveOfficialExamFirstAttempt(score,totalMarks,partStats); else await saveRevisionProgressBest(score,totalMarks,partStats); renderRight(); results.scrollIntoView({behavior:'smooth',block:'start'});}
+async function submitQuiz(){submitted=true; let score=0; const partStats={}, groupStats={words:0,grammar:0,find:0,clues:0,big:0,other:0}, missed=[]; parts.forEach(part=>partStats[part.title]={score:0,total:(part.questions||[]).reduce((s,q)=>s+Number(q.points||1),0),correct:0,count:(part.questions||[]).length}); allQuestions.forEach(q=>{const selected=window.answerState[q.id]||null,isCorrect=selected===q.answer; if(isCorrect){score+=Number(q.points||1); partStats[q.partTitle].score+=Number(q.points||1); partStats[q.partTitle].correct+=1;} else {missed.push(q); groupStats[skillGroup(q.skill)]+=1;}}); lastMissedIds=missed.map(q=>q.id); tryWrongBtn.disabled=missed.length===0; showResults(score,partStats,groupStats,missed); if(isTeacherMode()) showSaveNote('Teacher preview only. No mark was saved.',false); else if(isOfficialActiveExam) await saveOfficialExamFirstAttempt(score,totalMarks,partStats); else await saveRevisionProgressBest(score,totalMarks,partStats); renderRight(); results.scrollIntoView({behavior:'smooth',block:'start'});}
 function showResults(score,partStats,groupStats,missed){results.classList.add('show'); const percent=totalMarks?Math.round(score/totalMarks*100):0; document.getElementById('scoreText').textContent=`${score}/${totalMarks}`; document.getElementById('percentText').textContent=percent+'%'; const deg=totalMarks?Math.round(score/totalMarks*360):0; document.getElementById('scoreCircle').style.background=`radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${deg}deg, #ece8f5 ${deg}deg)`; const level=readinessLevel(score), badge=document.getElementById('readinessBadge'); badge.textContent=level.label; badge.className='readiness '+level.cls; document.getElementById('mainFeedback').textContent=level.main; document.getElementById('nextStepFeedback').textContent=level.next; document.getElementById('tryAgainMessage').textContent=missed.length===0?'Wonderful! You can try another version later.':'Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.'; document.getElementById('partBreakdown').innerHTML=Object.entries(partStats).map(([title,stat])=>{const pct=stat.total?Math.round(stat.score/stat.total*100):0; return `<div class="breakdown-card"><strong>${title}</strong><p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div></div>`;}).join(''); document.getElementById('mistakeFeedback').innerHTML=missed.length===0?`<h3>My Practice Tips</h3><p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>`:`<h3>My Practice Tips</h3><p>You have <strong>${missed.length}</strong> question${missed.length===1?'':'s'} to try again. Use these tips and keep going.</p><div class="kid-tips-grid">${groupStats.words>0?`<div class="kid-tip"><strong>Words to check: ${groupStats.words}</strong>Read the whole sentence. Ask yourself, “Which word fits best?”</div>`:''}${groupStats.grammar>0?`<div class="kid-tip"><strong>Grammar to check: ${groupStats.grammar}</strong>Look for time words and clues in the sentence.</div>`:''}${groupStats.find>0?`<div class="kid-tip"><strong>Find the proof: ${groupStats.find}</strong>Go back to the text. Find the sentence that shows the answer.</div>`:''}${groupStats.clues>0?`<div class="kid-tip"><strong>Use clues: ${groupStats.clues}</strong>The answer may be written in different words. Read around the question.</div>`:''}${groupStats.big>0?`<div class="kid-tip"><strong>Big idea: ${groupStats.big}</strong>Think about what the whole text is mostly about.</div>`:''}</div>`;}
 function showSaveNote(msg,good=true){const el=document.getElementById('saveNote'); el.textContent=msg; el.style.background=good?'#ecfdf5':'#fff7ed'; el.style.color=good?'#166534':'#9a3412'; el.style.borderColor=good?'#bbf7d0':'#fed7aa'; el.classList.add('show');}
 async function getActiveTermSettings(){if(!db)return{term:'term1',studyYear:''}; const snap=await db.ref('teacherControlCenter/settings/tracker').get(); const t=snap.exists()?snap.val():{}; return{term:t.activeSavingTerm||t.activeTerm||t.term||'term1',studyYear:t.activeSavingStudyYear||t.activeStudyYear||t.studyYear||''};}
@@ -1173,7 +1339,7 @@ function goToFirstMissed(){if(lastMissedIds.length===0)return; const first=lastM
 function resetQuiz(showWelcome=true){window.answerState={}; currentScreen=0; submitted=false; lastMissedIds=[]; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; welcomePage.classList.remove('hidden'); practiceArea.style.display='none'; if(showWelcome) window.scrollTo({top:0,behavior:'smooth'}); updateWelcomeText();}
 document.addEventListener('change',e=>{if(e.target.matches("input[type='radio'], select.vocab-select")){window.answerState[e.target.name]=e.target.value; submitted=false; results.classList.remove('show'); document.getElementById('saveNote').classList.remove('show'); tryWrongBtn.disabled=true; updateProgress(); if(e.target.matches('select.vocab-select')) updateVocabVisual(e.target.name); else updateQuestionVisual(e.target.name);}});
 prevBtn.addEventListener('click',()=>{if(currentScreen>0){currentScreen--; renderRight();}}); nextBtn.addEventListener('click',()=>{if(currentScreen<screens.length-1){currentScreen++; renderRight();}}); submitBtn.addEventListener('click',submitQuiz); tryWrongBtn.addEventListener('click',goToFirstMissed); resetBtn.addEventListener('click',()=>resetQuiz(true)); startPracticeBtn.addEventListener('click',startPractice);
-rebuildExamArrays(); initStudentExamPage();
+rebuildExamArrays(); initExamPage();
 </script>
 </body>
 </html>
