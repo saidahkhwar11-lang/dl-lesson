@@ -1117,18 +1117,23 @@ button{
     <input id="teacherExamSubtitle" placeholder="Short instructions shown to students">
   </div>
 </div>
-      <div class="teacher-actions">
-        <button onclick="saveImportedOrCurrentExam()">💾 Save to Library</button>
-        <button onclick="previewTeacherSelectedExam()">👁 Preview</button>
-        <button onclick="assignTeacherSelectedAsRevision()">📚 Assign as Revision</button>
-        <button onclick="assignTeacherSelectedAsAssessment()">📝 Assign as Assessment</button>
-        <button onclick="toggleTeacherSelectedVisibility()">👁 Show / Hide</button>
-        <button class="danger" onclick="deleteTeacherSelectedExam()">🗑 Delete</button>
-        <button onclick="location.href='secure-hub.html'">🏠 Teacher Hub</button>
-      </div>
+     <div class="teacher-actions">
+  <button onclick="saveImportedOrCurrentExam()">💾 Save to Library</button>
+  <button onclick="previewTeacherSelectedExam()">👁 Preview</button>
+  <button onclick="assignTeacherSelectedAsRevision()">📚 Assign as Revision</button>
+  <button onclick="assignTeacherSelectedAsAssessment()">📝 Assign as Assessment</button>
+  <button onclick="toggleTeacherSelectedVisibility()">👁 Show / Hide</button>
+  <button class="danger" onclick="deleteTeacherSelectedExam()">🗑 Delete</button>
+  <button onclick="location.href='secure-hub.html'">🏠 Teacher Hub</button>
+</div>
 
-      <div class="teacher-status" id="teacherExamStatus">Loading library...</div>
-    </section>
+<div class="teacher-status" id="teacherExamStatus">Loading library...</div>
+
+<div class="teacher-panel">
+  <h3>🔒 Locked Students</h3>
+  <div id="lockedStudentsList">No locked students.</div>
+</div>
+</section>
 
     <div id="studentStrip" class="student-strip hidden">
       <div class="student-name-pill">👩‍🎓 <span id="examStudentName">Student</span></div>
@@ -1458,19 +1463,98 @@ function setTeacherStatus(msg, good=true){
   el.style.borderColor=good?'#bbf7d0':'#fed7aa';
 }
 
+  async function loadLockedStudents(){
+  if(!db || !isTeacherMode()) return;
+
+  const wrap=document.getElementById('lockedStudentsList');
+  if(!wrap) return;
+
+  const snap=await db.ref('examPage/examLocks').get();
+
+  if(!snap.exists()){
+    wrap.innerHTML='No locked students.';
+    return;
+  }
+
+  const rows=[];
+
+  Object.values(snap.val()||{}).forEach(classObj=>{
+    Object.values(classObj||{}).forEach(studentObj=>{
+      Object.entries(studentObj||{}).forEach(([examId,data])=>{
+        if(data?.locked){
+          rows.push(data);
+        }
+      });
+    });
+  });
+
+  if(!rows.length){
+    wrap.innerHTML='No locked students.';
+    return;
+  }
+
+  wrap.innerHTML=rows.map(r=>`
+    <div style="
+      border:1px solid #ddd;
+      border-radius:14px;
+      padding:10px;
+      margin-bottom:8px;
+      background:white;
+    ">
+      <strong>${r.studentName}</strong><br>
+      Exam: ${r.examTitle}<br>
+      Violations: ${r.violations || 0}<br><br>
+
+      <button onclick="
+        unlockStudentExam(
+          '${safeKey(r.classId)}',
+          '${safeKey(r.studentId)}',
+          '${safeKey(r.examId)}'
+        )
+      ">
+        🔓 Unlock Student
+      </button>
+    </div>
+  `).join('');
+}
+
+async function unlockStudentExam(classId,studentId,examId){
+  try{
+    await db.ref(
+      `examPage/examLocks/${classId}/${studentId}/${examId}`
+    ).update({
+      locked:false,
+      unlockCount:firebase.database.ServerValue.increment(1),
+      unlockedAt:Date.now()
+    });
+
+    alert('Student unlocked.');
+    loadLockedStudents();
+
+  }catch(err){
+    console.warn(err);
+    alert('Could not unlock student.');
+  }
+}
+
 async function initExamPage(){
   try{
     if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
 
-    if(isTeacherMode()){
-      document.getElementById('teacherPanel')?.classList.remove('hidden');
-      document.getElementById('studentStrip')?.classList.add('hidden');
-      document.getElementById('studentLibraryPanel')?.classList.add('hidden');
-      await loadTeacherExamLibrary();
-      rebuildExamArrays();
-      return;
-    }
+   if(isTeacherMode()){
+  document.getElementById('teacherPanel')?.classList.remove('hidden');
+  document.getElementById('studentStrip')?.classList.add('hidden');
+  document.getElementById('studentLibraryPanel')?.classList.add('hidden');
+
+  await loadTeacherExamLibrary();
+  await loadLockedStudents();
+
+  setInterval(loadLockedStudents, 5000);
+
+  rebuildExamArrays();
+  return;
+}
 
     const st=studentSession();
     if(!st) return;
@@ -1754,9 +1838,41 @@ function renderStudentLibrary(){
 function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
 function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
 function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
+async function watchForTeacherUnlock(){
+  try{
+    const st = studentSession();
+    if(!db || !st || unlockWatcherStarted) return;
+
+    unlockWatcherStarted = true;
+
+    const classId = safeKey(st.classId || st.className);
+    const studentId = safeKey(st.studentId || st.password);
+    const path = `examPage/examLocks/${classId}/${studentId}/${safeKey(currentExamId)}`;
+
+    db.ref(path).on('value', snap=>{
+      const data = snap.val() || {};
+
+      if(examLocked && data.locked === false){
+        alert('✅ Your teacher unlocked your exam. Continue where you stopped.');
+
+        examLocked = false;
+
+        practiceArea.style.display = 'block';
+        welcomePage.classList.add('hidden');
+
+        renderRight();
+        updateProgress();
+      }
+    });
+
+  }catch(err){
+    console.warn('Unlock watcher skipped:',err);
+  }
+}
 function startPractice(){
   examViolations = 0;
   examLocked = false;
+  watchForTeacherUnlock();
 
   welcomePage.classList.add('hidden');
   practiceArea.style.display='block';
