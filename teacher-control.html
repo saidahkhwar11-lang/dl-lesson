@@ -782,10 +782,10 @@ async function deleteStudent(classId,studentId){
 
 
 const PROGRAM_WEIGHTS = {
-  dl: {label:'DL Lesson', weight:50},
+  dl: {label:'DL Lesson', weight:30},
   skill: {label:'Skill Clash', weight:20},
-  reading: {label:'Reading Rush', weight:30},
-  exam: {label:'Exam Page', weight:0}
+  reading: {label:'Reading Rush', weight:20},
+  exam: {label:'Exam Page', weight:30}
 };
 
 function normalizeProgramName(record){
@@ -1406,18 +1406,51 @@ function renderClassRecords(){
           <span class="metaChip">📅 Date: ${esc(reportDate)}</span>
         </div>
       </div>
-      <div class="metaChip" style="font-size:14px;">Final = DL 50% + Skill 20% + Reading 30%</div>
-    </div>
+      <div class="metaChip" style="font-size:14px;">
+  Final = DL 30% + Skill 20% + Reading 20% + Exams 30%
+</div>
     <div class="summaryStrip">
-      <div class="summaryMini"><div class="miniLabel">Class DL Avg /50</div><div class="miniValue">${avgDL}/50</div></div>
-      <div class="summaryMini"><div class="miniLabel">Skill Clash Avg /20</div><div class="miniValue">${avgSkill}/20</div></div>
-      <div class="summaryMini"><div class="miniLabel">Reading Avg /30</div><div class="miniValue">${avgReading}/30</div></div>
-      <div class="summaryMini"><div class="miniLabel">Exam Page Avg</div><div class="miniValue">${avgExam}%</div></div>
-      <div class="summaryMini"><div class="miniLabel">Final Term Avg</div><div class="miniValue">${classAvg}%</div></div>
-    </div>
+  <div class="summaryMini">
+    <div class="miniLabel">Class DL Avg /30</div>
+    <div class="miniValue">${avgDL}/30</div>
+  </div>
+
+  <div class="summaryMini">
+    <div class="miniLabel">Skill Clash Avg /20</div>
+    <div class="miniValue">${avgSkill}/20</div>
+  </div>
+
+  <div class="summaryMini">
+    <div class="miniLabel">Reading Avg /20</div>
+    <div class="miniValue">${avgReading}/20</div>
+  </div>
+
+  <div class="summaryMini">
+    <div class="miniLabel">Exam Avg /30</div>
+    <div class="miniValue">${avgExam}/30</div>
+  </div>
+
+  <div class="summaryMini">
+    <div class="miniLabel">Final Term Avg</div>
+    <div class="miniValue">${classAvg}%</div>
+  </div>
+</div>
   </div>
   <div class="tableWrap"><table>
-    <thead><tr><th>Student</th><th>ID</th><th class="dlCol">DL Lesson 50%</th><th class="skillCol">Skill Clash 20%</th><th class="readingCol">Reading Rush 30%</th><th class="examCol">Exam Page</th><th class="finalCol">Final Term 100%</th><th class="commentCol">Performance Comments</th><th>Last Activity</th><th>Date</th></tr></thead>
+  <thead>
+<tr>
+  <th>Student</th>
+  <th>ID</th>
+  <th class="dlCol">DL Lesson 30%</th>
+  <th class="skillCol">Skill Clash 20%</th>
+  <th class="readingCol">Reading Rush 20%</th>
+  <th class="examCol">Exam Page 30%</th>
+  <th class="finalCol">Final Term 100%</th>
+  <th class="commentCol">Performance Comments</th>
+  <th>Last Activity</th>
+  <th>Date</th>
+</tr>
+</thead>
     <tbody>${rows}</tbody>
   </table></div>`;
 }
