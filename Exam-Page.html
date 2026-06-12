@@ -1524,9 +1524,10 @@ async function unlockStudentExam(classId,studentId,examId){
     await db.ref(
       `examPage/examLocks/${classId}/${studentId}/${examId}`
     ).update({
-      locked:false,
-      unlockCount:firebase.database.ServerValue.increment(1),
-      unlockedAt:Date.now()
+     locked:false,
+violations:0,
+unlockCount:firebase.database.ServerValue.increment(1),
+unlockedAt:Date.now()
     });
 
     alert('Student unlocked.');
@@ -1862,9 +1863,11 @@ async function watchForTeacherUnlock(){
       const data = snap.val() || {};
 
       if(examLocked && data.locked === false){
-        alert('✅ Your teacher unlocked your exam. Continue where you stopped.');
+  alert('✅ Your teacher unlocked your exam. Continue where you stopped.');
 
-        examLocked = false;
+  examLocked = false;
+  examViolations = 0;
+  lastViolationTime = Date.now();
         const overlay = document.getElementById('examLockOverlay');
 if(overlay) overlay.remove();
 
