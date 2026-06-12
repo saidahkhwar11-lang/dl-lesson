@@ -1339,7 +1339,10 @@ let studentLibrary={};
 let screens=[], allQuestions=[], totalQuestions=0, totalMarks=0;
 let currentScreen=0, submitted=false, lastMissedIds=[];
 window.answerState={};
-
+let examViolations = 0;
+let examLocked = false;
+let unlockWatcherStarted = false;
+  
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
   function updateSubmitButtonState(){
@@ -1751,7 +1754,21 @@ function renderStudentLibrary(){
 function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
 function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
 function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
-function startPractice(){welcomePage.classList.add('hidden'); practiceArea.style.display='block'; renderRight(); window.scrollTo({top:0,behavior:'smooth'});}
+function startPractice(){
+  examViolations = 0;
+  examLocked = false;
+
+  welcomePage.classList.add('hidden');
+  practiceArea.style.display='block';
+
+  renderRight();
+  updateProgress();
+
+  window.scrollTo({
+    top:0,
+    behavior:'smooth'
+  });
+}
 function getQuestionById(qid){return allQuestions.find(q=>q.id===qid)} function getQuestionNumber(qid){return allQuestions.findIndex(q=>q.id===qid)+1}
 function renderLeft(part){leftPanel.innerHTML=`<div class="left-content-wrap"><div class="panel-label">${part.leftLabel||''}</div>${part.leftContent||''}</div>`}
 function renderRight(){const screen=screens[currentScreen]; if(!screen)return; const part=parts[screen.partIndex]; renderLeft(part); if(screen.type==='intro'){rightPanel.innerHTML=`<div class="intro-card"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-box"><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><p>This part has <strong>${(part.questions||[]).length}</strong> question${(part.questions||[]).length===1?'':'s'}.</p><p>Take your time, breathe, and do your best.</p></div>`;} else if(screen.type==='vocab') renderVocabPage(part); else {const q=part.questions[screen.questionIndex]; const selected=window.answerState[q.id]||null; rightPanel.innerHTML=`<div class="question-card" id="questionCard"><div class="instruction-box"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><div class="q-number"><span>Question ${getQuestionNumber(q.id)} of ${totalQuestions}</span><span>${q.points||1} marks</span></div><div class="q-title">${q.prompt||''}</div><div class="options">${Object.entries(q.options||{}).map(([letter,text])=>`<label class="option" id="option-${q.id}-${letter}"><input type="radio" name="${q.id}" value="${letter}" ${selected===letter?'checked':''} /><span><strong>${letter}.</strong> ${text}</span></label>`).join('')}</div><div class="q-meta">${q.skill||''}</div><div class="feedback-note" id="feedback-${q.id}"></div></div>`; updateQuestionVisual(q.id);} updateProgress(); updateButtons();}
@@ -1787,7 +1804,145 @@ function updateVocabVisual(qid){const q=getQuestionById(qid), row=document.getEl
 function updateQuestionVisual(qid){const q=getQuestionById(qid), card=document.getElementById('questionCard'); if(!q||!card)return; const feedback=document.getElementById(`feedback-${qid}`), selected=window.answerState[qid]||null; card.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; Object.keys(q.options||{}).forEach(letter=>{const option=document.getElementById(`option-${qid}-${letter}`); if(option)option.classList.remove('correct-choice','wrong-choice');}); if(!submitted)return; if(!selected){card.classList.add('unanswered');feedback.innerHTML='<strong>Not answered yet.</strong> Choose one answer, then submit again.';} else if(selected===q.answer){card.classList.add('correct'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('correct-choice'); feedback.innerHTML='<strong>Correct.</strong> Great job!';} else {card.classList.add('incorrect'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('wrong-choice'); feedback.innerHTML='<strong>Try again.</strong> Reread carefully and choose a better answer.';} feedback.classList.add('show');}
 function skillGroup(skill=''){if(skill.includes('Vocabulary')&&!skill.includes('Context'))return'words'; if(skill.includes('Grammar'))return'grammar'; if(skill.includes('Detail'))return'find'; if(skill.includes('Inference')||skill.includes('Evidence Check')||skill.includes('Connection')||skill.includes('Vocabulary in Context'))return'clues'; if(skill.includes('Overall Meaning'))return'big'; return'other';}
 function readinessLevel(score){const pct=totalMarks?score/totalMarks*100:0; if(pct>=90)return{label:'Excellent readiness',cls:'excellent',main:'Amazing work. You are very ready.',next:'Next step: keep practising and check your answers carefully.'}; if(pct>=75)return{label:'Good readiness',cls:'good',main:'Good work. You understand many of the skills.',next:'Next step: fix the highlighted questions, then submit again.'}; if(pct>=60)return{label:'Keep practising',cls:'practice',main:'You are getting there. A little more practice will help.',next:'Next step: read slowly, look for proof in the text, and try again.'}; return{label:'Need more practice',cls:'support',main:'Do not worry. This practice shows what to work on next.',next:'Next step: practise one part at a time and ask for help when you need it.'};}
-async function submitQuiz(){submitted=true; let score=0; const partStats={}, groupStats={words:0,grammar:0,find:0,clues:0,big:0,other:0}, missed=[]; parts.forEach(part=>partStats[part.title]={score:0,total:(part.questions||[]).reduce((s,q)=>s+Number(q.points||1),0),correct:0,count:(part.questions||[]).length}); allQuestions.forEach(q=>{const selected=window.answerState[q.id]||null,isCorrect=selected===q.answer; if(isCorrect){score+=Number(q.points||1); partStats[q.partTitle].score+=Number(q.points||1); partStats[q.partTitle].correct+=1;} else {missed.push(q); groupStats[skillGroup(q.skill)]+=1;}}); lastMissedIds=missed.map(q=>q.id); tryWrongBtn.disabled=missed.length===0; showResults(score,partStats,groupStats,missed); if(isTeacherMode()) showSaveNote('Teacher preview only. No mark was saved.',false); else if(isOfficialActiveExam) await saveOfficialExamFirstAttempt(score,totalMarks,partStats); else await saveRevisionProgressBest(score,totalMarks,partStats); renderRight(); results.scrollIntoView({behavior:'smooth',block:'start'});}
+function antiCheatActive(){
+  return isOfficialActiveExam && practiceArea.style.display === 'block' && !submitted && !examLocked;
+}
+
+async function saveExamLockStatus(locked, reason){
+  try{
+    const st = studentSession();
+    if(!db || !st) return;
+
+    const classId = safeKey(st.classId || st.className);
+    const studentId = safeKey(st.studentId || st.password);
+    const path = `examPage/examLocks/${classId}/${studentId}/${safeKey(currentExamId)}`;
+
+    await db.ref(path).update({
+      locked,
+      reason: reason || '',
+      violations: examViolations,
+      studentName: st.name || '',
+      studentId: st.studentId || st.password || '',
+      classId: st.classId || '',
+      className: st.className || '',
+      examId: currentExamId,
+      examTitle: currentExamMeta.title || 'Exam',
+      updatedAt: Date.now()
+    });
+  }catch(e){
+    console.warn('Lock status save skipped:', e);
+  }
+}
+
+function showExamLockedScreen(){
+  welcomePage.classList.add('hidden');
+  practiceArea.style.display = 'none';
+
+  document.body.innerHTML = `
+    <div style="min-height:100vh;display:grid;place-items:center;background:#f7f8ff;font-family:Inter,Arial,sans-serif;text-align:center;padding:30px;">
+      <div style="max-width:650px;background:white;border:2px solid #ef4444;border-radius:28px;padding:35px;box-shadow:0 20px 45px rgba(0,0,0,.12);">
+        <h1 style="color:#b91c1c;">🔒 Exam Locked</h1>
+        <p style="font-size:20px;">You left the exam page too many times.</p>
+        <p style="font-size:18px;">Please raise your hand and wait for your teacher to unlock your exam.</p>
+        <p style="font-size:16px;color:#777;">Do not refresh. Your teacher can unlock you more than one time.</p>
+      </div>
+    </div>
+  `;
+}
+
+async function recordExamViolation(reason){
+  if(!antiCheatActive()) return;
+
+  examViolations++;
+
+  if(examViolations < 3){
+    alert(`⚠️ Exam warning ${examViolations}/3\n${reason}\nPlease stay on the exam page.`);
+    await saveExamLockStatus(false, reason);
+    return;
+  }
+
+  examLocked = true;
+  await saveExamLockStatus(true, reason);
+  showExamLockedScreen();
+}
+
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden){
+    recordExamViolation("You left or minimized the exam page.");
+  }
+});
+
+window.addEventListener("blur", ()=>{
+  recordExamViolation("The exam window lost focus.");
+});
+
+window.addEventListener("beforeunload", e=>{
+  if(antiCheatActive()){
+    e.preventDefault();
+    e.returnValue = "Leaving the exam may lock your attempt.";
+  }
+});
+async function submitQuiz(){
+  if(examLocked){
+    alert("Your exam is locked. Please wait for your teacher to unlock it.");
+    return;
+  }
+
+  const answered = allQuestions.filter(q => window.answerState[q.id]).length;
+
+  if(answered < totalQuestions){
+    alert(`Please answer all questions first. You answered ${answered} out of ${totalQuestions}.`);
+    updateProgress();
+    return;
+  }
+
+  submitted=true;
+
+  let score=0;
+  const partStats={};
+  const groupStats={words:0,grammar:0,find:0,clues:0,big:0,other:0};
+  const missed=[];
+
+  parts.forEach(part=>{
+    partStats[part.title]={
+      score:0,
+      total:(part.questions||[]).reduce((s,q)=>s+Number(q.points||1),0),
+      correct:0,
+      count:(part.questions||[]).length
+    };
+  });
+
+  allQuestions.forEach(q=>{
+    const selected=window.answerState[q.id]||null;
+    const isCorrect=selected===q.answer;
+
+    if(isCorrect){
+      score+=Number(q.points||1);
+      partStats[q.partTitle].score+=Number(q.points||1);
+      partStats[q.partTitle].correct+=1;
+    }else{
+      missed.push(q);
+      groupStats[skillGroup(q.skill)]+=1;
+    }
+  });
+
+  lastMissedIds=missed.map(q=>q.id);
+  tryWrongBtn.disabled=missed.length===0;
+
+  showResults(score,partStats,groupStats,missed);
+
+  if(isTeacherMode()){
+    showSaveNote('Teacher preview only. No mark was saved.',false);
+  }else if(isOfficialActiveExam){
+    await saveOfficialExamFirstAttempt(score,totalMarks,partStats);
+  }else{
+    await saveRevisionProgressBest(score,totalMarks,partStats);
+  }
+
+  renderRight();
+  results.scrollIntoView({behavior:'smooth',block:'start'});
+}
+  
 function showResults(score,partStats,groupStats,missed){results.classList.add('show'); const percent=totalMarks?Math.round(score/totalMarks*100):0; document.getElementById('scoreText').textContent=`${score}/${totalMarks}`; document.getElementById('percentText').textContent=percent+'%'; const deg=totalMarks?Math.round(score/totalMarks*360):0; document.getElementById('scoreCircle').style.background=`radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${deg}deg, #ece8f5 ${deg}deg)`; const level=readinessLevel(score), badge=document.getElementById('readinessBadge'); badge.textContent=level.label; badge.className='readiness '+level.cls; document.getElementById('mainFeedback').textContent=level.main; document.getElementById('nextStepFeedback').textContent=level.next; document.getElementById('tryAgainMessage').textContent=missed.length===0?'Wonderful! You can try another version later.':'Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.'; document.getElementById('partBreakdown').innerHTML=Object.entries(partStats).map(([title,stat])=>{const pct=stat.total?Math.round(stat.score/stat.total*100):0; return `<div class="breakdown-card"><strong>${title}</strong><p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div></div>`;}).join(''); document.getElementById('mistakeFeedback').innerHTML=missed.length===0?`<h3>My Practice Tips</h3><p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>`:`<h3>My Practice Tips</h3><p>You have <strong>${missed.length}</strong> question${missed.length===1?'':'s'} to try again. Use these tips and keep going.</p><div class="kid-tips-grid">${groupStats.words>0?`<div class="kid-tip"><strong>Words to check: ${groupStats.words}</strong>Read the whole sentence. Ask yourself, “Which word fits best?”</div>`:''}${groupStats.grammar>0?`<div class="kid-tip"><strong>Grammar to check: ${groupStats.grammar}</strong>Look for time words and clues in the sentence.</div>`:''}${groupStats.find>0?`<div class="kid-tip"><strong>Find the proof: ${groupStats.find}</strong>Go back to the text. Find the sentence that shows the answer.</div>`:''}${groupStats.clues>0?`<div class="kid-tip"><strong>Use clues: ${groupStats.clues}</strong>The answer may be written in different words. Read around the question.</div>`:''}${groupStats.big>0?`<div class="kid-tip"><strong>Big idea: ${groupStats.big}</strong>Think about what the whole text is mostly about.</div>`:''}</div>`;}
 function showSaveNote(msg,good=true){const el=document.getElementById('saveNote'); el.textContent=msg; el.style.background=good?'#ecfdf5':'#fff7ed'; el.style.color=good?'#166534':'#9a3412'; el.style.borderColor=good?'#bbf7d0':'#fed7aa'; el.classList.add('show');}
 async function getActiveTermSettings(){if(!db)return{term:'term1',studyYear:''}; const snap=await db.ref('teacherControlCenter/settings/tracker').get(); const t=snap.exists()?snap.val():{}; return{term:t.activeSavingTerm||t.activeTerm||t.term||'term1',studyYear:t.activeSavingStudyYear||t.activeStudyYear||t.studyYear||''};}
