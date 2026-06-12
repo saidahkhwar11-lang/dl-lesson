@@ -1347,6 +1347,7 @@ window.answerState={};
 let examViolations = 0;
 let examLocked = false;
 let unlockWatcherStarted = false;
+let lastViolationTime = 0;
   
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
@@ -1864,6 +1865,8 @@ async function watchForTeacherUnlock(){
         alert('✅ Your teacher unlocked your exam. Continue where you stopped.');
 
         examLocked = false;
+        const overlay = document.getElementById('examLockOverlay');
+if(overlay) overlay.remove();
 
         practiceArea.style.display = 'block';
         welcomePage.classList.add('hidden');
@@ -1959,10 +1962,15 @@ async function saveExamLockStatus(locked, reason){
 }
 
 function showExamLockedScreen(){
-  welcomePage.classList.add('hidden');
-  practiceArea.style.display = 'none';
+  let overlay = document.getElementById('examLockOverlay');
 
-  document.body.innerHTML = `
+  if(!overlay){
+    overlay = document.createElement('div');
+    overlay.id = 'examLockOverlay';
+    document.body.appendChild(overlay);
+  }
+
+  overlay.innerHTML = `
     <div style="min-height:100vh;display:grid;place-items:center;background:#f7f8ff;font-family:Inter,Arial,sans-serif;text-align:center;padding:30px;">
       <div style="max-width:650px;background:white;border:2px solid #ef4444;border-radius:28px;padding:35px;box-shadow:0 20px 45px rgba(0,0,0,.12);">
         <h1 style="color:#b91c1c;">🔒 Exam Locked</h1>
@@ -1972,10 +1980,17 @@ function showExamLockedScreen(){
       </div>
     </div>
   `;
-}
 
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = '999999';
+  overlay.style.display = 'block';
+}
 async function recordExamViolation(reason){
   if(!antiCheatActive()) return;
+  const now = Date.now();
+if(now - lastViolationTime < 3000) return;
+lastViolationTime = now;
 
   examViolations++;
 
