@@ -1279,7 +1279,15 @@ function buildPerformanceSummary(records){
     item.percent = item.total ? Math.round((item.score/item.total)*100) : 0;
     item.weighted = Math.round((item.percent * PROGRAM_WEIGHTS[key].weight) / 100);
     summary.finalPercent += item.weighted;
+    
   });
+
+  const bonus = Number(
+  controlData?.bonusMarks?.[records[0]?.classId]?.[records[0]?.studentId]?.value || 0
+);
+
+summary.bonus = bonus;
+summary.finalPercent = Math.min(100, summary.finalPercent + bonus);
 
   return summary;
 }
@@ -1378,7 +1386,26 @@ function renderClassRecords(){
       <td class="skillCol">${programCellHtml(summary.skill,'skill')}</td>
       <td class="readingCol">${programCellHtml(summary.reading,'reading')}</td>
       <td class="examCol">${examCellHtml(summary.exam)}</td>
-      <td class="finalCol"><span class="${scoreClass(summary.finalPercent)}">${summary.finalPercent}%</span><div class="raw">Weighted total /100</div></td>
+      <td>
+  <input
+    type="number"
+    min="0"
+    max="10"
+    value="${getStudentBonus(classId,st.id)}"
+    onchange="saveStudentBonus('${classId}','${st.id}',this.value)"
+    style="width:70px"
+  >
+</td>
+
+<td class="finalCol">
+  <span class="${scoreClass(summary.finalPercent)}">
+    ${summary.finalPercent}%
+  </span>
+  <div class="raw">
+    Weighted total /100
+    ${summary.bonus ? `• Bonus +${summary.bonus}` : ''}
+  </div>
+</td>
       <td class="commentCol">${performanceCommentsHtml(r)}</td>
       <td>${last?esc(last.activityName||last.activity||"Activity"):"No record yet"}</td>
       <td>${last?esc(last.date||""):"-"}</td>
@@ -1445,7 +1472,8 @@ function renderClassRecords(){
   <th class="skillCol">Skill Clash 20%</th>
   <th class="readingCol">Reading Rush 20%</th>
   <th class="examCol">Exam Page 30%</th>
-  <th class="finalCol">Final Term 100%</th>
+  <th>⭐ Bonus</th>
+<th class="finalCol">Final Term 100%</th>
   <th class="commentCol">Performance Comments</th>
   <th>Last Activity</th>
   <th>Date</th>
@@ -1459,6 +1487,26 @@ function renderClassRecords(){
 function todayKeyISO(){
   const d=new Date();
   return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+  function getStudentBonus(classId,studentId){
+  return Number(
+    controlData?.bonusMarks?.[classId]?.[studentId]?.value || 0
+  );
+}
+
+async function saveStudentBonus(classId,studentId,value){
+  const bonus=Math.max(0,Math.min(10,Number(value)||0));
+
+  await db.ref(
+    `teacherControlCenter/bonusMarks/${classId}/${studentId}`
+  ).set({
+    value:bonus,
+    term:getCurrentTerm(),
+    studyYear:getStudyYear(),
+    updatedAt:Date.now()
+  });
+
+  renderClassRecords();
 }
 function setDailyDateToday(){
   const el=byId('dailyDateInput');
