@@ -8,7 +8,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Quicksand:wght@600;700&display=swap" rel="stylesheet">
 
   <style>
     :root {
@@ -874,6 +874,191 @@
   margin-top:10px;
 }
 @media(max-width:800px){.teacher-mini-grid{grid-template-columns:1fr}}
+
+
+/* ===== RT3-inspired clean visual polish ===== */
+:root{
+  --bg:#f7f8ff;
+  --text:#2f3148;
+  --muted:#71799b;
+  --line:#dde3ff;
+  --lavender:#eef1ff;
+  --lavender-mid:#7188e8;
+  --warm-purple:#6f7ee8;
+  --warm-purple-dark:#6e4bb3;
+  --warm-pink-deep:#7188e8;
+  --shadow:0 10px 28px rgba(64,74,140,.10);
+}
+
+body{
+  font-family:'Inter', Arial, sans-serif !important;
+  color:var(--text);
+  font-size:18px;
+  background:
+    radial-gradient(circle at top left, #eef1ff 0%, transparent 28%),
+    radial-gradient(circle at top right, #f4edff 0%, transparent 25%),
+    linear-gradient(180deg,#ffffff 0%,var(--bg) 260px);
+}
+
+h1,h2,h3,
+button,
+.part-badge,
+.mark-pill,
+.panel-label,
+.q-number,
+.q-title,
+.word-bank li,
+.vocab-sentence,
+.library-title-small,
+.teacher-panel h2{
+  font-family:'Quicksand','Inter',sans-serif !important;
+}
+
+h1{
+  font-size:clamp(2rem,3.5vw,2.75rem);
+  letter-spacing:-.03em;
+}
+
+h2{font-size:1.35rem;}
+h3{font-size:1.12rem;}
+
+.page{
+  max-width:1320px;
+  padding:16px 14px 38px;
+}
+
+.welcome-card{
+  box-shadow:0 12px 30px rgba(80,70,150,.10);
+  border-radius:28px;
+}
+
+.welcome-box,
+.teacher-box,
+.library-item,
+.question-card,
+.intro-card,
+.vocab-card,
+.reading-text,
+.results{
+  box-shadow:0 4px 14px rgba(61,72,130,.055);
+}
+
+.exam-shell{
+  grid-template-columns:48% 52%;
+  border-radius:22px;
+  box-shadow:0 12px 28px rgba(61,72,130,.10);
+}
+
+.left-panel{
+  background:linear-gradient(180deg,#f7f9ff 0%,#fffefa 100%);
+  padding:26px;
+}
+
+.right-panel{
+  padding:26px;
+}
+
+.reading-text{
+  border-left:7px solid var(--lavender-mid);
+  border-radius:18px;
+}
+
+.reading-text p{
+  font-family:'Inter',Arial,sans-serif !important;
+  font-size:1.05rem;
+  line-height:1.9;
+  font-weight:500;
+}
+
+.question-card,
+.intro-card,
+.vocab-card{
+  border-radius:22px;
+  min-height:560px;
+}
+
+.instruction-box{
+  border-left:6px solid var(--lavender-mid);
+  background:#fbfbff;
+  padding:18px;
+}
+
+.option,
+.vocab-row,
+.word-bank li{
+  border-radius:16px;
+  border-color:#dfe4ff;
+  background:#ffffff;
+  box-shadow:0 2px 8px rgba(50,60,110,.045);
+}
+
+.option{
+  font-size:1rem;
+  padding:15px;
+}
+
+.word-bank li{
+  font-size:1rem;
+  padding:13px 14px;
+}
+
+.vocab-sentence{
+  font-size:1.06rem;
+  line-height:1.9;
+}
+
+.vocab-select{
+  font-family:'Inter',Arial,sans-serif !important;
+  font-weight:700;
+  border-color:#dfe4ff;
+  background:#ffffff;
+}
+
+button{
+  font-weight:700;
+  box-shadow:0 3px 8px rgba(84,97,180,.12);
+}
+
+.topbar{
+  position:sticky;
+  bottom:auto;
+  top:0;
+  border-radius:0 0 22px 22px;
+  box-shadow:0 8px 24px rgba(60,70,130,.12);
+}
+
+.progress-row{
+  font-family:'Quicksand','Inter',sans-serif !important;
+  font-weight:700;
+}
+
+.progress-bar{
+  height:10px;
+  background:#e8ebff;
+}
+
+.progress-fill{
+  background:linear-gradient(90deg,#8fa2ff,#6f7ee8);
+}
+
+.teacher-panel{
+  box-shadow:0 10px 28px rgba(64,74,140,.10);
+}
+
+.student-strip,
+.student-library-panel,
+.library-modal-card{
+  box-shadow:0 8px 22px rgba(64,74,140,.08);
+}
+
+@media(max-width:980px){
+  body{font-size:16px;}
+  .exam-shell{grid-template-columns:1fr;}
+  .topbar{
+    position:sticky;
+    top:0;
+  }
+}
 
 </style>
 </head>
