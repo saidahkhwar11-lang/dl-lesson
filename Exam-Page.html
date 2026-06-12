@@ -1060,6 +1060,35 @@ button{
   }
 }
 
+body.exam-focus-mode .student-strip,
+body.exam-focus-mode .student-library-panel,
+body.exam-focus-mode #welcomePage,
+body.exam-focus-mode #results {
+  display: none !important;
+}
+
+body.exam-focus-mode .page {
+  max-width: 100%;
+  padding: 0;
+}
+
+body.exam-focus-mode #practiceArea {
+  display: block !important;
+}
+
+body.exam-focus-mode .exam-shell {
+  border-radius: 0;
+  box-shadow: none;
+  border-left: 0;
+  border-right: 0;
+  min-height: 100vh;
+}
+
+body.exam-focus-mode .topbar {
+  border-radius: 0;
+  margin-bottom: 0;
+}    
+    
 </style>
 </head>
 <body>
@@ -1890,6 +1919,9 @@ function startPractice(){
 
   welcomePage.classList.add('hidden');
   practiceArea.style.display='block';
+  if(isOfficialActiveExam){
+  document.body.classList.add('exam-focus-mode');
+}
 
   renderRight();
   updateProgress();
@@ -2085,7 +2117,9 @@ async function submitQuiz(){
   results.scrollIntoView({behavior:'smooth',block:'start'});
 }
   
-function showResults(score,partStats,groupStats,missed){results.classList.add('show'); const percent=totalMarks?Math.round(score/totalMarks*100):0; document.getElementById('scoreText').textContent=`${score}/${totalMarks}`; document.getElementById('percentText').textContent=percent+'%'; const deg=totalMarks?Math.round(score/totalMarks*360):0; document.getElementById('scoreCircle').style.background=`radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${deg}deg, #ece8f5 ${deg}deg)`; const level=readinessLevel(score), badge=document.getElementById('readinessBadge'); badge.textContent=level.label; badge.className='readiness '+level.cls; document.getElementById('mainFeedback').textContent=level.main; document.getElementById('nextStepFeedback').textContent=level.next; document.getElementById('tryAgainMessage').textContent=missed.length===0?'Wonderful! You can try another version later.':'Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.'; document.getElementById('partBreakdown').innerHTML=Object.entries(partStats).map(([title,stat])=>{const pct=stat.total?Math.round(stat.score/stat.total*100):0; return `<div class="breakdown-card"><strong>${title}</strong><p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div></div>`;}).join(''); document.getElementById('mistakeFeedback').innerHTML=missed.length===0?`<h3>My Practice Tips</h3><p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>`:`<h3>My Practice Tips</h3><p>You have <strong>${missed.length}</strong> question${missed.length===1?'':'s'} to try again. Use these tips and keep going.</p><div class="kid-tips-grid">${groupStats.words>0?`<div class="kid-tip"><strong>Words to check: ${groupStats.words}</strong>Read the whole sentence. Ask yourself, “Which word fits best?”</div>`:''}${groupStats.grammar>0?`<div class="kid-tip"><strong>Grammar to check: ${groupStats.grammar}</strong>Look for time words and clues in the sentence.</div>`:''}${groupStats.find>0?`<div class="kid-tip"><strong>Find the proof: ${groupStats.find}</strong>Go back to the text. Find the sentence that shows the answer.</div>`:''}${groupStats.clues>0?`<div class="kid-tip"><strong>Use clues: ${groupStats.clues}</strong>The answer may be written in different words. Read around the question.</div>`:''}${groupStats.big>0?`<div class="kid-tip"><strong>Big idea: ${groupStats.big}</strong>Think about what the whole text is mostly about.</div>`:''}</div>`;}
+function showResults(score,partStats,groupStats,missed){
+  document.body.classList.remove('exam-focus-mode');
+  results.classList.add('show'); const percent=totalMarks?Math.round(score/totalMarks*100):0; document.getElementById('scoreText').textContent=`${score}/${totalMarks}`; document.getElementById('percentText').textContent=percent+'%'; const deg=totalMarks?Math.round(score/totalMarks*360):0; document.getElementById('scoreCircle').style.background=`radial-gradient(circle at center, #fff 0 58%, transparent 59%), conic-gradient(var(--warm-purple) ${deg}deg, #ece8f5 ${deg}deg)`; const level=readinessLevel(score), badge=document.getElementById('readinessBadge'); badge.textContent=level.label; badge.className='readiness '+level.cls; document.getElementById('mainFeedback').textContent=level.main; document.getElementById('nextStepFeedback').textContent=level.next; document.getElementById('tryAgainMessage').textContent=missed.length===0?'Wonderful! You can try another version later.':'Your wrong answers are hidden. Press Try Again, fix the highlighted questions, and submit again.'; document.getElementById('partBreakdown').innerHTML=Object.entries(partStats).map(([title,stat])=>{const pct=stat.total?Math.round(stat.score/stat.total*100):0; return `<div class="breakdown-card"><strong>${title}</strong><p>${stat.score} / ${stat.total} marks • ${stat.correct} / ${stat.count} questions correct</p><div class="mini-bar"><div class="mini-fill" style="width:${pct}%"></div></div></div>`;}).join(''); document.getElementById('mistakeFeedback').innerHTML=missed.length===0?`<h3>My Practice Tips</h3><p><strong>Perfect score!</strong> You answered every question correctly. Well done!</p>`:`<h3>My Practice Tips</h3><p>You have <strong>${missed.length}</strong> question${missed.length===1?'':'s'} to try again. Use these tips and keep going.</p><div class="kid-tips-grid">${groupStats.words>0?`<div class="kid-tip"><strong>Words to check: ${groupStats.words}</strong>Read the whole sentence. Ask yourself, “Which word fits best?”</div>`:''}${groupStats.grammar>0?`<div class="kid-tip"><strong>Grammar to check: ${groupStats.grammar}</strong>Look for time words and clues in the sentence.</div>`:''}${groupStats.find>0?`<div class="kid-tip"><strong>Find the proof: ${groupStats.find}</strong>Go back to the text. Find the sentence that shows the answer.</div>`:''}${groupStats.clues>0?`<div class="kid-tip"><strong>Use clues: ${groupStats.clues}</strong>The answer may be written in different words. Read around the question.</div>`:''}${groupStats.big>0?`<div class="kid-tip"><strong>Big idea: ${groupStats.big}</strong>Think about what the whole text is mostly about.</div>`:''}</div>`;}
 function showSaveNote(msg,good=true){const el=document.getElementById('saveNote'); el.textContent=msg; el.style.background=good?'#ecfdf5':'#fff7ed'; el.style.color=good?'#166534':'#9a3412'; el.style.borderColor=good?'#bbf7d0':'#fed7aa'; el.classList.add('show');}
 async function getActiveTermSettings(){if(!db)return{term:'term1',studyYear:''}; const snap=await db.ref('teacherControlCenter/settings/tracker').get(); const t=snap.exists()?snap.val():{}; return{term:t.activeSavingTerm||t.activeTerm||t.term||'term1',studyYear:t.activeSavingStudyYear||t.activeStudyYear||t.studyYear||''};}
 
