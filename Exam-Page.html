@@ -1440,8 +1440,8 @@ function loadExamObject(ex, official){
   currentExamId=ex.id||safeKey(ex.title)||'exam';
 
   currentExamMeta={
-    title:ex.title||'Exam Page',
-    subtitle:ex.subtitle||'',
+    title: official ? (ex.assessmentTitle || ex.title || 'Official Assessment') : (ex.title || 'Exam Page'),
+subtitle: official ? (ex.assessmentSubtitle || 'Official assessment. First attempt only will be saved.') : (ex.subtitle || ''),
     term:ex.term||'term1',
     studyYear:ex.studyYear||''
   };
@@ -1775,7 +1775,12 @@ async function assignTeacherSelectedAsAssessment(){
     const cls=document.getElementById('teacherClassSelect')?.value;
     if(!id || !cls){ setTeacherStatus('Choose a page and class first.',false); return; }
     const ex=studentLibrary[id]||{};
-    await db.ref('examPage/exams/'+id).update({mode:'assessment',updatedAt:Date.now()});
+await db.ref('examPage/exams/'+id).update({
+  mode:'assessment',
+  assessmentTitle: ex.title || id,
+  assessmentSubtitle: 'Official assessment. First attempt only will be saved.',
+  updatedAt:Date.now()
+});
     await db.ref('examPage/activeExams/'+safeKey(cls)).set({examId:id,title:ex.title||id,mode:'assessment',activatedAt:Date.now()});
     setTeacherStatus('Assigned as Assessment for this class. First attempt will be saved officially.');
   }catch(err){ console.warn(err); setTeacherStatus('Could not assign as assessment.',false); }
