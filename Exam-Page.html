@@ -1153,6 +1153,18 @@ window.answerState={};
 
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
+  function updateSubmitButtonState(){
+  const answered = Object.keys(answerState || {}).length;
+
+  submitBtn.disabled = answered < totalQuestions;
+
+  if(answered < totalQuestions){
+    submitBtn.textContent =
+      `Submit Answers (${answered}/${totalQuestions})`;
+  }else{
+    submitBtn.textContent = 'Submit Answers';
+  }
+}
 function getSecureHubStudent(){
   const preferredKeys = [
     'DL_SECURE_STUDENT_LOGIN',
@@ -1556,7 +1568,32 @@ function renderLeft(part){leftPanel.innerHTML=`<div class="left-content-wrap"><d
 function renderRight(){const screen=screens[currentScreen]; if(!screen)return; const part=parts[screen.partIndex]; renderLeft(part); if(screen.type==='intro'){rightPanel.innerHTML=`<div class="intro-card"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-box"><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><p>This part has <strong>${(part.questions||[]).length}</strong> question${(part.questions||[]).length===1?'':'s'}.</p><p>Take your time, breathe, and do your best.</p></div>`;} else if(screen.type==='vocab') renderVocabPage(part); else {const q=part.questions[screen.questionIndex]; const selected=window.answerState[q.id]||null; rightPanel.innerHTML=`<div class="question-card" id="questionCard"><div class="instruction-box"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><div class="q-number"><span>Question ${getQuestionNumber(q.id)} of ${totalQuestions}</span><span>${q.points||1} marks</span></div><div class="q-title">${q.prompt||''}</div><div class="options">${Object.entries(q.options||{}).map(([letter,text])=>`<label class="option" id="option-${q.id}-${letter}"><input type="radio" name="${q.id}" value="${letter}" ${selected===letter?'checked':''} /><span><strong>${letter}.</strong> ${text}</span></label>`).join('')}</div><div class="q-meta">${q.skill||''}</div><div class="feedback-note" id="feedback-${q.id}"></div></div>`; updateQuestionVisual(q.id);} updateProgress(); updateButtons();}
 function renderVocabPage(part){rightPanel.innerHTML=`<div class="vocab-card"><div class="instruction-box"><div class="part-badge">${part.shortTitle||''}</div><h2>${part.title||''}</h2><div class="instruction-title">Instructions</div><p>${part.instructions||''}</p><span class="mark-pill">${part.marks||0} marks</span></div><div class="q-number"><span>Questions 1–${part.questions.length}</span><span>Vocabulary</span></div><div class="vocab-list">${part.questions.map((q,index)=>{const selected=window.answerState[q.id]||'';return `<div class="vocab-row" id="vocab-row-${q.id}"><div class="vocab-sentence">${index+1}. ${q.promptStart||q.prompt||''} <select class="vocab-select" name="${q.id}"><option value="">Choose</option>${Object.entries(q.options||{}).map(([letter,text])=>`<option value="${letter}" ${selected===letter?'selected':''}>${letter}. ${text}</option>`).join('')}</select> ${q.promptEnd||''}</div><div class="vocab-mini-feedback" id="vocab-feedback-${q.id}"></div></div>`;}).join('')}</div></div>`; part.questions.forEach(q=>updateVocabVisual(q.id));}
 function updateButtons(){prevBtn.disabled=currentScreen===0; nextBtn.disabled=currentScreen===screens.length-1; nextBtn.textContent=currentScreen===screens.length-1?'End':'Next'}
-function updateProgress(){const answered=allQuestions.filter(q=>window.answerState[q.id]).length; const percent=totalQuestions?Math.round(answered/totalQuestions*100):0; progressText.textContent=`Answered: ${answered} / ${totalQuestions}`; progressFill.style.width=percent+'%'; const screen=screens[currentScreen], part=screen?parts[screen.partIndex]:{shortTitle:''}; screenText.textContent=screen?.type==='question'?`${part.shortTitle} • Question ${getQuestionNumber(screen.qid)}`:screen?.type==='vocab'?`${part.shortTitle} • Vocabulary`:`${part.shortTitle||''} Instructions`;}
+  function updateProgress(){
+  const answered = allQuestions.filter(q => window.answerState[q.id]).length;
+  const percent = totalQuestions ? Math.round(answered / totalQuestions * 100) : 0;
+
+  progressText.textContent = `Answered: ${answered} / ${totalQuestions}`;
+  progressFill.style.width = percent + '%';
+
+  const screen = screens[currentScreen];
+  const part = screen ? parts[screen.partIndex] : {shortTitle:''};
+
+  screenText.textContent =
+    screen?.type === 'question'
+      ? `${part.shortTitle} • Question ${getQuestionNumber(screen.qid)}`
+      : screen?.type === 'vocab'
+      ? `${part.shortTitle} • Vocabulary`
+      : `${part.shortTitle || ''} Instructions`;
+
+  /* Lock submit until all questions are answered */
+  submitBtn.disabled = answered < totalQuestions;
+
+  if(answered < totalQuestions){
+    submitBtn.textContent = `Submit Answers (${answered}/${totalQuestions})`;
+  }else{
+    submitBtn.textContent = 'Submit Answers';
+  }
+}
 function updateVocabVisual(qid){const q=getQuestionById(qid), row=document.getElementById(`vocab-row-${qid}`), feedback=document.getElementById(`vocab-feedback-${qid}`); if(!q||!row||!feedback)return; const selected=window.answerState[qid]||null; row.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; if(!submitted)return; if(!selected){row.classList.add('unanswered');feedback.innerHTML='Choose one word, then submit again.';} else if(selected===q.answer){row.classList.add('correct');feedback.innerHTML='Correct. Great job!';} else {row.classList.add('incorrect');feedback.innerHTML='Try again. Read the whole sentence and choose a better word.';} feedback.classList.add('show');}
 function updateQuestionVisual(qid){const q=getQuestionById(qid), card=document.getElementById('questionCard'); if(!q||!card)return; const feedback=document.getElementById(`feedback-${qid}`), selected=window.answerState[qid]||null; card.classList.remove('correct','incorrect','unanswered'); feedback.classList.remove('show'); feedback.innerHTML=''; Object.keys(q.options||{}).forEach(letter=>{const option=document.getElementById(`option-${qid}-${letter}`); if(option)option.classList.remove('correct-choice','wrong-choice');}); if(!submitted)return; if(!selected){card.classList.add('unanswered');feedback.innerHTML='<strong>Not answered yet.</strong> Choose one answer, then submit again.';} else if(selected===q.answer){card.classList.add('correct'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('correct-choice'); feedback.innerHTML='<strong>Correct.</strong> Great job!';} else {card.classList.add('incorrect'); const option=document.getElementById(`option-${qid}-${selected}`); if(option)option.classList.add('wrong-choice'); feedback.innerHTML='<strong>Try again.</strong> Reread carefully and choose a better answer.';} feedback.classList.add('show');}
 function skillGroup(skill=''){if(skill.includes('Vocabulary')&&!skill.includes('Context'))return'words'; if(skill.includes('Grammar'))return'grammar'; if(skill.includes('Detail'))return'find'; if(skill.includes('Inference')||skill.includes('Evidence Check')||skill.includes('Connection')||skill.includes('Vocabulary in Context'))return'clues'; if(skill.includes('Overall Meaning'))return'big'; return'other';}
