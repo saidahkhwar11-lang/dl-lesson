@@ -1263,7 +1263,23 @@ function buildPerformanceSummary(records){
     finalPercent:0
   };
 
-  records.forEach(r=>{
+  const examRecords = records
+  .filter(r => normalizeProgramName(r) === 'exam')
+  .sort((a,b)=>{
+    const ap = recordScore(a);
+    const bp = recordScore(b);
+
+    const aPct = ap.total ? (ap.score/ap.total)*100 : 0;
+    const bPct = bp.total ? (bp.score/bp.total)*100 : 0;
+
+    return bPct - aPct;
+  })
+  .slice(0,4);
+  const nonExamRecords = records.filter(
+  r => normalizeProgramName(r) !== 'exam'
+);
+
+[...nonExamRecords, ...examRecords].forEach(r=>{
     const key=normalizeProgramName(r);
     const sc=recordScore(r);
     if(!summary[key]) return;
