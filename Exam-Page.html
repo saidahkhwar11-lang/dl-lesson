@@ -1816,7 +1816,11 @@ function renderStudentLibrary(){
   if(!box)return;
 
   const items=Object.entries(studentLibrary||{})
-    .filter(([id,ex])=>ex && ex.visibleToStudents!==false);
+    .filter(([id,ex]) =>
+      ex &&
+      ex.visibleToStudents !== false &&
+      ex.mode === 'revision'
+    );
 
   if(!items.length){
     box.className='';
@@ -1834,7 +1838,6 @@ function renderStudentLibrary(){
     </div>
   `).join('');
 }
-  
 function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
 function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
 function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
