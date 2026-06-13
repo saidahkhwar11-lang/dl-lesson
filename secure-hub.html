@@ -521,15 +521,82 @@ function teacherPanelHtml(){return `<aside class="panel"><div class="panelCard">
     <button onclick="saveAgendaItem()">+ Add Lesson / Activity</button><button class="secondary" onclick="copyPreviousWeek()">Copy Previous Week</button><button class="danger" onclick="clearThisWeek()">Clear This Week</button>
   </div></div><div class="panelCard"><h3>This Week Items</h3><div id="teacherAgendaList">${agendaItems.map(i=>`<div class="agendaListItem"><b>${esc(i.title)}</b><br>${esc(i.day)} • ${esc(PAGE_MAP[i.platform]?.label||i.platform)}</div>`).join("")||"No activities yet."}</div></div></aside>`}
 async function renderTeacherAgenda(){
-  const cls=Object.keys(classes)[0]||""; await loadAgenda(cls); renderAgenda("teacherAgendaSection",true);
-  setTimeout(()=>{const sel=byId("agendaClassSelect"); if(sel)sel.value=cls},0)
+  const cls=Object.keys(classes)[0]||"";
+  await loadAgenda(cls);
+  renderAgenda("teacherAgendaSection",true);
+
+  setTimeout(()=>{
+    const sel=byId("agendaClassSelect");
+    if(sel){
+      const oldOptions=sel.innerHTML;
+      if(!oldOptions.includes('value="all"')){
+        sel.innerHTML=`<option value="all">All Classes</option>` + oldOptions;
+      }
+      sel.value=cls;
+    }
+  },0);
 }
-async function teacherClassChanged(){await loadAgenda(byId("agendaClassSelect").value);renderAgenda("teacherAgendaSection",true)}
+
+async function teacherClassChanged(){
+  const selected=byId("agendaClassSelect").value;
+
+  if(selected==="all"){
+    const firstClass=Object.keys(classes)[0]||"";
+    await loadAgenda(firstClass);
+  }else{
+    await loadAgenda(selected);
+  }
+
+  renderAgenda("teacherAgendaSection",true);
+
+  setTimeout(()=>{
+    const sel=byId("agendaClassSelect");
+    if(sel){
+      const oldOptions=sel.innerHTML;
+      if(!oldOptions.includes('value="all"')){
+        sel.innerHTML=`<option value="all">All Classes</option>` + oldOptions;
+      }
+      sel.value=selected;
+    }
+  },0);
+}
+
 async function saveAgendaItem(){
-  const cls=byId("agendaClassSelect").value, day=byId("agendaDay").value, platform=byId("agendaPlatform").value, title=byId("agendaTitle").value.trim();
-  if(!cls||!title){alert("Choose class and write activity title.");return}
-  const id="agenda_"+safeKey(day+"_"+platform+"_"+title+"_"+Date.now());
-  await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).set({id,day,platform,title,order:Date.now(),createdAt:Date.now()});
+  const selectedClass=byId("agendaClassSelect").value;
+  const day=byId("agendaDay").value;
+  const platform=byId("agendaPlatform").value;
+  const title=byId("agendaTitle").value.trim();
+
+  if(!selectedClass || !title){
+    alert("Choose class and write activity title.");
+    return;
+  }
+
+  const classIds = selectedClass === "all"
+    ? Object.keys(classes || {})
+    : [selectedClass];
+
+  for(const cls of classIds){
+    const id="agenda_"+safeKey(day+"_"+platform+"_"+title+"_"+Date.now()+"_"+cls);
+
+    await db.ref(
+      `secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`
+    ).set({
+      id,
+      day,
+      platform,
+      title,
+      order:Date.now(),
+      createdAt:Date.now(),
+      assignedTo:selectedClass==="all" ? "all" : cls
+    });
+  }
+
+  alert(selectedClass==="all"
+    ? "Activity added to all classes."
+    : "Activity added to this class."
+  );
+
   await teacherClassChanged();
 }
 function editAgendaItem(id){
