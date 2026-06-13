@@ -44,7 +44,23 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .journeyCard{margin-top:24px;background:linear-gradient(135deg,#fff,#f3efff);border:1px solid #d9d0ff;border-radius:18px;padding:16px;color:#241569;min-height:150px}
 .journeyCard h3{font-family:Quicksand,sans-serif;font-size:15px;margin-bottom:8px}.journeyCard p{font-size:12px;line-height:1.55}.rocket{font-size:54px;text-align:right;margin-top:8px}
 .main{padding:18px 22px 28px;min-width:0}
-.topHeader{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+.topHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:16px;
+  margin-bottom:12px;
+}
+
+.userMiniLine{
+  background:#fff;
+  border:1px solid #dfe8ff;
+  border-radius:14px;
+  padding:10px 14px;
+  margin-bottom:16px;
+  color:#203a78;
+  font-weight:800;
+}
 .pageTitle{display:flex;align-items:center;gap:12px}.pageTitle .bigIcon{width:48px;height:48px;border-radius:16px;background:#eef4ff;color:var(--blue);display:grid;place-items:center;font-size:26px}
 .pageTitle h1{font-family:Quicksand,sans-serif;font-size:30px;color:#0d2d68}.pageTitle p{font-size:13px;color:#607197;margin-top:4px}
 .viewTabs{display:flex;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px}.viewTabs button{box-shadow:none;min-width:130px}.viewTabs button.off{background:#fff;color:#20345f}
@@ -143,22 +159,29 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
   </aside>
 
   <main class="main">
-    <div class="topHeader">
-      <div class="pageTitle"><div class="bigIcon">🗓️</div><div><h1>Weekly Agenda</h1><p>Your learning journey for this week.</p></div></div>
-      <div class="profile">
 
-  <div class="avatar">👩‍🎓</div>
+  <div class="topHeader">
 
-  <div>
-    <b id="studentNameTop">Student</b><br>
-    <span id="studentClassTop">Grade 9</span>
+    <div class="pageTitle">
+      <div class="bigIcon">🗓️</div>
+      <div>
+        <h1>Weekly Agenda</h1>
+        <p>Your learning journey for this week.</p>
+      </div>
+    </div>
+
+    <button class="logoutBtn" onclick="logoutAll()">
+      🚪 Logout
+    </button>
+
   </div>
 
-  <button class="logoutBtn" onclick="logoutAll()">
-    🚪 Logout
-  </button>
-
-</div>
+  <div class="userMiniLine">
+    👩‍🎓
+    <b id="studentNameTop">Student</b>
+    •
+    <span id="studentClassTop">Grade 9</span>
+  </div>
 
 <section id="agendaSection"></section>
 
