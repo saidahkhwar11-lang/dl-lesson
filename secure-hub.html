@@ -55,11 +55,46 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .legend{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;box-shadow:var(--shadow)}
 .legend span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}.dot{width:18px;height:18px;border-radius:50%;border:2px solid #9fb0cf;display:inline-grid;place-items:center}.dot.done{background:var(--green);border-color:var(--green);color:white}.dot.progress{border-color:var(--blue);color:var(--blue)}.dot.upcoming{border-color:var(--orange);color:var(--orange)}
 .contentGrid{display:grid;grid-template-columns:1fr 250px;gap:18px}
-.weekGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
-.dayCol{border:1px solid var(--line);border-radius:18px;background:#fff;min-height:510px;padding:10px;box-shadow:var(--shadow)}
+.weekGrid{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.dayCol{
+  border:1px solid var(--line);
+  border-radius:18px;
+  background:#fff;
+  min-height:auto;
+  padding:14px;
+  box-shadow:var(--shadow);
+  display:grid;
+  grid-template-columns:150px 1fr 140px;
+  gap:14px;
+  align-items:center;
+}
 .dayCol.mon{background:linear-gradient(180deg,#eff7ff,#fff)}.dayCol.tue{background:linear-gradient(180deg,#effff4,#fff)}.dayCol.wed{background:linear-gradient(180deg,#fff8e9,#fff)}.dayCol.thu{background:linear-gradient(180deg,#f5f1ff,#fff)}.dayCol.fri{background:linear-gradient(180deg,#fff0f4,#fff)}
 .dayHead{display:flex;gap:8px;align-items:center;margin:8px 4px 12px}.dayHead .cal{font-size:25px}.dayHead b{font-family:Quicksand,sans-serif;color:#0b57e3;font-size:14px;text-transform:uppercase}.dayHead span{display:block;font-size:13px;color:#10295c;margin-top:2px}
-.task{position:relative;background:#fff;border:1px solid #dde7ff;border-radius:14px;padding:12px 10px 12px 48px;margin-bottom:10px;min-height:104px;box-shadow:0 5px 14px rgba(45,68,130,.06)}
+.task{
+  position:relative;
+  background:#fff;
+  border:1px solid #dde7ff;
+  border-radius:14px;
+  padding:12px 12px 12px 46px;
+  margin-bottom:0;
+  min-height:92px;
+  box-shadow:0 5px 14px rgba(45,68,130,.06);
+}
+  .dayCol .task{
+  display:inline-block;
+  width:220px;
+  vertical-align:top;
+  margin-right:10px;
+}
+
+.dayCol .task:last-child{
+  margin-right:0;
+}
 .tick{position:absolute;left:12px;top:16px;width:20px;height:20px;border-radius:50%;border:2px solid #a8b6d2;display:grid;place-items:center;color:white;font-weight:900;font-size:12px}
 .task.done .tick{background:var(--green);border-color:var(--green)}.task.inprogress .tick{border-color:var(--blue);color:var(--blue)}
 .taskIcon{font-size:34px;float:left;margin-right:8px}.task h4{font-size:13px;font-weight:900;color:#0b2456;margin-bottom:4px}.task p{font-size:12px;color:#152957;line-height:1.45}
