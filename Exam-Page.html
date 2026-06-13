@@ -1151,6 +1151,7 @@ body.exam-focus-mode .topbar {
   <button onclick="previewTeacherSelectedExam()">👁 Preview</button>
   <button onclick="assignTeacherSelectedAsRevision()">📚 Assign as Revision</button>
   <button onclick="assignTeacherSelectedAsAssessment()">📝 Assign as Assessment</button>
+  <button class="danger" onclick="stopAssignedAssessment()">⛔ Stop Assessment</button>
   <button onclick="toggleTeacherSelectedVisibility()">👁 Show / Hide</button>
   <button class="danger" onclick="deleteTeacherSelectedExam()">🗑 Delete</button>
   <button onclick="location.href='secure-hub.html'">🏠 Teacher Hub</button>
@@ -1491,6 +1492,27 @@ function setTeacherStatus(msg, good=true){
   el.style.background=good?'#ecfdf5':'#fff7ed';
   el.style.color=good?'#166534':'#9a3412';
   el.style.borderColor=good?'#bbf7d0':'#fed7aa';
+}
+
+  async function stopAssignedAssessment(){
+  try{
+    const cls=document.getElementById('teacherClassSelect')?.value;
+
+    if(!cls){
+      setTeacherStatus('Choose a class first.',false);
+      return;
+    }
+
+    if(!confirm('Stop the active assessment for this class? Students will no longer open it.')) return;
+
+    await db.ref('examPage/activeExams/'+safeKey(cls)).remove();
+
+    setTeacherStatus('Assessment stopped for this class. Students can no longer open it.',true);
+
+  }catch(err){
+    console.warn(err);
+    setTeacherStatus('Could not stop assessment.',false);
+  }
 }
 
   async function loadLockedStudents(){
