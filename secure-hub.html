@@ -44,23 +44,7 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .journeyCard{margin-top:24px;background:linear-gradient(135deg,#fff,#f3efff);border:1px solid #d9d0ff;border-radius:18px;padding:16px;color:#241569;min-height:150px}
 .journeyCard h3{font-family:Quicksand,sans-serif;font-size:15px;margin-bottom:8px}.journeyCard p{font-size:12px;line-height:1.55}.rocket{font-size:54px;text-align:right;margin-top:8px}
 .main{padding:18px 22px 28px;min-width:0}
-.topHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:16px;
-  margin-bottom:12px;
-}
-
-.userMiniLine{
-  background:#fff;
-  border:1px solid #dfe8ff;
-  border-radius:14px;
-  padding:10px 14px;
-  margin-bottom:16px;
-  color:#203a78;
-  font-weight:800;
-}
+.topHeader{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
 .pageTitle{display:flex;align-items:center;gap:12px}.pageTitle .bigIcon{width:48px;height:48px;border-radius:16px;background:#eef4ff;color:var(--blue);display:grid;place-items:center;font-size:26px}
 .pageTitle h1{font-family:Quicksand,sans-serif;font-size:30px;color:#0d2d68}.pageTitle p{font-size:13px;color:#607197;margin-top:4px}
 .viewTabs{display:flex;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px}.viewTabs button{box-shadow:none;min-width:130px}.viewTabs button.off{background:#fff;color:#20345f}
@@ -89,22 +73,6 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .panelCard h3{font-family:Quicksand,sans-serif;color:#1b35b0;margin-bottom:10px}
 .panelCard p{font-size:12px;color:#607197;line-height:1.55;margin-bottom:10px}
 .panelBtn{width:100%;margin:5px 0}
-.logoutBtn{
-  border:none;
-  border-radius:14px;
-  padding:10px 14px;
-  background:#ef5267;
-  color:white;
-  font-family:Quicksand,sans-serif;
-  font-weight:800;
-  cursor:pointer;
-  transition:.2s;
-}
-
-.logoutBtn:hover{
-  transform:translateY(-1px);
-  opacity:.92;
-}
 .connected{display:grid;gap:9px}.connected .item{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px;font-weight:700;background:#fff}
 .progressBlock{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
 .progressBar{height:10px;background:#e8efff;border-radius:999px;overflow:hidden;margin:10px 0}.progressFill{height:100%;background:linear-gradient(90deg,var(--green),#63d98e);width:0%}.progressLine{display:flex;justify-content:space-between;font-weight:900}
@@ -116,6 +84,131 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .footerNote{margin-top:14px;border:1px solid #b9dafc;background:#eff7ff;color:#0d3f82;border-radius:12px;padding:12px;text-align:center;font-size:13px}
 @media(max-width:1150px){.appShell{grid-template-columns:1fr}.sidebar{position:static;height:auto}.contentGrid,.agendaTop{grid-template-columns:1fr}.weekGrid{grid-template-columns:1fr 1fr}.panel{grid-template-columns:1fr 1fr}.main{padding:14px}}
 @media(max-width:750px){.weekGrid,.panel,.stats{grid-template-columns:1fr}.topHeader{align-items:flex-start;flex-direction:column}.viewTabs{width:100%}.viewTabs button{flex:1}.teacherRow{grid-template-columns:1fr}}
+
+/* ===== Restored Student Report + Certificate Windows ===== */
+/* ===== STUDENT REPORT + CERTIFICATE WINDOWS ===== */
+.studentWindows{
+  display:grid;
+  grid-template-columns:1.15fr .85fr;
+  gap:22px;
+  margin:26px 0;
+}
+.infoWindow{
+  background:white;
+  border:2px solid #e4eaff;
+  border-radius:26px;
+  padding:20px;
+  box-shadow:0 8px 22px rgba(36,59,107,.08);
+  text-align:left;
+}
+.infoWindow h2{
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+  font-size:24px;
+  margin-bottom:10px;
+}
+.feedbackBox{
+  background:#eef4ff;
+  border:1px solid #d7e3ff;
+  color:#294a99;
+  border-radius:18px;
+  padding:12px 14px;
+  font-weight:700;
+  line-height:1.45;
+  margin:10px 0 14px;
+}
+.reportTableWrap{overflow:auto;border:1px solid #dfe8ff;border-radius:18px;background:white}
+.reportTable{width:100%;border-collapse:collapse;min-width:560px;font-size:13px}
+.reportTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px;font-family:Quicksand,sans-serif}
+.reportTable td{border-top:1px solid #edf2ff;padding:10px;vertical-align:top}
+.markGood{color:#176b45;font-weight:800}
+.markBad{color:#9a2740;font-weight:800}
+.actionList{display:grid;gap:8px;margin-top:10px}
+.actionItem{
+  background:#fff8df;
+  border:1px solid #f2d98a;
+  color:#775704;
+  border-radius:16px;
+  padding:10px 12px;
+  font-weight:700;
+  font-size:13px;
+}
+.certList{display:grid;gap:10px;margin-top:12px}
+.certCard{
+  background:linear-gradient(135deg,#fff,#f8fbff);
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+}
+.certCard b{color:#203a78}
+.certMeta{font-size:12px;color:#607197;margin-top:4px;line-height:1.4}
+.certBtn{
+  display:inline-block;
+  margin-top:8px;
+  border-radius:12px;
+  padding:8px 12px;
+  background:#2f63d9;
+  color:white;
+  font-family:Quicksand,sans-serif;
+  font-weight:800;
+  font-size:13px;
+  text-decoration:none;
+  border:none;
+  cursor:pointer;
+}
+.certBtn.secondaryCert{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}
+.miniLoading{color:#607197;font-size:13px;line-height:1.5}
+@media(max-width:900px){.studentWindows{grid-template-columns:1fr}}
+
+/* ===== COMPACT TERM VIEW ===== */
+.termControlBar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:8px;
+  flex-wrap:wrap;
+}
+.termControlBar h2{margin:0!important}
+.termSelectMini{
+  width:auto!important;
+  min-width:120px;
+  padding:8px 10px!important;
+  border-radius:12px!important;
+  font-size:13px!important;
+  font-weight:800!important;
+  color:#203a78!important;
+  background:#eef4ff!important;
+}
+.studentWindows{
+  grid-template-columns:1fr 1fr!important;
+  gap:16px!important;
+  margin:18px 0!important;
+}
+.infoWindow{
+  padding:14px!important;
+  border-radius:22px!important;
+}
+.infoWindow h2{font-size:22px!important;margin-bottom:6px!important}
+.feedbackBox{padding:9px 11px!important;font-size:13px!important;margin:8px 0 10px!important}
+.reportTable{font-size:12px!important;min-width:500px!important}
+.reportTable th,.reportTable td{padding:7px 8px!important}
+.actionItem{padding:8px 10px!important;font-size:12px!important}
+.certList{gap:7px!important;max-height:420px;overflow:auto;padding-right:3px}
+.certCard{padding:9px 10px!important;border-radius:14px!important}
+.certMeta{font-size:11px!important;margin-top:2px!important}
+.certBtn{padding:6px 10px!important;font-size:12px!important;margin-top:6px!important}
+.grid{gap:14px!important}
+.card{padding:18px 14px!important;border-radius:22px!important}
+.emoji{font-size:48px!important;margin-bottom:8px!important}
+.card h2{font-size:22px!important}
+.card p{font-size:13px!important;line-height:1.45!important}
+.hero{padding:24px!important;margin-bottom:20px!important}
+.hero h1{font-size:44px!important}
+.hero p{font-size:15px!important}
+@media(max-width:900px){.studentWindows{grid-template-columns:1fr!important}.certList{max-height:none}}
+
+
 </style>
 </head>
 
@@ -159,70 +252,40 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
   </aside>
 
   <main class="main">
-
-  <div class="topHeader">
-
-  <div class="pageTitle">
-    <div class="bigIcon">🗓️</div>
-    <div>
-      <h1>Weekly Agenda</h1>
-      <p>Your learning journey for this week.</p>
+    <div class="topHeader">
+      <div class="pageTitle"><div class="bigIcon">🗓️</div><div><h1>Weekly Agenda</h1><p>Your learning journey for this week.</p></div></div>
+      <div class="profile"><div class="avatar">👩‍🎓</div><div><b id="studentNameTop">Student</b><br><span id="studentClassTop">Grade 9</span></div></div>
     </div>
-  </div>
+    <section id="agendaSection"></section>
 
-  <div class="profile">
-    <div class="avatar">👩‍🎓</div>
-    <div>
-      <b id="studentNameTop">Student</b><br>
-      <span id="studentClassTop">Grade 9</span>
+    <div class="studentWindows">
+      <section id="reportSection" class="infoWindow">
+        <div class="termControlBar">
+          <h2>📊 My Performance Report</h2>
+          <select id="studentTermSelect" class="termSelectMini" onchange="reloadStudentTermView()">
+            <option value="term1">Term 1</option>
+            <option value="term2">Term 2</option>
+            <option value="term3">Term 3</option>
+          </select>
+        </div>
+        <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
+        <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...</div>
+        <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
+        <div id="studentNeededActions" class="actionList"></div>
+      </section>
+
+      <section class="infoWindow">
+        <div class="termControlBar">
+          <h2>🏅 My Certificates</h2>
+          <span id="certificateTermLabel" class="miniLoading">Term 1</span>
+        </div>
+        <div class="miniLoading">
+          Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
+        </div>
+        <div id="studentCertificatesList" class="certList"></div>
+      </section>
     </div>
-  </div>
-
-</div>
-
-<section id="agendaSection"></section>
-
-<section id="reportSection" class="infoWindow">
-
-  <div style="
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-bottom:10px;
-  ">
-    
-    <h2 style="margin:0;">📊 My Performance Report</h2>
-
-    <select
-      id="studentTermSelect"
-      onchange="renderStudentReport()"
-      style="
-        width:auto;
-        min-width:120px;
-        padding:8px 12px;
-        border-radius:12px;
-        border:1px solid #d7e3ff;
-        background:#eef4ff;
-        color:#203a78;
-        font-weight:800;
-      "
-    >
-      <option value="term1">Term 1</option>
-      <option value="term2">Term 2</option>
-      <option value="term3">Term 3</option>
-    </select>
-
-  </div>
-
-  <div id="studentReportTable" class="status">
-    Loading your records...
-  </div>
-
-</section>
-
-</main>
+  </main>
 </div>
 
 <div id="teacherHub" class="appShell hidden">
@@ -345,7 +408,7 @@ async function loadAgenda(classId){
 async function loadStudentRecords(session){
   studentRecordCache=[];
 
-  const ids = [
+  const ids=[
     session.studentId,
     session.password,
     safeKey(session.studentId),
@@ -359,10 +422,7 @@ async function loadStudentRecords(session){
     if(snap.exists()){
       Object.values(snap.val()||{}).forEach(r=>{
         const key=JSON.stringify(r);
-        if(!seen[key]){
-          seen[key]=true;
-          studentRecordCache.push(r);
-        }
+        if(!seen[key]){seen[key]=true;studentRecordCache.push(r);}
       });
     }
 
@@ -371,10 +431,7 @@ async function loadStudentRecords(session){
       Object.values(rev.val()||{}).forEach(r=>{
         const row={...r,page:"Exam Page",activityType:"Exam Page Revision"};
         const key=JSON.stringify(row);
-        if(!seen[key]){
-          seen[key]=true;
-          studentRecordCache.push(row);
-        }
+        if(!seen[key]){seen[key]=true;studentRecordCache.push(row);}
       });
     }
   }
@@ -382,9 +439,8 @@ async function loadStudentRecords(session){
   const progress=await db.ref(`secureHubWeeklyProgress/${weekKey()}/${session.classId}/${safeKey(session.studentId)}`).get();
   const manual=progress.exists()?progress.val()||{}:{};
   studentRecordCache.manualAgenda=manual;
-
-  console.log("Student records loaded:", studentRecordCache);
 }
+
 function recordMatchesItem(record,item){
   const txt=String((record.activityName||"")+" "+(record.title||"")+" "+(record.lessonTitle||"")+" "+(record.collectionTitle||"")+" "+(record.page||"")+" "+(record.activityType||"")+" "+(record.notes||"")).toLowerCase();
   const page=(PAGE_MAP[item.platform]?.label||"").toLowerCase();
@@ -411,9 +467,12 @@ async function markAgendaDone(id){
 }
 async function loadStudentDataAndAgenda(){
   const s=CURRENT_STUDENT_SESSION; if(!s)return;
-  await loadAgenda(s.classId); await loadStudentRecords(s);
-  renderAgenda("agendaSection", false); renderStudentReport();
+  await loadAgenda(s.classId);
+  await loadStudentRecords(s);
+  renderAgenda("agendaSection", false);
+  loadStudentHubWindows(s);
 }
+
 function renderAgenda(targetId, teacher=false){
   const target=byId(targetId); if(!target)return;
   const total=agendaItems.length, done=teacher?0:agendaItems.filter(isItemDone).length, pct=total?Math.round(done/total*100):0;
@@ -497,70 +556,339 @@ async function copyPreviousWeek(){
 }
 async function changeWeek(n){currentWeekOffset+=n;if(CURRENT_STUDENT_SESSION)await loadStudentDataAndAgenda();else await renderTeacherAgenda()}
 
-function getScoreText(r){const s=r.score??r.finalMark??r.bestScore??r.mark??"";const t=r.total??r.maxScore??r.outOf??"";return s===""?"Missing":(t?`${s}/${t}`:String(s))}
-function renderStudentReport(){
-  const selectedTerm = byId("studentTermSelect")?.value || "term1";
 
-  const rows = studentRecordCache
-    .filter(r => r && typeof r === "object")
-    .filter(r => recordTerm(r) === selectedTerm)
-    .filter(r => {
-      const type = String(r.activityType || "");
-      const page = String(r.page || "");
-      const notes = String(r.notes || "");
+function selectedStudentTerm(){
+  return byId("studentTermSelect")?.value || "term1";
+}
 
+function termLabel(term){
+  const n=String(term||"term1").replace(/[^0-9]/g,"") || "1";
+  return "Term " + n;
+}
+
+function normalizeTerm(value){
+  const v=String(value||"").toLowerCase().replace(/\s+/g,"");
+  if(v.includes("3")) return "term3";
+  if(v.includes("2")) return "term2";
+  return "term1";
+}
+
+function recordTerm(record){
+  const savedTerm=record?.term || record?.activeTerm || record?.termId || record?.schoolTerm || record?.activeSavingTerm;
+  if(savedTerm) return normalizeTerm(savedTerm);
+
+  const value=record?.time || record?.updatedAt || record?.completedAt || record?.savedAt || record?.issuedAt || Date.now();
+  const d=new Date(Number(value));
+  const m=d.getMonth()+1;
+  if(m>=8 && m<=12) return "term1";
+  if(m>=1 && m<=3) return "term2";
+  if(m>=4 && m<=7) return "term3";
+  return "term1";
+}
+
+function reloadStudentTermView(){
+  if(CURRENT_STUDENT_SESSION){
+    loadStudentHubWindows(CURRENT_STUDENT_SESSION);
+  }
+}
+
+function getScoreText(record){
+  if(!record) return "Missing";
+  const score=record.score ?? record.finalMark ?? record.totalScore ?? record.mark ?? record.bestScore ?? record.percentage ?? "";
+  const total=record.total ?? record.maxScore ?? record.outOf ?? record.max ?? "";
+  if(score==="" || score===null || typeof score==="undefined") return "Missing";
+  return total ? `${score}/${total}` : String(score);
+}
+
+function getActivityName(record,fallback){
+  return record?.activityName || record?.lessonTitle || record?.title || fallback;
+}
+
+function getUpdatedText(record){
+  const t=record?.updatedAt || record?.completedAt || record?.savedAt || record?.time || record?.date;
+  if(!t) return "-";
+  try{return new Date(Number(t)).toLocaleDateString();}catch(e){return String(t);}
+}
+
+function isFullMark(record){
+  if(!record) return false;
+  const score=Number(record.score ?? record.bestScore ?? 0);
+  const total=Number(record.total ?? record.max ?? 0);
+  return total>0 && score>=total;
+}
+
+async function readScheduledRecovery(session){
+  const studentId=String(session.studentId || session.password || "").trim();
+  const keys=[safeKey(session.className), session.classId].filter(Boolean);
+  const all={};
+  for(const k of keys){
+    const snap=await db.ref(`games/reading_rush_collection_v1/state/scheduledCollections/${k}/${studentId}`).get();
+    if(snap.exists()) Object.assign(all,snap.val()||{});
+  }
+  return Object.values(all).filter(x=>x && x.status!=="completed");
+}
+
+function renderReportTable(rows){
+  return `
+    <div class="reportTableWrap">
+      <table class="reportTable">
+        <thead>
+          <tr>
+            <th>Page</th>
+            <th>Activity / Lesson</th>
+            <th>Mark</th>
+            <th>Status</th>
+            <th>Updated</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map(r=>`
+            <tr>
+              <td><b>${esc(r.page)}</b></td>
+              <td>${esc(r.activity)}</td>
+              <td class="${r.record ? 'markGood' : 'markBad'}">${esc(r.mark)}</td>
+              <td>${r.record ? '✅ Saved' : '⚠️ Missing'}</td>
+              <td>${esc(r.updated)}</td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+async function loadStudentPerformanceWindow(session){
+  if(!db || !session) return;
+
+  const classId=session.classId;
+  const selectedTerm=selectedStudentTerm();
+  const ids=[session.studentId, session.password, safeKey(session.studentId), safeKey(session.password)].filter(Boolean);
+  const seen={};
+  const records=[];
+
+  for(const id of ids){
+    const snap=await db.ref(`teacherControlCenter/records/${classId}/${id}`).get();
+    if(snap.exists()){
+      Object.values(snap.val()||{}).forEach(r=>{
+        const key=JSON.stringify(r);
+        if(!seen[key]){seen[key]=true;records.push(r);}
+      });
+    }
+    const revisionSnap=await db.ref(`teacherControlCenter/revisionProgress/${classId}/${id}`).get();
+    if(revisionSnap.exists()){
+      Object.values(revisionSnap.val()||{}).forEach(r=>{
+        const row={
+          ...r,
+          activityType:"Exam Page Revision",
+          page:"Exam Page",
+          title:r.title || "Revision Practice",
+          score:r.bestScore ?? r.score,
+          total:r.total,
+          percentage:r.bestPercentage ?? r.percentage,
+          term:normalizeTerm(r.term || r.activeTerm || r.schoolTerm || selectedTerm),
+          updatedAt:r.updatedAt || r.createdAt || Date.now()
+        };
+        const key=JSON.stringify(row);
+        if(!seen[key]){seen[key]=true;records.push(row);}
+      });
+    }
+  }
+
+  const rows=records
+    .filter(r=>recordTerm(r)===selectedTerm)
+    .filter(r=>{
+      const type=String(r.activityType || "");
+      const notes=String(r.notes || "");
       return (
         notes.includes("Final DL lesson mark") ||
         type.includes("Skill Clash") ||
         type.includes("Reading Rush") ||
         type.includes("Exam Page") ||
-        page.includes("Exam Page")
+        String(r.page || "").includes("Exam Page")
       );
     })
-    .map(r => {
-      const notes = String(r.notes || "");
-      const type = String(r.activityType || "");
-      const pageRaw = String(r.page || "");
-
-      let page = "Activity";
-
-      if(notes.includes("Final DL lesson mark")) page = "DL Lesson";
-      else if(type.includes("Skill Clash")) page = "Skill Clash";
-      else if(type.includes("Reading Rush")) page = "Reading Rush";
-      else if(type.includes("Exam Page") || pageRaw.includes("Exam Page")) page = "Exam Page";
-
+    .map(r=>{
+      let page="Activity";
+      if(String(r.notes||"").includes("Final DL lesson mark")) page="DL Lesson";
+      else if(String(r.activityType||"").includes("Skill Clash")) page="Skill Clash";
+      else if(String(r.activityType||"").includes("Reading Rush")) page="Reading Rush";
+      else if(String(r.activityType||"").includes("Exam Page") || String(r.page||"").includes("Exam Page")) page="Exam Page";
       return {
         page,
-        activity: r.activityName || r.title || r.lessonTitle || page,
-        mark: getScoreText(r),
-        time: Number(r.time || r.updatedAt || r.createdAt || 0)
+        activity:getActivityName(r,page),
+        mark:getScoreText(r),
+        updated:getUpdatedText(r),
+        record:r
       };
     })
-    .sort((a,b)=>b.time-a.time);
+    .sort((a,b)=>Number(b.record.time || b.record.updatedAt || 0)-Number(a.record.time || a.record.updatedAt || 0));
 
-  byId("studentReportTable").innerHTML = rows.length
-    ? `<div style="overflow:auto">
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <thead>
-            <tr>
-              <th style="text-align:left;padding:8px;background:#eef4ff">Page</th>
-              <th style="text-align:left;padding:8px;background:#eef4ff">Activity</th>
-              <th style="text-align:left;padding:8px;background:#eef4ff">Mark</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows.map(r=>`
-              <tr>
-                <td style="padding:8px;border-top:1px solid #edf2ff"><b>${esc(r.page)}</b></td>
-                <td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.activity)}</td>
-                <td style="padding:8px;border-top:1px solid #edf2ff;color:#176b45;font-weight:900">${esc(r.mark)}</td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-      </div>`
-    : `<div class="status">No saved marks found for ${termLabel(selectedTerm)} yet.</div>`;
+  for(const row of rows){
+    if(row.record && row.page!=="Exam Page"){
+      await autoCreateCertificateIfFull(row.record,session,row.page,selectedTerm);
+    }
+  }
+
+  const uniqueRows=[];
+  rows.forEach(r=>{
+    const key=safeKey(r.page+"_"+r.activity+"_"+r.mark);
+    if(!uniqueRows.some(x=>x._key===key)){
+      r._key=key;
+      uniqueRows.push(r);
+    }
+  });
+
+  const recovery=await readScheduledRecovery(session);
+
+  byId("studentReportTable").innerHTML=uniqueRows.length
+    ? renderReportTable(uniqueRows)
+    : `<div class="actionItem">⚠️ No saved marks found for ${termLabel(selectedTerm)} yet.</div>`;
+
+  const actions=[];
+  if(!uniqueRows.length) actions.push("⚠️ No marks saved yet. Complete an activity first.");
+  recovery.forEach(a=>actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`));
+
+  if(actions.length){
+    byId("studentAutoMessage").innerHTML=`Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
+    byId("studentNeededActions").innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
+  }else{
+    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
+    byId("studentNeededActions").innerHTML=`<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
+  }
 }
+
+function certificateUrl(cert){
+  return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
+}
+
+async function autoCreateCertificateIfFull(record,session,page,selectedTerm){
+  if(!record || !isFullMark(record)) return;
+  const recordTime=record.time || record.updatedAt || record.completedAt || record.savedAt || Date.now();
+  selectedTerm=selectedTerm || recordTerm(record);
+  const certId=safeKey(selectedTerm+"_"+page+"_"+(record.activityName||page)+"_"+recordTime);
+  const certPath=`teacherControlCenter/certificates/${session.classId}/${session.studentId}/${certId}`;
+  const snap=await db.ref(certPath).get();
+  if(snap.exists()) return;
+  await db.ref(certPath).set({
+    certificateId:certId,
+    certificateTitle:"Certificate of Achievement",
+    source:page,
+    activityName:record.activityName || page,
+    studentId:session.studentId,
+    studentName:session.name,
+    classId:session.classId,
+    className:session.className,
+    term:selectedTerm,
+    time:recordTime,
+    issuedAt:recordTime,
+    score:Number(record.score || 0),
+    total:Number(record.total || 0),
+    reason:"Full mark achieved in " + (record.activityName || page),
+    date:new Date(Number(recordTime)).toLocaleDateString("en-GB")
+  });
+}
+
+function certificateDateText(c){
+  const date=c.date || c.issuedAt || c.createdAt || c.completedAt || c.updatedAt || Date.now();
+  try{return new Date(Number(date)).toLocaleDateString();}catch(e){return String(date || "-");}
+}
+
+let STUDENT_CERT_CACHE=[];
+function buildCertificateHTML(c,session){
+  const title=c.title || c.certificateTitle || "Certificate of Appreciation";
+  const activity=c.activityName || c.lessonTitle || c.page || "Learning Activity";
+  const student=c.studentName || session?.name || "Student";
+  const className=c.className || session?.className || "";
+  const reason=c.reason || "Excellent performance and active learning achievement";
+  const source=c.source || "DL Learning Hub";
+  const dateText=certificateDateText(c);
+  const scoreLine=(c.correct && c.questionsTotal) ? `${c.correct}/${c.questionsTotal} correct answers` : (c.percentage ? `${c.percentage}% achievement` : "Outstanding achievement");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${esc(title)}</title><style>
+  @page{size:A4 landscape;margin:12mm}body{font-family:Arial,sans-serif;background:#eef4ff;margin:0;padding:0;color:#20345f}.cert{min-height:calc(100vh - 40px);background:linear-gradient(135deg,#ffffff,#f8fbff,#fff7fb);border:10px solid #d8c7ff;border-radius:28px;margin:18px;padding:42px;text-align:center;box-sizing:border-box;position:relative}.badge{font-size:62px;margin-bottom:8px}h1{font-size:46px;color:#203a78;margin:8px 0 6px;font-family:Georgia,serif}.subtitle{font-size:18px;color:#607197;margin-bottom:24px}.student{font-size:44px;font-weight:800;color:#2f63d9;margin:18px 0;border-bottom:3px solid #d8c7ff;display:inline-block;padding:0 28px 8px}.text{font-size:20px;line-height:1.6;max-width:850px;margin:18px auto;color:#405377}.activity{font-size:24px;font-weight:800;color:#203a78;margin-top:12px}.meta{display:flex;justify-content:space-between;gap:20px;margin-top:42px;font-size:16px;color:#506080}.sign{margin-top:34px;border-top:2px solid #cfdcff;padding-top:8px;min-width:220px}.printBtn{position:fixed;top:12px;right:12px;background:#2f63d9;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}@media print{.printBtn{display:none}body{background:white}.cert{margin:0;min-height:auto}}
+  </style></head><body><button class="printBtn" onclick="window.print()">Download / Save PDF</button><div class="cert"><div class="badge">🏅</div><h1>${esc(title)}</h1><div class="subtitle">This certificate is proudly presented to</div><div class="student">${esc(student)}</div><div class="text">For ${esc(reason)} in</div><div class="activity">${esc(activity)}</div><div class="text"><b>${esc(scoreLine)}</b></div><div class="meta"><div><b>Class:</b> ${esc(className)}</div><div><b>Source:</b> ${esc(source)}</div><div><b>Date:</b> ${esc(dateText)}</div></div><div style="display:flex;justify-content:center;margin-top:30px"><div class="sign">Teacher / DL Learning Hub</div></div></div><script>setTimeout(()=>window.print(),600)<\/script></body></html>`;
+}
+
+function downloadCertificatePDF(index){
+  const c=STUDENT_CERT_CACHE[index];
+  if(!c){alert("Certificate not found.");return;}
+  const session=CURRENT_STUDENT_SESSION || JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY) || "null");
+  const win=window.open("","_blank");
+  if(!win){alert("Please allow popups to download the certificate PDF.");return;}
+  win.document.open();
+  win.document.write(buildCertificateHTML(c,session));
+  win.document.close();
+}
+
+async function loadStudentCertificatesWindow(session){
+  if(!db || !session) return;
+  const classId=session.classId;
+  const classKey=safeKey(session.className);
+  const studentId=String(session.studentId || session.password || "").trim();
+  const selectedTerm=selectedStudentTerm();
+  const termBox=byId("certificateTermLabel");
+  if(termBox) termBox.innerText=termLabel(selectedTerm);
+
+  const certs=[];
+  for(const key of [classId,classKey].filter(Boolean)){
+    const snap=await db.ref(`teacherControlCenter/certificates/${key}/${studentId}`).get();
+    if(snap.exists()) Object.values(snap.val()||{}).forEach(c=>certs.push(c));
+  }
+
+  const perfSnap=await db.ref(`teacherControlCenter/performance/${classId}/${studentId}`).get();
+  if(perfSnap.exists()){
+    Object.values(perfSnap.val()||{}).forEach(r=>{
+      if(r && certificateUrl(r)){
+        certs.push({
+          title:r.activityName || r.lessonTitle || r.title || "Achievement Certificate",
+          activityName:r.activityName || r.lessonTitle || r.title || "Activity",
+          date:r.completedAt || r.updatedAt || Date.now(),
+          pdfUrl:certificateUrl(r),
+          term:r.term || r.activeTerm || selectedTerm
+        });
+      }
+    });
+  }
+
+  const box=byId("studentCertificatesList");
+  if(!box) return;
+  if(!certs.length){
+    box.innerHTML=`<div class="actionItem">🏅 No certificates saved yet. Complete activities and teacher-released certificates will appear here.</div>`;
+    return;
+  }
+
+  const filteredCerts=certs.filter(c=>recordTerm(c)===selectedTerm);
+  const uniqueCerts=[];
+  filteredCerts.forEach(c=>{
+    const key=safeKey((c.source||c.page||"")+"_"+(c.activityName||c.lessonTitle||c.title||"")+"_"+(c.score||"")+"_"+(c.total||"")+"_"+selectedTerm);
+    if(!uniqueCerts.some(x=>x._uniqueKey===key)){
+      c._uniqueKey=key;
+      uniqueCerts.push(c);
+    }
+  });
+
+  if(!uniqueCerts.length){
+    box.innerHTML=`<div class="actionItem">🏅 No certificates for ${termLabel(selectedTerm)} yet.</div>`;
+    return;
+  }
+
+  STUDENT_CERT_CACHE=uniqueCerts;
+  box.innerHTML=uniqueCerts.map((c,index)=>{
+    const url=certificateUrl(c);
+    const title=c.title || c.certificateTitle || "Achievement Certificate";
+    const activity=c.activityName || c.lessonTitle || c.page || "Learning Activity";
+    const dateText=certificateDateText(c);
+    return `<div class="certCard"><b>🏅 ${esc(title)}</b><div class="certMeta">Activity: ${esc(activity)}<br>Date: ${esc(dateText)}</div><button class="certBtn" onclick="downloadCertificatePDF(${index})">Download PDF</button>${url ? `<a class="certBtn secondaryCert" href="${esc(url)}" target="_blank" download>Open Saved File</a>` : ``}</div>`;
+  }).join("");
+}
+
+function loadStudentHubWindows(session){
+  loadStudentPerformanceWindow(session);
+  loadStudentCertificatesWindow(session);
+}
+
+function renderStudentReport(){
+  if(CURRENT_STUDENT_SESSION) loadStudentPerformanceWindow(CURRENT_STUDENT_SESSION);
+}
+
 initFirebase();
 </script>
 </body>
