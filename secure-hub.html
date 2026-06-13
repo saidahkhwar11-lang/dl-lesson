@@ -55,18 +55,19 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .legend{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;box-shadow:var(--shadow)}
 .legend span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}.dot{width:18px;height:18px;border-radius:50%;border:2px solid #9fb0cf;display:inline-grid;place-items:center}.dot.done{background:var(--green);border-color:var(--green);color:white}.dot.progress{border-color:var(--blue);color:var(--blue)}.dot.upcoming{border-color:var(--orange);color:var(--orange)}
 .contentGrid{display:grid;grid-template-columns:1fr 250px;gap:18px}
+.contentGrid.studentFull{display:block}
 .weekGrid{
   display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:14px;
+  grid-template-columns:repeat(5,minmax(185px,1fr));
+  gap:16px;
 }
 
 .dayCol{
   border:1px solid var(--line);
   border-radius:18px;
   background:#fff;
-  min-height:510px;
-  padding:10px;
+  min-height:500px;
+  padding:12px;
   box-shadow:var(--shadow);
 }
 .dayCol.mon{background:linear-gradient(180deg,#eff7ff,#fff)}.dayCol.tue{background:linear-gradient(180deg,#effff4,#fff)}.dayCol.wed{background:linear-gradient(180deg,#fff8e9,#fff)}.dayCol.thu{background:linear-gradient(180deg,#f5f1ff,#fff)}.dayCol.fri{background:linear-gradient(180deg,#fff0f4,#fff)}
@@ -77,8 +78,8 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
   border:1px solid #dde7ff;
   border-radius:14px;
   padding:12px 12px 12px 46px;
-  margin-bottom:0;
-  min-height:92px;
+  margin-bottom:10px;
+  min-height:100px;
   box-shadow:0 5px 14px rgba(45,68,130,.06);
 }
 
@@ -512,12 +513,12 @@ function renderAgenda(targetId, teacher=false){
       <div class="weekNav"><button onclick="changeWeek(-1)">←</button><div class="weekCenter">📅 Week of <span>${weekRange()}</span></div><button onclick="changeWeek(1)">→</button></div>
       <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>In Progress</span><span><span class="dot upcoming">○</span>Upcoming</span><span><span class="dot"></span>Not Started</span></div>
     </div>
-    <div class="contentGrid">
+    <div class="contentGrid ${teacher?'':'studentFull'}">
       <div>
         <div class="weekGrid">${cols}</div>
         ${!teacher?`<div class="progressBlock"><div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div><div>${done} of ${total} activities completed</div><div class="footerNote">💡 When you complete an activity in DL Lesson, Reading Rush, Skill Clash, Exam Page, or Imposter, it will be marked here automatically when records are saved. Imposter is marked when you open/complete it from here.</div></div>`:''}
       </div>
-      ${teacher?teacherPanelHtml():studentPanelHtml(pct)}
+      ${teacher?teacherPanelHtml():''}
     </div>`;
 }
 function renderTask(item,teacher){
