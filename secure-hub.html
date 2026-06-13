@@ -1,379 +1,164 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>DL Secure Learning Hub</title>
+<title>Secure Hub Weekly Agenda</title>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
-<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{
-  min-height:100vh;
-  font-family:Inter,Arial,sans-serif;
-  background:linear-gradient(135deg,#eef6ff,#fff7fb,#f8f2ff);
-  color:#20345f;
-  padding:22px;
+:root{
+  --blue:#1263f1;--purple:#6d4cff;--ink:#10295c;--muted:#617198;
+  --line:#dfe8ff;--soft:#f6f9ff;--card:#fff;--green:#22b86b;--orange:#f97316;--red:#ef4444;
+  --shadow:0 10px 28px rgba(45,68,130,.10);--radius:22px;
 }
+body{min-height:100vh;font-family:Inter,Arial,sans-serif;background:linear-gradient(135deg,#f6f9ff,#fff7fb,#f8f2ff);color:var(--ink)}
 .hidden{display:none!important}
-.wrapper{max-width:1280px;margin:auto}
-.loginWrap{min-height:80vh;display:flex;align-items:center;justify-content:center}
-.loginCard{
-  width:min(520px,96vw);
-  background:white;
-  border:1px solid #dfe8ff;
-  border-radius:30px;
-  padding:26px;
-  box-shadow:0 18px 40px rgba(55,75,135,.14);
-}
-.loginCard h1{font-family:Quicksand,sans-serif;color:#203a78;font-size:34px;margin-bottom:10px}
-.loginCard p{color:#607197;font-size:14px;line-height:1.5;margin-bottom:14px}
+button{border:0;border-radius:14px;padding:11px 14px;font-family:Quicksand,sans-serif;font-weight:800;cursor:pointer;background:linear-gradient(135deg,var(--blue),var(--purple));color:#fff;box-shadow:0 8px 16px rgba(18,99,241,.16)}
+button.secondary{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;box-shadow:none}
+button.danger{background:#fff1f2;color:#be123c;border:1px solid #fecdd3;box-shadow:none}
+button.good{background:#eafff3;color:#176b45;border:1px solid #9fe4bd;box-shadow:none}
+input,select,textarea{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:11px;font-size:14px;font-family:Inter,sans-serif;outline:none;background:#fff}
+textarea{min-height:72px;resize:vertical}
+label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5px}
+.loginWrap{min-height:100vh;display:grid;place-items:center;padding:18px}
+.loginCard{width:min(520px,96vw);background:#fff;border:1px solid var(--line);border-radius:30px;padding:26px;box-shadow:0 18px 40px rgba(55,75,135,.14)}
+.loginCard h1{font-family:Quicksand,sans-serif;color:#203a78;font-size:34px;margin-bottom:8px}
+.loginCard p{color:#607197;font-size:14px;line-height:1.5;margin-bottom:12px}
 .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 16px}
-.tabBtn{
-  border:none;border-radius:16px;padding:12px;
-  font-family:Quicksand,sans-serif;font-weight:800;cursor:pointer;
-  background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;
-}
-.tabBtn.active{background:linear-gradient(135deg,#2f63d9,#7d5cff);color:white;border-color:transparent}
-label{display:block;font-weight:800;font-size:13px;margin:10px 0 6px;color:#314a80}
-input,select{width:100%;border:1px solid #cfdcff;border-radius:14px;padding:12px;font-size:15px;outline:none}
-.loginBtn{
-  width:100%;margin-top:14px;border:none;border-radius:16px;padding:13px;
-  background:linear-gradient(135deg,#2f63d9,#7d5cff);
-  color:white;font-family:Quicksand,sans-serif;font-weight:800;font-size:16px;cursor:pointer;
-}
-.teacherBtn{background:linear-gradient(135deg,#7d5cff,#b35cff)}
+.tabBtn{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff;box-shadow:none}.tabBtn.active{background:linear-gradient(135deg,var(--blue),var(--purple));color:white;border-color:transparent}
 .status{margin-top:12px;padding:10px 12px;border-radius:16px;font-size:13px;font-weight:700;background:#fff8df;border:1px solid #f2d98a;color:#775704}
-.bad{background:#fff0f3;border-color:#ffc4cf;color:#9a2740}
-.good{background:#eafff3;border-color:#9fe4bd;color:#176b45}
-.hero{
-  background:linear-gradient(135deg,#4f6edb,#8b6ee8);
-  color:white;padding:34px 24px;border-radius:30px;text-align:center;
-  box-shadow:0 12px 30px rgba(0,0,0,.12);margin-bottom:28px;
-}
-.hero h1{font-family:Quicksand,sans-serif;font-size:56px}
-.hero p{margin-top:10px;font-size:18px}
-.topBar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
-.userBox{background:white;border:1px solid #dfe8ff;border-radius:18px;padding:12px 16px;box-shadow:0 8px 18px rgba(55,75,135,.08)}
-.userBox b{color:#203a78}
-.logoutBtn{border:none;border-radius:14px;padding:10px 14px;background:#ef5267;color:white;font-family:Quicksand,sans-serif;font-weight:800;cursor:pointer}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:22px}
-.card{
-  background:white;border-radius:26px;padding:28px 20px;text-align:center;cursor:pointer;transition:.25s;
-  border:2px solid #e4eaff;box-shadow:0 8px 22px rgba(36,59,107,.08);
-}
-.card:hover{transform:translateY(-5px);box-shadow:0 12px 28px rgba(36,59,107,.15)}
-.teacherCard{border-color:#eadcff;background:linear-gradient(135deg,#fff,#fbf8ff)}
-.emoji{font-size:72px;margin-bottom:12px}
-.card h2{margin:0;font-size:26px;color:#243b6b;font-family:Quicksand,sans-serif}
-.card p{margin-top:10px;color:#6a7aa6;line-height:1.6;font-size:15px}
-.sectionTitle{font-family:Quicksand,sans-serif;color:#203a78;font-size:26px;margin:6px 0 16px}
-.footer{text-align:center;margin-top:30px;color:#7b88aa;font-size:13px}
-@media(max-width:700px){.hero h1{font-size:38px}.tabs{grid-template-columns:1fr}}
-
-/* ===== STUDENT REPORT + CERTIFICATE WINDOWS ===== */
-.studentWindows{
-  display:grid;
-  grid-template-columns:1.15fr .85fr;
-  gap:22px;
-  margin:26px 0;
-}
-.infoWindow{
-  background:white;
-  border:2px solid #e4eaff;
-  border-radius:26px;
-  padding:20px;
-  box-shadow:0 8px 22px rgba(36,59,107,.08);
-  text-align:left;
-}
-.infoWindow h2{
-  font-family:Quicksand,sans-serif;
-  color:#203a78;
-  font-size:24px;
-  margin-bottom:10px;
-}
-.feedbackBox{
-  background:#eef4ff;
-  border:1px solid #d7e3ff;
-  color:#294a99;
-  border-radius:18px;
-  padding:12px 14px;
-  font-weight:700;
-  line-height:1.45;
-  margin:10px 0 14px;
-}
-.reportTableWrap{overflow:auto;border:1px solid #dfe8ff;border-radius:18px;background:white}
-.reportTable{width:100%;border-collapse:collapse;min-width:560px;font-size:13px}
-.reportTable th{background:#eef4ff;color:#203a78;text-align:left;padding:10px;font-family:Quicksand,sans-serif}
-.reportTable td{border-top:1px solid #edf2ff;padding:10px;vertical-align:top}
-.markGood{color:#176b45;font-weight:800}
-.markBad{color:#9a2740;font-weight:800}
-.actionList{display:grid;gap:8px;margin-top:10px}
-.actionItem{
-  background:#fff8df;
-  border:1px solid #f2d98a;
-  color:#775704;
-  border-radius:16px;
-  padding:10px 12px;
-  font-weight:700;
-  font-size:13px;
-}
-.certList{display:grid;gap:10px;margin-top:12px}
-.certCard{
-  background:linear-gradient(135deg,#fff,#f8fbff);
-  border:1px solid #dfe8ff;
-  border-radius:18px;
-  padding:12px;
-}
-.certCard b{color:#203a78}
-.certMeta{font-size:12px;color:#607197;margin-top:4px;line-height:1.4}
-.certBtn{
-  display:inline-block;
-  margin-top:8px;
-  border-radius:12px;
-  padding:8px 12px;
-  background:#2f63d9;
-  color:white;
-  font-family:Quicksand,sans-serif;
-  font-weight:800;
-  font-size:13px;
-  text-decoration:none;
-  border:none;
-  cursor:pointer;
-}
-.certBtn.secondaryCert{background:#eef4ff;color:#294a99;border:1px solid #d7e3ff}
-.miniLoading{color:#607197;font-size:13px;line-height:1.5}
-@media(max-width:900px){.studentWindows{grid-template-columns:1fr}}
-
-/* ===== COMPACT TERM VIEW ===== */
-.termControlBar{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:8px;
-  flex-wrap:wrap;
-}
-.termControlBar h2{margin:0!important}
-.termSelectMini{
-  width:auto!important;
-  min-width:120px;
-  padding:8px 10px!important;
-  border-radius:12px!important;
-  font-size:13px!important;
-  font-weight:800!important;
-  color:#203a78!important;
-  background:#eef4ff!important;
-}
-.studentWindows{
-  grid-template-columns:1fr 1fr!important;
-  gap:16px!important;
-  margin:18px 0!important;
-}
-.infoWindow{
-  padding:14px!important;
-  border-radius:22px!important;
-}
-.infoWindow h2{font-size:22px!important;margin-bottom:6px!important}
-.feedbackBox{padding:9px 11px!important;font-size:13px!important;margin:8px 0 10px!important}
-.reportTable{font-size:12px!important;min-width:500px!important}
-.reportTable th,.reportTable td{padding:7px 8px!important}
-.actionItem{padding:8px 10px!important;font-size:12px!important}
-.certList{gap:7px!important;max-height:420px;overflow:auto;padding-right:3px}
-.certCard{padding:9px 10px!important;border-radius:14px!important}
-.certMeta{font-size:11px!important;margin-top:2px!important}
-.certBtn{padding:6px 10px!important;font-size:12px!important;margin-top:6px!important}
-.grid{gap:14px!important}
-.card{padding:18px 14px!important;border-radius:22px!important}
-.emoji{font-size:48px!important;margin-bottom:8px!important}
-.card h2{font-size:22px!important}
-.card p{font-size:13px!important;line-height:1.45!important}
-.hero{padding:24px!important;margin-bottom:20px!important}
-.hero h1{font-size:44px!important}
-.hero p{font-size:15px!important}
-@media(max-width:900px){.studentWindows{grid-template-columns:1fr!important}.certList{max-height:none}}
-
+.bad{background:#fff0f3;border-color:#ffc4cf;color:#9a2740}.goodStatus{background:#eafff3;border-color:#9fe4bd;color:#176b45}
+.appShell{display:grid;grid-template-columns:235px 1fr;min-height:100vh}
+.sidebar{background:rgba(255,255,255,.86);border-right:1px solid var(--line);padding:18px 14px;position:sticky;top:0;height:100vh;overflow:auto}
+.logo{display:flex;gap:10px;align-items:center;margin-bottom:26px}.logoIcon{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--blue),var(--purple));display:grid;place-items:center;color:#fff;font-size:24px}
+.logo h2{font-family:Quicksand,sans-serif;color:#07327c;font-size:22px;line-height:1}.logo p{font-size:11px;color:#607197;margin-top:4px}
+.sideTitle{font-size:11px;color:#607197;font-weight:900;margin:14px 8px 8px;text-transform:uppercase}
+.navBtn{width:100%;display:flex;align-items:center;gap:12px;background:transparent;color:#10295c;box-shadow:none;text-align:left;justify-content:flex-start;margin:4px 0;padding:12px;border-radius:14px}
+.navBtn:hover,.navBtn.active{background:#eef4ff;color:#0b57e3}.navIcon{font-size:21px;width:24px;text-align:center}
+.journeyCard{margin-top:24px;background:linear-gradient(135deg,#fff,#f3efff);border:1px solid #d9d0ff;border-radius:18px;padding:16px;color:#241569;min-height:150px}
+.journeyCard h3{font-family:Quicksand,sans-serif;font-size:15px;margin-bottom:8px}.journeyCard p{font-size:12px;line-height:1.55}.rocket{font-size:54px;text-align:right;margin-top:8px}
+.main{padding:18px 22px 28px;min-width:0}
+.topHeader{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}
+.pageTitle{display:flex;align-items:center;gap:12px}.pageTitle .bigIcon{width:48px;height:48px;border-radius:16px;background:#eef4ff;color:var(--blue);display:grid;place-items:center;font-size:26px}
+.pageTitle h1{font-family:Quicksand,sans-serif;font-size:30px;color:#0d2d68}.pageTitle p{font-size:13px;color:#607197;margin-top:4px}
+.viewTabs{display:flex;gap:8px;background:#fff;border:1px solid var(--line);border-radius:16px;padding:5px}.viewTabs button{box-shadow:none;min-width:130px}.viewTabs button.off{background:#fff;color:#20345f}
+.profile{display:flex;align-items:center;gap:10px}.avatar{width:46px;height:46px;border-radius:50%;background:#d8e2f5;display:grid;place-items:center;font-size:22px}.profile b{font-family:Quicksand,sans-serif}.profile span{font-size:12px;color:#607197}
+.agendaTop{display:grid;grid-template-columns:425px 1fr;gap:18px;align-items:center;margin:14px 0 18px}
+.weekNav{display:grid;grid-template-columns:48px 1fr 48px;background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow)}
+.weekNav button{border-radius:0;background:#fff;color:#10295c;box-shadow:none}.weekCenter{display:flex;align-items:center;gap:12px;justify-content:center;font-weight:900}
+.legend{background:#fff;border:1px solid var(--line);border-radius:16px;padding:12px;display:flex;gap:20px;flex-wrap:wrap;align-items:center;justify-content:center;box-shadow:var(--shadow)}
+.legend span{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}.dot{width:18px;height:18px;border-radius:50%;border:2px solid #9fb0cf;display:inline-grid;place-items:center}.dot.done{background:var(--green);border-color:var(--green);color:white}.dot.progress{border-color:var(--blue);color:var(--blue)}.dot.upcoming{border-color:var(--orange);color:var(--orange)}
+.contentGrid{display:grid;grid-template-columns:1fr 250px;gap:18px}
+.weekGrid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.dayCol{border:1px solid var(--line);border-radius:18px;background:#fff;min-height:510px;padding:10px;box-shadow:var(--shadow)}
+.dayCol.mon{background:linear-gradient(180deg,#eff7ff,#fff)}.dayCol.tue{background:linear-gradient(180deg,#effff4,#fff)}.dayCol.wed{background:linear-gradient(180deg,#fff8e9,#fff)}.dayCol.thu{background:linear-gradient(180deg,#f5f1ff,#fff)}.dayCol.fri{background:linear-gradient(180deg,#fff0f4,#fff)}
+.dayHead{display:flex;gap:8px;align-items:center;margin:8px 4px 12px}.dayHead .cal{font-size:25px}.dayHead b{font-family:Quicksand,sans-serif;color:#0b57e3;font-size:14px;text-transform:uppercase}.dayHead span{display:block;font-size:13px;color:#10295c;margin-top:2px}
+.task{position:relative;background:#fff;border:1px solid #dde7ff;border-radius:14px;padding:12px 10px 12px 48px;margin-bottom:10px;min-height:104px;box-shadow:0 5px 14px rgba(45,68,130,.06)}
+.tick{position:absolute;left:12px;top:16px;width:20px;height:20px;border-radius:50%;border:2px solid #a8b6d2;display:grid;place-items:center;color:white;font-weight:900;font-size:12px}
+.task.done .tick{background:var(--green);border-color:var(--green)}.task.inprogress .tick{border-color:var(--blue);color:var(--blue)}
+.taskIcon{font-size:34px;float:left;margin-right:8px}.task h4{font-size:13px;font-weight:900;color:#0b2456;margin-bottom:4px}.task p{font-size:12px;color:#152957;line-height:1.45}
+.tag{display:inline-block;margin-top:8px;border-radius:8px;padding:4px 7px;font-size:10px;font-weight:900;background:#e7f1ff;color:#0b57e3}
+.tag.Skill{background:#eef4ff;color:#2542a8}.tag.Exam{background:#f0edff;color:#5d3dcb}.tag.Imp{background:#fff0f4;color:#db2777}.tag.Reading{background:#e8fbff;color:#0891b2}
+.taskBtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.taskBtns button{padding:6px 8px;border-radius:9px;font-size:11px;box-shadow:none}
+.dayFoot{text-align:center;border:1px solid #cdebd7;background:#ecfdf5;color:#11834b;font-weight:900;border-radius:14px;padding:8px;margin-top:12px}
+.dayFoot.zero{background:#fff7ed;border-color:#fed7aa;color:#ea580c}
+.panel{display:grid;gap:14px}
+.panelCard{background:#fff;border:1px solid var(--line);border-radius:18px;padding:15px;box-shadow:var(--shadow)}
+.panelCard h3{font-family:Quicksand,sans-serif;color:#1b35b0;margin-bottom:10px}
+.panelCard p{font-size:12px;color:#607197;line-height:1.55;margin-bottom:10px}
+.panelBtn{width:100%;margin:5px 0}
+.connected{display:grid;gap:9px}.connected .item{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px;font-weight:700;background:#fff}
+.progressBlock{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.progressBar{height:10px;background:#e8efff;border-radius:999px;overflow:hidden;margin:10px 0}.progressFill{height:100%;background:linear-gradient(90deg,var(--green),#63d98e);width:0%}.progressLine{display:flex;justify-content:space-between;font-weight:900}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}.stat b{display:block;font-size:24px;font-family:Quicksand,sans-serif;margin-top:6px}
+.teacherForm{display:grid;gap:8px}.teacherRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.agendaListItem{border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0;background:#f8fbff;font-size:12px}.agendaListItem b{color:#10295c}
+.infoWindow{background:white;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-top:18px}
+.infoWindow h2{font-family:Quicksand,sans-serif;color:#203a78;font-size:22px;margin-bottom:10px}
+.footerNote{margin-top:14px;border:1px solid #b9dafc;background:#eff7ff;color:#0d3f82;border-radius:12px;padding:12px;text-align:center;font-size:13px}
+@media(max-width:1150px){.appShell{grid-template-columns:1fr}.sidebar{position:static;height:auto}.contentGrid,.agendaTop{grid-template-columns:1fr}.weekGrid{grid-template-columns:1fr 1fr}.panel{grid-template-columns:1fr 1fr}.main{padding:14px}}
+@media(max-width:750px){.weekGrid,.panel,.stats{grid-template-columns:1fr}.topHeader{align-items:flex-start;flex-direction:column}.viewTabs{width:100%}.viewTabs button{flex:1}.teacherRow{grid-template-columns:1fr}}
 </style>
 </head>
 
 <body>
-<div class="wrapper">
-
 <div id="loginScreen" class="loginWrap">
   <div class="loginCard">
-    <h1>🎮 DL Learning Hub</h1>
-    <p>Students login with ID only. Teachers login to create classes and activities.</p>
-
+    <h1>🛡️ Secure Hub</h1>
+    <p>Your learning journey in one place. Students login with ID only. Teachers manage the weekly agenda and class activity pages.</p>
     <div class="tabs">
       <button id="studentTab" class="tabBtn active" onclick="showLoginTab('student')">👩‍🎓 Student</button>
       <button id="teacherTab" class="tabBtn" onclick="showLoginTab('teacher')">👩‍🏫 Teacher</button>
     </div>
-
     <div id="studentLoginBox">
-      <label>Choose Class</label>
-      <select id="classSelect"></select>
-
-      <label>Student ID / Password</label>
-      <input id="studentPassword" placeholder="Write your school ID only">
-
-      <button class="loginBtn" onclick="loginStudent()">Enter Student Hub</button>
-      <div class="status good">Your name will appear automatically after login.</div>
+      <label>Choose Class</label><select id="classSelect"></select>
+      <label>Student ID / Password</label><input id="studentPassword" placeholder="Write your school ID only">
+      <button onclick="loginStudent()" style="width:100%;margin-top:14px">Enter Student Hub</button>
+      <div class="status goodStatus">Your weekly checklist will appear after login.</div>
     </div>
-
     <div id="teacherLoginBox" class="hidden">
-      <label>Teacher Password</label>
-      <input id="teacherPassword" type="password" placeholder="Teacher password">
-
-      <button class="loginBtn teacherBtn" onclick="loginTeacher()">Enter Teacher Hub</button>
+      <label>Teacher Password</label><input id="teacherPassword" type="password" placeholder="Teacher password">
+      <button onclick="loginTeacher()" style="width:100%;margin-top:14px">Enter Teacher Hub</button>
     </div>
-
     <div id="loginMsg"></div>
   </div>
 </div>
 
-<div id="studentHub" class="hidden">
-  <div class="hero">
-    <h1>🎮 DL Learning Hub</h1>
-    <p>Choose your activity. Your marks are saved automatically in the Teacher Control Center.</p>
-  </div>
+<div id="studentHub" class="appShell hidden">
+  <aside class="sidebar">
+    <div class="logo"><div class="logoIcon">🛡️</div><div><h2>SECURE HUB</h2><p>Your Learning, Our Mission</p></div></div>
+    <div class="sideTitle">Main Menu</div>
+    <button class="navBtn" onclick="scrollToTop()"><span class="navIcon">🏠</span>Home</button>
+    <button class="navBtn active" onclick="scrollToAgenda()"><span class="navIcon">🗓️</span>Weekly Agenda</button>
+    <button class="navBtn" onclick="openPage('DL-Lesson-Tracker.html')"><span class="navIcon">📘</span>DL Lesson</button>
+    <button class="navBtn" onclick="openPage('Reading-Rush-Tracker.html')"><span class="navIcon">📚</span>Reading Rush</button>
+    <button class="navBtn" onclick="openPage('Skill-Clash3-Tracker.html')"><span class="navIcon">⚔️</span>Skill Clash</button>
+    <button class="navBtn" onclick="openPage('Exam-Page.html')"><span class="navIcon">📝</span>Exam Page</button>
+    <button class="navBtn" onclick="openPage('imposter.html')"><span class="navIcon">🕵️</span>Imposter</button>
+    <button class="navBtn" onclick="scrollToReport()"><span class="navIcon">📊</span>Student Performance</button>
+    <button class="navBtn" onclick="logoutAll()"><span class="navIcon">🚪</span>Logout</button>
+    <div class="journeyCard"><h3>Learning Journey</h3><p>Stay consistent, keep learning, and achieve great things!</p><div class="rocket">🚀</div></div>
+  </aside>
 
-  <div class="topBar">
-    <div class="userBox">
-      <b id="studentDisplay"></b><br>
-      <span id="classDisplay"></span>
+  <main class="main">
+    <div class="topHeader">
+      <div class="pageTitle"><div class="bigIcon">🗓️</div><div><h1>Weekly Agenda</h1><p>Your learning journey for this week.</p></div></div>
+      <div class="profile"><div class="avatar">👩‍🎓</div><div><b id="studentNameTop">Student</b><br><span id="studentClassTop">Grade 9</span></div></div>
     </div>
-    <button class="logoutBtn" onclick="logoutAll()">Logout</button>
-  </div>
-
-  <h2 class="sectionTitle">👩‍🎓 Student Activities</h2>
-
-  <div class="grid">
-    <div class="card" onclick="openPage('DL-Lesson-Tracker.html')">
-      <div class="emoji">📘</div>
-      <h2>DL Lesson</h2>
-      <p>Interactive stations, live trackers, timers, and classroom lesson activities.</p>
-    </div>
-
-    <div class="card" onclick="openPage('Skill-Clash3-Tracker.html')">
-      <div class="emoji">⚔️</div>
-      <h2>Skill Clash</h2>
-      <p>Debate battles, group writing, voting rounds, and competitions.</p>
-    </div>
-
-    <div class="card" onclick="openPage('Reading-Rush-Tracker.html')">
-      <div class="emoji">📚</div>
-      <h2>Reading Rush</h2>
-      <p>Reading collections, paragraph races, comprehension, and vocabulary challenges.</p>
-    </div>
-
-<div class="card" onclick="openPage('Exam-Page.html')">
-  <div class="emoji">📝</div>
-      <h2>Exam Page</h2>
-      <p>Revision exams, grammar checks, vocabulary practice, and reading simulations.</p>
+    <section id="agendaSection"></section>
+    <section id="reportSection" class="infoWindow">
+      <h2>📊 My Performance Report</h2>
+      <div id="studentReportTable" class="status">Loading your records...</div>
+    </section>
+  </main>
 </div>
 
-    <div class="card" onclick="openPage('imposter.html')">
-      <div class="emoji">🕵️</div>
-      <h2>Classroom Imposter</h2>
-      <p>Fun-only classroom guessing game. No marks are saved.</p>
+<div id="teacherHub" class="appShell hidden">
+  <aside class="sidebar">
+    <div class="logo"><div class="logoIcon">🛡️</div><div><h2>SECURE HUB</h2><p>Teacher Control</p></div></div>
+    <div class="sideTitle">Teacher Menu</div>
+    <button class="navBtn active" onclick="scrollToAgenda()"><span class="navIcon">🗓️</span>Weekly Agenda</button>
+    <button class="navBtn" onclick="openPage('teacher-control.html')"><span class="navIcon">📊</span>Teacher Control</button>
+    <button class="navBtn" onclick="openPage('DL-Lesson-Tracker.html')"><span class="navIcon">📘</span>DL Lesson Builder</button>
+    <button class="navBtn" onclick="openPage('Reading-Rush-Tracker.html')"><span class="navIcon">📚</span>Reading Rush Builder</button>
+    <button class="navBtn" onclick="openPage('Skill-Clash3-Tracker.html')"><span class="navIcon">⚔️</span>Skill Clash Builder</button>
+    <button class="navBtn" onclick="openPage('Exam-Page.html?teacher=1')"><span class="navIcon">📝</span>Exam Manager</button>
+    <button class="navBtn" onclick="openPage('imposter.html')"><span class="navIcon">🕵️</span>Imposter</button>
+    <button class="navBtn" onclick="logoutAll()"><span class="navIcon">🚪</span>Logout</button>
+  </aside>
+  <main class="main">
+    <div class="topHeader">
+      <div class="pageTitle"><div class="bigIcon">🗓️</div><div><h1>Weekly Agenda</h1><p>Edit the current week. Students see changes instantly.</p></div></div>
+      <div class="viewTabs"><button>Teacher View</button></div>
     </div>
-  </div>
-
-  <div class="studentWindows">
-
-    <div class="infoWindow">
-      <div class="termControlBar">
-        <h2>📊 My Performance Report</h2>
-        <select id="studentTermSelect" class="termSelectMini" onchange="reloadStudentTermView()">
-          <option value="term1">Term 1</option>
-          <option value="term2">Term 2</option>
-          <option value="term3">Term 3</option>
-        </select>
-      </div>
-      <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
-      <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...</div>
-      <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
-      <div id="studentNeededActions" class="actionList"></div>
-    </div>
-
-    <div class="infoWindow">
-      <div class="termControlBar">
-        <h2>🏅 My Certificates</h2>
-        <span id="certificateTermLabel" class="miniLoading">Term 1</span>
-      </div>
-      <div class="miniLoading">
-        Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
-      </div>
-      <div id="studentCertificatesList" class="certList"></div>
-    </div>
-
-  </div>
-
-  <div class="footer">Student ID is used as the permanent record key.</div>
-</div>
-
-<div id="teacherHub" class="hidden">
-  <div class="hero">
-    <h1>👩‍🏫 Teacher Hub</h1>
-    <p>Create classes, manage records, and open any activity page to build lessons for students.</p>
-  </div>
-
-  <div class="topBar">
-    <div class="userBox">
-      <b>Welcome, Teacher</b><br>
-      <span>Control room + activity builders</span>
-    </div>
-    <button class="logoutBtn" onclick="logoutAll()">Logout</button>
-  </div>
-
-  <h2 class="sectionTitle">👩‍🏫 Teacher Pages</h2>
-
-  <div class="grid">
-    <div class="card teacherCard" onclick="openPage('teacher-control.html')">
-      <div class="emoji">📊</div>
-      <h2>Teacher Control</h2>
-      <p>Add classes, upload student Excel files, and check class/student performance records.</p>
-    </div>
-
-    <div class="card teacherCard" onclick="openPage('DL-Lesson-Tracker.html')">
-      <div class="emoji">📘</div>
-      <h2>DL Lesson Builder</h2>
-      <p>Open DL lesson page to create/edit lessons, stations, images, questions, and activities.</p>
-    </div>
-
-    <div class="card teacherCard" onclick="openPage('Skill-Clash3-Tracker.html')">
-      <div class="emoji">⚔️</div>
-      <h2>Skill Clash Builder</h2>
-      <p>Open Skill Clash to create writing, reading, debate, voting, and group activities.</p>
-    </div>
-
-    <div class="card teacherCard" onclick="openPage('Exam-Page.html?teacher=1')">
-  <div class="emoji">📝</div>
-  <h2>Exam Library Manager</h2>
-  <p>Manage revision pages, assign them as Revision or Assessment, activate them for classes, and track results.</p>
-</div>
-
-    <div class="card teacherCard" onclick="openPage('Reading-Rush-Tracker.html')">
-      <div class="emoji">📚</div>
-      <h2>Reading Rush Builder</h2>
-      <p>Open Reading Rush to create reading collections, questions, lesson plans, and live races.</p>
-    </div>
-
-    <div class="card teacherCard" onclick="openPage('imposter.html')">
-      <div class="emoji">🕵️</div>
-      <h2>Classroom Imposter</h2>
-      <p>Open the fun game page for classroom speaking, guessing, and discussion.</p>
-    </div>
-  </div>
-
-  <div class="footer">Teacher access is protected.</div>
-</div>
-
+    <section id="teacherAgendaSection"></section>
+  </main>
 </div>
 
 <script>
@@ -385,641 +170,220 @@ const FIREBASE_CONFIG = {
   storageBucket:"online-english-lesson-grade-9.firebasestorage.app",
   appId:"1:542666648554:web:5190c68ea73b3536dae093"
 };
-
-const STUDENT_SESSION_KEY = "DL_SECURE_STUDENT_LOGIN";
-const TEACHER_SESSION_KEY = "DL_SECURE_TEACHER_LOGIN";
-const TEACHER_PASSWORD = "Welcome@2020";
-
-let db=null;
-let classes={};
-let STUDENT_CERT_CACHE=[];
-let CURRENT_STUDENT_SESSION=null;
-
-function selectedStudentTerm(){
-  return byId("studentTermSelect")?.value || "term1";
-}
-
-function termLabel(term){
-  const n = String(term || "term1").replace(/[^0-9]/g,"") || "1";
-  return "Term " + n;
-}
-
-function normalizeTerm(value){
-  const v = String(value || "").toLowerCase().replace(/\s+/g,"");
-  if(v.includes("3")) return "term3";
-  if(v.includes("2")) return "term2";
-  return "term1";
-}
-
-function recordTerm(record){
-
-  const savedTerm =
-    record?.term ||
-    record?.activeTerm ||
-    record?.termId ||
-    record?.schoolTerm;
-
-  if(savedTerm){
-    return normalizeTerm(savedTerm);
-  }
-
-  const value =
-    record?.time ||
-    record?.updatedAt ||
-    record?.completedAt ||
-    record?.savedAt ||
-    record?.issuedAt ||
-    Date.now();
-
-  const d = new Date(Number(value));
-  const m = d.getMonth() + 1;
-
-  if(m >= 8 && m <= 12) return "term1"; // Aug-Dec
-  if(m >= 1 && m <= 3) return "term2";  // Jan-Mar
-  if(m >= 4 && m <= 7) return "term3";  // Apr-Jul
-
-  return "term1";
-}
-
-function reloadStudentTermView(){
-  if(CURRENT_STUDENT_SESSION){
-    loadStudentHubWindows(CURRENT_STUDENT_SESSION);
-  }
-}
-
+const STUDENT_SESSION_KEY="DL_SECURE_STUDENT_LOGIN";
+const TEACHER_SESSION_KEY="DL_SECURE_TEACHER_LOGIN";
+const TEACHER_PASSWORD="Welcome@2020";
+let db=null, classes={}, CURRENT_STUDENT_SESSION=null, currentWeekOffset=0, agendaItems=[], studentRecordCache=[];
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
+function safeKey(v){return String(v||"").trim().replace(/[.#$\[\]\/]/g,"_").replace(/\s+/g,"_") || "item"}
 function showMsg(text,type="status"){byId("loginMsg").innerHTML=`<div class="${type}">${text}</div>`}
-
-function showLoginTab(type){
-  byId("studentTab").classList.toggle("active",type==="student");
-  byId("teacherTab").classList.toggle("active",type==="teacher");
-  byId("studentLoginBox").classList.toggle("hidden",type!=="student");
-  byId("teacherLoginBox").classList.toggle("hidden",type!=="teacher");
-  byId("loginMsg").innerHTML="";
-}
+function showLoginTab(type){byId("studentTab").classList.toggle("active",type==="student");byId("teacherTab").classList.toggle("active",type==="teacher");byId("studentLoginBox").classList.toggle("hidden",type!=="student");byId("teacherLoginBox").classList.toggle("hidden",type!=="teacher");byId("loginMsg").innerHTML=""}
+function openPage(page){window.open(page,"_blank")}
+function scrollToTop(){window.scrollTo({top:0,behavior:"smooth"})}
+function scrollToAgenda(){document.getElementById("agendaSection")?.scrollIntoView({behavior:"smooth"});document.getElementById("teacherAgendaSection")?.scrollIntoView({behavior:"smooth"})}
+function scrollToReport(){document.getElementById("reportSection")?.scrollIntoView({behavior:"smooth"})}
 
 async function initFirebase(){
   try{
-    if(!firebase.apps.length)firebase.initializeApp(FIREBASE_CONFIG);
+    if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     db=firebase.database();
-
     const snap=await db.ref("teacherControlCenter/classes").get();
     classes=snap.exists()?snap.val():{};
-
     const list=Object.values(classes).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
-    byId("classSelect").innerHTML=list.length
-      ? list.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")
-      : `<option value="">No classes available</option>`;
-
+    byId("classSelect").innerHTML=list.length?list.map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join(""):`<option value="">No classes available</option>`;
     checkExistingLogin();
-  }catch(err){
-    showMsg("Firebase error: "+esc(err.message),"bad");
-  }
+  }catch(err){showMsg("Firebase error: "+esc(err.message),"bad")}
 }
-
 function checkExistingLogin(){
-  const teacher = sessionStorage.getItem(TEACHER_SESSION_KEY);
-  if(teacher==="yes"){openTeacherHub();return}
-
-  try{
-    const student=JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY)||"null");
-    if(student)openStudentHub(student);
-  }catch(e){}
+  if(sessionStorage.getItem(TEACHER_SESSION_KEY)==="yes"){openTeacherHub();return}
+  try{const st=JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY)||"null"); if(st) openStudentHub(st)}catch(e){}
 }
-
 async function loginStudent(){
-  const classId=byId("classSelect").value;
-  const pass=byId("studentPassword").value.trim();
-
-  if(!classId||!pass){
-    showMsg("Please choose your class and write your student ID.","bad");
-    return;
-  }
-
-  const cls=classes[classId];
-  const students=Object.values(cls?.students||{});
-
-  const match=students.find(s =>
-    String(s.password||"").trim()===pass ||
-    String(s.id||"").trim()===pass
-  );
-
-  if(!match){
-    showMsg("❌ Login denied. Check your class and student ID.","bad");
-    return;
-  }
-
-  const session={
-    classId:classId,
-    className:cls.name,
-    studentId:match.password || match.id,
-    name:match.name,
-    password:match.password || match.id,
-    loginTime:Date.now()
-  };
-
-localStorage.setItem(STUDENT_SESSION_KEY, JSON.stringify(session));
-localStorage.setItem('DL_SECURE_STUDENT_LOGIN', JSON.stringify(session));
-sessionStorage.setItem('DL_SECURE_STUDENT_LOGIN', JSON.stringify(session));
-  
-  // ✅ DAILY TRACKER LOGIN SAVE
-  try{
-    const d=new Date();
-    const todayKey=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-
-    const safeStudentId=String(session.studentId||"")
-      .trim()
-      .replace(/[.#$\[\]\/]/g,"_")
-      .replace(/\s+/g,"_");
-
-    const ref=firebase.database().ref(
-      "teacherControlCenter/dailyAttendance/"+todayKey+"/"+classId+"/"+safeStudentId
-    );
-
-    const snap=await ref.once("value");
-    const old=snap.val() || {};
-    const now=Date.now();
-
-    await ref.update({
-      name:session.name,
-      id:session.studentId,
-      classId:classId,
-      className:session.className,
-      attendance:"present",
-      present:true,
-      loginAt:old.loginAt || now,
-      firstLoginAt:old.firstLoginAt || now,
-      loginTimeMs:old.loginTimeMs || now,
-      lastActiveAt:now,
-      activityCount: old.activityCount || 0
-    });
-
-    console.log("✅ Daily attendance saved:", todayKey, classId, safeStudentId);
-  }catch(err){
-    console.error("❌ Daily attendance save failed:", err);
-  }
-
+  const classId=byId("classSelect").value, pass=byId("studentPassword").value.trim();
+  if(!classId||!pass){showMsg("Please choose class and write ID.","bad");return}
+  const cls=classes[classId], students=Object.values(cls?.students||{});
+  const match=students.find(s=>String(s.password||"").trim()===pass||String(s.id||"").trim()===pass);
+  if(!match){showMsg("❌ Login denied. Check class and ID.","bad");return}
+  const session={classId,className:cls.name,studentId:match.password||match.id,name:match.name,password:match.password||match.id,loginTime:Date.now()};
+  localStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(session));
+  sessionStorage.setItem(STUDENT_SESSION_KEY,JSON.stringify(session));
+  await saveDailyLogin(session);
   openStudentHub(session);
 }
-  
+async function saveDailyLogin(session){
+  try{
+    const d=new Date(); const todayKey=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    const sid=safeKey(session.studentId);
+    const ref=db.ref("teacherControlCenter/dailyAttendance/"+todayKey+"/"+session.classId+"/"+sid);
+    const old=(await ref.get()).val()||{}, now=Date.now();
+    await ref.update({name:session.name,id:session.studentId,classId:session.classId,className:session.className,attendance:"present",present:true,loginAt:old.loginAt||now,firstLoginAt:old.firstLoginAt||now,loginTimeMs:old.loginTimeMs||now,lastActiveAt:now,activityCount:old.activityCount||0});
+  }catch(e){console.warn(e)}
+}
 function loginTeacher(){
-  const pass=byId("teacherPassword").value;
-  if(pass!==TEACHER_PASSWORD){
-    showMsg("❌ Incorrect teacher password.","bad");
-    return;
-  }
-  sessionStorage.setItem(TEACHER_SESSION_KEY,"yes");
-  openTeacherHub();
+  if(byId("teacherPassword").value!==TEACHER_PASSWORD){showMsg("❌ Incorrect teacher password.","bad");return}
+  sessionStorage.setItem(TEACHER_SESSION_KEY,"yes"); openTeacherHub();
 }
-
-
-function safeKey(value){
-  return String(value || "").trim().replace(/[^a-zA-Z0-9_-]/g,"_");
-}
-
-function getTermFromDate(value){
-  const d = value ? new Date(Number(value)) : new Date();
-  const m = d.getMonth() + 1;
-
-  if(m >= 8 && m <= 12) return "term1"; // Aug-Dec
-  if(m >= 1 && m <= 3) return "term2";  // Jan-Mar
-  if(m >= 4 && m <= 7) return "term3";  // Apr-Jul
-
-  return "term1";
-}
-
-function getScoreText(record){
-  if(!record) return "Missing";
-  const score = record.score ?? record.finalMark ?? record.totalScore ?? record.mark ?? record.percentage ?? "";
-  const total = record.total ?? record.maxScore ?? record.outOf ?? "";
-  if(score === "" || score === null || typeof score === "undefined") return "Missing";
-  return total ? `${score}/${total}` : String(score);
-}
-
-function getActivityName(record, fallback){
-  return record?.activityName || record?.lessonTitle || record?.title || fallback;
-}
-
-function getUpdatedText(record){
-  const t = record?.updatedAt || record?.completedAt || record?.savedAt || record?.time || record?.date;
-  if(!t) return "-";
-  try{return new Date(Number(t)).toLocaleDateString();}catch(e){return String(t);}
-}
-
-async function readPerformanceRecord(classId, studentId, keys){
-  const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
-  if(!snap.exists()) return null;
-
-  const records = Object.values(snap.val() || {});
-
-  const matched = records.filter(r=>{
-    const type = String(r.activityType || "");
-    const name = String(r.activityName || "");
-const notes = String(r.notes || "");
-return keys.some(k => type.includes(k) || name.includes(k) || notes.includes(k));
-  });
-
-  if(!matched.length) return null;
-
-  matched.sort((a,b)=>{
-    const ap = Number(a.score || 0) / Math.max(Number(a.total || 1),1);
-    const bp = Number(b.score || 0) / Math.max(Number(b.total || 1),1);
-    return bp - ap;
-  });
-
-  return matched[0];
-}
-
-  function isFullMark(record){
-  if(!record) return false;
-  const score = Number(record.score || 0);
-  const total = Number(record.total || 0);
-  return total > 0 && score >= total;
-}
-  
-async function readScheduledRecovery(session){
-  const studentId = String(session.studentId || session.password || "").trim();
-  const keys = [safeKey(session.className), session.classId].filter(Boolean);
-  const all = {};
-
-  for(const k of keys){
-    const snap = await db.ref(`games/reading_rush_collection_v1/state/scheduledCollections/${k}/${studentId}`).get();
-    if(snap.exists()){
-      Object.assign(all, snap.val() || {});
-    }
-  }
-
-  return Object.values(all).filter(x => x && x.status !== "completed");
-}
-
-function renderReportTable(rows){
-  return `
-    <div class="reportTableWrap">
-      <table class="reportTable">
-        <thead>
-          <tr>
-            <th>Page</th>
-            <th>Activity / Lesson</th>
-            <th>Mark</th>
-            <th>Status</th>
-            <th>Updated</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.map(r=>`
-            <tr>
-              <td><b>${esc(r.page)}</b></td>
-              <td>${esc(r.activity)}</td>
-              <td class="${r.record ? 'markGood' : 'markBad'}">${esc(r.mark)}</td>
-              <td>${r.record ? '✅ Saved' : '⚠️ Missing'}</td>
-              <td>${esc(r.updated)}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
-
-async function loadStudentPerformanceWindow(session){
-  if(!db || !session) return;
-
-  const classId = session.classId;
-  const studentId = String(session.studentId || session.password || "").trim();
-  const selectedTerm = selectedStudentTerm();
-
-  const snap = await db.ref(`teacherControlCenter/records/${classId}/${studentId}`).get();
-  const records = snap.exists() ? Object.values(snap.val() || {}) : [];
-  const revisionSnap = await db.ref(
-  `teacherControlCenter/revisionProgress/${classId}/${studentId}`
-).get();
-
-const revisionRecords = revisionSnap.exists()
-  ? Object.values(revisionSnap.val() || {}).map(r => ({
-      ...r,
-      activityType: "Exam Page Revision",
-      page: "Exam Page",
-      title: r.title || "Revision Practice",
-      score: r.bestScore ?? r.score,
-      total: r.total,
-      percentage: r.bestPercentage ?? r.percentage,
-     term: normalizeTerm(r.term || r.activeTerm || r.schoolTerm || selectedTerm),
-    updatedAt: r.updatedAt || r.createdAt || Date.now()
-    }))
-  : [];
-
-const rows = records.concat(revisionRecords)
-  .filter(r=> recordTerm(r) === selectedTerm)
-    .filter(r=>{
-      const type = String(r.activityType || "");
-      const notes = String(r.notes || "");
-      return (
-        notes.includes("Final DL lesson mark") ||
-        type.includes("Skill Clash") ||
-        type.includes("Reading Rush") ||
-        type.includes("Exam Page") ||
-        String(r.page || "").includes("Exam Page")
-      );
-    })
-    .map(r=>{
-      let page = "Activity";
-      if(String(r.notes || "").includes("Final DL lesson mark")) page = "DL Lesson";
-      else if(String(r.activityType || "").includes("Skill Clash")) page = "Skill Clash";
-      else if(String(r.activityType || "").includes("Reading Rush")) page = "Reading Rush";
-      else if(String(r.activityType || "").includes("Exam Page") || String(r.page || "").includes("Exam Page")) page = "Exam Page";
-
-      return {
-        page: page,
-        activity: getActivityName(r, page),
-        mark: getScoreText(r),
-        updated: getUpdatedText(r),
-        record: r
-      };
-    })
-    .sort((a,b)=> Number(b.record.time || 0) - Number(a.record.time || 0));
-
-  for(const row of rows){
-    if(row.record && row.page !== "Exam Page"){
-      await autoCreateCertificateIfFull(row.record, session, row.page, selectedTerm);
-    }
-  }
-
-  const uniqueRows = [];
-
-rows.forEach(r=>{
-  const key = safeKey(r.page + "_" + r.activity + "_" + r.mark);
-  if(!uniqueRows.some(x => x._key === key)){
-    r._key = key;
-    uniqueRows.push(r);
-  }
-});
-
-  const recovery = await readScheduledRecovery(session);
-
-  byId("studentReportTable").innerHTML = uniqueRows.length
-  ? renderReportTable(uniqueRows)
-    : `<div class="actionItem">⚠️ No saved marks found yet.</div>`;
-
-  const actions = [];
-
-if(!uniqueRows.length){
-  actions.push("⚠️ No marks saved yet. Complete an activity first.");
-  }
-
-  recovery.forEach(a=>{
-    actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`);
-  });
-
-  if(actions.length){
-    byId("studentAutoMessage").innerHTML =
-      `Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
-    byId("studentNeededActions").innerHTML = actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
-  }else{
-    byId("studentAutoMessage").innerHTML =
-      `Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
-    byId("studentNeededActions").innerHTML =
-      `<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
-  }
-}
-  
-function certificateUrl(cert){
-  return cert.pdfUrl || cert.url || cert.downloadUrl || cert.fileUrl || cert.dataUrl || "";
-}
-
- async function autoCreateCertificateIfFull(record, session, page, selectedTerm){
-  if(!record || !isFullMark(record)) return;
-
-  const recordTime =
-    record.time ||
-    record.updatedAt ||
-    record.completedAt ||
-    record.savedAt ||
-    Date.now();
-
-  selectedTerm = selectedTerm || recordTerm(record);
-
-  const certId = safeKey(
-    selectedTerm + "_" +
-    page + "_" +
-    (record.activityName || page) + "_" +
-    recordTime
-  );
-
-  const certPath =
-    `teacherControlCenter/certificates/${session.classId}/${session.studentId}/${certId}`;
-
-  const snap = await db.ref(certPath).get();
-  if(snap.exists()) return;
-
-  await db.ref(certPath).set({
-    certificateId: certId,
-    certificateTitle: "Certificate of Achievement",
-    source: page,
-    activityName: record.activityName || page,
-    studentId: session.studentId,
-    studentName: session.name,
-    classId: session.classId,
-    className: session.className,
-    term: selectedTerm,
-    time: recordTime,
-    issuedAt: recordTime,
-    score: Number(record.score || 0),
-    total: Number(record.total || 0),
-    reason: "Full mark achieved in " + (record.activityName || page),
-    date: new Date(Number(recordTime)).toLocaleDateString("en-GB")
-  });
-}
-function certificateDateText(c){
-  const date = c.date || c.issuedAt || c.createdAt || c.completedAt || c.updatedAt || Date.now();
-  try{return new Date(Number(date)).toLocaleDateString();}catch(e){return String(date || "-");}
-}
-
-function buildCertificateHTML(c, session){
-  const title = c.title || c.certificateTitle || "Certificate of Appreciation";
-  const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
-  const student = c.studentName || session?.name || "Student";
-  const className = c.className || session?.className || "";
-  const reason = c.reason || "Excellent performance and active learning achievement";
-  const source = c.source || "DL Learning Hub";
-  const dateText = certificateDateText(c);
-  const scoreLine = (c.correct && c.questionsTotal)
-    ? `${c.correct}/${c.questionsTotal} correct answers`
-    : (c.percentage ? `${c.percentage}% achievement` : "Outstanding achievement");
-
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>${esc(title)}</title>
-<style>
-  @page{size:A4 landscape;margin:12mm}
-  body{font-family:Arial,sans-serif;background:#eef4ff;margin:0;padding:0;color:#20345f}
-  .cert{min-height:calc(100vh - 40px);background:linear-gradient(135deg,#ffffff,#f8fbff,#fff7fb);border:10px solid #d8c7ff;border-radius:28px;margin:18px;padding:42px;text-align:center;box-sizing:border-box;position:relative}
-  .badge{font-size:62px;margin-bottom:8px}
-  h1{font-size:46px;color:#203a78;margin:8px 0 6px;font-family:Georgia,serif}
-  .subtitle{font-size:18px;color:#607197;margin-bottom:24px}
-  .student{font-size:44px;font-weight:800;color:#2f63d9;margin:18px 0;border-bottom:3px solid #d8c7ff;display:inline-block;padding:0 28px 8px}
-  .text{font-size:20px;line-height:1.6;max-width:850px;margin:18px auto;color:#405377}
-  .activity{font-size:24px;font-weight:800;color:#203a78;margin-top:12px}
-  .meta{display:flex;justify-content:space-between;gap:20px;margin-top:42px;font-size:16px;color:#506080}
-  .sign{margin-top:34px;border-top:2px solid #cfdcff;padding-top:8px;min-width:220px}
-  .printBtn{position:fixed;top:12px;right:12px;background:#2f63d9;color:#fff;border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
-  @media print{.printBtn{display:none}body{background:white}.cert{margin:0;min-height:auto}}
-</style>
-</head>
-<body>
-<button class="printBtn" onclick="window.print()">Download / Save PDF</button>
-<div class="cert">
-  <div class="badge">🏅</div>
-  <h1>${esc(title)}</h1>
-  <div class="subtitle">This certificate is proudly presented to</div>
-  <div class="student">${esc(student)}</div>
-  <div class="text">For ${esc(reason)} in</div>
-  <div class="activity">${esc(activity)}</div>
-  <div class="text"><b>${esc(scoreLine)}</b></div>
-  <div class="meta">
-    <div><b>Class:</b> ${esc(className)}</div>
-    <div><b>Source:</b> ${esc(source)}</div>
-    <div><b>Date:</b> ${esc(dateText)}</div>
-  </div>
-  <div style="display:flex;justify-content:center;margin-top:30px">
-    <div class="sign">Teacher / DL Learning Hub</div>
-  </div>
-</div>
-<script>setTimeout(()=>window.print(),600)<\/script>
-</body>
-</html>`;
-}
-
-function downloadCertificatePDF(index){
-  const c = STUDENT_CERT_CACHE[index];
-  if(!c){alert("Certificate not found.");return;}
-  const session = JSON.parse(localStorage.getItem(STUDENT_SESSION_KEY) || "null");
-  const win = window.open("", "_blank");
-  if(!win){alert("Please allow popups to download the certificate PDF.");return;}
-  win.document.open();
-  win.document.write(buildCertificateHTML(c, session));
-  win.document.close();
-}
-
-async function loadStudentCertificatesWindow(session){
-  if(!db || !session) return;
-
-  const classId = session.classId;
-  const classKey = safeKey(session.className);
-  const studentId = String(session.studentId || session.password || "").trim();
-  const selectedTerm = selectedStudentTerm();
-  const termBox = byId("certificateTermLabel");
-  if(termBox) termBox.innerText = termLabel(selectedTerm);
-
-  const certs = [];
-
-  for(const key of [classId, classKey].filter(Boolean)){
-    const snap = await db.ref(`teacherControlCenter/certificates/${key}/${studentId}`).get();
-    if(snap.exists()){
-      Object.values(snap.val() || {}).forEach(c=>certs.push(c));
-    }
-  }
-
-  const perfSnap = await db.ref(`teacherControlCenter/performance/${classId}/${studentId}`).get();
-  if(perfSnap.exists()){
-    Object.values(perfSnap.val() || {}).forEach(r=>{
-      if(r && certificateUrl(r)){
-        certs.push({
-          title:r.activityName || r.lessonTitle || r.title || "Achievement Certificate",
-          activityName:r.activityName || r.lessonTitle || r.title || "Activity",
-          date:r.completedAt || r.updatedAt || Date.now(),
-          pdfUrl:certificateUrl(r)
-        });
-      }
-    });
-  }
-
-  const box = byId("studentCertificatesList");
-  if(!certs.length){
-    box.innerHTML = `<div class="actionItem">🏅 No certificates saved yet. Complete activities and teacher-released certificates will appear here.</div>`;
-    return;
-  }
-
-  const filteredCerts = certs.filter(c => recordTerm(c) === selectedTerm);
-
-  const uniqueCerts = [];
-
-filteredCerts.forEach(c => {
-  const key = safeKey(
-    (c.source || c.page || '') + '_' +
-    (c.activityName || c.lessonTitle || c.title || '') + '_' +
-    (c.score || '') + '_' +
-    (c.total || '') + '_' +
-    selectedTerm
-  );
-
-  if(!uniqueCerts.some(x => x._uniqueKey === key)){
-    c._uniqueKey = key;
-    uniqueCerts.push(c);
-  }
-});
-
-if(!uniqueCerts.length){
-  box.innerHTML = `<div class="actionItem">🏅 No certificates for ${termLabel(selectedTerm)} yet.</div>`;
-    return;
-  }
-
-STUDENT_CERT_CACHE = uniqueCerts;
-  
-  box.innerHTML = uniqueCerts.map((c,index)=>{
-    const url = certificateUrl(c);
-    const title = c.title || c.certificateTitle || "Achievement Certificate";
-    const activity = c.activityName || c.lessonTitle || c.page || "Learning Activity";
-    const dateText = certificateDateText(c);
-    return `
-      <div class="certCard">
-        <b>🏅 ${esc(title)}</b>
-        <div class="certMeta">
-          Activity: ${esc(activity)}<br>
-          Date: ${esc(dateText)}
-        </div>
-        <button class="certBtn" onclick="downloadCertificatePDF(${index})">Download PDF</button>
-        ${url ? `<a class="certBtn secondaryCert" href="${esc(url)}" target="_blank" download>Open Saved File</a>` : ``}
-      </div>
-    `;
-  }).join("");
-}
-
-function loadStudentHubWindows(session){
-  loadStudentPerformanceWindow(session);
-  loadStudentCertificatesWindow(session);
-}
+function logoutAll(){localStorage.removeItem(STUDENT_SESSION_KEY);sessionStorage.removeItem(STUDENT_SESSION_KEY);sessionStorage.removeItem(TEACHER_SESSION_KEY);location.reload()}
 
 function openStudentHub(session){
-  CURRENT_STUDENT_SESSION = session;
-  byId("loginScreen").classList.add("hidden");
-  byId("teacherHub").classList.add("hidden");
-  byId("studentHub").classList.remove("hidden");
-  byId("studentDisplay").innerText=session.name;
-  byId("classDisplay").innerText=session.className+" • ID: "+session.studentId;
-  loadStudentHubWindows(session);
+  CURRENT_STUDENT_SESSION=session;
+  byId("loginScreen").classList.add("hidden"); byId("teacherHub").classList.add("hidden"); byId("studentHub").classList.remove("hidden");
+  byId("studentNameTop").textContent=session.name; byId("studentClassTop").textContent=(session.className||session.classId)+" • ID: "+session.studentId;
+  loadStudentDataAndAgenda();
 }
-
 function openTeacherHub(){
-  byId("loginScreen").classList.add("hidden");
-  byId("studentHub").classList.add("hidden");
-  byId("teacherHub").classList.remove("hidden");
+  byId("loginScreen").classList.add("hidden"); byId("studentHub").classList.add("hidden"); byId("teacherHub").classList.remove("hidden");
+  renderTeacherAgenda();
 }
 
-function logoutAll(){
-  localStorage.removeItem(STUDENT_SESSION_KEY);
-  sessionStorage.removeItem(TEACHER_SESSION_KEY);
-  location.reload();
+function weekStart(offset=0){const d=new Date(); const day=d.getDay(); const diff=(day===0?-6:1-day)+(offset*7); d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d}
+function weekKey(offset=currentWeekOffset){const d=weekStart(offset);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function dayDate(i){const d=weekStart();d.setDate(d.getDate()+i);return d}
+function niceDate(d){return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}
+function weekRange(){const s=weekStart(currentWeekOffset), e=new Date(s); e.setDate(s.getDate()+4); return niceDate(s)+" – "+niceDate(e)+", "+s.getFullYear()}
+const DAYS=[["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],["thu","Thursday"],["fri","Friday"]];
+const PAGE_MAP={
+  dl:{label:"DL Lesson", icon:"📘", page:"DL-Lesson-Tracker.html", tag:"DL Lesson"},
+  reading:{label:"Reading Rush", icon:"📚", page:"Reading-Rush-Tracker.html", tag:"Reading"},
+  skill:{label:"Skill Clash", icon:"⚔️", page:"Skill-Clash3-Tracker.html", tag:"Skill"},
+  exam:{label:"Exam Page", icon:"📝", page:"Exam-Page.html", tag:"Exam"},
+  imposter:{label:"Imposter", icon:"🕵️", page:"imposter.html", tag:"Imp"}
+};
+async function loadAgenda(classId){
+  const snap=await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(classId)}/items`).get();
+  agendaItems=snap.exists()?Object.values(snap.val()||{}):[];
+  agendaItems.sort((a,b)=>(DAYS.findIndex(d=>d[0]===a.day)-DAYS.findIndex(d=>d[0]===b.day))||Number(a.order||0)-Number(b.order||0));
 }
+async function loadStudentRecords(session){
+  studentRecordCache=[];
+  const snap=await db.ref(`teacherControlCenter/records/${session.classId}/${safeKey(session.studentId)}`).get();
+  if(snap.exists()) studentRecordCache.push(...Object.values(snap.val()||{}));
+  const rev=await db.ref(`teacherControlCenter/revisionProgress/${session.classId}/${safeKey(session.studentId)}`).get();
+  if(rev.exists()) studentRecordCache.push(...Object.values(rev.val()||{}).map(r=>({...r,page:"Exam Page",activityType:"Exam Page Revision"})));
+  const progress=await db.ref(`secureHubWeeklyProgress/${weekKey()}/${session.classId}/${safeKey(session.studentId)}`).get();
+  const manual=progress.exists()?progress.val()||{}:{};
+  studentRecordCache.manualAgenda=manual;
+}
+function recordMatchesItem(record,item){
+  const txt=String((record.activityName||"")+" "+(record.title||"")+" "+(record.lessonTitle||"")+" "+(record.collectionTitle||"")+" "+(record.page||"")+" "+(record.activityType||"")+" "+(record.notes||"")).toLowerCase();
+  const page=(PAGE_MAP[item.platform]?.label||"").toLowerCase();
+  const title=String(item.title||"").toLowerCase();
+  return txt.includes(page.split(" ")[0]) && (!title || txt.includes(title) || title.includes(String(record.activityName||record.title||"").toLowerCase()));
+}
+function isItemDone(item){
+  if(studentRecordCache.manualAgenda?.[item.id]?.completed) return true;
+  if(item.platform==="imposter") return !!studentRecordCache.manualAgenda?.[item.id]?.opened;
+  return studentRecordCache.some(r=>recordMatchesItem(r,item));
+}
+async function openAgendaItem(id){
+  const item=agendaItems.find(x=>x.id===id); if(!item)return;
+  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
+  if(CURRENT_STUDENT_SESSION){
+    await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({opened:true,openedAt:Date.now(),platform:item.platform,title:item.title});
+  }
+  openPage(map.page);
+}
+async function markAgendaDone(id){
+  const item=agendaItems.find(x=>x.id===id); if(!item||!CURRENT_STUDENT_SESSION)return;
+  await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({completed:true,completedAt:Date.now(),platform:item.platform,title:item.title});
+  await loadStudentDataAndAgenda();
+}
+async function loadStudentDataAndAgenda(){
+  const s=CURRENT_STUDENT_SESSION; if(!s)return;
+  await loadAgenda(s.classId); await loadStudentRecords(s);
+  renderAgenda("agendaSection", false); renderStudentReport();
+}
+function renderAgenda(targetId, teacher=false){
+  const target=byId(targetId); if(!target)return;
+  const total=agendaItems.length, done=teacher?0:agendaItems.filter(isItemDone).length, pct=total?Math.round(done/total*100):0;
+  const cols=DAYS.map(([key,label],idx)=>{
+    const items=agendaItems.filter(i=>i.day===key);
+    const doneCount=teacher?0:items.filter(isItemDone).length;
+    return `<div class="dayCol ${key}">
+      <div class="dayHead"><div class="cal">🗓️</div><div><b>${label}</b><span>${niceDate(dayDate(idx))}</span></div></div>
+      ${items.length?items.map(item=>renderTask(item,teacher)).join(""):`<div class="status">No activities for this day.</div>`}
+      <div class="dayFoot ${doneCount===0?'zero':''}">${doneCount} / ${items.length} Completed</div>
+    </div>`;
+  }).join("");
+  target.innerHTML=`
+    <div class="agendaTop">
+      <div class="weekNav"><button onclick="changeWeek(-1)">←</button><div class="weekCenter">📅 Week of <span>${weekRange()}</span></div><button onclick="changeWeek(1)">→</button></div>
+      <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>In Progress</span><span><span class="dot upcoming">○</span>Upcoming</span><span><span class="dot"></span>Not Started</span></div>
+    </div>
+    <div class="contentGrid">
+      <div>
+        <div class="weekGrid">${cols}</div>
+        ${!teacher?`<div class="progressBlock"><div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div><div>${done} of ${total} activities completed</div><div class="footerNote">💡 When you complete an activity in DL Lesson, Reading Rush, Skill Clash, Exam Page, or Imposter, it will be marked here automatically when records are saved. Imposter is marked when you open/complete it from here.</div></div>`:''}
+      </div>
+      ${teacher?teacherPanelHtml():studentPanelHtml(pct)}
+    </div>`;
+}
+function renderTask(item,teacher){
+  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl, done=!teacher&&isItemDone(item);
+  const status=done?"done":"";
+  return `<div class="task ${status}">
+    <span class="tick">${done?"✓":""}</span>
+    <span class="taskIcon">${map.icon}</span>
+    <h4>${esc(map.label)}</h4>
+    <p>${esc(item.title||"Activity")}</p>
+    <span class="tag ${map.tag.split(" ")[0]}">${esc(map.label)}</span>
+    <div class="taskBtns">
+      ${teacher?`<button class="secondary" onclick="editAgendaItem('${item.id}')">Edit</button><button class="danger" onclick="deleteAgendaItem('${item.id}')">Delete</button>`:`<button class="secondary" onclick="openAgendaItem('${item.id}')">Open</button>${item.platform==="imposter"?`<button class="good" onclick="markAgendaDone('${item.id}')">Mark Done</button>`:''}`}
+    </div>
+  </div>`;
+}
+function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCard"><h3>Connected Platforms</h3><div class="connected">${Object.values(PAGE_MAP).map(p=>`<div class="item"><span>${p.icon} ${p.label}</span><span style="color:var(--green)">●</span></div>`).join("")}</div></div><div class="panelCard"><h3>Progress</h3><p>Progress updates automatically from your saved activity marks.</p><div style="font-size:36px;font-family:Quicksand;color:#203a78">${pct}%</div></div></aside>`}
+function teacherPanelHtml(){return `<aside class="panel"><div class="panelCard"><h3>Teacher Panel</h3><p>Manage this week. Changes are visible to students instantly.</p>
+  <div class="teacherForm">
+    <label>Choose Class</label><select id="agendaClassSelect" onchange="teacherClassChanged()">${Object.values(classes).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select>
+    <div class="teacherRow"><div><label>Day</label><select id="agendaDay">${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div><div><label>Platform</label><select id="agendaPlatform">${Object.entries(PAGE_MAP).map(([k,p])=>`<option value="${k}">${p.icon} ${p.label}</option>`).join("")}</select></div></div>
+    <label>Lesson / Activity Title</label><input id="agendaTitle" placeholder="Example: Reported Speech">
+    <button onclick="saveAgendaItem()">+ Add Lesson / Activity</button><button class="secondary" onclick="copyPreviousWeek()">Copy Previous Week</button><button class="danger" onclick="clearThisWeek()">Clear This Week</button>
+  </div></div><div class="panelCard"><h3>This Week Items</h3><div id="teacherAgendaList">${agendaItems.map(i=>`<div class="agendaListItem"><b>${esc(i.title)}</b><br>${esc(i.day)} • ${esc(PAGE_MAP[i.platform]?.label||i.platform)}</div>`).join("")||"No activities yet."}</div></div></aside>`}
+async function renderTeacherAgenda(){
+  const cls=Object.keys(classes)[0]||""; await loadAgenda(cls); renderAgenda("teacherAgendaSection",true);
+  setTimeout(()=>{const sel=byId("agendaClassSelect"); if(sel)sel.value=cls},0)
+}
+async function teacherClassChanged(){await loadAgenda(byId("agendaClassSelect").value);renderAgenda("teacherAgendaSection",true)}
+async function saveAgendaItem(){
+  const cls=byId("agendaClassSelect").value, day=byId("agendaDay").value, platform=byId("agendaPlatform").value, title=byId("agendaTitle").value.trim();
+  if(!cls||!title){alert("Choose class and write activity title.");return}
+  const id="agenda_"+safeKey(day+"_"+platform+"_"+title+"_"+Date.now());
+  await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).set({id,day,platform,title,order:Date.now(),createdAt:Date.now()});
+  await teacherClassChanged();
+}
+function editAgendaItem(id){
+  const item=agendaItems.find(x=>x.id===id); if(!item)return;
+  const title=prompt("Edit activity title:",item.title||""); if(!title)return;
+  const cls=byId("agendaClassSelect").value;
+  db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).update({title,updatedAt:Date.now()}).then(teacherClassChanged);
+}
+function deleteAgendaItem(id){
+  if(!confirm("Delete this agenda item?"))return;
+  const cls=byId("agendaClassSelect").value;
+  db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).remove().then(teacherClassChanged);
+}
+async function clearThisWeek(){
+  const cls=byId("agendaClassSelect").value; if(!confirm("Clear this week's agenda for this class?"))return;
+  await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items`).remove(); await teacherClassChanged();
+}
+async function copyPreviousWeek(){
+  const cls=byId("agendaClassSelect").value;
+  const prevKey=(()=>{const d=weekStart(currentWeekOffset-1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
+  const snap=await db.ref(`secureHubWeeklyAgenda/${prevKey}/${safeKey(cls)}/items`).get();
+  if(!snap.exists()){alert("No previous week agenda found.");return}
+  await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items`).set(snap.val()); await teacherClassChanged();
+}
+async function changeWeek(n){currentWeekOffset+=n;if(CURRENT_STUDENT_SESSION)await loadStudentDataAndAgenda();else await renderTeacherAgenda()}
 
-function openPage(page){
-  window.open(page, "_blank");
+function getScoreText(r){const s=r.score??r.finalMark??r.bestScore??r.mark??"";const t=r.total??r.maxScore??r.outOf??"";return s===""?"Missing":(t?`${s}/${t}`:String(s))}
+function renderStudentReport(){
+  const rows=studentRecordCache.filter(r=>r && typeof r==="object").slice(-20).reverse();
+  byId("studentReportTable").innerHTML=rows.length?`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;padding:8px;background:#eef4ff">Page</th><th style="text-align:left;padding:8px;background:#eef4ff">Activity</th><th style="text-align:left;padding:8px;background:#eef4ff">Mark</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.page||r.activityType||"Activity")}</td><td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.activityName||r.title||r.lessonTitle||"Activity")}</td><td style="padding:8px;border-top:1px solid #edf2ff;color:#176b45;font-weight:900">${esc(getScoreText(r))}</td></tr>`).join("")}</tbody></table></div>`:`<div class="status">No saved marks found yet.</div>`;
 }
-  initFirebase();
-  
+initFirebase();
 </script>
 </body>
 </html>
