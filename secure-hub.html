@@ -73,6 +73,22 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .panelCard h3{font-family:Quicksand,sans-serif;color:#1b35b0;margin-bottom:10px}
 .panelCard p{font-size:12px;color:#607197;line-height:1.55;margin-bottom:10px}
 .panelBtn{width:100%;margin:5px 0}
+.logoutBtn{
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  background:#ef5267;
+  color:white;
+  font-family:Quicksand,sans-serif;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+}
+
+.logoutBtn:hover{
+  transform:translateY(-1px);
+  opacity:.92;
+}
 .connected{display:grid;gap:9px}.connected .item{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:12px;padding:10px;font-size:13px;font-weight:700;background:#fff}
 .progressBlock{margin-top:16px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
 .progressBar{height:10px;background:#e8efff;border-radius:999px;overflow:hidden;margin:10px 0}.progressFill{height:100%;background:linear-gradient(90deg,var(--green),#63d98e);width:0%}.progressLine{display:flex;justify-content:space-between;font-weight:900}
@@ -129,14 +145,64 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
   <main class="main">
     <div class="topHeader">
       <div class="pageTitle"><div class="bigIcon">🗓️</div><div><h1>Weekly Agenda</h1><p>Your learning journey for this week.</p></div></div>
-      <div class="profile"><div class="avatar">👩‍🎓</div><div><b id="studentNameTop">Student</b><br><span id="studentClassTop">Grade 9</span></div></div>
-    </div>
-    <section id="agendaSection"></section>
-    <section id="reportSection" class="infoWindow">
-      <h2>📊 My Performance Report</h2>
-      <div id="studentReportTable" class="status">Loading your records...</div>
-    </section>
-  </main>
+      <div class="profile">
+
+  <div class="avatar">👩‍🎓</div>
+
+  <div>
+    <b id="studentNameTop">Student</b><br>
+    <span id="studentClassTop">Grade 9</span>
+  </div>
+
+  <button class="logoutBtn" onclick="logoutAll()">
+    🚪 Logout
+  </button>
+
+</div>
+
+<section id="agendaSection"></section>
+
+<section id="reportSection" class="infoWindow">
+
+  <div style="
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-bottom:10px;
+  ">
+    
+    <h2 style="margin:0;">📊 My Performance Report</h2>
+
+    <select
+      id="studentTermSelect"
+      onchange="renderStudentReport()"
+      style="
+        width:auto;
+        min-width:120px;
+        padding:8px 12px;
+        border-radius:12px;
+        border:1px solid #d7e3ff;
+        background:#eef4ff;
+        color:#203a78;
+        font-weight:800;
+      "
+    >
+      <option value="term1">Term 1</option>
+      <option value="term2">Term 2</option>
+      <option value="term3">Term 3</option>
+    </select>
+
+  </div>
+
+  <div id="studentReportTable" class="status">
+    Loading your records...
+  </div>
+
+</section>
+
+</main>
 </div>
 
 <div id="teacherHub" class="appShell hidden">
