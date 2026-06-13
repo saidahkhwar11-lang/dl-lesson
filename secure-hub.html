@@ -380,8 +380,67 @@ async function changeWeek(n){currentWeekOffset+=n;if(CURRENT_STUDENT_SESSION)awa
 
 function getScoreText(r){const s=r.score??r.finalMark??r.bestScore??r.mark??"";const t=r.total??r.maxScore??r.outOf??"";return s===""?"Missing":(t?`${s}/${t}`:String(s))}
 function renderStudentReport(){
-  const rows=studentRecordCache.filter(r=>r && typeof r==="object").slice(-20).reverse();
-  byId("studentReportTable").innerHTML=rows.length?`<div style="overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;padding:8px;background:#eef4ff">Page</th><th style="text-align:left;padding:8px;background:#eef4ff">Activity</th><th style="text-align:left;padding:8px;background:#eef4ff">Mark</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.page||r.activityType||"Activity")}</td><td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.activityName||r.title||r.lessonTitle||"Activity")}</td><td style="padding:8px;border-top:1px solid #edf2ff;color:#176b45;font-weight:900">${esc(getScoreText(r))}</td></tr>`).join("")}</tbody></table></div>`:`<div class="status">No saved marks found yet.</div>`;
+  const selectedTerm = byId("studentTermSelect")?.value || "term1";
+
+  const rows = studentRecordCache
+    .filter(r => r && typeof r === "object")
+    .filter(r => recordTerm(r) === selectedTerm)
+    .filter(r => {
+      const type = String(r.activityType || "");
+      const page = String(r.page || "");
+      const notes = String(r.notes || "");
+
+      return (
+        notes.includes("Final DL lesson mark") ||
+        type.includes("Skill Clash") ||
+        type.includes("Reading Rush") ||
+        type.includes("Exam Page") ||
+        page.includes("Exam Page")
+      );
+    })
+    .map(r => {
+      const notes = String(r.notes || "");
+      const type = String(r.activityType || "");
+      const pageRaw = String(r.page || "");
+
+      let page = "Activity";
+
+      if(notes.includes("Final DL lesson mark")) page = "DL Lesson";
+      else if(type.includes("Skill Clash")) page = "Skill Clash";
+      else if(type.includes("Reading Rush")) page = "Reading Rush";
+      else if(type.includes("Exam Page") || pageRaw.includes("Exam Page")) page = "Exam Page";
+
+      return {
+        page,
+        activity: r.activityName || r.title || r.lessonTitle || page,
+        mark: getScoreText(r),
+        time: Number(r.time || r.updatedAt || r.createdAt || 0)
+      };
+    })
+    .sort((a,b)=>b.time-a.time);
+
+  byId("studentReportTable").innerHTML = rows.length
+    ? `<div style="overflow:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead>
+            <tr>
+              <th style="text-align:left;padding:8px;background:#eef4ff">Page</th>
+              <th style="text-align:left;padding:8px;background:#eef4ff">Activity</th>
+              <th style="text-align:left;padding:8px;background:#eef4ff">Mark</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows.map(r=>`
+              <tr>
+                <td style="padding:8px;border-top:1px solid #edf2ff"><b>${esc(r.page)}</b></td>
+                <td style="padding:8px;border-top:1px solid #edf2ff">${esc(r.activity)}</td>
+                <td style="padding:8px;border-top:1px solid #edf2ff;color:#176b45;font-weight:900">${esc(r.mark)}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>`
+    : `<div class="status">No saved marks found for ${termLabel(selectedTerm)} yet.</div>`;
 }
 initFirebase();
 </script>
