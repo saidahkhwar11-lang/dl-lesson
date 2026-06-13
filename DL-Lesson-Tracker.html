@@ -796,9 +796,6 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   
   <div id="teacherOverviewCard" class="card">
 
-    <div class="btns" style="margin-bottom:10px;">
-  <button class="secondary" onclick="spinStudent()">🎡 Spinner</button>
-</div>
       <div id="spinnerBox" style="
   display:none;
   margin-top:10px;
@@ -823,30 +820,25 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
       <div class="btns" style="justify-content:space-between;align-items:center;">
         <h2 style="margin:0;">Lesson Stations</h2>
-       <div class="btns">
+       <div class="btns teacher-main-actions">
+  <button class="secondary" style="width:auto" onclick="showTeacherSection('teacherLibraryCard')">📚 Library</button>
+  <button class="goodbtn" style="width:auto" onclick="createNewBlankLesson()">➕ New Lesson</button>
   <button class="secondary" style="width:auto" onclick="toggleBonusPopup()">🎁 Bonus</button>
-
-  <button class="secondary" style="width:auto" onclick="exportLessonData()">💾 Save</button>
-
-  <button class="secondary" style="width:auto" onclick="document.getElementById('lessonDataFile').click()">📂 Load</button>
-
-  <button class="secondary" style="width:auto" onclick="showTeacherSection('teacherLibraryCard')">
-    📚 Library
-  </button>
-
-  <button class="goodbtn" onclick="syncFinalDLMarks()">
-  🔄 Sync Final DL Marks
-</button>
-         
-<button class="goodbtn"
-  onclick="createNewBlankLesson()">
-  ➕ Create New Blank Lesson
-</button>
-
   <button class="secondary" style="width:auto" onclick="spinStudent()">🎡 Spinner</button>
+  <button class="muted" style="width:auto" onclick="toggleDLAdvancedTools()">⚙ Advanced</button>
 </div>
       </div>
       <input id="lessonDataFile" class="hidden" type="file" accept="application/json" onchange="importLessonData(event)" />
+      <div id="dlAdvancedTools" class="card hidden" style="margin-top:10px;background:#f8fbff;border-style:dashed;">
+        <h3 style="margin-top:0;">⚙ Advanced Tools</h3>
+        <div class="small" style="margin-bottom:8px;">Use these only when you need backup, migration, or repair.</div>
+        <div class="btns">
+          <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
+          <button class="secondary" onclick="document.getElementById('lessonDataFile').click()">📂 Load Lesson Data</button>
+          <button class="goodbtn" onclick="syncFinalDLMarks()">🔄 Sync Final DL Marks</button>
+          <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
+        </div>
+      </div>
       <div id="teacherOverviewStations" class="top-bar"></div>
 <div id="topStudentsBoard" class="card hidden" style="margin-top:12px;">
   <h3 style="margin-top:0;">🏆 Top 5 Students</h3>
@@ -870,14 +862,9 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
   Show Top 5
 </button>
     <div id="teacherTrackerCard" class="card">
-<div class="btns">
+<div class="btns tracker-actions">
   <button onclick="refreshTeacherNow()">🔄 Refresh</button>
-  
   <button class="secondary" onclick="exportTrackerCsv()">📊 Export</button>
-
-  <button class="secondary" onclick="exportLessonData()">💾 Save Lesson Data</button>
-
-  <button class="secondary" onclick="triggerImportLesson()">📂 Load Lesson Data</button>
 </div>
 
    <div id="rankingBoard" class="ranking-box">
@@ -886,11 +873,13 @@ button{background:var(--primary);color:#fff;border:none;cursor:pointer;font-weig
 </div>
       
 <div class="card" style="margin-top:10px; padding:8px; background:#fff5f5;">
-  <div class="small" style="margin-bottom:6px;">⚠️ Reset Options</div>
-  <div class="btns">
-    <button class="warnbtn" onclick="clearTrackerData()">Clear Tracker</button>
-    <button class="warnbtn" onclick="clearBonusData()">Clear Bonus</button>
-    <button class="lesson-plan-btn" onclick="downloadLessonPlan()">📄 Download Lesson Plan</button>
+  <button class="warnbtn" style="width:auto" onclick="document.getElementById('trackerResetTools').classList.toggle('hidden')">⚠️ Reset Options</button>
+  <div id="trackerResetTools" class="hidden" style="margin-top:8px;">
+    <div class="small" style="margin-bottom:6px;">Danger area: use only when you really need to clear live lesson data.</div>
+    <div class="btns">
+      <button class="warnbtn" onclick="clearTrackerData()">Clear Tracker</button>
+      <button class="warnbtn" onclick="clearBonusData()">Clear Bonus</button>
+    </div>
   </div>
 </div>
       <h2>Live Teacher Tracker</h2>
@@ -1070,10 +1059,7 @@ https://quizizz.com/... | Practice Quiz"></textarea>
       🔄 Refresh Library
     </button>
 
-<button class="secondary"
-  onclick="document.getElementById('oldLessonImportBox').classList.toggle('hidden')">
-  📥 Import Old Lesson Key
-</button>
+<button class="muted" onclick="document.getElementById('oldLessonImportBox').classList.toggle('hidden')">⚙ Advanced Import</button>
 
   </div>
 
@@ -2975,6 +2961,12 @@ window.openTeacherView = async function(){
   }
 };
   
+
+window.toggleDLAdvancedTools = function(){
+  const box = byId('dlAdvancedTools');
+  if(box) box.classList.toggle('hidden');
+};
+
 window.showTeacherSection = function(id){ ['teacherTrackerCard','teacherControlCard','teacherCreatorCard','teacherLibraryCard'].forEach(function(sec){ if(byId(sec)) byId(sec).classList.add('hidden'); }); if(byId(id)) byId(id).classList.remove('hidden'); };
   function stationHasWrittenQuestion(stationId){
 
@@ -7408,7 +7400,6 @@ const list = Object.values(lessons)
         <h3 style="margin:0 0 4px 0;">${escapeHtml(l.title || 'Untitled Lesson')}</h3>
         <div class="small">
           Date: ${escapeHtml(l.date || '')}
-          | ${termNameLabel(l.term || 'term3')}
           | ${l.locked ? '🔒 Locked' : '✅ Unlocked'}
           | ${l.visible ? '👁 Visible' : '🙈 Hidden'}
         </div>
