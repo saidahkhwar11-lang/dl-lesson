@@ -1035,6 +1035,29 @@ https://quizizz.com/... | Practice Quiz"></textarea>
 
   <h2>📚 Saved Lessons Library</h2>
 
+  <div class="card" style="margin:10px 0 12px;background:#f8fbff;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end;">
+      <div>
+        <label>Save / Current Lesson Term</label>
+        <select id="lessonTermSelect">
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
+      <div>
+        <label>Filter Library</label>
+        <select id="libraryTermFilter" onchange="loadLessonLibrary()">
+          <option value="all">All Terms</option>
+          <option value="term1">Term 1</option>
+          <option value="term2">Term 2</option>
+          <option value="term3">Term 3</option>
+        </select>
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px;">One library only. Terms are filters, so Firebase stays light.</div>
+  </div>
+
   <div class="btns">
 
     <button class="goodbtn"
@@ -1195,6 +1218,7 @@ await firebase.database().ref(lessonLibraryPath() + '/' + lessonId).set({
     date: new Date().toLocaleDateString('en-GB'),
     createdAt: Date.now(),
     updatedAt: Date.now(),
+    term: getSelectedLessonTerm(),
     locked: false,
     visible: true,
     importedFromOldKey: cleanOldKey,
@@ -7057,6 +7081,26 @@ window.addEventListener('load', function(){
   }, 1200);
 
 });
+      function getSelectedLessonTerm(){
+  return byId('lessonTermSelect')?.value || 'term3';
+}
+
+function getLibraryTermFilter(){
+  return byId('libraryTermFilter')?.value || 'all';
+}
+
+function termNameLabel(term){
+  if(term === 'term1') return 'Term 1';
+  if(term === 'term2') return 'Term 2';
+  if(term === 'term3') return 'Term 3';
+  return 'Term 3';
+}
+
+function setLessonTermSelect(term){
+  const el = byId('lessonTermSelect');
+  if(el) el.value = term || 'term3';
+}
+
       function lessonLibraryPath(){
   return 'lessonLibrary';
 }
@@ -7125,6 +7169,7 @@ async function createNewBlankLesson(){
       date: new Date().toLocaleDateString('en-GB'),
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      term: getSelectedLessonTerm(),
       locked: false,
       visible: true,
       blankCreated: true,
@@ -7242,6 +7287,7 @@ if(!activeLessonKey){
     title: lessonMeta.lessonTitle,
     date: new Date().toLocaleDateString('en-GB'),
     updatedAt: Date.now(),
+    term: getSelectedLessonTerm(),
     locked: false,
     visible: true,
     lessonMeta: lessonMeta,
@@ -7297,6 +7343,7 @@ async function importOldLessonKeyToLibrary(){
     title: title,
     date: new Date().toLocaleDateString('en-GB'),
     createdAt: Date.now(),
+    term: getSelectedLessonTerm(),
     locked: false,
     visible: true,
     importedFromOldKey: cleanOldKey,
@@ -7333,17 +7380,25 @@ async function loadLessonLibrary(){
   const snap = await dbRef(lessonLibraryPath()).once('value');
   const lessons = snap.val() || {};
 
-const list = Object.values(lessons).map(function(l){
-  return {
-    id: l.id,
-    title: l.title,
-    date: l.date,
-    locked: l.locked,
-    visible: l.visible
-  };
-});
+const filterTerm = getLibraryTermFilter();
+
+const list = Object.values(lessons)
+  .filter(function(l){
+    const lessonTerm = l.term || 'term3';
+    return filterTerm === 'all' || lessonTerm === filterTerm;
+  })
+  .map(function(l){
+    return {
+      id: l.id,
+      title: l.title,
+      date: l.date,
+      term: l.term || 'term3',
+      locked: l.locked,
+      visible: l.visible
+    };
+  });
   if(!list.length){
-    box.innerHTML = '<div class="small">No saved lessons yet.</div>';
+    box.innerHTML = '<div class="small">No saved lessons found for this filter.</div>';
     return;
   }
 
@@ -7353,6 +7408,7 @@ const list = Object.values(lessons).map(function(l){
         <h3 style="margin:0 0 4px 0;">${escapeHtml(l.title || 'Untitled Lesson')}</h3>
         <div class="small">
           Date: ${escapeHtml(l.date || '')}
+          | ${termNameLabel(l.term || 'term3')}
           | ${l.locked ? '🔒 Locked' : '✅ Unlocked'}
           | ${l.visible ? '👁 Visible' : '🙈 Hidden'}
         </div>
@@ -7382,6 +7438,7 @@ const list = Object.values(lessons).map(function(l){
   }
 
   const l = snap.val();
+  setLessonTermSelect(l.term || 'term3');
 
   // IMPORTANT: switch active lesson key
 lessonKey = lessonId;
@@ -7430,6 +7487,7 @@ async function activateSavedLesson(lessonId){
   }
 
   const l = snap.val() || {};
+  setLessonTermSelect(l.term || 'term3');
   const cleaned = (typeof dlFixCleanStationsAndContent === 'function')
     ? dlFixCleanStationsAndContent(l.stations || [], l.content || {})
     : {stations: l.stations || [], content: l.content || {}};
@@ -7619,6 +7677,7 @@ async function dlFixSaveLibraryCopy(libraryId){
     title: title,
     date: new Date().toLocaleDateString('en-GB'),
     updatedAt: Date.now(),
+    term: getSelectedLessonTerm(),
     locked: false,
     visible: true,
     lessonMeta: lessonMeta,
@@ -7724,6 +7783,7 @@ if(!teacherViewIsOpen && teacherPasswordBox && teacherPasswordBox.value !== TEAC
       date: new Date().toLocaleDateString('en-GB'),
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      term: getSelectedLessonTerm(),
       locked: false,
       visible: true,
       blankCreated: true,
@@ -8090,6 +8150,7 @@ window.importOldLessonKeyToLibrary = async function(){
       date: new Date().toLocaleDateString('en-GB'),
       createdAt: Date.now(),
       updatedAt: Date.now(),
+      term: getSelectedLessonTerm(),
       locked: false,
       visible: true,
       importedFromOldKey: cleanOldKey,
