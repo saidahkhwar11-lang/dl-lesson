@@ -162,26 +162,23 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 
   <div class="topHeader">
 
-    <div class="pageTitle">
-      <div class="bigIcon">🗓️</div>
-      <div>
-        <h1>Weekly Agenda</h1>
-        <p>Your learning journey for this week.</p>
-      </div>
+  <div class="pageTitle">
+    <div class="bigIcon">🗓️</div>
+    <div>
+      <h1>Weekly Agenda</h1>
+      <p>Your learning journey for this week.</p>
     </div>
-
-    <button class="logoutBtn" onclick="logoutAll()">
-      🚪 Logout
-    </button>
-
   </div>
 
-  <div class="userMiniLine">
-    👩‍🎓
-    <b id="studentNameTop">Student</b>
-    •
-    <span id="studentClassTop">Grade 9</span>
+  <div class="profile">
+    <div class="avatar">👩‍🎓</div>
+    <div>
+      <b id="studentNameTop">Student</b><br>
+      <span id="studentClassTop">Grade 9</span>
+    </div>
   </div>
+
+</div>
 
 <section id="agendaSection"></section>
 
@@ -347,13 +344,46 @@ async function loadAgenda(classId){
 }
 async function loadStudentRecords(session){
   studentRecordCache=[];
-  const snap=await db.ref(`teacherControlCenter/records/${session.classId}/${safeKey(session.studentId)}`).get();
-  if(snap.exists()) studentRecordCache.push(...Object.values(snap.val()||{}));
-  const rev=await db.ref(`teacherControlCenter/revisionProgress/${session.classId}/${safeKey(session.studentId)}`).get();
-  if(rev.exists()) studentRecordCache.push(...Object.values(rev.val()||{}).map(r=>({...r,page:"Exam Page",activityType:"Exam Page Revision"})));
+
+  const ids = [
+    session.studentId,
+    session.password,
+    safeKey(session.studentId),
+    safeKey(session.password)
+  ].filter(Boolean);
+
+  const seen={};
+
+  for(const id of ids){
+    const snap=await db.ref(`teacherControlCenter/records/${session.classId}/${id}`).get();
+    if(snap.exists()){
+      Object.values(snap.val()||{}).forEach(r=>{
+        const key=JSON.stringify(r);
+        if(!seen[key]){
+          seen[key]=true;
+          studentRecordCache.push(r);
+        }
+      });
+    }
+
+    const rev=await db.ref(`teacherControlCenter/revisionProgress/${session.classId}/${id}`).get();
+    if(rev.exists()){
+      Object.values(rev.val()||{}).forEach(r=>{
+        const row={...r,page:"Exam Page",activityType:"Exam Page Revision"};
+        const key=JSON.stringify(row);
+        if(!seen[key]){
+          seen[key]=true;
+          studentRecordCache.push(row);
+        }
+      });
+    }
+  }
+
   const progress=await db.ref(`secureHubWeeklyProgress/${weekKey()}/${session.classId}/${safeKey(session.studentId)}`).get();
   const manual=progress.exists()?progress.val()||{}:{};
   studentRecordCache.manualAgenda=manual;
+
+  console.log("Student records loaded:", studentRecordCache);
 }
 function recordMatchesItem(record,item){
   const txt=String((record.activityName||"")+" "+(record.title||"")+" "+(record.lessonTitle||"")+" "+(record.collectionTitle||"")+" "+(record.page||"")+" "+(record.activityType||"")+" "+(record.notes||"")).toLowerCase();
