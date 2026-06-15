@@ -420,6 +420,47 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
   .missionTitle h2{font-size:23px}
 }
 
+
+
+/* ===== WEEKLY MISSION V2: CUTE MISSION + 5 DAY PREVIEW CARDS ===== */
+.missionCard.v2{
+  min-height:265px;
+  display:grid;
+  grid-template-columns:.85fr .85fr 1.15fr 230px;
+  gap:22px;
+  align-items:center;
+  padding:30px 32px;
+  background:
+    radial-gradient(circle at 8% 86%, rgba(216,199,255,.95) 0 70px, transparent 72px),
+    radial-gradient(circle at 0% 100%, rgba(238,246,255,.9) 0 120px, transparent 122px),
+    radial-gradient(circle at 100% 100%, rgba(228,215,255,.8) 0 110px, transparent 112px),
+    linear-gradient(135deg,#fff,#fbf8ff 55%,#f1f8ff);
+}
+.missionCard.v2:before{display:none}
+.missionArt{position:relative;min-height:220px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:24px}
+.missionArt .rainbow{position:absolute;left:8px;bottom:14px;font-size:78px;opacity:.88}
+.missionArt .starHero{position:absolute;left:72px;bottom:34px;font-size:86px;filter:drop-shadow(0 10px 20px rgba(255,200,70,.18))}
+.missionArt .rocketHero{position:absolute;left:118px;top:14px;font-size:62px;transform:rotate(-16deg);filter:drop-shadow(0 10px 20px rgba(109,76,255,.16))}
+.missionArt .sparkleA{position:absolute;left:28px;top:42px;font-size:28px;color:#f6c453}
+.missionArt .sparkleB{position:absolute;right:30px;bottom:74px;font-size:28px;color:#d8c7ff}
+.missionMainTitle h2{font-family:Quicksand,sans-serif;font-size:40px;line-height:1.05;color:#0d2d68;margin:0;text-transform:uppercase;letter-spacing:.02em}
+.missionMainTitle .weekNum{font-size:38px;color:#7d5cff;display:block;margin-bottom:4px}
+.missionMainTitle .datePill{display:inline-block;margin-top:14px;border-radius:12px;padding:8px 16px;background:linear-gradient(135deg,#a986ff,#7d5cff);color:#fff;font-weight:900;box-shadow:0 8px 16px rgba(125,92,255,.18)}
+.objectiveBox.v2{background:transparent;border:0;margin:0;padding:0}
+.objectiveBox.v2 h3{font-size:20px;color:#7d5cff;margin-bottom:12px}
+.objectiveList.v2{display:grid;grid-template-columns:1fr;gap:10px}
+.objectiveItem.v2{display:flex;align-items:center;gap:12px;min-height:54px;background:rgba(255,255,255,.82);border:1px solid #e2dcff;border-radius:17px;padding:11px 14px;font-size:14px;box-shadow:0 5px 14px rgba(45,68,130,.05)}
+.objectiveItem.v2 .objIcon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#eef4ff;font-size:19px;flex:0 0 auto}
+.missionProgress.v2{min-width:0;background:rgba(255,255,255,.88);border:1px solid #e2dcff;border-radius:26px;padding:18px;text-align:center;box-shadow:0 8px 20px rgba(45,68,130,.07)}
+.circleProgress{--pct:0;width:150px;height:150px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#7d5cff calc(var(--pct)*1%), #eee9ff 0);position:relative}
+.circleProgress:before{content:"";position:absolute;width:118px;height:118px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1px #edf2ff}
+.circleProgress b{position:relative;z-index:1;font-family:Quicksand,sans-serif;color:#0d2d68;font-size:30px}
+.missionProgress.v2 p{font-size:14px;color:#617198;font-weight:900;margin:0;line-height:1.35}
+.weekOnlyCard{background:#fff;border:1px solid var(--line);border-radius:26px;box-shadow:var(--shadow);padding:20px;margin-top:18px}
+.weekOnlyCard h2{font-family:Quicksand,sans-serif;color:#0d2d68;font-size:25px;margin:0 0 16px}.weekFiveGrid{display:grid;grid-template-columns:repeat(5,minmax(145px,1fr));gap:14px}.futureDayCard.v2{min-height:162px;display:flex;flex-direction:column;justify-content:space-between;border-radius:20px;padding:16px}.futureDayCard.v2.today{border-color:#1263f1;background:linear-gradient(180deg,#eff7ff,#fff)}.futureDayCard.v2 .dayBadge{font-size:34px;line-height:1}.futureDayCard.v2 .dayName{font-family:Quicksand,sans-serif;font-size:19px;font-weight:900}.futureDayCard.v2 .dayDate{font-size:13px;color:#617198;font-weight:800}.futureDayCard.v2 .taskBig{font-family:Quicksand,sans-serif;font-size:20px;font-weight:900;margin-top:12px}.futureDayCard.v2 .taskSmall{font-size:13px;color:#617198;font-weight:900;margin-top:2px}.futureDayCard.v2 .viewBtnMini{margin-top:14px;border-radius:14px;text-align:center;padding:10px;background:#eef4ff;color:#0b57e3;font-weight:900}.futureDayCard.v2.mon{color:#1263f1}.futureDayCard.v2.tue{color:#7d5cff}.futureDayCard.v2.wed{color:#1263f1}.futureDayCard.v2.thu{color:#22a968}.futureDayCard.v2.fri{color:#f97316}.expandedDayPanel{margin-top:16px;border:1px solid #dfe8ff;border-radius:22px;background:linear-gradient(180deg,#fff,#fbfdff);padding:16px}.expandedDayHead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}.expandedDayHead h3{font-family:Quicksand,sans-serif;color:#0d2d68;font-size:22px;margin:0}.expandedTaskGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:12px}.missionHint{margin-top:16px;border:1px solid #b9dafc;background:#eff7ff;color:#0d3f82;border-radius:16px;padding:14px;text-align:center;font-size:14px;font-weight:700}
+@media(max-width:1150px){.missionCard.v2{grid-template-columns:1fr}.missionArt{min-height:165px}.missionMainTitle{text-align:center}.weekFiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){.weekFiveGrid{grid-template-columns:1fr}.missionMainTitle h2{font-size:31px}.missionMainTitle .weekNum{font-size:31px}.missionCard.v2{padding:20px}}
+
 </style>
 </head>
 
@@ -835,71 +876,65 @@ function renderAgenda(targetId, teacher=false){
   const pct=total?Math.round(done/total*100):0;
 
   const objectives=cleanObjectives(weekPlan?.objectives || defaultWeekPlan().objectives);
+  const objIcons=["📖","📚","✏️","🏆","🎯","💡"];
   const missionHtml=`
-    <div class="missionCard">
-      <div class="missionTop">
-        <div class="missionTitle">
-          <h2>${esc(weekPlan?.title || "🌟 WEEKLY LEARNING MISSION")}</h2>
-          <p>${esc(weekRange())}</p>
-        </div>
-        ${!teacher?`<div class="missionProgress">
-          <b>${pct}%</b>
-          <div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>
-          <div style="font-size:12px;font-weight:900;color:#617198">${done} of ${total} activities completed</div>
-        </div>`:''}
+    <div class="missionCard v2">
+      <div class="missionArt">
+        <div class="rainbow">🌈</div>
+        <div class="starHero">⭐</div>
+        <div class="rocketHero">🚀</div>
+        <div class="sparkleA">✦</div>
+        <div class="sparkleB">✦</div>
       </div>
-      <div class="objectiveBox">
+      <div>
+        <div class="missionMainTitle">
+          <span class="weekNum">WEEKLY</span>
+          <h2>${esc((weekPlan?.title || "Learning Mission").replace(/^🌟\s*/,'').replace(/weekly\s*/i,''))}</h2>
+          <span class="datePill">${esc(weekRange())}</span>
+        </div>
+      </div>
+      <div class="objectiveBox v2">
         <h3>🎯 This Week's Objectives</h3>
-        <div class="objectiveList">
-          ${objectives.map(o=>`<div class="objectiveItem">✓ ${esc(o)}</div>`).join("")}
+        <div class="objectiveList v2">
+          ${objectives.map((o,i)=>`<div class="objectiveItem v2"><span class="objIcon">${objIcons[i%objIcons.length]}</span><span>${esc(o)}</span></div>`).join("")}
         </div>
       </div>
+      ${!teacher?`<div class="missionProgress v2">
+        <div class="circleProgress" style="--pct:${pct}"><b>${pct}%</b></div>
+        <p>${done} of ${total}<br>activities completed</p>
+      </div>`:''}
     </div>`;
 
   if(!teacher){
-    const todayKey=currentViewedDayKey();
-    const todayIdx=dayIndexFromKey(todayKey);
-    const todayItems=agendaItems.filter(i=>i.day===todayKey);
-    const todayDone=todayItems.filter(isItemDone).length;
+    if(!selectedPreviewDay) selectedPreviewDay=currentViewedDayKey();
 
-    const todayHtml=`
-      <div class="todayMission">
-        <div class="todayMissionHeader">
-          <h2>🌟 Today's Mission — ${esc(dayLabel(todayKey))}</h2>
-          <span class="tag">${esc(niceDate(dayDate(todayIdx)))}</span>
-        </div>
-        ${todayItems.length
-          ? `<div class="todayTaskGrid">${todayItems.map(item=>renderTask(item,false)).join("")}</div>
-             <div class="dayFoot ${todayDone===0?'zero':''}">${todayDone} / ${todayItems.length} Completed</div>`
-          : `<div class="emptyToday">No activities assigned for today.</div>`}
-      </div>`;
-
-    const otherDays=DAYS.filter(([key])=>key!==todayKey);
-    const futureHtml=`
-      <div class="futureWeek">
+    const weekCardsHtml=`
+      <div class="weekOnlyCard">
         <h2>📆 This Week</h2>
-        <div class="futureGrid">
-          ${otherDays.map(([key,label],idx)=>{
+        <div class="weekFiveGrid">
+          ${DAYS.map(([key,label])=>{
             const realIdx=dayIndexFromKey(key);
             const items=agendaItems.filter(i=>i.day===key);
             const dayDone=items.filter(isItemDone).length;
             const active=selectedPreviewDay===key;
-            return `<div class="futureDayCard ${active?'active':''}" onclick="toggleDayPreview('${key}')">
-              <div class="futureDayTop">
-                <b>📅 ${esc(label)}</b>
-                <span>${active?'▲':'▼'}</span>
+            const isToday=currentViewedDayKey()===key;
+            return `<div class="futureDayCard v2 ${key} ${active?'active':''} ${isToday?'today':''}" onclick="toggleDayPreview('${key}')">
+              <div>
+                <div class="futureDayTop">
+                  <span class="dayBadge">🗓️</span>
+                  <span>${active?'▲':'▼'}</span>
+                </div>
+                <div class="dayName">${esc(label)}</div>
+                <div class="dayDate">${esc(niceDate(dayDate(realIdx)))} ${isToday?'• Today':''}</div>
+                <div class="taskBig">${items.length} Task${items.length===1?'':'s'}</div>
+                <div class="taskSmall">${dayDone}/${items.length} done</div>
               </div>
-              <div class="futureCount">${esc(niceDate(dayDate(realIdx)))} • ${items.length} Task${items.length===1?'':'s'} • ${dayDone}/${items.length} done</div>
-              ${active?`<div class="dayPreview">
-                ${items.length?items.map(item=>{
-                  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
-                  const locked=!isAgendaItemAvailableToday(item) && !isItemDone(item);
-                  return `<div class="previewTask">${map.icon} ${esc(item.title||"Activity")}<span>${esc(map.label)} ${locked?'• 🔒 Opens on '+unlockDateText(item):isItemDone(item)?'• ✅ Completed':'• Available'}</span></div>`;
-                }).join(""):`<div class="previewTask">No activities assigned.</div>`}
-              </div>`:''}
+              <div class="viewBtnMini">View Day →</div>
             </div>`;
           }).join("")}
         </div>
+        ${selectedPreviewDay?renderExpandedDayPanel(selectedPreviewDay):''}
+        <div class="missionHint">💡 Focus on your learning mission this week! Click any day to see what's planned. Upcoming activities stay locked until their day.</div>
       </div>`;
 
     target.innerHTML=`
@@ -908,14 +943,7 @@ function renderAgenda(targetId, teacher=false){
         <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>Today</span><span><span class="dot upcoming">○</span>Preview</span><span><span class="dot"></span>Locked / Not Started</span></div>
       </div>
       ${missionHtml}
-      ${todayHtml}
-      ${futureHtml}
-      <div class="progressBlock">
-        <div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div>
-        <div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>
-        <div>${done} of ${total} activities completed</div>
-        <div class="footerNote">💡 Focus on today's mission first. You can preview other days, but upcoming activities stay locked until their day.</div>
-      </div>`;
+      ${weekCardsHtml}`;
     return;
   }
 
@@ -941,6 +969,23 @@ function renderAgenda(targetId, teacher=false){
       ${teacherPanelHtml()}
     </div>`;
 }
+
+function renderExpandedDayPanel(dayKey){
+  const idx=dayIndexFromKey(dayKey);
+  const label=dayLabel(dayKey);
+  const items=agendaItems.filter(i=>i.day===dayKey);
+  const doneCount=items.filter(isItemDone).length;
+  return `<div class="expandedDayPanel">
+    <div class="expandedDayHead">
+      <h3>📅 ${esc(label)} Tasks</h3>
+      <span class="tag">${esc(niceDate(dayDate(idx)))} • ${doneCount}/${items.length} completed</span>
+    </div>
+    ${items.length
+      ? `<div class="expandedTaskGrid">${items.map(item=>renderTask(item,false)).join("")}</div>`
+      : `<div class="emptyToday">No activities assigned for ${esc(label)}.</div>`}
+  </div>`;
+}
+
 function renderTask(item,teacher){
   const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
   const done=!teacher&&isItemDone(item);
