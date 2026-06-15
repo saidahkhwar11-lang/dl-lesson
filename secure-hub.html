@@ -238,6 +238,188 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .lockMsg{display:inline-block;margin-top:8px;border-radius:9px;padding:5px 8px;font-size:11px;font-weight:900;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
 button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px solid #cbd5e1!important;cursor:not-allowed!important;box-shadow:none!important}
 
+
+/* ===== WEEKLY MISSION REDESIGN ===== */
+.missionCard{
+  background:linear-gradient(135deg,#ffffff,#f4f0ff,#eef7ff);
+  border:1px solid #d9d0ff;
+  border-radius:26px;
+  padding:20px;
+  box-shadow:var(--shadow);
+  margin:14px 0 18px;
+  position:relative;
+  overflow:hidden;
+}
+.missionCard:before{
+  content:"";
+  position:absolute;
+  width:210px;height:210px;
+  border-radius:50%;
+  background:rgba(109,76,255,.10);
+  right:-80px;top:-90px;
+}
+.missionCard>*{position:relative;z-index:1}
+.missionTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:14px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.missionTitle h2{
+  font-family:Quicksand,sans-serif;
+  font-size:28px;
+  color:#163d86;
+  margin:0 0 4px;
+}
+.missionTitle p{color:#617198;font-weight:800;font-size:13px;margin:0}
+.objectiveBox{
+  background:rgba(255,255,255,.86);
+  border:1px solid #dfe8ff;
+  border-radius:20px;
+  padding:14px;
+  margin-top:12px;
+}
+.objectiveBox h3{
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+  margin-bottom:10px;
+}
+.objectiveList{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px 12px;
+}
+.objectiveItem{
+  background:#fff;
+  border:1px solid #e5ebff;
+  border-radius:14px;
+  padding:9px 11px;
+  color:#20345f;
+  font-size:13px;
+  font-weight:800;
+}
+.missionProgress{
+  min-width:190px;
+  background:#fff;
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+}
+.missionProgress b{
+  display:block;
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+  font-size:22px;
+  margin-bottom:6px;
+}
+.todayMission{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:16px;
+  margin-bottom:16px;
+}
+.todayMissionHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:12px;
+}
+.todayMissionHeader h2{
+  font-family:Quicksand,sans-serif;
+  color:#0d2d68;
+  font-size:24px;
+  margin:0;
+}
+.todayTaskGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(230px,1fr));
+  gap:12px;
+}
+.futureWeek{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+.futureWeek h2{
+  font-family:Quicksand,sans-serif;
+  color:#0d2d68;
+  font-size:22px;
+  margin:0 0 12px;
+}
+.futureGrid{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(140px,1fr));
+  gap:12px;
+}
+.futureDayCard{
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff,#f8fbff);
+  padding:12px;
+  cursor:pointer;
+  transition:.18s;
+}
+.futureDayCard:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(45,68,130,.08)}
+.futureDayCard.active{border-color:#6d4cff;background:linear-gradient(180deg,#f4f0ff,#fff)}
+.futureDayTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:6px;
+  margin-bottom:7px;
+}
+.futureDayTop b{
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+}
+.futureCount{font-size:12px;color:#617198;font-weight:900}
+.dayPreview{
+  margin-top:10px;
+  border-top:1px dashed #dfe8ff;
+  padding-top:10px;
+  display:grid;
+  gap:8px;
+}
+.previewTask{
+  border:1px solid #e5ebff;
+  border-radius:12px;
+  padding:8px;
+  background:#fff;
+  font-size:12px;
+  font-weight:800;
+  color:#20345f;
+}
+.previewTask span{display:block;color:#617198;font-size:11px;margin-top:2px}
+.emptyToday{
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  color:#9a3412;
+  border-radius:16px;
+  padding:14px;
+  font-weight:900;
+}
+.teacherObjectivesBox textarea{
+  min-height:110px;
+  font-weight:700;
+  line-height:1.5;
+}
+@media(max-width:900px){
+  .objectiveList{grid-template-columns:1fr}
+  .futureGrid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:600px){
+  .futureGrid{grid-template-columns:1fr}
+  .missionTitle h2{font-size:23px}
+}
+
 </style>
 </head>
 
@@ -352,6 +534,7 @@ const STUDENT_SESSION_KEY="DL_SECURE_STUDENT_LOGIN";
 const TEACHER_SESSION_KEY="DL_SECURE_TEACHER_LOGIN";
 const TEACHER_PASSWORD="Welcome@2020";
 let db=null, classes={}, CURRENT_STUDENT_SESSION=null, currentWeekOffset=0, agendaItems=[], studentRecordCache=[];
+let weekPlan=null, selectedPreviewDay=null;
 
 function byId(id){return document.getElementById(id)}
 function esc(t){return String(t||"").replace(/[&<>'"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]))}
@@ -456,7 +639,84 @@ function unlockDateText(item){
   return itemDate(item).toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
 }
 
+
+function defaultWeekPlan(){
+  return {
+    title:"🌟 WEEKLY LEARNING MISSION",
+    objectives:[
+      "Review EOT3 Vocabulary",
+      "Practice Reading Comprehension",
+      "Complete All Assigned Activities",
+      "Improve Grammar Accuracy"
+    ]
+  };
+}
+
+function cleanObjectives(value){
+  if(Array.isArray(value)) return value.map(x=>String(x||"").trim()).filter(Boolean);
+  return String(value||"")
+    .split(/\n|•|✓|-/)
+    .map(x=>x.trim())
+    .filter(Boolean);
+}
+
+function currentViewedDayKey(){
+  const today=todayMidnight();
+  for(const [key] of DAYS){
+    const d=itemDate({day:key});
+    if(d.getTime()===today.getTime()) return key;
+  }
+  return DAYS[0][0];
+}
+
+function dayLabel(dayKey){
+  return DAYS.find(d=>d[0]===dayKey)?.[1] || "Day";
+}
+
+async function loadWeekPlan(classId){
+  weekPlan=defaultWeekPlan();
+  try{
+    const snap=await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(classId)}/plan`).get();
+    if(snap.exists()){
+      const saved=snap.val()||{};
+      weekPlan={
+        title:saved.title || weekPlan.title,
+        objectives:cleanObjectives(saved.objectives || weekPlan.objectives)
+      };
+    }
+  }catch(e){console.warn("Week plan load skipped",e)}
+}
+
+async function saveWeekPlan(){
+  const selectedClass=byId("agendaClassSelect")?.value;
+  const title=byId("weekPlanTitle")?.value.trim() || "🌟 WEEKLY LEARNING MISSION";
+  const objectives=cleanObjectives(byId("weekPlanObjectives")?.value || "");
+  if(!selectedClass){
+    alert("Choose class first.");
+    return;
+  }
+  const classIds = selectedClass === "all"
+    ? Object.keys(classes || {})
+    : [selectedClass];
+
+  for(const cls of classIds){
+    await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/plan`).set({
+      title,
+      objectives:objectives.length?objectives:defaultWeekPlan().objectives,
+      updatedAt:Date.now()
+    });
+  }
+  alert(selectedClass==="all" ? "Week objectives saved to all classes." : "Week objectives saved.");
+  await teacherClassChanged();
+}
+
+function toggleDayPreview(day){
+  selectedPreviewDay = selectedPreviewDay===day ? null : day;
+  renderAgenda("agendaSection", false);
+}
+
 async function loadAgenda(classId){
+  await loadWeekPlan(classId);
   const snap=await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(classId)}/items`).get();
   agendaItems=snap.exists()?Object.values(snap.val()||{}):[];
   agendaItems.sort((a,b)=>(DAYS.findIndex(d=>d[0]===a.day)-DAYS.findIndex(d=>d[0]===b.day))||Number(a.order||0)-Number(b.order||0));
@@ -570,27 +830,115 @@ async function loadStudentDataAndAgenda(){
 
 function renderAgenda(targetId, teacher=false){
   const target=byId(targetId); if(!target)return;
-  const total=agendaItems.length, done=teacher?0:agendaItems.filter(isItemDone).length, pct=total?Math.round(done/total*100):0;
+  const total=agendaItems.length;
+  const done=teacher?0:agendaItems.filter(isItemDone).length;
+  const pct=total?Math.round(done/total*100):0;
+
+  const objectives=cleanObjectives(weekPlan?.objectives || defaultWeekPlan().objectives);
+  const missionHtml=`
+    <div class="missionCard">
+      <div class="missionTop">
+        <div class="missionTitle">
+          <h2>${esc(weekPlan?.title || "🌟 WEEKLY LEARNING MISSION")}</h2>
+          <p>${esc(weekRange())}</p>
+        </div>
+        ${!teacher?`<div class="missionProgress">
+          <b>${pct}%</b>
+          <div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>
+          <div style="font-size:12px;font-weight:900;color:#617198">${done} of ${total} activities completed</div>
+        </div>`:''}
+      </div>
+      <div class="objectiveBox">
+        <h3>🎯 This Week's Objectives</h3>
+        <div class="objectiveList">
+          ${objectives.map(o=>`<div class="objectiveItem">✓ ${esc(o)}</div>`).join("")}
+        </div>
+      </div>
+    </div>`;
+
+  if(!teacher){
+    const todayKey=currentViewedDayKey();
+    const todayIdx=dayIndexFromKey(todayKey);
+    const todayItems=agendaItems.filter(i=>i.day===todayKey);
+    const todayDone=todayItems.filter(isItemDone).length;
+
+    const todayHtml=`
+      <div class="todayMission">
+        <div class="todayMissionHeader">
+          <h2>🌟 Today's Mission — ${esc(dayLabel(todayKey))}</h2>
+          <span class="tag">${esc(niceDate(dayDate(todayIdx)))}</span>
+        </div>
+        ${todayItems.length
+          ? `<div class="todayTaskGrid">${todayItems.map(item=>renderTask(item,false)).join("")}</div>
+             <div class="dayFoot ${todayDone===0?'zero':''}">${todayDone} / ${todayItems.length} Completed</div>`
+          : `<div class="emptyToday">No activities assigned for today.</div>`}
+      </div>`;
+
+    const otherDays=DAYS.filter(([key])=>key!==todayKey);
+    const futureHtml=`
+      <div class="futureWeek">
+        <h2>📆 This Week</h2>
+        <div class="futureGrid">
+          ${otherDays.map(([key,label],idx)=>{
+            const realIdx=dayIndexFromKey(key);
+            const items=agendaItems.filter(i=>i.day===key);
+            const dayDone=items.filter(isItemDone).length;
+            const active=selectedPreviewDay===key;
+            return `<div class="futureDayCard ${active?'active':''}" onclick="toggleDayPreview('${key}')">
+              <div class="futureDayTop">
+                <b>📅 ${esc(label)}</b>
+                <span>${active?'▲':'▼'}</span>
+              </div>
+              <div class="futureCount">${esc(niceDate(dayDate(realIdx)))} • ${items.length} Task${items.length===1?'':'s'} • ${dayDone}/${items.length} done</div>
+              ${active?`<div class="dayPreview">
+                ${items.length?items.map(item=>{
+                  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
+                  const locked=!isAgendaItemAvailableToday(item) && !isItemDone(item);
+                  return `<div class="previewTask">${map.icon} ${esc(item.title||"Activity")}<span>${esc(map.label)} ${locked?'• 🔒 Opens on '+unlockDateText(item):isItemDone(item)?'• ✅ Completed':'• Available'}</span></div>`;
+                }).join(""):`<div class="previewTask">No activities assigned.</div>`}
+              </div>`:''}
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`;
+
+    target.innerHTML=`
+      <div class="agendaTop">
+        <div class="weekNav"><button onclick="changeWeek(-1)">←</button><div class="weekCenter">📅 Week of <span>${weekRange()}</span></div><button onclick="changeWeek(1)">→</button></div>
+        <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>Today</span><span><span class="dot upcoming">○</span>Preview</span><span><span class="dot"></span>Locked / Not Started</span></div>
+      </div>
+      ${missionHtml}
+      ${todayHtml}
+      ${futureHtml}
+      <div class="progressBlock">
+        <div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div>
+        <div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div>
+        <div>${done} of ${total} activities completed</div>
+        <div class="footerNote">💡 Focus on today's mission first. You can preview other days, but upcoming activities stay locked until their day.</div>
+      </div>`;
+    return;
+  }
+
   const cols=DAYS.map(([key,label],idx)=>{
     const items=agendaItems.filter(i=>i.day===key);
-    const doneCount=teacher?0:items.filter(isItemDone).length;
     return `<div class="dayCol ${key}">
       <div class="dayHead"><div class="cal">🗓️</div><div><b>${label}</b><span>${niceDate(dayDate(idx))}</span></div></div>
       ${items.length?items.map(item=>renderTask(item,teacher)).join(""):`<div class="status">No activities for this day.</div>`}
-      <div class="dayFoot ${doneCount===0?'zero':''}">${doneCount} / ${items.length} Completed</div>
+      <div class="dayFoot zero">${items.length} Task${items.length===1?'':'s'}</div>
     </div>`;
   }).join("");
+
   target.innerHTML=`
     <div class="agendaTop">
       <div class="weekNav"><button onclick="changeWeek(-1)">←</button><div class="weekCenter">📅 Week of <span>${weekRange()}</span></div><button onclick="changeWeek(1)">→</button></div>
       <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>In Progress</span><span><span class="dot upcoming">○</span>Upcoming</span><span><span class="dot"></span>Not Started</span></div>
     </div>
-    <div class="contentGrid ${teacher?'':'studentFull'}">
+    <div class="contentGrid">
       <div>
+        ${missionHtml}
         <div class="weekGrid">${cols}</div>
-        ${!teacher?`<div class="progressBlock"><div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div><div>${done} of ${total} activities completed</div><div class="footerNote">💡 When you complete an activity in DL Lesson, Reading Rush, Skill Clash, Exam Page, or Imposter, it will be marked here automatically when records are saved. Imposter is marked when you open/complete it from here.</div></div>`:''}
       </div>
-      ${teacher?teacherPanelHtml():''}
+      ${teacherPanelHtml()}
     </div>`;
 }
 function renderTask(item,teacher){
@@ -615,7 +963,20 @@ function renderTask(item,teacher){
   </div>`;
 }
 function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCard"><h3>Connected Platforms</h3><div class="connected">${Object.values(PAGE_MAP).map(p=>`<div class="item"><span>${p.icon} ${p.label}</span><span style="color:var(--green)">●</span></div>`).join("")}</div></div><div class="panelCard"><h3>Progress</h3><p>Progress updates automatically from your saved activity marks.</p><div style="font-size:36px;font-family:Quicksand;color:#203a78">${pct}%</div></div></aside>`}
-function teacherPanelHtml(){return `<aside class="panel"><div class="panelCard"><h3>Teacher Panel</h3><p>Manage this week. Changes are visible to students instantly.</p>
+function teacherPanelHtml(){
+  const objText=cleanObjectives(weekPlan?.objectives || defaultWeekPlan().objectives).join("\\n");
+  return `<aside class="panel">
+  <div class="panelCard teacherObjectivesBox">
+    <h3>🌟 Week Mission</h3>
+    <p>Write the learning mission and objectives students see at the top of Weekly Agenda.</p>
+    <label>Week Title</label>
+    <input id="weekPlanTitle" value="${esc(weekPlan?.title || "🌟 WEEKLY LEARNING MISSION")}">
+    <label>Week Objectives</label>
+    <textarea id="weekPlanObjectives" placeholder="One objective per line">${esc(objText)}</textarea>
+    <button onclick="saveWeekPlan()">💾 Save Week Objectives</button>
+  </div>
+
+  <div class="panelCard"><h3>Teacher Panel</h3><p>Manage this week. Changes are visible to students instantly.</p>
   <div class="teacherForm">
     <label>Choose Class</label><select id="agendaClassSelect" onchange="teacherClassChanged()">${Object.values(classes).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select>
     <div class="teacherRow"><div><label>Day</label><select id="agendaDay">${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div><div><label>Platform</label><select id="agendaPlatform">${Object.entries(PAGE_MAP).map(([k,p])=>`<option value="${k}">${p.icon} ${p.label}</option>`).join("")}</select></div></div>
