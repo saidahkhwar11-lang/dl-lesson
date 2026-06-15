@@ -619,6 +619,10 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
   display:none!important;
 }
 
+.compactDashCard.activePanel{border-color:#6d4cff;background:linear-gradient(180deg,#f4f0ff,#fff)!important}
+.studentPanelContent{width:100%;}
+
+
 </style>
 </head>
 
@@ -721,6 +725,9 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
   </section>
 
 </div>
+  </main>
+</div>
+
 <div id="teacherHub" class="appShell hidden">
   <aside class="sidebar">
     <div class="logo"><div class="logoIcon">🛡️</div><div><h2>SECURE HUB</h2><p>Teacher Control</p></div></div>
@@ -1158,39 +1165,55 @@ function renderLearningDashboardShortcuts(done,total,pct){
     <div class="compactDashCard" onclick="showStudentDashboardPanel('performance')">
       <div class="compactDashIcon">📊</div>
       <div><b>My Performance</b><span>${pct}% weekly progress • View marks</span></div>
-      <div class="compactDashArrow">›</div>
+      <div class="compactDashArrow">⌄</div>
     </div>
     <div class="compactDashCard" onclick="showStudentDashboardPanel('certificates')">
       <div class="compactDashIcon">🏅</div>
       <div><b>My Certificates</b><span>View and download certificates</span></div>
-      <div class="compactDashArrow">›</div>
+      <div class="compactDashArrow">⌄</div>
     </div>
     <div class="compactDashCard" onclick="showStudentDashboardPanel('actions')">
       <div class="compactDashIcon">✅</div>
       <div><b>Needed Actions</b><span>${done} of ${total} agenda tasks done</span></div>
-      <div class="compactDashArrow">›</div>
+      <div class="compactDashArrow">⌄</div>
     </div>
   </div>`;
 }
 
+let activeStudentDashboardType=null;
 function showStudentDashboardPanel(type){
   const panel=byId("studentDashboardPanels");
-  if(!panel) return;
-  panel.classList.remove("hidden");
-  panel.classList.add("showPanel");
-
   const report=byId("reportSection");
-  const certBox=byId("studentCertificatesList")?.closest(".infoWindow");
+  const cert=byId("certificateSection");
+  if(!panel || !report || !cert) return;
 
-  if(report && certBox){
-    report.style.display = (type==="certificates") ? "none" : "";
-    certBox.style.display = (type==="performance" || type==="actions") ? "none" : "";
+  const isSameOpen = activeStudentDashboardType===type &&
+    ((type==="certificates" && !cert.classList.contains("hidden")) ||
+     (type!=="certificates" && !report.classList.contains("hidden")));
+
+  report.classList.add("hidden");
+  cert.classList.add("hidden");
+  panel.classList.remove("showPanel");
+
+  if(isSameOpen){
+    activeStudentDashboardType=null;
+    return;
   }
 
+  activeStudentDashboardType=type;
+  panel.classList.add("showPanel");
+
+  if(type==="certificates"){
+    cert.classList.remove("hidden");
+    cert.scrollIntoView({behavior:"smooth",block:"start"});
+    return;
+  }
+
+  report.classList.remove("hidden");
   if(type==="actions"){
     byId("studentNeededActions")?.scrollIntoView({behavior:"smooth",block:"center"});
   }else{
-    panel.scrollIntoView({behavior:"smooth",block:"start"});
+    report.scrollIntoView({behavior:"smooth",block:"start"});
   }
 }
 
@@ -1386,6 +1409,101 @@ function recordTerm(record){
   return "term1";
 }
 
+function dateToTerm(d){
+  const date = d instanceof Date ? d : new Date(d || Date.now());
+  const m = date.getMonth()+1;
+  if(m>=8 && m<=12) return "term1";
+  if(m>=1 && m<=3) return "term2";
+  if(m>=4 && m<=7) return "term3";
+  return "term1";
+}
+
+function weekStartFromKey(key){
+  const d=new Date(String(key||weekKey())+"T00:00:00");
+  if(isNaN(d.getTime())) return weekStart();
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function agendaItemDateFromWeek(item,wk){
+  const idx=dayIndexFromKey(item?.day);
+  const d=weekStartFromKey(wk);
+  d.setDate(d.getDate()+Math.max(idx,0));
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function agendaItemTerm(item,wk){
+  return dateToTerm(agendaItemDateFromWeek(item,wk));
+}
+
+function agendaItemDoneFromProgress(progress,item){
+  const row=progress?.[item.id];
+  return !!(row && (row.completed || row.status==="completed"));
+}
+
+async function readProgressForWeek(session,wk){
+  const studentKeys=[safeKey(session.studentId), safeKey(session.password), session.studentId, session.password].filter(Boolean);
+  const classKeys=[session.classId, safeKey(session.classId)].filter(Boolean);
+  const merged={};
+  for(const cls of classKeys){
+    for(const sid of studentKeys){
+      try{
+        const snap=await db.ref(`secureHubWeeklyProgress/${wk}/${cls}/${sid}`).get();
+        if(snap.exists()) Object.assign(merged,snap.val()||{});
+      }catch(e){console.warn("Weekly progress read skipped",e)}
+    }
+  }
+  return merged;
+}
+
+async function readMissedWeeklyAgendaActions(session,selectedTerm){
+  const missed=[];
+  const seen={};
+  if(!db || !session) return missed;
+  try{
+    const agendaSnap=await db.ref("secureHubWeeklyAgenda").get();
+    if(!agendaSnap.exists()) return missed;
+    const allWeeks=agendaSnap.val()||{};
+    const today=todayMidnight().getTime();
+    const classKeys=[safeKey(session.classId), session.classId].filter(Boolean);
+
+    for(const [wk,weekObj] of Object.entries(allWeeks)){
+      const planForClass = classKeys.map(k=>weekObj?.[k]).find(Boolean);
+      const itemsObj=planForClass?.items || {};
+      const items=Object.values(itemsObj||{});
+      if(!items.length) continue;
+      const progress=await readProgressForWeek(session,wk);
+
+      for(const item of items){
+        const dueDate=agendaItemDateFromWeek(item,wk);
+        if(dueDate.getTime()>today) continue;
+        if(agendaItemTerm(item,wk)!==selectedTerm) continue;
+        if(agendaItemDoneFromProgress(progress,item)) continue;
+        if(studentRecordCache.some(r=>recordMatchesItem(r,item))) continue;
+
+        const key=safeKey(wk+"_"+(item.id||item.title));
+        if(seen[key]) continue;
+        seen[key]=true;
+        const map=PAGE_MAP[item.platform]||{};
+        missed.push({
+          title:item.title || "Assigned Activity",
+          platform:map.label || item.platform || "Weekly Agenda",
+          week:wk,
+          day:item.day || "",
+          dueDate,
+          term:selectedTerm,
+          id:item.id
+        });
+      }
+    }
+  }catch(err){
+    console.warn("Missed weekly agenda read skipped",err);
+  }
+  missed.sort((a,b)=>a.dueDate-b.dueDate || String(a.title).localeCompare(String(b.title)));
+  return missed;
+}
+
 function reloadStudentTermView(){
   if(CURRENT_STUDENT_SESSION){
     loadStudentHubWindows(CURRENT_STUDENT_SESSION);
@@ -1564,16 +1682,21 @@ async function loadStudentPerformanceWindow(session){
     ? renderReportTable(uniqueRows)
     : `<div class="actionItem">⚠️ No saved marks found for ${termLabel(selectedTerm)} yet.</div>`;
 
+  const missedAgenda=await readMissedWeeklyAgendaActions(session,selectedTerm);
+
   const actions=[];
-  if(!uniqueRows.length) actions.push("⚠️ No marks saved yet. Complete an activity first.");
+  missedAgenda.forEach(a=>{
+    const due=a.dueDate.toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"});
+    actions.push(`📌 Weekly Agenda missed task: ${a.title} (${a.platform}) — ${due}`);
+  });
   recovery.forEach(a=>actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`));
 
   if(actions.length){
     byId("studentAutoMessage").innerHTML=`Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
     byId("studentNeededActions").innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
   }else{
-    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
-    byId("studentNeededActions").innerHTML=`<div class="actionItem good">✅ Your saved marks are up to date.</div>`;
+    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} weekly tasks are up to date. 🌟`;
+    byId("studentNeededActions").innerHTML=`<div class="actionItem good">✅ No missed weekly agenda tasks for ${termLabel(selectedTerm)}.</div>`;
   }
 }
 
