@@ -615,6 +615,10 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
   .missionMainTitle h2{font-size:26px!important}
 }
 
+  .studentPanelContent.hidden{
+  display:none!important;
+}
+
 </style>
 </head>
 
@@ -664,36 +668,59 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
     </div>
     <section id="agendaSection"></section>
 
-    <div class="studentWindows compactPanel hidden" id="studentDashboardPanels">
-      <section id="reportSection" class="infoWindow">
-        <div class="termControlBar">
-          <h2>📊 My Performance Report</h2>
-          <select id="studentTermSelect" class="termSelectMini" onchange="reloadStudentTermView()">
-            <option value="term1">Term 1</option>
-            <option value="term2">Term 2</option>
-            <option value="term3">Term 3</option>
-          </select>
-        </div>
-        <div id="studentAutoMessage" class="feedbackBox">Loading your performance report...</div>
-        <div id="studentReportTable" class="miniLoading">Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...</div>
-        <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">✅ Needed Actions</h3>
-        <div id="studentNeededActions" class="actionList"></div>
-      </section>
+    <div class="studentWindows compactPanel" id="studentDashboardPanels">
 
-      <section class="infoWindow">
-        <div class="termControlBar">
-          <h2>🏅 My Certificates</h2>
-          <span id="certificateTermLabel" class="miniLoading">Term 1</span>
-        </div>
-        <div class="miniLoading">
-          Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
-        </div>
-        <div id="studentCertificatesList" class="certList"></div>
-      </section>
+  <section id="reportSection"
+           class="infoWindow studentPanelContent hidden">
+
+    <div class="termControlBar">
+      <h2>📊 My Performance Report</h2>
+
+      <select id="studentTermSelect"
+              class="termSelectMini"
+              onchange="reloadStudentTermView()">
+        <option value="term1">Term 1</option>
+        <option value="term2">Term 2</option>
+        <option value="term3">Term 3</option>
+      </select>
     </div>
-  </main>
-</div>
 
+    <div id="studentAutoMessage" class="feedbackBox">
+      Loading your performance report...
+    </div>
+
+    <div id="studentReportTable" class="miniLoading">
+      Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...
+    </div>
+
+    <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">
+      ✅ Needed Actions
+    </h3>
+
+    <div id="studentNeededActions" class="actionList"></div>
+
+  </section>
+
+
+  <section id="certificateSection"
+           class="infoWindow studentPanelContent hidden">
+
+    <div class="termControlBar">
+      <h2>🏅 My Certificates</h2>
+      <span id="certificateTermLabel" class="miniLoading">
+        Term 1
+      </span>
+    </div>
+
+    <div class="miniLoading">
+      Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
+    </div>
+
+    <div id="studentCertificatesList" class="certList"></div>
+
+  </section>
+
+</div>
 <div id="teacherHub" class="appShell hidden">
   <aside class="sidebar">
     <div class="logo"><div class="logoIcon">🛡️</div><div><h2>SECURE HUB</h2><p>Teacher Control</p></div></div>
@@ -1362,6 +1389,28 @@ function recordTerm(record){
 function reloadStudentTermView(){
   if(CURRENT_STUDENT_SESSION){
     loadStudentHubWindows(CURRENT_STUDENT_SESSION);
+  }
+}
+
+  function toggleStudentPanel(panelId){
+
+  document.querySelectorAll('.studentPanelContent').forEach(el=>{
+    if(el.id !== panelId){
+      el.classList.add('hidden');
+      el.dataset.open = "no";
+    }
+  });
+
+  const panel = document.getElementById(panelId);
+
+  if(!panel) return;
+
+  if(panel.dataset.open === "yes"){
+    panel.classList.add('hidden');
+    panel.dataset.open = "no";
+  }else{
+    panel.classList.remove('hidden');
+    panel.dataset.open = "yes";
   }
 }
 
