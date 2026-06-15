@@ -461,6 +461,160 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
 @media(max-width:1150px){.missionCard.v2{grid-template-columns:1fr}.missionArt{min-height:165px}.missionMainTitle{text-align:center}.weekFiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.weekFiveGrid{grid-template-columns:1fr}.missionMainTitle h2{font-size:31px}.missionMainTitle .weekNum{font-size:31px}.missionCard.v2{padding:20px}}
 
+
+/* ===== CLEAN SAFE SECURE HUB LAYOUT V3 ===== */
+.journeyCard{display:none!important}
+.main{padding:16px 22px 24px}
+.topHeader{margin-bottom:12px}
+.agendaTop{margin:8px 0 14px}
+.missionCard.v2{
+  min-height:auto!important;
+  grid-template-columns:96px minmax(230px,.9fr) minmax(320px,1.25fr) 190px!important;
+  gap:18px!important;
+  padding:22px 24px!important;
+  background:linear-gradient(135deg,#ffffff,#f8fbff 60%,#f5f0ff)!important;
+  border-radius:24px!important;
+}
+.missionArt{
+  min-height:92px!important;
+  background:#eef4ff;
+  border:1px solid #dfe8ff;
+  border-radius:22px;
+}
+.missionArt .starHero{
+  position:static!important;
+  font-size:54px!important;
+  filter:drop-shadow(0 8px 14px rgba(255,200,70,.16));
+}
+.missionArt .rainbow,.missionArt .rocketHero,.missionArt .sparkleA,.missionArt .sparkleB{display:none!important}
+.missionMainTitle h2{
+  font-size:30px!important;
+  line-height:1.08!important;
+  letter-spacing:.01em!important;
+}
+.missionMainTitle .weekNum{
+  font-size:18px!important;
+  color:#6d4cff!important;
+  margin-bottom:4px!important;
+}
+.missionMainTitle .datePill{
+  margin-top:10px!important;
+  padding:7px 12px!important;
+  font-size:13px!important;
+  background:#eef4ff!important;
+  color:#294a99!important;
+  box-shadow:none!important;
+  border:1px solid #d7e3ff!important;
+}
+.objectiveBox.v2 h3{font-size:18px!important;margin-bottom:10px!important}
+.objectiveList.v2{gap:8px!important}
+.objectiveItem.v2{
+  min-height:42px!important;
+  padding:8px 11px!important;
+  font-size:13px!important;
+  border-radius:14px!important;
+}
+.objectiveItem.v2 .objIcon{
+  width:28px!important;height:28px!important;font-size:15px!important;
+}
+.missionProgress.v2{
+  border-radius:22px!important;
+  padding:14px!important;
+}
+.circleProgress{
+  width:120px!important;height:120px!important;margin-bottom:10px!important;
+}
+.circleProgress:before{width:92px!important;height:92px!important}
+.circleProgress b{font-size:27px!important}
+.missionProgress.v2 p{font-size:13px!important}
+.weekOnlyCard{padding:17px!important;border-radius:24px!important}
+.weekOnlyCard h2{font-size:22px!important;margin-bottom:12px!important}
+.weekFiveGrid{grid-template-columns:repeat(5,minmax(120px,1fr))!important;gap:12px!important}
+.futureDayCard.v2{
+  min-height:126px!important;
+  padding:13px!important;
+  border-radius:18px!important;
+}
+.futureDayCard.v2 .dayBadge{font-size:24px!important}
+.futureDayCard.v2 .dayName{font-size:16px!important}
+.futureDayCard.v2 .dayDate{font-size:12px!important}
+.futureDayCard.v2 .taskBig{font-size:16px!important;margin-top:8px!important}
+.futureDayCard.v2 .taskSmall{font-size:12px!important}
+.futureDayCard.v2 .viewBtnMini{margin-top:10px!important;padding:8px!important;font-size:12px!important}
+.missionHint{display:none!important}
+.expandedDayPanel{padding:14px!important;border-radius:20px!important}
+.expandedTaskGrid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))!important}
+.task{min-height:88px!important}
+.compactDashboard{
+  margin-top:16px;
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:12px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.compactDashCard{
+  border:1px solid #dfe8ff;
+  background:linear-gradient(180deg,#fff,#f8fbff);
+  border-radius:18px;
+  padding:13px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  cursor:pointer;
+  transition:.18s;
+}
+.compactDashCard:hover{transform:translateY(-2px);box-shadow:0 8px 18px rgba(45,68,130,.08)}
+.compactDashIcon{
+  width:48px;height:48px;border-radius:16px;
+  display:grid;place-items:center;
+  background:#eef4ff;
+  font-size:25px;
+  flex:0 0 auto;
+}
+.compactDashCard b{
+  display:block;
+  color:#0d2d68;
+  font-family:Quicksand,sans-serif;
+  font-size:16px;
+}
+.compactDashCard span{
+  display:block;
+  color:#617198;
+  font-size:12px;
+  font-weight:800;
+  margin-top:2px;
+}
+.compactDashArrow{
+  margin-left:auto;
+  color:#6d4cff;
+  font-weight:900;
+  font-size:22px;
+}
+.studentWindows.compactPanel{
+  margin-top:14px!important;
+}
+.studentWindows.compactPanel.hidden{display:none!important}
+.studentWindows.compactPanel.showPanel{display:grid!important}
+@media(max-width:1150px){
+  .missionCard.v2{grid-template-columns:86px 1fr!important}
+  .missionProgress.v2{grid-column:1/-1}
+  .objectiveBox.v2{grid-column:1/-1}
+  .weekFiveGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:800px){
+  .compactDashboard{grid-template-columns:1fr}
+}
+@media(max-width:650px){
+  .missionCard.v2{grid-template-columns:1fr!important;text-align:center}
+  .missionArt{max-width:110px;margin:auto}
+  .weekFiveGrid{grid-template-columns:1fr!important}
+  .missionMainTitle h2{font-size:26px!important}
+}
+
 </style>
 </head>
 
@@ -510,7 +664,7 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
     </div>
     <section id="agendaSection"></section>
 
-    <div class="studentWindows">
+    <div class="studentWindows compactPanel hidden" id="studentDashboardPanels">
       <section id="reportSection" class="infoWindow">
         <div class="termControlBar">
           <h2>📊 My Performance Report</h2>
@@ -943,7 +1097,8 @@ function renderAgenda(targetId, teacher=false){
         <div class="legend"><span><span class="dot done">✓</span>Completed</span><span><span class="dot progress">○</span>Today</span><span><span class="dot upcoming">○</span>Preview</span><span><span class="dot"></span>Locked / Not Started</span></div>
       </div>
       ${missionHtml}
-      ${weekCardsHtml}`;
+      ${weekCardsHtml}
+      ${renderLearningDashboardShortcuts(done,total,pct)}`;
     return;
   }
 
@@ -969,6 +1124,49 @@ function renderAgenda(targetId, teacher=false){
       ${teacherPanelHtml()}
     </div>`;
 }
+
+
+function renderLearningDashboardShortcuts(done,total,pct){
+  return `<div class="compactDashboard">
+    <div class="compactDashCard" onclick="showStudentDashboardPanel('performance')">
+      <div class="compactDashIcon">📊</div>
+      <div><b>My Performance</b><span>${pct}% weekly progress • View marks</span></div>
+      <div class="compactDashArrow">›</div>
+    </div>
+    <div class="compactDashCard" onclick="showStudentDashboardPanel('certificates')">
+      <div class="compactDashIcon">🏅</div>
+      <div><b>My Certificates</b><span>View and download certificates</span></div>
+      <div class="compactDashArrow">›</div>
+    </div>
+    <div class="compactDashCard" onclick="showStudentDashboardPanel('actions')">
+      <div class="compactDashIcon">✅</div>
+      <div><b>Needed Actions</b><span>${done} of ${total} agenda tasks done</span></div>
+      <div class="compactDashArrow">›</div>
+    </div>
+  </div>`;
+}
+
+function showStudentDashboardPanel(type){
+  const panel=byId("studentDashboardPanels");
+  if(!panel) return;
+  panel.classList.remove("hidden");
+  panel.classList.add("showPanel");
+
+  const report=byId("reportSection");
+  const certBox=byId("studentCertificatesList")?.closest(".infoWindow");
+
+  if(report && certBox){
+    report.style.display = (type==="certificates") ? "none" : "";
+    certBox.style.display = (type==="performance" || type==="actions") ? "none" : "";
+  }
+
+  if(type==="actions"){
+    byId("studentNeededActions")?.scrollIntoView({behavior:"smooth",block:"center"});
+  }else{
+    panel.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+}
+
 
 function renderExpandedDayPanel(dayKey){
   const idx=dayIndexFromKey(dayKey);
