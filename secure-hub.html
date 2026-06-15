@@ -682,7 +682,7 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
 
       <select id="studentTermSelect"
               class="termSelectMini"
-              onchange="reloadStudentTermView()">
+              onchange="syncStudentTermAndReload(this.value)">
         <option value="term1">Term 1</option>
         <option value="term2">Term 2</option>
         <option value="term3">Term 3</option>
@@ -696,12 +696,6 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
     <div id="studentReportTable" class="miniLoading">
       Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...
     </div>
-
-    <h3 style="margin-top:14px;color:#203a78;font-family:Quicksand,sans-serif">
-      ✅ Needed Actions
-    </h3>
-
-    <div id="studentNeededActions" class="actionList"></div>
 
   </section>
 
@@ -721,6 +715,30 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
     </div>
 
     <div id="studentCertificatesList" class="certList"></div>
+
+  </section>
+
+
+  <section id="actionsSection"
+           class="infoWindow studentPanelContent hidden">
+
+    <div class="termControlBar">
+      <h2>✅ Needed Actions</h2>
+
+      <select id="studentActionsTermSelect"
+              class="termSelectMini"
+              onchange="syncStudentTermAndReload(this.value)">
+        <option value="term1">Term 1</option>
+        <option value="term2">Term 2</option>
+        <option value="term3">Term 3</option>
+      </select>
+    </div>
+
+    <div id="studentActionsMessage" class="feedbackBox">
+      Checking your missed weekly agenda tasks...
+    </div>
+
+    <div id="studentNeededActions" class="actionList"></div>
 
   </section>
 
@@ -773,7 +791,7 @@ function showLoginTab(type){byId("studentTab").classList.toggle("active",type===
 function openPage(page){window.open(page,"_blank")}
 function scrollToTop(){window.scrollTo({top:0,behavior:"smooth"})}
 function scrollToAgenda(){document.getElementById("agendaSection")?.scrollIntoView({behavior:"smooth"});document.getElementById("teacherAgendaSection")?.scrollIntoView({behavior:"smooth"})}
-function scrollToReport(){document.getElementById("reportSection")?.scrollIntoView({behavior:"smooth"})}
+function scrollToReport(){showStudentDashboardPanel("performance")}
 
 async function initFirebase(){
   try{
@@ -1185,15 +1203,16 @@ function showStudentDashboardPanel(type){
   const panel=byId("studentDashboardPanels");
   const report=byId("reportSection");
   const cert=byId("certificateSection");
-  if(!panel || !report || !cert) return;
+  const actions=byId("actionsSection");
+  if(!panel || !report || !cert || !actions) return;
 
-  const isSameOpen = activeStudentDashboardType===type &&
-    ((type==="certificates" && !cert.classList.contains("hidden")) ||
-     (type!=="certificates" && !report.classList.contains("hidden")));
+  const sectionMap={performance:report, certificates:cert, actions:actions};
+  const target=sectionMap[type] || report;
+  const isSameOpen = activeStudentDashboardType===type && !target.classList.contains("hidden");
 
-  report.classList.add("hidden");
-  cert.classList.add("hidden");
+  [report,cert,actions].forEach(sec=>sec.classList.add("hidden"));
   panel.classList.remove("showPanel");
+  document.querySelectorAll(".compactDashCard").forEach(card=>card.classList.remove("activePanel"));
 
   if(isSameOpen){
     activeStudentDashboardType=null;
@@ -1202,19 +1221,15 @@ function showStudentDashboardPanel(type){
 
   activeStudentDashboardType=type;
   panel.classList.add("showPanel");
+  target.classList.remove("hidden");
 
-  if(type==="certificates"){
-    cert.classList.remove("hidden");
-    cert.scrollIntoView({behavior:"smooth",block:"start"});
-    return;
-  }
+  const cards=document.querySelectorAll(".compactDashCard");
+  if(type==="performance") cards[0]?.classList.add("activePanel");
+  if(type==="certificates") cards[1]?.classList.add("activePanel");
+  if(type==="actions") cards[2]?.classList.add("activePanel");
 
-  report.classList.remove("hidden");
-  if(type==="actions"){
-    byId("studentNeededActions")?.scrollIntoView({behavior:"smooth",block:"center"});
-  }else{
-    report.scrollIntoView({behavior:"smooth",block:"start"});
-  }
+  syncStudentTermSelectors(selectedStudentTerm());
+  target.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 
@@ -1381,7 +1396,20 @@ async function changeWeek(n){currentWeekOffset+=n;if(CURRENT_STUDENT_SESSION)awa
 
 
 function selectedStudentTerm(){
-  return byId("studentTermSelect")?.value || "term1";
+  return byId("studentTermSelect")?.value || byId("studentActionsTermSelect")?.value || "term1";
+}
+
+function syncStudentTermSelectors(term){
+  const selected = term || selectedStudentTerm();
+  const reportSel = byId("studentTermSelect");
+  const actionsSel = byId("studentActionsTermSelect");
+  if(reportSel) reportSel.value = selected;
+  if(actionsSel) actionsSel.value = selected;
+}
+
+function syncStudentTermAndReload(term){
+  syncStudentTermSelectors(term || selectedStudentTerm());
+  reloadStudentTermView();
 }
 
 function termLabel(term){
@@ -1505,6 +1533,7 @@ async function readMissedWeeklyAgendaActions(session,selectedTerm){
 }
 
 function reloadStudentTermView(){
+  syncStudentTermSelectors(selectedStudentTerm());
   if(CURRENT_STUDENT_SESSION){
     loadStudentHubWindows(CURRENT_STUDENT_SESSION);
   }
@@ -1691,13 +1720,23 @@ async function loadStudentPerformanceWindow(session){
   });
   recovery.forEach(a=>actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`));
 
-  if(actions.length){
-    byId("studentAutoMessage").innerHTML=`Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
-    byId("studentNeededActions").innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
+  if(uniqueRows.length){
+    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
   }else{
-    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} weekly tasks are up to date. 🌟`;
-    byId("studentNeededActions").innerHTML=`<div class="actionItem good">✅ No missed weekly agenda tasks for ${termLabel(selectedTerm)}.</div>`;
+    byId("studentAutoMessage").innerHTML=`No saved marks found for ${termLabel(selectedTerm)} yet. Complete an activity first. 🌟`;
   }
+
+  const actionsMessage=byId("studentActionsMessage");
+  const actionsBox=byId("studentNeededActions");
+  if(actions.length){
+    if(actionsMessage) actionsMessage.innerHTML=`Dear ${esc(session.name)}, these ${termLabel(selectedTerm)} weekly agenda tasks still need your attention. 🌟`;
+    if(actionsBox) actionsBox.innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
+  }else{
+    if(actionsMessage) actionsMessage.innerHTML=`Excellent work, ${esc(session.name)}! No missed weekly agenda tasks for ${termLabel(selectedTerm)}. 🌟`;
+    if(actionsBox) actionsBox.innerHTML=`<div class="actionItem good">✅ No missed weekly agenda tasks for ${termLabel(selectedTerm)}.</div>`;
+  }
+
+  syncStudentTermSelectors(selectedTerm);
 }
 
 function certificateUrl(cert){
@@ -1826,6 +1865,7 @@ async function loadStudentCertificatesWindow(session){
 }
 
 function loadStudentHubWindows(session){
+  syncStudentTermSelectors(selectedStudentTerm());
   loadStudentPerformanceWindow(session);
   loadStudentCertificatesWindow(session);
 }
