@@ -1091,27 +1091,15 @@ body.exam-focus-mode .topbar {
     
 /* ===== Weekly Agenda Guided Mode ===== */
 .agenda-lock-note{
-  border:1px solid #fed7aa;
   background:#fff7ed;
   color:#9a3412;
+  border:1px solid #fed7aa;
   border-radius:16px;
   padding:10px 12px;
   font-weight:900;
-  margin-top:8px;
+  margin:10px 0;
 }
-.agenda-complete-note{
-  border:1px solid #bbf7d0;
-  background:#ecfdf5;
-  color:#166534;
-  border-radius:16px;
-  padding:10px 12px;
-  font-weight:900;
-  margin-top:8px;
-}
-button.agenda-disabled{
-  opacity:.55;
-  cursor:not-allowed;
-}
+body.agenda-assigned-locked #studentLibraryPanel button{opacity:.55;cursor:not-allowed}
 
 </style>
 </head>
@@ -1395,16 +1383,6 @@ let currentExamId='default_revision_check';
 let currentExamMeta={title:'Grade 9 EOT3 Revision Check',subtitle:'This practice reviews vocabulary, grammar, and reading skills for the Grade 9 English exam.'};
 let isOfficialActiveExam=false;
 let studentLibrary={};
-const agendaParams = new URLSearchParams(location.search);
-const AGENDA_ASSIGNMENT = {
-  title: (agendaParams.get('agendaTitle') || '').trim(),
-  platform: (agendaParams.get('agendaPlatform') || '').trim(),
-  itemId: (agendaParams.get('agendaItemId') || '').trim(),
-  sourceItemId: (agendaParams.get('sourceItemId') || agendaParams.get('agendaSourceId') || agendaParams.get('examId') || '').trim(),
-  week: (agendaParams.get('agendaWeek') || '').trim()
-};
-let agendaMode = !!AGENDA_ASSIGNMENT.title;
-let agendaAssignmentCompleted = false;
 let screens=[], allQuestions=[], totalQuestions=0, totalMarks=0;
 let currentScreen=0, submitted=false, lastMissedIds=[];
 window.answerState={};
@@ -1412,175 +1390,12 @@ let examViolations = 0;
 let examLocked = false;
 let unlockWatcherStarted = false;
 let lastViolationTime = 0;
+const AGENDA_LINK = getAgendaLinkParams();
+let agendaAssignedCompleted = false;
   
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
-function textKey(v){
-  return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-}
-function titleMatchesAgenda(value){
-  if(!agendaMode) return false;
-  const a=textKey(AGENDA_ASSIGNMENT.title);
-  const b=textKey(value);
-  return !!a && !!b && (a===b || b.includes(a) || a.includes(b));
-}
-function updateAgendaLibraryGate(){
-  const panel=document.getElementById('studentLibraryPanel');
-  const btn=panel?.querySelector('button');
-  if(!agendaMode || !panel || !btn) return;
-
-  const hint=panel.querySelector('.library-hint');
-  const existing=document.getElementById('agendaGateNote');
-  if(existing) existing.remove();
-
-  if(agendaAssignmentCompleted){
-    btn.disabled=false;
-    btn.classList.remove('agenda-disabled');
-    if(hint) hint.textContent='Assigned work completed. You can now open the library for extra practice.';
-    panel.insertAdjacentHTML('beforeend', `<div id="agendaGateNote" class="agenda-complete-note">✅ Assigned work completed. Extra revision library is unlocked.</div>`);
-  }else{
-    btn.disabled=true;
-    btn.classList.add('agenda-disabled');
-    if(hint) hint.textContent='Finish today’s assigned work first. The library will unlock after you submit it.';
-    panel.insertAdjacentHTML('beforeend', `<div id="agendaGateNote" class="agenda-lock-note">🔒 Library locked until you finish: ${esc(AGENDA_ASSIGNMENT.title)}</div>`);
-  }
-}
-function currentWeekKeyForAgenda(){
-  if(AGENDA_ASSIGNMENT.week) return AGENDA_ASSIGNMENT.week;
-  const d=new Date();
-  const day=d.getDay();
-  const diff=day===0?-6:1-day;
-  d.setDate(d.getDate()+diff);
-  d.setHours(0,0,0,0);
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-}
-async function readAgendaCompletion(st){
-  if(!agendaMode || !AGENDA_ASSIGNMENT.itemId || !db || !st) return false;
-  const studentId=safeKey(st.studentId||st.password);
-  const classKeys=[st.classId, safeKey(st.classId||st.className)].filter(Boolean);
-  for(const cls of [...new Set(classKeys)]){
-    const snap=await db.ref(`secureHubWeeklyProgress/${currentWeekKeyForAgenda()}/${cls}/${studentId}/${AGENDA_ASSIGNMENT.itemId}`).get();
-    if(snap.exists() && snap.val()?.completed) return true;
-  }
-  return false;
-}
-async function saveAgendaCompletion(score,total){
-  try{
-    if(!agendaMode || !AGENDA_ASSIGNMENT.itemId || !db) return;
-    const st=studentSession();
-    if(!st) return;
-    const percent=total?Math.round(score/total*100):0;
-    const studentId=safeKey(st.studentId||st.password);
-    const classKeys=[st.classId, safeKey(st.classId||st.className)].filter(Boolean);
-    const payload={
-      completed:true,
-      completedAt:Date.now(),
-      platform:AGENDA_ASSIGNMENT.platform || 'exam',
-      title:AGENDA_ASSIGNMENT.title || currentExamMeta.title,
-      examId:currentExamId,
-      examTitle:currentExamMeta.title,
-      score,
-      total,
-      percentage:percent
-    };
-    for(const cls of [...new Set(classKeys)]){
-      await db.ref(`secureHubWeeklyProgress/${currentWeekKeyForAgenda()}/${cls}/${studentId}/${AGENDA_ASSIGNMENT.itemId}`).update(payload);
-    }
-    agendaAssignmentCompleted=true;
-    updateAgendaLibraryGate();
-  }catch(err){
-    console.warn('Weekly agenda completion save skipped:',err);
-  }
-}
-async function loadAssignedExamFromAgenda(st){
-  if(!agendaMode || !db || !st) return false;
-
-  const assignedTitle = AGENDA_ASSIGNMENT.title || '';
-  const assignedKey = textKey(assignedTitle);
-  const sourceId = AGENDA_ASSIGNMENT.sourceItemId || '';
-  const classId = safeKey(st.classId || st.className || 'guest');
-
-  function candidateMatches(id, ex, activeMeta){
-    if(!ex) return false;
-
-    const values = [
-      id,
-      safeKey(id),
-      ex.id,
-      safeKey(ex.id),
-      ex.title,
-      ex.assessmentTitle,
-      ex.revisionTitle,
-      ex.subtitle,
-      activeMeta?.title,
-      activeMeta?.assessmentTitle
-    ].filter(Boolean);
-
-    if(sourceId){
-      const sourceKeys = [sourceId, safeKey(sourceId), textKey(sourceId)];
-      if(values.some(v => sourceKeys.includes(String(v)) || sourceKeys.includes(safeKey(v)) || sourceKeys.includes(textKey(v)))){
-        return true;
-      }
-    }
-
-    return values.some(v => titleMatchesAgenda(v));
-  }
-
-  // 1) Prefer the active assessment when its title/id matches the agenda task.
-  const activeSnap = await db.ref('examPage/activeExams/' + classId).get();
-  if(activeSnap.exists()){
-    const active = activeSnap.val();
-    const examId = active.examId || active;
-    const exSnap = await db.ref('examPage/exams/' + examId).get();
-    if(exSnap.exists()){
-      const ex = {id: examId, ...exSnap.val()};
-      if(candidateMatches(examId, ex, active)){
-        loadExamObject(ex, true);
-        showAgendaAssignedNotice(true, ex.title || active.title || assignedTitle, 'assessment');
-        return true;
-      }
-    }
-  }
-
-  // 2) Then open the exact matching revision/assessment from the saved library.
-  const items = Object.entries(studentLibrary || {});
-
-  const exactMatch = items.find(([id, ex]) => {
-    const titles = [ex?.title, ex?.assessmentTitle, ex?.revisionTitle].filter(Boolean).map(textKey);
-    return ex && titles.includes(assignedKey);
-  });
-
-  const idMatch = sourceId ? items.find(([id, ex]) => ex && (id === sourceId || safeKey(id) === safeKey(sourceId))) : null;
-
-  const softMatch = items.find(([id, ex]) => candidateMatches(id, ex, null));
-
-  const match = idMatch || exactMatch || softMatch;
-
-  if(match){
-    const [id, ex] = match;
-    const official = ex.mode === 'assessment' || textKey(assignedTitle).includes('exam') || textKey(assignedTitle).includes('assessment');
-    loadExamObject({id, ...ex}, official);
-    showAgendaAssignedNotice(true, ex.title || assignedTitle, official ? 'assessment' : 'revision');
-    return true;
-  }
-
-  showAgendaAssignedNotice(false, assignedTitle, 'missing');
-  alert('The assigned Exam Page task was not found yet: ' + assignedTitle + '\n\nPlease make sure the title in Weekly Agenda is exactly the same as the saved revision or active exam title.');
-  return false;
-}
-
-function showAgendaAssignedNotice(found, title, type){
-  if(!agendaMode) return;
-  const panel = document.getElementById('studentLibraryPanel');
-  if(!panel) return;
-  const old = document.getElementById('agendaAssignedNotice');
-  if(old) old.remove();
-  const msg = found
-    ? `🎯 Assigned ${type === 'assessment' ? 'exam' : 'revision'} loaded: ${esc(title || AGENDA_ASSIGNMENT.title)}. Finish it first to unlock extra practice.`
-    : `⚠️ Assigned task not found: ${esc(title || AGENDA_ASSIGNMENT.title)}. Check the title in Weekly Agenda.`;
-  panel.insertAdjacentHTML('afterbegin', `<div id="agendaAssignedNotice" class="${found ? 'agenda-complete-note' : 'agenda-lock-note'}" style="width:100%;margin-bottom:8px">${msg}</div>`);
-}
-
+function esc(t){return String(t||'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
   function updateSubmitButtonState(){
   const answered = Object.keys(answerState || {}).length;
 
@@ -1593,6 +1408,84 @@ function showAgendaAssignedNotice(found, title, type){
     submitBtn.textContent = 'Submit Answers';
   }
 }
+
+function getAgendaLinkParams(){
+  const q = new URLSearchParams(location.search);
+  const title = (q.get('agendaTitle') || '').trim();
+  return {
+    fromAgenda: q.get('fromAgenda') === '1' || !!title,
+    title,
+    platform: q.get('agendaPlatform') || '',
+    itemId: q.get('agendaItemId') || '',
+    week: q.get('agendaWeek') || '',
+    day: q.get('agendaDay') || '',
+    classId: q.get('classId') || '',
+    studentId: q.get('studentId') || ''
+  };
+}
+
+function normalizeTitleForMatch(value){
+  return String(value || '')
+    .toLowerCase()
+    .replace(/revision|assessment|exam|practice|official|active/g,'')
+    .replace(/[^a-z0-9]+/g,' ')
+    .trim();
+}
+
+function titleMatchesAgenda(ex, agendaTitle){
+  const target = normalizeTitleForMatch(agendaTitle);
+  if(!target) return false;
+  const candidates = [ex?.title, ex?.assessmentTitle, ex?.subtitle, ex?.id].map(normalizeTitleForMatch).filter(Boolean);
+  return candidates.some(c => c === target || c.includes(target) || target.includes(c));
+}
+
+function setAgendaLibraryLockedUI(locked){
+  document.body.classList.toggle('agenda-assigned-locked', !!locked);
+  const hint = document.querySelector('#studentLibraryPanel .library-hint');
+  if(hint && AGENDA_LINK.fromAgenda){
+    hint.textContent = locked
+      ? 'Weekly Agenda mode: finish the assigned work first. The library unlocks after you submit.'
+      : 'Assigned work completed. Library is now unlocked for extra practice.';
+  }
+}
+
+async function saveAgendaCompletion(score,total,mode){
+  try{
+    if(!AGENDA_LINK.fromAgenda || !AGENDA_LINK.itemId || !db) return;
+    const st = studentSession();
+    if(!st) return;
+    const classId = AGENDA_LINK.classId || st.classId || st.className || 'guest';
+    const studentId = AGENDA_LINK.studentId || st.studentId || st.password || '';
+    const week = AGENDA_LINK.week || currentWeekKeyForAgenda();
+    const pct = total ? Math.round(score / total * 100) : 0;
+    await db.ref(`secureHubWeeklyProgress/${week}/${safeKey(classId)}/${safeKey(studentId)}/${AGENDA_LINK.itemId}`).update({
+      completed:true,
+      completedAt:Date.now(),
+      platform:'exam',
+      title:AGENDA_LINK.title || currentExamMeta.title || '',
+      examId:currentExamId || '',
+      mode:mode || (isOfficialActiveExam ? 'assessment' : 'revision'),
+      score,
+      total,
+      percentage:pct
+    });
+    agendaAssignedCompleted = true;
+    setAgendaLibraryLockedUI(false);
+    renderStudentLibrary();
+  }catch(err){
+    console.warn('Agenda completion save skipped:', err);
+  }
+}
+
+function currentWeekKeyForAgenda(){
+  const d = new Date();
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+
 function getSecureHubStudent(){
   const preferredKeys = [
     'DL_SECURE_STUDENT_LOGIN',
@@ -1819,11 +1712,8 @@ async function initExamPage(){
     document.getElementById('examClassName').textContent=st.className||st.classId||'';
 
     await loadStudentLibrary();
-    if(agendaMode){
-      agendaAssignmentCompleted = await readAgendaCompletion(st);
-      updateAgendaLibraryGate();
-      const loadedAssigned = await loadAssignedExamFromAgenda(st);
-      if(!loadedAssigned) await loadActiveExamForStudent(st);
+    if(AGENDA_LINK.fromAgenda){
+      await loadAgendaAssignedExamForStudent(st);
     }else{
       await loadActiveExamForStudent(st);
     }
@@ -2074,11 +1964,88 @@ async function deleteTeacherSelectedExam(){
 async function saveCurrentExamToLibrary(){ return saveImportedOrCurrentExam(); }
 async function activateTeacherSelectedExam(){ return assignTeacherSelectedAsAssessment(); }
 
-async function loadActiveExamForStudent(st){if(!db)return; const classId=safeKey(st.classId||st.className||'guest'); const snap=await db.ref('examPage/activeExams/'+classId).get(); if(snap.exists()){const active=snap.val(); const examId=active.examId||active; const exSnap=await db.ref('examPage/exams/'+examId).get(); if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true); else rebuildExamArrays();} else {isOfficialActiveExam=false; rebuildExamArrays();}}
-async function loadStudentLibrary(){if(!db)return; const snap=await db.ref('examPage/exams').get(); studentLibrary=snap.exists()?snap.val():{}; renderStudentLibrary();}
+async function loadActiveExamForStudent(st){
+  if(!db)return;
+  const classId=safeKey(st.classId||st.className||'guest');
+  const snap=await db.ref('examPage/activeExams/'+classId).get();
+  if(snap.exists()){
+    const active=snap.val();
+    const examId=active.examId||active;
+    const exSnap=await db.ref('examPage/exams/'+examId).get();
+    if(exSnap.exists()) loadExamObject({id:examId,...exSnap.val()},true);
+    else rebuildExamArrays();
+  } else {
+    isOfficialActiveExam=false;
+    rebuildExamArrays();
+  }
+}
+
+async function loadAgendaAssignedExamForStudent(st){
+  if(!db) return;
+  setAgendaLibraryLockedUI(true);
+
+  const activeSnap = await db.ref('examPage/activeExams/'+safeKey(st.classId||st.className||'guest')).get();
+  if(activeSnap.exists()){
+    const active = activeSnap.val() || {};
+    if(titleMatchesAgenda(active, AGENDA_LINK.title)){
+      const exSnap = await db.ref('examPage/exams/'+(active.examId || active)).get();
+      if(exSnap.exists()){
+        loadExamObject({id:(active.examId || active), ...exSnap.val()}, true);
+        addAgendaAssignedNotice(true);
+        return;
+      }
+    }
+  }
+
+  const entries = Object.entries(studentLibrary || {});
+  let match = entries.find(([id,ex]) => ex && id === AGENDA_LINK.itemId);
+  if(!match){
+    match = entries.find(([id,ex]) => ex && titleMatchesAgenda({...ex,id}, AGENDA_LINK.title));
+  }
+
+  if(match){
+    const [id, ex] = match;
+    const official = ex.mode === 'assessment';
+    loadExamObject({id, ...ex}, official);
+    addAgendaAssignedNotice(official);
+    return;
+  }
+
+  isOfficialActiveExam=false;
+  rebuildExamArrays();
+  addAgendaNotFoundNotice();
+}
+
+function addAgendaAssignedNotice(official){
+  const sub = document.getElementById('welcomeSubtitle');
+  if(sub && AGENDA_LINK.title){
+    sub.innerHTML = `Assigned from Weekly Agenda: <strong>${esc(AGENDA_LINK.title)}</strong><br>${official ? 'This opens as the assigned assessment.' : 'Complete this assigned revision first. The library unlocks after you submit.'}`;
+  }
+}
+
+function addAgendaNotFoundNotice(){
+  const sub = document.getElementById('welcomeSubtitle');
+  if(sub){
+    sub.innerHTML = `⚠️ I could not find the assigned Exam Page item named <strong>${esc(AGENDA_LINK.title)}</strong>. Please check that the Weekly Agenda title exactly matches the saved revision/exam title.`;
+  }
+}
+
+async function loadStudentLibrary(){
+  if(!db)return;
+  const snap=await db.ref('examPage/exams').get();
+  studentLibrary=snap.exists()?snap.val():{};
+  renderStudentLibrary();
+}
+
 function renderStudentLibrary(){
   const box=document.getElementById('studentLibraryList');
   if(!box)return;
+
+  if(AGENDA_LINK.fromAgenda && !agendaAssignedCompleted){
+    box.className='';
+    box.innerHTML=`<div class="empty-library">🔒 Finish your assigned work first:<br><strong>${esc(AGENDA_LINK.title || 'Weekly Agenda task')}</strong><br>After you submit it, this library will unlock for extra practice.</div>`;
+    return;
+  }
 
   const items=Object.entries(studentLibrary||{})
     .filter(([id,ex]) =>
@@ -2103,11 +2070,10 @@ function renderStudentLibrary(){
     </div>
   `).join('');
 }
+
 function openStudentLibrary(){
-  if(agendaMode && !agendaAssignmentCompleted){
-    alert('🔒 Please finish the assigned work first: ' + AGENDA_ASSIGNMENT.title + '\nAfter you submit it, the revision library will unlock for extra practice.');
-    updateAgendaLibraryGate();
-    return;
+  if(AGENDA_LINK.fromAgenda && !agendaAssignedCompleted){
+    alert('🔒 Please finish the assigned Weekly Agenda work first. The library will unlock after you submit it.');
   }
   renderStudentLibrary();
   document.getElementById('studentLibraryModal').classList.add('show');
@@ -2346,10 +2312,10 @@ async function submitQuiz(){
     showSaveNote('Teacher preview only. No mark was saved.',false);
   }else if(isOfficialActiveExam){
     await saveOfficialExamFirstAttempt(score,totalMarks,partStats);
-    await saveAgendaCompletion(score,totalMarks);
+    await saveAgendaCompletion(score,totalMarks,'assessment');
   }else{
     await saveRevisionProgressBest(score,totalMarks,partStats);
-    await saveAgendaCompletion(score,totalMarks);
+    await saveAgendaCompletion(score,totalMarks,'revision');
   }
 
   renderRight();
@@ -2388,6 +2354,8 @@ const termSettings = {
       type:'Revision Practice',
       activityType:'Exam Page Revision',
       title:currentExamMeta.title,
+      examId:currentExamId,
+      agendaItemId:AGENDA_LINK.itemId || '',
       score,
       total,
       percentage:pct,
@@ -2398,9 +2366,6 @@ const termSettings = {
       attempts,
       studentName:st.name||'',
       studentId:st.studentId||st.password||'',
-      agendaItemId: AGENDA_ASSIGNMENT.itemId || '',
-      agendaTitle: AGENDA_ASSIGNMENT.title || '',
-      agendaWeek: AGENDA_ASSIGNMENT.week || '',
       classId:st.classId||'',
       className:st.className||'',
       partStats:isBest?partStats:(oldData?.partStats||partStats),
@@ -2444,7 +2409,7 @@ async function saveOfficialExamFirstAttempt(score,total,partStats){
       return;
     }
     const pct=total?Math.round(score/total*100):0;
-    const record={type:'Exam Page',activityType:'Exam Page',page:'Exam Page',title:currentExamMeta.title,activityName:currentExamMeta.title,score,total,percentage:pct,term:term.term,studyYear:term.studyYear,studentName:st.name||'',studentId:st.studentId||st.password||'',classId:st.classId||'',className:st.className||'',firstAttempt:true,partStats,createdAt:Date.now(),time:Date.now(),updatedAt:Date.now()};
+    const record={type:'Exam Page',activityType:'Exam Page',page:'Exam Page',title:currentExamMeta.title,activityName:currentExamMeta.title,examId:currentExamId,agendaItemId:AGENDA_LINK.itemId || '',score,total,percentage:pct,term:term.term,studyYear:term.studyYear,studentName:st.name||'',studentId:st.studentId||st.password||'',classId:st.classId||'',className:st.className||'',firstAttempt:true,partStats,createdAt:Date.now(),time:Date.now(),updatedAt:Date.now()};
     await db.ref(path).set(record);
     await db.ref('examPage/studentHistory/'+classId+'/'+studentId+'/'+recordId).set(record);
     await db.ref('teacherControlCenter/studentExamHistory/'+classId+'/'+studentId+'/'+recordId).set(record);
