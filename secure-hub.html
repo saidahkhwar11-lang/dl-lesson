@@ -102,8 +102,6 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}.stat{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}.stat b{display:block;font-size:24px;font-family:Quicksand,sans-serif;margin-top:6px}
 .teacherForm{display:grid;gap:8px}.teacherRow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .agendaListItem{border:1px solid var(--line);border-radius:12px;padding:8px;margin:6px 0;background:#f8fbff;font-size:12px}.agendaListItem b{color:#10295c}
-.assignmentHelp{background:#fff8df;border:1px solid #f2d98a;color:#775704;border-radius:12px;padding:10px;font-size:12px;line-height:1.5;margin-top:8px}
-.assignmentMeta{display:inline-block;margin-top:6px;border-radius:8px;padding:3px 7px;font-size:10px;font-weight:900;background:#f6f9ff;color:#617198;border:1px solid #dfe8ff}
 .infoWindow{background:white;border:1px solid var(--line);border-radius:22px;padding:16px;box-shadow:var(--shadow);margin-top:18px}
 .infoWindow h2{font-family:Quicksand,sans-serif;color:#203a78;font-size:22px;margin-bottom:10px}
 .footerNote{margin-top:14px;border:1px solid #b9dafc;background:#eff7ff;color:#0d3f82;border-radius:12px;padding:12px;text-align:center;font-size:13px}
@@ -233,6 +231,12 @@ label{display:block;font-size:12px;font-weight:900;color:#314a80;margin:8px 0 5p
 .hero p{font-size:15px!important}
 @media(max-width:900px){.studentWindows{grid-template-columns:1fr!important}.certList{max-height:none}}
 
+
+/* ===== DAY LOCK FOR UPCOMING AGENDA TASKS ===== */
+.task.locked{opacity:.72;background:#f8fafc;border-style:dashed}
+.task.locked .tick{background:#e5e7eb;border-color:#cbd5e1;color:#64748b}
+.lockMsg{display:inline-block;margin-top:8px;border-radius:9px;padding:5px 8px;font-size:11px;font-weight:900;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px solid #cbd5e1!important;cursor:not-allowed!important;box-shadow:none!important}
 
 </style>
 </head>
@@ -414,7 +418,7 @@ function openTeacherHub(){
 
 function weekStart(offset=0){const d=new Date(); const day=d.getDay(); const diff=(day===0?-6:1-day)+(offset*7); d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d}
 function weekKey(offset=currentWeekOffset){const d=weekStart(offset);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
-function dayDate(i){const d=weekStart(currentWeekOffset);d.setDate(d.getDate()+i);return d}
+function dayDate(i){const d=weekStart();d.setDate(d.getDate()+i);return d}
 function niceDate(d){return d.toLocaleDateString("en-US",{month:"short",day:"numeric"})}
 function weekRange(){const s=weekStart(currentWeekOffset), e=new Date(s); e.setDate(s.getDate()+4); return niceDate(s)+" – "+niceDate(e)+", "+s.getFullYear()}
 const DAYS=[["mon","Monday"],["tue","Tuesday"],["wed","Wednesday"],["thu","Thursday"],["fri","Friday"]];
@@ -425,45 +429,33 @@ const PAGE_MAP={
   exam:{label:"Exam Page", icon:"📝", page:"Exam-Page.html", tag:"Exam"},
   imposter:{label:"Imposter", icon:"🕵️", page:"imposter.html", tag:"Imp"}
 };
-const AGENDA_ASSIGNMENT_STORAGE_KEY = "SECURE_HUB_CURRENT_ASSIGNMENT";
 
-function buildAgendaAssignmentId(day, platform, title, sourceItemId, classId){
-  return "agenda_" + safeKey([weekKey(), classId, day, platform, sourceItemId || title].join("_"));
+function dayIndexFromKey(day){
+  return DAYS.findIndex(d=>d[0]===day);
 }
 
-function currentWeekProgressPath(classId, studentId, assignmentId){
-  return `secureHubWeeklyProgress/${weekKey()}/${safeKey(classId)}/${safeKey(studentId)}/${assignmentId}`;
+function itemDate(item){
+  const idx=dayIndexFromKey(item?.day);
+  const d=weekStart(currentWeekOffset);
+  d.setDate(d.getDate()+Math.max(idx,0));
+  d.setHours(0,0,0,0);
+  return d;
 }
 
-async function saveWeeklyAgendaProgress(classId, studentId, assignmentId, data){
-  if(!db || !classId || !studentId || !assignmentId) return false;
-  await db.ref(currentWeekProgressPath(classId, studentId, assignmentId)).update({
-    completed:true,
-    status:"completed",
-    completedAt:Date.now(),
-    ...data
-  });
-  return true;
+function todayMidnight(){
+  const d=new Date();
+  d.setHours(0,0,0,0);
+  return d;
 }
-window.saveWeeklyAgendaProgress = saveWeeklyAgendaProgress;
 
-function saveCurrentAgendaAssignmentForActivity(item){
-  if(!CURRENT_STUDENT_SESSION || !item) return;
-  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
-  localStorage.setItem(AGENDA_ASSIGNMENT_STORAGE_KEY, JSON.stringify({
-    weekKey:weekKey(),
-    classId:CURRENT_STUDENT_SESSION.classId,
-    className:CURRENT_STUDENT_SESSION.className,
-    studentId:CURRENT_STUDENT_SESSION.studentId,
-    studentName:CURRENT_STUDENT_SESSION.name,
-    assignmentId:item.id,
-    platform:item.platform,
-    sourcePage:map.label,
-    sourceItemId:item.sourceItemId || "",
-    title:item.title || "Activity",
-    openedAt:Date.now()
-  }));
+function isAgendaItemAvailableToday(item){
+  return itemDate(item).getTime() <= todayMidnight().getTime();
 }
+
+function unlockDateText(item){
+  return itemDate(item).toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+}
+
 async function loadAgenda(classId){
   const snap=await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(classId)}/items`).get();
   agendaItems=snap.exists()?Object.values(snap.val()||{}):[];
@@ -506,24 +498,9 @@ async function loadStudentRecords(session){
 }
 
 function recordMatchesItem(record,item){
-  if(!record || !item) return false;
-
-  const exactNeedle=String(item.sourceItemId || item.id || "").toLowerCase().trim();
-  const recordIds=[
-    record.assignmentId, record.agendaAssignmentId, record.sourceItemId, record.itemId,
-    record.activityId, record.lessonId, record.revisionId, record.examId, record.collectionId,
-    record.battleId, record.id, record.key
-  ].map(x=>String(x||"").toLowerCase().trim()).filter(Boolean);
-
-  if(exactNeedle && recordIds.includes(exactNeedle)) return true;
-  if(recordIds.includes(String(item.id||"").toLowerCase())) return true;
-
   const txt=String((record.activityName||"")+" "+(record.title||"")+" "+(record.lessonTitle||"")+" "+(record.collectionTitle||"")+" "+(record.page||"")+" "+(record.activityType||"")+" "+(record.notes||"")).toLowerCase();
   const page=(PAGE_MAP[item.platform]?.label||"").toLowerCase();
-  const title=String(item.title||"").toLowerCase().trim();
-  const source=String(item.sourceItemId||"").toLowerCase().trim();
-
-  if(source && txt.includes(source)) return true;
+  const title=String(item.title||"").toLowerCase();
   return txt.includes(page.split(" ")[0]) && (!title || txt.includes(title) || title.includes(String(record.activityName||record.title||"").toLowerCase()));
 }
 function isItemDone(item){
@@ -531,63 +508,28 @@ function isItemDone(item){
   if(item.platform==="imposter") return !!studentRecordCache.manualAgenda?.[item.id]?.opened;
   return studentRecordCache.some(r=>recordMatchesItem(r,item));
 }
-
-async function syncAgendaCompletionFromSavedRecords(session){
-  if(!session || !agendaItems.length) return;
-  for(const item of agendaItems){
-    if(studentRecordCache.manualAgenda?.[item.id]?.completed) continue;
-    const matched=studentRecordCache.find(r=>recordMatchesItem(r,item));
-    if(matched){
-      await saveWeeklyAgendaProgress(session.classId, session.studentId, item.id, {
-        platform:item.platform,
-        sourcePage:PAGE_MAP[item.platform]?.label || item.platform,
-        sourceItemId:item.sourceItemId || "",
-        title:item.title,
-        score:matched.score ?? matched.bestScore ?? matched.finalMark ?? matched.mark ?? "",
-        total:matched.total ?? matched.maxScore ?? matched.outOf ?? "",
-        percentage:matched.percentage ?? matched.bestPercentage ?? "",
-        matchedFromSavedRecord:true
-      });
-    }
-  }
-}
 async function openAgendaItem(id){
   const item=agendaItems.find(x=>x.id===id); if(!item)return;
-  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
-  saveCurrentAgendaAssignmentForActivity(item);
 
-  if(CURRENT_STUDENT_SESSION){
-    await db.ref(currentWeekProgressPath(CURRENT_STUDENT_SESSION.classId, CURRENT_STUDENT_SESSION.studentId, item.id)).update({
-      opened:true,
-      status:"in_progress",
-      openedAt:Date.now(),
-      platform:item.platform,
-      sourcePage:map.label,
-      sourceItemId:item.sourceItemId || "",
-      title:item.title
-    });
+  if(!isAgendaItemAvailableToday(item)){
+    alert("🔒 This activity will open on " + unlockDateText(item) + ". Please complete today's agenda first.");
+    return;
   }
 
-  const params=new URLSearchParams({
-    from:"secureHubAgenda",
-    agendaAssignmentId:item.id,
-    sourceItemId:item.sourceItemId || "",
-    classId:CURRENT_STUDENT_SESSION?.classId || "",
-    studentId:CURRENT_STUDENT_SESSION?.studentId || ""
-  });
-  const joiner=map.page.includes("?") ? "&" : "?";
-  openPage(map.page + joiner + params.toString());
+  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
+  if(CURRENT_STUDENT_SESSION){
+    await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({opened:true,openedAt:Date.now(),platform:item.platform,title:item.title});
+  }
+  openPage(map.page);
 }
 async function markAgendaDone(id){
   const item=agendaItems.find(x=>x.id===id); if(!item||!CURRENT_STUDENT_SESSION)return;
-  await saveWeeklyAgendaProgress(CURRENT_STUDENT_SESSION.classId, CURRENT_STUDENT_SESSION.studentId, item.id, {platform:item.platform,title:item.title,sourceItemId:item.sourceItemId || "",score:item.platform==="imposter"?1:undefined,total:item.platform==="imposter"?1:undefined,percentage:item.platform==="imposter"?100:undefined});
+  await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({completed:true,completedAt:Date.now(),platform:item.platform,title:item.title});
   await loadStudentDataAndAgenda();
 }
 async function loadStudentDataAndAgenda(){
   const s=CURRENT_STUDENT_SESSION; if(!s)return;
   await loadAgenda(s.classId);
-  await loadStudentRecords(s);
-  await syncAgendaCompletionFromSavedRecords(s);
   await loadStudentRecords(s);
   renderAgenda("agendaSection", false);
   loadStudentHubWindows(s);
@@ -619,17 +561,23 @@ function renderAgenda(targetId, teacher=false){
     </div>`;
 }
 function renderTask(item,teacher){
-  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl, done=!teacher&&isItemDone(item);
-  const status=done?"done":"";
+  const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
+  const done=!teacher&&isItemDone(item);
+  const locked=!teacher && !done && !isAgendaItemAvailableToday(item);
+  const status=done?"done":(locked?"locked":"");
   return `<div class="task ${status}">
-    <span class="tick">${done?"✓":""}</span>
+    <span class="tick">${done?"✓":(locked?"🔒":"")}</span>
     <span class="taskIcon">${map.icon}</span>
     <h4>${esc(map.label)}</h4>
     <p>${esc(item.title||"Activity")}</p>
-    ${item.sourceItemId ? `<span class="assignmentMeta">ID: ${esc(item.sourceItemId)}</span><br>` : ``}
     <span class="tag ${map.tag.split(" ")[0]}">${esc(map.label)}</span>
+    ${locked?`<div class="lockMsg">🔒 Opens on ${esc(unlockDateText(item))}</div>`:''}
     <div class="taskBtns">
-      ${teacher?`<button class="secondary" onclick="editAgendaItem('${item.id}')">Edit</button><button class="danger" onclick="deleteAgendaItem('${item.id}')">Delete</button>`:`<button class="secondary" onclick="openAgendaItem('${item.id}')">Open</button>${item.platform==="imposter"?`<button class="good" onclick="markAgendaDone('${item.id}')">Mark Done</button>`:''}`}
+      ${teacher
+        ? `<button class="secondary" onclick="editAgendaItem('${item.id}')">Edit</button><button class="danger" onclick="deleteAgendaItem('${item.id}')">Delete</button>`
+        : locked
+          ? `<button class="lockedBtn" disabled>Locked</button>`
+          : `<button class="secondary" onclick="openAgendaItem('${item.id}')">Open</button>${item.platform==="imposter"?`<button class="good" onclick="markAgendaDone('${item.id}')">Mark Done</button>`:''}`}
     </div>
   </div>`;
 }
@@ -638,11 +586,9 @@ function teacherPanelHtml(){return `<aside class="panel"><div class="panelCard">
   <div class="teacherForm">
     <label>Choose Class</label><select id="agendaClassSelect" onchange="teacherClassChanged()">${Object.values(classes).map(c=>`<option value="${esc(c.id)}">${esc(c.name)}</option>`).join("")}</select>
     <div class="teacherRow"><div><label>Day</label><select id="agendaDay">${DAYS.map(d=>`<option value="${d[0]}">${d[1]}</option>`).join("")}</select></div><div><label>Platform</label><select id="agendaPlatform">${Object.entries(PAGE_MAP).map(([k,p])=>`<option value="${k}">${p.icon} ${p.label}</option>`).join("")}</select></div></div>
-    <label>Lesson / Activity Title</label><input id="agendaTitle" placeholder="Example: Technology Revision Week 1">
-    <label>Specific Assignment ID / Exact Activity ID</label><input id="agendaSourceItemId" placeholder="Optional but best: revision/exam/lesson/collection ID">
-    <div class="assignmentHelp">Use the exact ID when you want auto-completion to be very accurate. Example: <b>technology_revision_1</b>, <b>rr_collection_3</b>, or <b>dl_reported_speech</b>. If you leave it empty, Secure Hub will match by title.</div>
+    <label>Lesson / Activity Title</label><input id="agendaTitle" placeholder="Example: Reported Speech">
     <button onclick="saveAgendaItem()">+ Add Lesson / Activity</button><button class="secondary" onclick="copyPreviousWeek()">Copy Previous Week</button><button class="danger" onclick="clearThisWeek()">Clear This Week</button>
-  </div></div><div class="panelCard"><h3>This Week Items</h3><div id="teacherAgendaList">${agendaItems.map(i=>`<div class="agendaListItem"><b>${esc(i.title)}</b><br>${esc(i.day)} • ${esc(PAGE_MAP[i.platform]?.label||i.platform)}${i.sourceItemId ? `<br><span class="assignmentMeta">ID: ${esc(i.sourceItemId)}</span>` : ``}</div>`).join("")||"No activities yet."}</div></div></aside>`}
+  </div></div><div class="panelCard"><h3>This Week Items</h3><div id="teacherAgendaList">${agendaItems.map(i=>`<div class="agendaListItem"><b>${esc(i.title)}</b><br>${esc(i.day)} • ${esc(PAGE_MAP[i.platform]?.label||i.platform)}</div>`).join("")||"No activities yet."}</div></div></aside>`}
 async function renderTeacherAgenda(){
   const cls=Object.keys(classes)[0]||"";
   await loadAgenda(cls);
@@ -689,7 +635,6 @@ async function saveAgendaItem(){
   const day=byId("agendaDay").value;
   const platform=byId("agendaPlatform").value;
   const title=byId("agendaTitle").value.trim();
-  const sourceItemId=byId("agendaSourceItemId")?.value.trim() || "";
 
   if(!selectedClass || !title){
     alert("Choose class and write activity title.");
@@ -701,17 +646,14 @@ async function saveAgendaItem(){
     : [selectedClass];
 
   for(const cls of classIds){
-    const id=buildAgendaAssignmentId(day, platform, title, sourceItemId, cls);
+    const id="agenda_"+safeKey(day+"_"+platform+"_"+title+"_"+Date.now()+"_"+cls);
 
     await db.ref(
       `secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`
     ).set({
       id,
-      assignmentId:id,
       day,
       platform,
-      sourcePage:PAGE_MAP[platform]?.label || platform,
-      sourceItemId,
       title,
       order:Date.now(),
       createdAt:Date.now(),
@@ -724,33 +666,25 @@ async function saveAgendaItem(){
     : "Activity added to this class."
   );
 
-  const titleBox=byId("agendaTitle");
-  const idBox=byId("agendaSourceItemId");
-  if(titleBox) titleBox.value="";
-  if(idBox) idBox.value="";
   await teacherClassChanged();
 }
 function editAgendaItem(id){
   const item=agendaItems.find(x=>x.id===id); if(!item)return;
   const title=prompt("Edit activity title:",item.title||""); if(!title)return;
-  const sourceItemId=prompt("Edit exact assignment/activity ID:",item.sourceItemId||"") || "";
   const cls=byId("agendaClassSelect").value;
-  if(cls==="all"){alert("Choose one class first to edit this item.");return;}
-  db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).update({title,sourceItemId,updatedAt:Date.now()}).then(teacherClassChanged);
+  db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).update({title,updatedAt:Date.now()}).then(teacherClassChanged);
 }
 function deleteAgendaItem(id){
   if(!confirm("Delete this agenda item?"))return;
   const cls=byId("agendaClassSelect").value;
-  if(cls==="all"){alert("Choose one class first to delete this item.");return;}
   db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items/${id}`).remove().then(teacherClassChanged);
 }
 async function clearThisWeek(){
-  const cls=byId("agendaClassSelect").value; if(cls==="all"){alert("Choose one class first before clearing.");return;} if(!confirm("Clear this week's agenda for this class?"))return;
+  const cls=byId("agendaClassSelect").value; if(!confirm("Clear this week's agenda for this class?"))return;
   await db.ref(`secureHubWeeklyAgenda/${weekKey()}/${safeKey(cls)}/items`).remove(); await teacherClassChanged();
 }
 async function copyPreviousWeek(){
   const cls=byId("agendaClassSelect").value;
-  if(cls==="all"){alert("Choose one class first before copying previous week.");return;}
   const prevKey=(()=>{const d=weekStart(currentWeekOffset-1);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")})();
   const snap=await db.ref(`secureHubWeeklyAgenda/${prevKey}/${safeKey(cls)}/items`).get();
   if(!snap.exists()){alert("No previous week agenda found.");return}
@@ -1090,13 +1024,6 @@ function loadStudentHubWindows(session){
 function renderStudentReport(){
   if(CURRENT_STUDENT_SESSION) loadStudentPerformanceWindow(CURRENT_STUDENT_SESSION);
 }
-
-/* ===== Optional helper for other activity pages =====
-   Other pages can read localStorage.SECURE_HUB_CURRENT_ASSIGNMENT after being opened
-   from the agenda, then save completion to:
-   secureHubWeeklyProgress/{weekKey}/{classId}/{studentId}/{assignmentId}
-   This Secure Hub page also auto-syncs completed agenda items from Teacher Control records.
-*/
 
 initFirebase();
 </script>
