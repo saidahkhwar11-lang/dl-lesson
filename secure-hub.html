@@ -270,11 +270,11 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
     <div class="sideTitle">Main Menu</div>
     <button class="navBtn" onclick="scrollToTop()"><span class="navIcon">🏠</span>Home</button>
     <button class="navBtn active" onclick="scrollToAgenda()"><span class="navIcon">🗓️</span>Weekly Agenda</button>
-    <button class="navBtn" onclick="openPlatformFromAgenda('dl')"><span class="navIcon">📘</span>DL Lesson</button>
-    <button class="navBtn" onclick="openPlatformFromAgenda('reading')"><span class="navIcon">📚</span>Reading Rush</button>
-    <button class="navBtn" onclick="openPlatformFromAgenda('skill')"><span class="navIcon">⚔️</span>Skill Clash</button>
-    <button class="navBtn" onclick="openPlatformFromAgenda('exam')"><span class="navIcon">📝</span>Exam Page</button>
-    <button class="navBtn" onclick="openPlatformFromAgenda('imposter')"><span class="navIcon">🕵️</span>Imposter</button>
+    <button class="navBtn" onclick="openPlatformFromToday('dl')"><span class="navIcon">📘</span>DL Lesson</button>
+    <button class="navBtn" onclick="openPlatformFromToday('reading')"><span class="navIcon">📚</span>Reading Rush</button>
+    <button class="navBtn" onclick="openPlatformFromToday('skill')"><span class="navIcon">⚔️</span>Skill Clash</button>
+    <button class="navBtn" onclick="openPlatformFromToday('exam')"><span class="navIcon">📝</span>Exam Page</button>
+    <button class="navBtn" onclick="openPlatformFromToday('imposter')"><span class="navIcon">🕵️</span>Imposter</button>
     <button class="navBtn" onclick="scrollToReport()"><span class="navIcon">📊</span>Student Performance</button>
     <button class="navBtn" onclick="logoutAll()"><span class="navIcon">🚪</span>Logout</button>
     <div class="journeyCard"><h3>Learning Journey</h3><p>Stay consistent, keep learning, and achieve great things!</p><div class="rocket">🚀</div></div>
@@ -430,42 +430,6 @@ const PAGE_MAP={
   imposter:{label:"Imposter", icon:"🕵️", page:"imposter.html", tag:"Imp"}
 };
 
-function buildAgendaLink(item){
-  const map=PAGE_MAP[item?.platform]||PAGE_MAP.dl;
-  const params=new URLSearchParams();
-  params.set("fromAgenda","1");
-  params.set("agendaTitle", item?.title || "");
-  params.set("agendaPlatform", item?.platform || "");
-  params.set("agendaItemId", item?.id || "");
-  params.set("agendaDay", item?.day || "");
-  params.set("agendaWeek", weekKey());
-  if(CURRENT_STUDENT_SESSION){
-    params.set("classId", CURRENT_STUDENT_SESSION.classId || "");
-    params.set("studentId", CURRENT_STUDENT_SESSION.studentId || CURRENT_STUDENT_SESSION.password || "");
-  }
-  return map.page + "?" + params.toString();
-}
-
-function todayAgendaItemForPlatform(platform){
-  const todayIndex = Math.max(0, Math.min(4, new Date().getDay() - 1));
-  const todayKey = DAYS[todayIndex]?.[0];
-  return agendaItems.find(item =>
-    item.platform === platform &&
-    item.day === todayKey &&
-    isAgendaItemAvailableToday(item)
-  );
-}
-
-function openPlatformFromAgenda(platform){
-  const item=todayAgendaItemForPlatform(platform);
-  if(item){
-    openAgendaItem(item.id);
-    return;
-  }
-  const map=PAGE_MAP[platform]||PAGE_MAP.dl;
-  openPage(map.page);
-}
-
 function dayIndexFromKey(day){
   return DAYS.findIndex(d=>d[0]===day);
 }
@@ -544,6 +508,39 @@ function isItemDone(item){
   if(item.platform==="imposter") return !!studentRecordCache.manualAgenda?.[item.id]?.opened;
   return studentRecordCache.some(r=>recordMatchesItem(r,item));
 }
+
+function buildAgendaUrl(item){
+  const map = PAGE_MAP[item.platform] || PAGE_MAP.dl;
+  const params = new URLSearchParams();
+  params.set("fromAgenda", "1");
+  params.set("agendaTitle", item.title || "");
+  params.set("agendaPlatform", item.platform || "");
+  params.set("agendaItemId", item.id || "");
+  params.set("agendaWeek", weekKey());
+  params.set("agendaDay", item.day || "");
+  if(CURRENT_STUDENT_SESSION){
+    params.set("classId", CURRENT_STUDENT_SESSION.classId || "");
+    params.set("studentId", CURRENT_STUDENT_SESSION.studentId || CURRENT_STUDENT_SESSION.password || "");
+  }
+  return map.page + "?" + params.toString();
+}
+
+function openPlatformFromToday(platform){
+  const todayItems = (agendaItems || []).filter(item =>
+    item.platform === platform &&
+    isAgendaItemAvailableToday(item) &&
+    itemDate(item).getTime() === todayMidnight().getTime()
+  );
+  const notDone = todayItems.find(item => !isItemDone(item));
+  const chosen = notDone || todayItems[0];
+  if(chosen){
+    openAgendaItem(chosen.id);
+    return;
+  }
+  const map = PAGE_MAP[platform] || PAGE_MAP.dl;
+  openPage(map.page);
+}
+
 async function openAgendaItem(id){
   const item=agendaItems.find(x=>x.id===id); if(!item)return;
 
@@ -554,17 +551,9 @@ async function openAgendaItem(id){
 
   const map=PAGE_MAP[item.platform]||PAGE_MAP.dl;
   if(CURRENT_STUDENT_SESSION){
-    await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({
-      opened:true,
-      openedAt:Date.now(),
-      platform:item.platform,
-      title:item.title,
-      agendaItemId:item.id,
-      agendaWeek:weekKey(),
-      agendaDay:item.day
-    });
+    await db.ref(`secureHubWeeklyProgress/${weekKey()}/${CURRENT_STUDENT_SESSION.classId}/${safeKey(CURRENT_STUDENT_SESSION.studentId)}/${item.id}`).update({opened:true,openedAt:Date.now(),platform:item.platform,title:item.title});
   }
-  openPage(buildAgendaLink(item));
+  openPage(buildAgendaUrl(item));
 }
 async function markAgendaDone(id){
   const item=agendaItems.find(x=>x.id===id); if(!item||!CURRENT_STUDENT_SESSION)return;
@@ -599,7 +588,7 @@ function renderAgenda(targetId, teacher=false){
     <div class="contentGrid ${teacher?'':'studentFull'}">
       <div>
         <div class="weekGrid">${cols}</div>
-        ${!teacher?`<div class="progressBlock"><div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div><div>${done} of ${total} activities completed</div><div class="footerNote">💡 Open activities from the Weekly Agenda or today’s platform buttons. The page receives the assigned title and can show only that lesson/revision/exam. When the saved record matches this agenda task, it becomes completed automatically.</div></div>`:''}
+        ${!teacher?`<div class="progressBlock"><div class="progressLine"><span>Your Progress This Week</span><span>${pct}%</span></div><div class="progressBar"><div class="progressFill" style="width:${pct}%"></div></div><div>${done} of ${total} activities completed</div><div class="footerNote">💡 When you complete an activity in DL Lesson, Reading Rush, Skill Clash, Exam Page, or Imposter, it will be marked here automatically when records are saved. Imposter is marked when you open/complete it from here.</div></div>`:''}
       </div>
       ${teacher?teacherPanelHtml():''}
     </div>`;
