@@ -1089,6 +1089,30 @@ body.exam-focus-mode .topbar {
   margin-bottom: 0;
 }    
     
+/* ===== Weekly Agenda Guided Mode ===== */
+.agenda-lock-note{
+  border:1px solid #fed7aa;
+  background:#fff7ed;
+  color:#9a3412;
+  border-radius:16px;
+  padding:10px 12px;
+  font-weight:900;
+  margin-top:8px;
+}
+.agenda-complete-note{
+  border:1px solid #bbf7d0;
+  background:#ecfdf5;
+  color:#166534;
+  border-radius:16px;
+  padding:10px 12px;
+  font-weight:900;
+  margin-top:8px;
+}
+button.agenda-disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
 </style>
 </head>
 <body>
@@ -1371,6 +1395,15 @@ let currentExamId='default_revision_check';
 let currentExamMeta={title:'Grade 9 EOT3 Revision Check',subtitle:'This practice reviews vocabulary, grammar, and reading skills for the Grade 9 English exam.'};
 let isOfficialActiveExam=false;
 let studentLibrary={};
+const agendaParams = new URLSearchParams(location.search);
+const AGENDA_ASSIGNMENT = {
+  title: (agendaParams.get('agendaTitle') || '').trim(),
+  platform: (agendaParams.get('agendaPlatform') || '').trim(),
+  itemId: (agendaParams.get('agendaItemId') || '').trim(),
+  week: (agendaParams.get('agendaWeek') || '').trim()
+};
+let agendaMode = !!AGENDA_ASSIGNMENT.title;
+let agendaAssignmentCompleted = false;
 let screens=[], allQuestions=[], totalQuestions=0, totalMarks=0;
 let currentScreen=0, submitted=false, lastMissedIds=[];
 window.answerState={};
@@ -1381,6 +1414,117 @@ let lastViolationTime = 0;
   
 const startPracticeBtn=document.getElementById('startPracticeBtn'), welcomePage=document.getElementById('welcomePage'), practiceArea=document.getElementById('practiceArea'), leftPanel=document.getElementById('leftPanel'), rightPanel=document.getElementById('rightPanel'), progressText=document.getElementById('progressText'), screenText=document.getElementById('screenText'), progressFill=document.getElementById('progressFill'), prevBtn=document.getElementById('prevBtn'), nextBtn=document.getElementById('nextBtn'), submitBtn=document.getElementById('submitBtn'), tryWrongBtn=document.getElementById('tryWrongBtn'), resetBtn=document.getElementById('resetBtn'), results=document.getElementById('results');
 function safeKey(v){return String(v||'').trim().replace(/[.#$\[\]\/]/g,'_').replace(/\s+/g,'_') || 'item'}
+function textKey(v){
+  return String(v||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function titleMatchesAgenda(value){
+  if(!agendaMode) return false;
+  const a=textKey(AGENDA_ASSIGNMENT.title);
+  const b=textKey(value);
+  return !!a && !!b && (a===b || b.includes(a) || a.includes(b));
+}
+function updateAgendaLibraryGate(){
+  const panel=document.getElementById('studentLibraryPanel');
+  const btn=panel?.querySelector('button');
+  if(!agendaMode || !panel || !btn) return;
+
+  const hint=panel.querySelector('.library-hint');
+  const existing=document.getElementById('agendaGateNote');
+  if(existing) existing.remove();
+
+  if(agendaAssignmentCompleted){
+    btn.disabled=false;
+    btn.classList.remove('agenda-disabled');
+    if(hint) hint.textContent='Assigned work completed. You can now open the library for extra practice.';
+    panel.insertAdjacentHTML('beforeend', `<div id="agendaGateNote" class="agenda-complete-note">✅ Assigned work completed. Extra revision library is unlocked.</div>`);
+  }else{
+    btn.disabled=true;
+    btn.classList.add('agenda-disabled');
+    if(hint) hint.textContent='Finish today’s assigned work first. The library will unlock after you submit it.';
+    panel.insertAdjacentHTML('beforeend', `<div id="agendaGateNote" class="agenda-lock-note">🔒 Library locked until you finish: ${esc(AGENDA_ASSIGNMENT.title)}</div>`);
+  }
+}
+function currentWeekKeyForAgenda(){
+  if(AGENDA_ASSIGNMENT.week) return AGENDA_ASSIGNMENT.week;
+  const d=new Date();
+  const day=d.getDay();
+  const diff=day===0?-6:1-day;
+  d.setDate(d.getDate()+diff);
+  d.setHours(0,0,0,0);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+async function readAgendaCompletion(st){
+  if(!agendaMode || !AGENDA_ASSIGNMENT.itemId || !db || !st) return false;
+  const studentId=safeKey(st.studentId||st.password);
+  const classKeys=[st.classId, safeKey(st.classId||st.className)].filter(Boolean);
+  for(const cls of [...new Set(classKeys)]){
+    const snap=await db.ref(`secureHubWeeklyProgress/${currentWeekKeyForAgenda()}/${cls}/${studentId}/${AGENDA_ASSIGNMENT.itemId}`).get();
+    if(snap.exists() && snap.val()?.completed) return true;
+  }
+  return false;
+}
+async function saveAgendaCompletion(score,total){
+  try{
+    if(!agendaMode || !AGENDA_ASSIGNMENT.itemId || !db) return;
+    const st=studentSession();
+    if(!st) return;
+    const percent=total?Math.round(score/total*100):0;
+    const studentId=safeKey(st.studentId||st.password);
+    const classKeys=[st.classId, safeKey(st.classId||st.className)].filter(Boolean);
+    const payload={
+      completed:true,
+      completedAt:Date.now(),
+      platform:AGENDA_ASSIGNMENT.platform || 'exam',
+      title:AGENDA_ASSIGNMENT.title || currentExamMeta.title,
+      examId:currentExamId,
+      examTitle:currentExamMeta.title,
+      score,
+      total,
+      percentage:percent
+    };
+    for(const cls of [...new Set(classKeys)]){
+      await db.ref(`secureHubWeeklyProgress/${currentWeekKeyForAgenda()}/${cls}/${studentId}/${AGENDA_ASSIGNMENT.itemId}`).update(payload);
+    }
+    agendaAssignmentCompleted=true;
+    updateAgendaLibraryGate();
+  }catch(err){
+    console.warn('Weekly agenda completion save skipped:',err);
+  }
+}
+async function loadAssignedExamFromAgenda(st){
+  if(!agendaMode || !db || !st) return false;
+  const classId=safeKey(st.classId||st.className||'guest');
+
+  // Prefer the official active assessment if it has the same assigned title.
+  const activeSnap=await db.ref('examPage/activeExams/'+classId).get();
+  if(activeSnap.exists()){
+    const active=activeSnap.val();
+    const examId=active.examId||active;
+    const exSnap=await db.ref('examPage/exams/'+examId).get();
+    if(exSnap.exists()){
+      const ex={id:examId,...exSnap.val()};
+      if(titleMatchesAgenda(active.title) || titleMatchesAgenda(ex.assessmentTitle) || titleMatchesAgenda(ex.title)){
+        loadExamObject(ex,true);
+        return true;
+      }
+    }
+  }
+
+  // Otherwise open the exact revision from the library.
+  const items=Object.entries(studentLibrary||{});
+  let match=items.find(([id,ex])=>ex && titleMatchesAgenda(ex.title));
+  if(!match){
+    match=items.find(([id,ex])=>ex && ex.visibleToStudents!==false && ex.mode==='revision' && titleMatchesAgenda(ex.subtitle));
+  }
+  if(match){
+    const [id,ex]=match;
+    loadExamObject({id,...ex},false);
+    return true;
+  }
+
+  alert('The assigned Exam Page task was not found yet: '+AGENDA_ASSIGNMENT.title+'\nPlease check that the title in Weekly Agenda matches the revision or active exam title.');
+  return false;
+}
   function updateSubmitButtonState(){
   const answered = Object.keys(answerState || {}).length;
 
@@ -1619,7 +1763,14 @@ async function initExamPage(){
     document.getElementById('examClassName').textContent=st.className||st.classId||'';
 
     await loadStudentLibrary();
-    await loadActiveExamForStudent(st);
+    if(agendaMode){
+      agendaAssignmentCompleted = await readAgendaCompletion(st);
+      updateAgendaLibraryGate();
+      const loadedAssigned = await loadAssignedExamFromAgenda(st);
+      if(!loadedAssigned) await loadActiveExamForStudent(st);
+    }else{
+      await loadActiveExamForStudent(st);
+    }
   }catch(err){
     console.warn('Exam page init skipped:',err);
     rebuildExamArrays();
@@ -1896,7 +2047,15 @@ function renderStudentLibrary(){
     </div>
   `).join('');
 }
-function openStudentLibrary(){renderStudentLibrary(); document.getElementById('studentLibraryModal').classList.add('show');}
+function openStudentLibrary(){
+  if(agendaMode && !agendaAssignmentCompleted){
+    alert('🔒 Please finish the assigned work first: '+AGENDA_ASSIGNMENT.title+'\nAfter you submit it, the revision library will unlock for extra practice.');
+    updateAgendaLibraryGate();
+    return;
+  }
+  renderStudentLibrary();
+  document.getElementById('studentLibraryModal').classList.add('show');
+}
 function closeStudentLibrary(){document.getElementById('studentLibraryModal').classList.remove('show');}
 function openLibraryExam(id){const ex=studentLibrary[id]; if(!ex)return; loadExamObject({id,...ex},false);}
 async function watchForTeacherUnlock(){
@@ -2131,8 +2290,10 @@ async function submitQuiz(){
     showSaveNote('Teacher preview only. No mark was saved.',false);
   }else if(isOfficialActiveExam){
     await saveOfficialExamFirstAttempt(score,totalMarks,partStats);
+    await saveAgendaCompletion(score,totalMarks);
   }else{
     await saveRevisionProgressBest(score,totalMarks,partStats);
+    await saveAgendaCompletion(score,totalMarks);
   }
 
   renderRight();
@@ -2181,6 +2342,9 @@ const termSettings = {
       attempts,
       studentName:st.name||'',
       studentId:st.studentId||st.password||'',
+      agendaItemId: AGENDA_ASSIGNMENT.itemId || '',
+      agendaTitle: AGENDA_ASSIGNMENT.title || '',
+      agendaWeek: AGENDA_ASSIGNMENT.week || '',
       classId:st.classId||'',
       className:st.className||'',
       partStats:isBest?partStats:(oldData?.partStats||partStats),
