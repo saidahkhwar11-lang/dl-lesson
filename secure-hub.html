@@ -703,6 +703,44 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
 }
 
 
+/* ===== TEACHER DAY FILTER COMPLETION DASHBOARD V3 ===== */
+.teacherDayPicker{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(110px,1fr));
+  gap:8px;
+  margin:12px 0 6px;
+}
+.teacherDayPickBtn{
+  background:#fff!important;
+  color:#0d2d68!important;
+  border:1px solid #dfe8ff!important;
+  box-shadow:none!important;
+  border-radius:14px!important;
+  padding:10px!important;
+}
+.teacherDayPickBtn.active{
+  background:linear-gradient(135deg,#1263f1,#6d4cff)!important;
+  color:#fff!important;
+  border-color:transparent!important;
+}
+.teacherSelectedDayWrap{margin-top:12px}
+.teacherDaySummary{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin:10px 0 4px;
+}
+.teacherSummaryPill{
+  border:1px solid #dfe8ff;
+  background:#f8fbff;
+  color:#203a78;
+  border-radius:999px;
+  padding:7px 10px;
+  font-size:12px;
+  font-weight:900;
+}
+@media(max-width:760px){.teacherDayPicker{grid-template-columns:1fr 1fr}.teacherDayPickBtn{font-size:12px}}
+
 </style>
 </head>
 
@@ -1327,6 +1365,8 @@ function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCar
 
 
 let teacherCompletionDetails={};
+let teacherCompletionCache=null;
+let selectedTeacherCompletionDay=null;
 
 function getClassListForDashboard(){
   return Object.values(classes || {})
@@ -1372,7 +1412,6 @@ function progressHasCompletedItem(progress,item){
   const row=progress?.[item.id];
   if(row && (row.completed || row.status==='completed')) return true;
 
-  /* Fallback: if older records saved by title instead of id */
   const wanted=String(item.title||'').trim().toLowerCase();
   if(!wanted) return false;
   return Object.values(progress||{}).some(r=>{
@@ -1392,80 +1431,145 @@ function teacherProgressFillClass(pct){
   return 'low';
 }
 
+function teacherCompletionDayIndex(dayKey){
+  const i=DAYS.findIndex(d=>d[0]===dayKey);
+  return i<0?0:i;
+}
+
+function teacherCompletionDateLabel(dayKey){
+  return niceDate(dayDate(teacherCompletionDayIndex(dayKey)));
+}
+
+async function buildTeacherCompletionCache(){
+  const wk=weekKey();
+  const classList=getClassListForDashboard();
+  const agendaSnap=await db.ref(`secureHubWeeklyAgenda/${wk}`).get();
+  const progressSnap=await db.ref(`secureHubWeeklyProgress/${wk}`).get();
+  const agendaWeekRoot=agendaSnap.exists()?agendaSnap.val():{};
+  const progressRoot=progressSnap.exists()?progressSnap.val():{};
+
+  teacherCompletionDetails={};
+  const data={};
+
+  for(const [dayKey,dayName] of DAYS){
+    data[dayKey]={dayKey,dayName,rows:[],summary:{classes:0,students:0,done:0,tasks:0}};
+
+    for(const cls of classList){
+      const classId=cls.id || safeKey(cls.name);
+      const students=getClassStudents(cls);
+      const allItems=readAgendaItemsFromAll(agendaWeekRoot, cls);
+      const dayItems=allItems.filter(i=>i.day===dayKey);
+      const doneNames=[];
+      const missingNames=[];
+
+      if(dayItems.length && students.length){
+        for(const st of students){
+          const progress=readProgressFromAll(progressRoot, cls, st);
+          const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+          if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
+          else missingNames.push(displayName);
+        }
+      }else if(dayItems.length && !students.length){
+        /* no students found */
+      }else if(!dayItems.length && students.length){
+        /* no tasks for this class/day */
+      }
+
+      const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
+      const detailKey=safeKey(dayKey+'_'+classId);
+      const row={
+        detailKey,
+        classId,
+        className:cls.name||classId,
+        students,
+        dayItems,
+        doneNames,
+        missingNames,
+        pct,
+        noTasks:!dayItems.length,
+        noStudents:!students.length
+      };
+      teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:row.className,dayName};
+      data[dayKey].rows.push(row);
+      data[dayKey].summary.classes += 1;
+      data[dayKey].summary.tasks += dayItems.length;
+      data[dayKey].summary.students += students.length;
+      data[dayKey].summary.done += doneNames.length;
+    }
+  }
+  teacherCompletionCache=data;
+  return data;
+}
+
+function renderTeacherCompletionDashboardShell(){
+  const box=byId('teacherCompletionDashboard');
+  if(!box) return;
+  box.innerHTML=`<h2>📊 Class Progress by Day</h2>
+    <div class="teacherDashHint">Click a day to show class progress for that day only. Percentages include the whole class, so absent students are still counted for follow-up.</div>
+    <div class="teacherDayPicker">
+      ${DAYS.map(([dayKey,dayName])=>`<button class="teacherDayPickBtn ${selectedTeacherCompletionDay===dayKey?'active':''}" onclick="showTeacherCompletionDay('${dayKey}')">${esc(dayName)}<br><small>${esc(teacherCompletionDateLabel(dayKey))}</small></button>`).join('')}
+    </div>
+    <div id="teacherSelectedDayProgress" class="teacherSelectedDayWrap">
+      ${selectedTeacherCompletionDay ? renderTeacherCompletionDay(selectedTeacherCompletionDay) : '<div class="teacherNoTasks">Choose a day above to view all class progress bars.</div>'}
+    </div>`;
+}
+
+function renderTeacherCompletionDay(dayKey){
+  const dayData=teacherCompletionCache?.[dayKey];
+  if(!dayData) return '<div class="teacherNoTasks">Loading day progress...</div>';
+
+  const rows=dayData.rows.map(row=>{
+    const label=row.noTasks ? 'No tasks' : (row.noStudents ? 'No students' : `${row.pct}% • ${row.doneNames.length}/${row.students.length}`);
+    const tasksLabel=row.dayItems.length ? row.dayItems.map(i=>esc(i.title||'Activity')).join(' • ') : 'No tasks assigned';
+    return `<div class="teacherClassProgressRow" onclick="toggleTeacherClassDayDetail('${row.detailKey}')">
+      <div class="teacherClassProgressTop">
+        <div class="teacherClassName">${esc(row.className)}</div>
+        <div class="teacherProgressTrack"><div class="teacherProgressFill ${teacherProgressFillClass(row.pct)}" style="width:${row.pct}%"></div></div>
+        <div class="teacherProgressNum">${label}</div>
+      </div>
+      <div class="teacherDashHint" style="margin:7px 0 0">Tasks: ${tasksLabel}</div>
+      <div id="detail_${row.detailKey}" class="teacherClassDetail hidden">
+        <div class="teacherStudentList"><b>✅ Finished</b>${row.doneNames.length?row.doneNames.map(esc).join('<br>'):(row.noTasks?'No tasks assigned.':'No students completed yet.')}</div>
+        <div class="teacherStudentList"><b>⚠️ Needs Follow-up</b>${row.noTasks?'No tasks assigned.':(row.missingNames.length?row.missingNames.map(esc).join('<br>'):'All students completed.')}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  return `<div class="teacherDayProgressBlock">
+    <h3>📅 ${esc(dayData.dayName)} Progress</h3>
+    <div class="teacherDaySummary">
+      <span class="teacherSummaryPill">Classes: ${dayData.summary.classes}</span>
+      <span class="teacherSummaryPill">Students counted: ${dayData.summary.students}</span>
+      <span class="teacherSummaryPill">Completed: ${dayData.summary.done}</span>
+    </div>
+    ${rows || '<div class="teacherNoTasks">No classes found.</div>'}
+  </div>`;
+}
+
 async function loadTeacherCompletionDashboard(){
   const box=byId('teacherCompletionDashboard');
   if(!box || !db) return;
 
   try{
-    box.innerHTML=`<h2>📊 Weekly Class Completion</h2><div class="teacherDashHint">Loading class progress...</div>`;
-
-    const wk=weekKey();
+    box.innerHTML=`<h2>📊 Class Progress by Day</h2><div class="teacherDashHint">Loading class progress...</div>`;
     const classList=getClassListForDashboard();
     if(!classList.length){
-      box.innerHTML='<h2>📊 Weekly Class Completion</h2><div class="teacherNoTasks">No classes found.</div>';
+      box.innerHTML='<h2>📊 Class Progress by Day</h2><div class="teacherNoTasks">No classes found.</div>';
       return;
     }
-
-    const agendaSnap=await db.ref(`secureHubWeeklyAgenda/${wk}`).get();
-    const progressSnap=await db.ref(`secureHubWeeklyProgress/${wk}`).get();
-    const agendaWeekRoot=agendaSnap.exists()?agendaSnap.val():{};
-    const progressRoot=progressSnap.exists()?progressSnap.val():{};
-
-    teacherCompletionDetails={};
-    const dayBlocks=[];
-
-    for(const [dayKey,dayName] of DAYS){
-      const rows=[];
-
-      for(const cls of classList){
-        const classId=cls.id || safeKey(cls.name);
-        const students=getClassStudents(cls);
-        const allItems=readAgendaItemsFromAll(agendaWeekRoot, cls);
-        const dayItems=allItems.filter(i=>i.day===dayKey);
-        const doneNames=[];
-        const missingNames=[];
-
-        if(dayItems.length && students.length){
-          for(const st of students){
-            const progress=readProgressFromAll(progressRoot, cls, st);
-            const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
-            if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
-            else missingNames.push(displayName);
-          }
-        }
-
-        const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
-        const detailKey=safeKey(dayKey+'_'+classId);
-        teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:cls.name||classId,dayName};
-        const noTasks=!dayItems.length;
-        const noStudents=!students.length;
-        const label=noTasks ? 'No tasks' : (noStudents ? 'No students' : `${pct}% • ${doneNames.length}/${students.length}`);
-
-        rows.push(`<div class="teacherClassProgressRow" onclick="toggleTeacherClassDayDetail('${detailKey}')">
-          <div class="teacherClassProgressTop">
-            <div class="teacherClassName">${esc(cls.name||classId)}</div>
-            <div class="teacherProgressTrack"><div class="teacherProgressFill ${teacherProgressFillClass(pct)}" style="width:${pct}%"></div></div>
-            <div class="teacherProgressNum">${label}</div>
-          </div>
-          <div id="detail_${detailKey}" class="teacherClassDetail hidden">
-            <div class="teacherStudentList"><b>✅ Finished</b>${doneNames.length?doneNames.map(esc).join('<br>'):(noTasks?'No tasks assigned.':'No students yet.')}</div>
-            <div class="teacherStudentList"><b>⚠️ Missing</b>${noTasks?'No tasks assigned.':(missingNames.length?missingNames.map(esc).join('<br>'):'All students completed.')}</div>
-          </div>
-        </div>`);
-      }
-
-      dayBlocks.push(`<div class="teacherDayProgressBlock"><h3>📅 ${esc(dayName)}</h3>${rows.join('')}</div>`);
-    }
-
-    box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
-      <div class="teacherDashHint">Progress is sorted by day. Click any class bar to see who finished and who still needs follow-up.</div>
-      ${dayBlocks.join('')}`;
+    await buildTeacherCompletionCache();
+    renderTeacherCompletionDashboardShell();
   }catch(err){
     console.warn('Teacher completion dashboard failed:', err);
-    box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
+    box.innerHTML=`<h2>📊 Class Progress by Day</h2>
       <div class="teacherNoTasks">Could not load completion dashboard. The rest of Weekly Agenda is still working.</div>
       <div class="teacherDashHint">Open Console for details: ${esc(err.message || err)}</div>`;
   }
+}
+
+function showTeacherCompletionDay(dayKey){
+  selectedTeacherCompletionDay = selectedTeacherCompletionDay===dayKey ? null : dayKey;
+  renderTeacherCompletionDashboardShell();
 }
 
 function toggleTeacherClassDayDetail(key){
