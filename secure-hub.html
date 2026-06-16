@@ -623,6 +623,86 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
 .studentPanelContent{width:100%;}
 
 
+
+/* ===== TEACHER WEEKLY COMPLETION DASHBOARD ===== */
+.teacherCompletionDashboard{
+  background:#fff;
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  padding:16px;
+  margin-bottom:16px;
+}
+.teacherCompletionDashboard h2{
+  font-family:Quicksand,sans-serif;
+  color:#0d2d68;
+  font-size:23px;
+  margin-bottom:6px;
+}
+.teacherCompletionDashboard .teacherDashHint{
+  color:#617198;
+  font-size:13px;
+  font-weight:700;
+  margin-bottom:14px;
+}
+.teacherDayProgressBlock{
+  border:1px solid #dfe8ff;
+  border-radius:18px;
+  padding:12px;
+  margin:10px 0;
+  background:linear-gradient(180deg,#fff,#f8fbff);
+}
+.teacherDayProgressBlock h3{
+  font-family:Quicksand,sans-serif;
+  color:#203a78;
+  margin-bottom:10px;
+  font-size:18px;
+}
+.teacherClassProgressRow{
+  border:1px solid #e4eaff;
+  border-radius:14px;
+  padding:10px;
+  margin:8px 0;
+  background:#fff;
+  cursor:pointer;
+}
+.teacherClassProgressTop{
+  display:grid;
+  grid-template-columns:78px 1fr 90px;
+  gap:10px;
+  align-items:center;
+}
+.teacherClassName{font-weight:900;color:#0d2d68;font-family:Quicksand,sans-serif}
+.teacherProgressTrack{height:12px;background:#e8efff;border-radius:999px;overflow:hidden}
+.teacherProgressFill{height:100%;border-radius:999px;background:linear-gradient(90deg,#22b86b,#63d98e)}
+.teacherProgressFill.mid{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.teacherProgressFill.low{background:linear-gradient(90deg,#ef4444,#fb7185)}
+.teacherProgressNum{font-weight:900;color:#203a78;text-align:right;font-size:13px}
+.teacherClassDetail{
+  margin-top:10px;
+  border-top:1px dashed #dfe8ff;
+  padding-top:10px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.teacherStudentList{
+  border-radius:12px;
+  padding:9px;
+  background:#f8fbff;
+  border:1px solid #e4eaff;
+  font-size:12px;
+  line-height:1.55;
+}
+.teacherStudentList b{display:block;margin-bottom:5px;color:#203a78}
+.teacherNoTasks{color:#617198;font-size:13px;font-weight:800;background:#f8fbff;border:1px dashed #dfe8ff;border-radius:14px;padding:10px}
+@media(max-width:760px){
+  .teacherClassProgressTop{grid-template-columns:1fr}
+  .teacherProgressNum{text-align:left}
+  .teacherClassDetail{grid-template-columns:1fr}
+}
+
+
 </style>
 </head>
 
@@ -674,75 +754,50 @@ button.lockedBtn{background:#f1f5f9!important;color:#64748b!important;border:1px
 
     <div class="studentWindows compactPanel" id="studentDashboardPanels">
 
-  <section id="reportSection"
-           class="infoWindow studentPanelContent hidden">
+      <section id="reportSection" class="infoWindow studentPanelContent hidden">
+        <div class="termControlBar">
+          <h2>📊 My Performance Report</h2>
+          <select id="studentTermSelect" class="termSelectMini" onchange="reloadStudentTermView()">
+            <option value="term1">Term 1</option>
+            <option value="term2">Term 2</option>
+            <option value="term3">Term 3</option>
+          </select>
+        </div>
 
-    <div class="termControlBar">
-      <h2>📊 My Performance Report</h2>
+        <div id="studentAutoMessage" class="feedbackBox">
+          Loading your performance report...
+        </div>
 
-      <select id="studentTermSelect"
-              class="termSelectMini"
-              onchange="syncStudentTermAndReload(this.value)">
-        <option value="term1">Term 1</option>
-        <option value="term2">Term 2</option>
-        <option value="term3">Term 3</option>
-      </select>
+        <div id="studentReportTable" class="miniLoading">
+          Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...
+        </div>
+      </section>
+
+      <section id="certificateSection" class="infoWindow studentPanelContent hidden">
+        <div class="termControlBar">
+          <h2>🏅 My Certificates</h2>
+          <span id="certificateTermLabel" class="miniLoading">Term 1</span>
+        </div>
+
+        <div class="miniLoading">
+          Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
+        </div>
+
+        <div id="studentCertificatesList" class="certList"></div>
+      </section>
+
+      <section id="actionsSection" class="infoWindow studentPanelContent hidden">
+        <div class="termControlBar">
+          <h2>✅ Needed Actions</h2>
+          <span id="actionsTermLabel" class="miniLoading">Term 1</span>
+        </div>
+        <div class="feedbackBox">
+          Missed weekly agenda tasks will appear here. When you complete a task, it is removed automatically.
+        </div>
+        <div id="studentNeededActions" class="actionList"></div>
+      </section>
+
     </div>
-
-    <div id="studentAutoMessage" class="feedbackBox">
-      Loading your performance report...
-    </div>
-
-    <div id="studentReportTable" class="miniLoading">
-      Checking DL Lesson, Skill Clash, Reading Rush, and Exam Page marks...
-    </div>
-
-  </section>
-
-
-  <section id="certificateSection"
-           class="infoWindow studentPanelContent hidden">
-
-    <div class="termControlBar">
-      <h2>🏅 My Certificates</h2>
-      <span id="certificateTermLabel" class="miniLoading">
-        Term 1
-      </span>
-    </div>
-
-    <div class="miniLoading">
-      Certificates saved from DL Lesson, Skill Clash, and Reading Rush will appear here as PDF files. Exam Page saves marks only.
-    </div>
-
-    <div id="studentCertificatesList" class="certList"></div>
-
-  </section>
-
-
-  <section id="actionsSection"
-           class="infoWindow studentPanelContent hidden">
-
-    <div class="termControlBar">
-      <h2>✅ Needed Actions</h2>
-
-      <select id="studentActionsTermSelect"
-              class="termSelectMini"
-              onchange="syncStudentTermAndReload(this.value)">
-        <option value="term1">Term 1</option>
-        <option value="term2">Term 2</option>
-        <option value="term3">Term 3</option>
-      </select>
-    </div>
-
-    <div id="studentActionsMessage" class="feedbackBox">
-      Checking your missed weekly agenda tasks...
-    </div>
-
-    <div id="studentNeededActions" class="actionList"></div>
-
-  </section>
-
-</div>
   </main>
 </div>
 
@@ -791,7 +846,7 @@ function showLoginTab(type){byId("studentTab").classList.toggle("active",type===
 function openPage(page){window.open(page,"_blank")}
 function scrollToTop(){window.scrollTo({top:0,behavior:"smooth"})}
 function scrollToAgenda(){document.getElementById("agendaSection")?.scrollIntoView({behavior:"smooth"});document.getElementById("teacherAgendaSection")?.scrollIntoView({behavior:"smooth"})}
-function scrollToReport(){showStudentDashboardPanel("performance")}
+function scrollToReport(){document.getElementById("reportSection")?.scrollIntoView({behavior:"smooth"})}
 
 async function initFirebase(){
   try{
@@ -1170,12 +1225,14 @@ function renderAgenda(targetId, teacher=false){
     </div>
     <div class="contentGrid">
       <div>
+        <div id="teacherCompletionDashboard" class="teacherCompletionDashboard">Loading class completion dashboard...</div>
         ${missionHtml}
         <div class="weekGrid">${cols}</div>
       </div>
       ${teacherPanelHtml()}
     </div>`;
 }
+
 
 
 function renderLearningDashboardShortcuts(done,total,pct){
@@ -1206,11 +1263,11 @@ function showStudentDashboardPanel(type){
   const actions=byId("actionsSection");
   if(!panel || !report || !cert || !actions) return;
 
-  const sectionMap={performance:report, certificates:cert, actions:actions};
-  const target=sectionMap[type] || report;
-  const isSameOpen = activeStudentDashboardType===type && !target.classList.contains("hidden");
+  const panelMap={performance:report, certificates:cert, actions:actions};
+  const selected=panelMap[type] || report;
+  const isSameOpen = activeStudentDashboardType===type && !selected.classList.contains("hidden");
 
-  [report,cert,actions].forEach(sec=>sec.classList.add("hidden"));
+  [report, cert, actions].forEach(el=>el.classList.add("hidden"));
   panel.classList.remove("showPanel");
   document.querySelectorAll(".compactDashCard").forEach(card=>card.classList.remove("activePanel"));
 
@@ -1221,15 +1278,11 @@ function showStudentDashboardPanel(type){
 
   activeStudentDashboardType=type;
   panel.classList.add("showPanel");
-  target.classList.remove("hidden");
+  selected.classList.remove("hidden");
 
-  const cards=document.querySelectorAll(".compactDashCard");
-  if(type==="performance") cards[0]?.classList.add("activePanel");
-  if(type==="certificates") cards[1]?.classList.add("activePanel");
-  if(type==="actions") cards[2]?.classList.add("activePanel");
-
-  syncStudentTermSelectors(selectedStudentTerm());
-  target.scrollIntoView({behavior:"smooth",block:"start"});
+  const cardIndex = type==="performance" ? 0 : type==="certificates" ? 1 : 2;
+  document.querySelectorAll(".compactDashCard")[cardIndex]?.classList.add("activePanel");
+  selected.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 
@@ -1271,6 +1324,121 @@ function renderTask(item,teacher){
   </div>`;
 }
 function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCard"><h3>Connected Platforms</h3><div class="connected">${Object.values(PAGE_MAP).map(p=>`<div class="item"><span>${p.icon} ${p.label}</span><span style="color:var(--green)">●</span></div>`).join("")}</div></div><div class="panelCard"><h3>Progress</h3><p>Progress updates automatically from your saved activity marks.</p><div style="font-size:36px;font-family:Quicksand;color:#203a78">${pct}%</div></div></aside>`}
+
+let teacherCompletionDetails={};
+
+function getClassListForDashboard(){
+  return Object.values(classes || {}).filter(c=>c && (c.id || c.name));
+}
+
+function getClassStudents(cls){
+  return Object.values(cls?.students || {}).filter(s=>s && (s.password || s.id || s.name));
+}
+
+async function readAgendaItemsForClassWeek(classId,wk){
+  const keys=[safeKey(classId), classId].filter(Boolean);
+  for(const key of keys){
+    try{
+      const snap=await db.ref(`secureHubWeeklyAgenda/${wk}/${key}/items`).get();
+      if(snap.exists()) return Object.values(snap.val()||{});
+    }catch(e){console.warn('Agenda read skipped',e)}
+  }
+  return [];
+}
+
+async function readStudentWeeklyProgressForClass(classId,student,wk){
+  const classKeys=[classId, safeKey(classId)].filter(Boolean);
+  const sidRaw=student?.password || student?.id || student?.studentId || '';
+  const studentKeys=[safeKey(sidRaw), sidRaw].filter(Boolean);
+  const merged={};
+  for(const ck of classKeys){
+    for(const sk of studentKeys){
+      try{
+        const snap=await db.ref(`secureHubWeeklyProgress/${wk}/${ck}/${sk}`).get();
+        if(snap.exists()) Object.assign(merged,snap.val()||{});
+      }catch(e){console.warn('Progress read skipped',e)}
+    }
+  }
+  return merged;
+}
+
+function progressHasCompletedItem(progress,item){
+  const row=progress?.[item.id];
+  return !!(row && (row.completed || row.status==='completed'));
+}
+
+function studentFinishedDayItems(progress,items){
+  if(!items.length) return false;
+  return items.every(item=>progressHasCompletedItem(progress,item));
+}
+
+function teacherProgressFillClass(pct){
+  if(pct>=75) return '';
+  if(pct>=40) return 'mid';
+  return 'low';
+}
+
+async function loadTeacherCompletionDashboard(){
+  const box=byId('teacherCompletionDashboard');
+  if(!box || !db) return;
+  const wk=weekKey();
+  const classList=getClassListForDashboard();
+  if(!classList.length){
+    box.innerHTML='<h2>📊 Weekly Class Completion</h2><div class="teacherNoTasks">No classes found.</div>';
+    return;
+  }
+
+  teacherCompletionDetails={};
+  const dayBlocks=[];
+
+  for(const [dayKey,dayName] of DAYS){
+    const rows=[];
+    for(const cls of classList){
+      const classId=cls.id || safeKey(cls.name);
+      const students=getClassStudents(cls);
+      const allItems=await readAgendaItemsForClassWeek(classId,wk);
+      const dayItems=allItems.filter(i=>i.day===dayKey);
+      const doneNames=[];
+      const missingNames=[];
+
+      if(dayItems.length && students.length){
+        for(const st of students){
+          const progress=await readStudentWeeklyProgressForClass(classId,st,wk);
+          const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+          if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
+          else missingNames.push(displayName);
+        }
+      }
+
+      const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
+      const detailKey=safeKey(dayKey+'_'+classId);
+      teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:cls.name||classId,dayName};
+      const noTasks=!dayItems.length;
+      rows.push(`<div class="teacherClassProgressRow" onclick="toggleTeacherClassDayDetail('${detailKey}')">
+        <div class="teacherClassProgressTop">
+          <div class="teacherClassName">${esc(cls.name||classId)}</div>
+          <div class="teacherProgressTrack"><div class="teacherProgressFill ${teacherProgressFillClass(pct)}" style="width:${pct}%"></div></div>
+          <div class="teacherProgressNum">${noTasks?'No tasks':`${pct}% • ${doneNames.length}/${students.length}`}</div>
+        </div>
+        <div id="detail_${detailKey}" class="teacherClassDetail hidden">
+          <div class="teacherStudentList"><b>✅ Finished</b>${doneNames.length?doneNames.map(esc).join('<br>'):'No students yet.'}</div>
+          <div class="teacherStudentList"><b>⚠️ Missing</b>${noTasks?'No tasks assigned.':(missingNames.length?missingNames.map(esc).join('<br>'):'All students completed.')}</div>
+        </div>
+      </div>`);
+    }
+    dayBlocks.push(`<div class="teacherDayProgressBlock"><h3>📅 ${esc(dayName)}</h3>${rows.join('')}</div>`);
+  }
+
+  box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
+    <div class="teacherDashHint">Progress is sorted by day. Click any class bar to see who finished and who still needs follow-up.</div>
+    ${dayBlocks.join('')}`;
+}
+
+function toggleTeacherClassDayDetail(key){
+  const el=byId('detail_'+key);
+  if(el) el.classList.toggle('hidden');
+}
+
 function teacherPanelHtml(){
   const objText=cleanObjectives(weekPlan?.objectives || defaultWeekPlan().objectives).join("\\n");
   return `<aside class="panel">
@@ -1295,6 +1463,7 @@ async function renderTeacherAgenda(){
   const cls=Object.keys(classes)[0]||"";
   await loadAgenda(cls);
   renderAgenda("teacherAgendaSection",true);
+  loadTeacherCompletionDashboard();
 
   setTimeout(()=>{
     const sel=byId("agendaClassSelect");
@@ -1319,6 +1488,7 @@ async function teacherClassChanged(){
   }
 
   renderAgenda("teacherAgendaSection",true);
+  loadTeacherCompletionDashboard();
 
   setTimeout(()=>{
     const sel=byId("agendaClassSelect");
@@ -1396,20 +1566,7 @@ async function changeWeek(n){currentWeekOffset+=n;if(CURRENT_STUDENT_SESSION)awa
 
 
 function selectedStudentTerm(){
-  return byId("studentTermSelect")?.value || byId("studentActionsTermSelect")?.value || "term1";
-}
-
-function syncStudentTermSelectors(term){
-  const selected = term || selectedStudentTerm();
-  const reportSel = byId("studentTermSelect");
-  const actionsSel = byId("studentActionsTermSelect");
-  if(reportSel) reportSel.value = selected;
-  if(actionsSel) actionsSel.value = selected;
-}
-
-function syncStudentTermAndReload(term){
-  syncStudentTermSelectors(term || selectedStudentTerm());
-  reloadStudentTermView();
+  return byId("studentTermSelect")?.value || "term1";
 }
 
 function termLabel(term){
@@ -1533,7 +1690,6 @@ async function readMissedWeeklyAgendaActions(session,selectedTerm){
 }
 
 function reloadStudentTermView(){
-  syncStudentTermSelectors(selectedStudentTerm());
   if(CURRENT_STUDENT_SESSION){
     loadStudentHubWindows(CURRENT_STUDENT_SESSION);
   }
@@ -1720,23 +1876,13 @@ async function loadStudentPerformanceWindow(session){
   });
   recovery.forEach(a=>actions.push(`📚 Reading Rush recovery needed: ${a.title || "Unfinished collection"}. Open Reading Rush to complete it.`));
 
-  if(uniqueRows.length){
-    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} saved activity marks are listed below. 🌟`;
-  }else{
-    byId("studentAutoMessage").innerHTML=`No saved marks found for ${termLabel(selectedTerm)} yet. Complete an activity first. 🌟`;
-  }
-
-  const actionsMessage=byId("studentActionsMessage");
-  const actionsBox=byId("studentNeededActions");
   if(actions.length){
-    if(actionsMessage) actionsMessage.innerHTML=`Dear ${esc(session.name)}, these ${termLabel(selectedTerm)} weekly agenda tasks still need your attention. 🌟`;
-    if(actionsBox) actionsBox.innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
+    byId("studentAutoMessage").innerHTML=`Dear ${esc(session.name)}, check ${termLabel(selectedTerm)} needed actions below. 🌟`;
+    byId("studentNeededActions").innerHTML=actions.map(a=>`<div class="actionItem">${esc(a)}</div>`).join("");
   }else{
-    if(actionsMessage) actionsMessage.innerHTML=`Excellent work, ${esc(session.name)}! No missed weekly agenda tasks for ${termLabel(selectedTerm)}. 🌟`;
-    if(actionsBox) actionsBox.innerHTML=`<div class="actionItem good">✅ No missed weekly agenda tasks for ${termLabel(selectedTerm)}.</div>`;
+    byId("studentAutoMessage").innerHTML=`Excellent work, ${esc(session.name)}! Your ${termLabel(selectedTerm)} weekly tasks are up to date. 🌟`;
+    byId("studentNeededActions").innerHTML=`<div class="actionItem good">✅ No missed weekly agenda tasks for ${termLabel(selectedTerm)}.</div>`;
   }
-
-  syncStudentTermSelectors(selectedTerm);
 }
 
 function certificateUrl(cert){
@@ -1865,7 +2011,6 @@ async function loadStudentCertificatesWindow(session){
 }
 
 function loadStudentHubWindows(session){
-  syncStudentTermSelectors(selectedStudentTerm());
   loadStudentPerformanceWindow(session);
   loadStudentCertificatesWindow(session);
 }
