@@ -1325,46 +1325,60 @@ function renderTask(item,teacher){
 }
 function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCard"><h3>Connected Platforms</h3><div class="connected">${Object.values(PAGE_MAP).map(p=>`<div class="item"><span>${p.icon} ${p.label}</span><span style="color:var(--green)">●</span></div>`).join("")}</div></div><div class="panelCard"><h3>Progress</h3><p>Progress updates automatically from your saved activity marks.</p><div style="font-size:36px;font-family:Quicksand;color:#203a78">${pct}%</div></div></aside>`}
 
+
 let teacherCompletionDetails={};
 
 function getClassListForDashboard(){
-  return Object.values(classes || {}).filter(c=>c && (c.id || c.name));
+  return Object.values(classes || {})
+    .filter(c=>c && (c.id || c.name))
+    .sort((a,b)=>String(a.name||a.id).localeCompare(String(b.name||b.id)));
 }
 
 function getClassStudents(cls){
-  return Object.values(cls?.students || {}).filter(s=>s && (s.password || s.id || s.name));
+  return Object.values(cls?.students || {})
+    .filter(s=>s && (s.password || s.id || s.studentId || s.name));
 }
 
-async function readAgendaItemsForClassWeek(classId,wk){
-  const keys=[safeKey(classId), classId].filter(Boolean);
-  for(const key of keys){
-    try{
-      const snap=await db.ref(`secureHubWeeklyAgenda/${wk}/${key}/items`).get();
-      if(snap.exists()) return Object.values(snap.val()||{});
-    }catch(e){console.warn('Agenda read skipped',e)}
-  }
-  return [];
+function studentKeyVariants(student){
+  const raw=String(student?.password || student?.id || student?.studentId || '').trim();
+  return [...new Set([raw, safeKey(raw)].filter(Boolean))];
 }
 
-async function readStudentWeeklyProgressForClass(classId,student,wk){
-  const classKeys=[classId, safeKey(classId)].filter(Boolean);
-  const sidRaw=student?.password || student?.id || student?.studentId || '';
-  const studentKeys=[safeKey(sidRaw), sidRaw].filter(Boolean);
+function classKeyVariants(cls){
+  const raw=String(cls?.id || safeKey(cls?.name || '')).trim();
+  return [...new Set([raw, safeKey(raw), safeKey(cls?.name || '')].filter(Boolean))];
+}
+
+function readProgressFromAll(progressRoot, cls, student){
   const merged={};
-  for(const ck of classKeys){
-    for(const sk of studentKeys){
-      try{
-        const snap=await db.ref(`secureHubWeeklyProgress/${wk}/${ck}/${sk}`).get();
-        if(snap.exists()) Object.assign(merged,snap.val()||{});
-      }catch(e){console.warn('Progress read skipped',e)}
+  for(const ck of classKeyVariants(cls)){
+    const classObj=progressRoot?.[ck] || {};
+    for(const sk of studentKeyVariants(student)){
+      Object.assign(merged, classObj?.[sk] || {});
     }
   }
   return merged;
 }
 
+function readAgendaItemsFromAll(agendaWeekRoot, cls){
+  for(const ck of classKeyVariants(cls)){
+    const itemsObj=agendaWeekRoot?.[ck]?.items;
+    if(itemsObj) return Object.values(itemsObj || {});
+  }
+  return [];
+}
+
 function progressHasCompletedItem(progress,item){
   const row=progress?.[item.id];
-  return !!(row && (row.completed || row.status==='completed'));
+  if(row && (row.completed || row.status==='completed')) return true;
+
+  /* Fallback: if older records saved by title instead of id */
+  const wanted=String(item.title||'').trim().toLowerCase();
+  if(!wanted) return false;
+  return Object.values(progress||{}).some(r=>{
+    const title=String(r?.title || r?.activityName || '').trim().toLowerCase();
+    return title && (title===wanted || title.includes(wanted) || wanted.includes(title)) && (r.completed || r.status==='completed' || r.opened);
+  });
 }
 
 function studentFinishedDayItems(progress,items){
@@ -1381,57 +1395,77 @@ function teacherProgressFillClass(pct){
 async function loadTeacherCompletionDashboard(){
   const box=byId('teacherCompletionDashboard');
   if(!box || !db) return;
-  const wk=weekKey();
-  const classList=getClassListForDashboard();
-  if(!classList.length){
-    box.innerHTML='<h2>📊 Weekly Class Completion</h2><div class="teacherNoTasks">No classes found.</div>';
-    return;
-  }
 
-  teacherCompletionDetails={};
-  const dayBlocks=[];
+  try{
+    box.innerHTML=`<h2>📊 Weekly Class Completion</h2><div class="teacherDashHint">Loading class progress...</div>`;
 
-  for(const [dayKey,dayName] of DAYS){
-    const rows=[];
-    for(const cls of classList){
-      const classId=cls.id || safeKey(cls.name);
-      const students=getClassStudents(cls);
-      const allItems=await readAgendaItemsForClassWeek(classId,wk);
-      const dayItems=allItems.filter(i=>i.day===dayKey);
-      const doneNames=[];
-      const missingNames=[];
+    const wk=weekKey();
+    const classList=getClassListForDashboard();
+    if(!classList.length){
+      box.innerHTML='<h2>📊 Weekly Class Completion</h2><div class="teacherNoTasks">No classes found.</div>';
+      return;
+    }
 
-      if(dayItems.length && students.length){
-        for(const st of students){
-          const progress=await readStudentWeeklyProgressForClass(classId,st,wk);
-          const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
-          if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
-          else missingNames.push(displayName);
+    const agendaSnap=await db.ref(`secureHubWeeklyAgenda/${wk}`).get();
+    const progressSnap=await db.ref(`secureHubWeeklyProgress/${wk}`).get();
+    const agendaWeekRoot=agendaSnap.exists()?agendaSnap.val():{};
+    const progressRoot=progressSnap.exists()?progressSnap.val():{};
+
+    teacherCompletionDetails={};
+    const dayBlocks=[];
+
+    for(const [dayKey,dayName] of DAYS){
+      const rows=[];
+
+      for(const cls of classList){
+        const classId=cls.id || safeKey(cls.name);
+        const students=getClassStudents(cls);
+        const allItems=readAgendaItemsFromAll(agendaWeekRoot, cls);
+        const dayItems=allItems.filter(i=>i.day===dayKey);
+        const doneNames=[];
+        const missingNames=[];
+
+        if(dayItems.length && students.length){
+          for(const st of students){
+            const progress=readProgressFromAll(progressRoot, cls, st);
+            const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+            if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
+            else missingNames.push(displayName);
+          }
         }
+
+        const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
+        const detailKey=safeKey(dayKey+'_'+classId);
+        teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:cls.name||classId,dayName};
+        const noTasks=!dayItems.length;
+        const noStudents=!students.length;
+        const label=noTasks ? 'No tasks' : (noStudents ? 'No students' : `${pct}% • ${doneNames.length}/${students.length}`);
+
+        rows.push(`<div class="teacherClassProgressRow" onclick="toggleTeacherClassDayDetail('${detailKey}')">
+          <div class="teacherClassProgressTop">
+            <div class="teacherClassName">${esc(cls.name||classId)}</div>
+            <div class="teacherProgressTrack"><div class="teacherProgressFill ${teacherProgressFillClass(pct)}" style="width:${pct}%"></div></div>
+            <div class="teacherProgressNum">${label}</div>
+          </div>
+          <div id="detail_${detailKey}" class="teacherClassDetail hidden">
+            <div class="teacherStudentList"><b>✅ Finished</b>${doneNames.length?doneNames.map(esc).join('<br>'):(noTasks?'No tasks assigned.':'No students yet.')}</div>
+            <div class="teacherStudentList"><b>⚠️ Missing</b>${noTasks?'No tasks assigned.':(missingNames.length?missingNames.map(esc).join('<br>'):'All students completed.')}</div>
+          </div>
+        </div>`);
       }
 
-      const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
-      const detailKey=safeKey(dayKey+'_'+classId);
-      teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:cls.name||classId,dayName};
-      const noTasks=!dayItems.length;
-      rows.push(`<div class="teacherClassProgressRow" onclick="toggleTeacherClassDayDetail('${detailKey}')">
-        <div class="teacherClassProgressTop">
-          <div class="teacherClassName">${esc(cls.name||classId)}</div>
-          <div class="teacherProgressTrack"><div class="teacherProgressFill ${teacherProgressFillClass(pct)}" style="width:${pct}%"></div></div>
-          <div class="teacherProgressNum">${noTasks?'No tasks':`${pct}% • ${doneNames.length}/${students.length}`}</div>
-        </div>
-        <div id="detail_${detailKey}" class="teacherClassDetail hidden">
-          <div class="teacherStudentList"><b>✅ Finished</b>${doneNames.length?doneNames.map(esc).join('<br>'):'No students yet.'}</div>
-          <div class="teacherStudentList"><b>⚠️ Missing</b>${noTasks?'No tasks assigned.':(missingNames.length?missingNames.map(esc).join('<br>'):'All students completed.')}</div>
-        </div>
-      </div>`);
+      dayBlocks.push(`<div class="teacherDayProgressBlock"><h3>📅 ${esc(dayName)}</h3>${rows.join('')}</div>`);
     }
-    dayBlocks.push(`<div class="teacherDayProgressBlock"><h3>📅 ${esc(dayName)}</h3>${rows.join('')}</div>`);
-  }
 
-  box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
-    <div class="teacherDashHint">Progress is sorted by day. Click any class bar to see who finished and who still needs follow-up.</div>
-    ${dayBlocks.join('')}`;
+    box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
+      <div class="teacherDashHint">Progress is sorted by day. Click any class bar to see who finished and who still needs follow-up.</div>
+      ${dayBlocks.join('')}`;
+  }catch(err){
+    console.warn('Teacher completion dashboard failed:', err);
+    box.innerHTML=`<h2>📊 Weekly Class Completion</h2>
+      <div class="teacherNoTasks">Could not load completion dashboard. The rest of Weekly Agenda is still working.</div>
+      <div class="teacherDashHint">Open Console for details: ${esc(err.message || err)}</div>`;
+  }
 }
 
 function toggleTeacherClassDayDetail(key){
