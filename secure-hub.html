@@ -1435,6 +1435,48 @@ function readProgressFromAll(progressRoot, cls, student){
   return merged;
 }
 
+  async function readStudentSavedPerformanceForTeacher(cls, student){
+  const merged = [];
+
+  const classKeys = classKeyVariants(cls);
+  const studentKeys = studentKeyVariants(student);
+  const seen = {};
+
+  for(const ck of classKeys){
+    for(const sk of studentKeys){
+
+      const recSnap = await db.ref(`teacherControlCenter/records/${ck}/${sk}`).get();
+      if(recSnap.exists()){
+        Object.values(recSnap.val() || {}).forEach(r=>{
+          const key = JSON.stringify(r);
+          if(!seen[key]){
+            seen[key] = true;
+            merged.push(r);
+          }
+        });
+      }
+
+      const revSnap = await db.ref(`teacherControlCenter/revisionProgress/${ck}/${sk}`).get();
+      if(revSnap.exists()){
+        Object.values(revSnap.val() || {}).forEach(r=>{
+          const row = {
+            ...r,
+            page: "Exam Page",
+            activityType: "Exam Page Revision"
+          };
+          const key = JSON.stringify(row);
+          if(!seen[key]){
+            seen[key] = true;
+            merged.push(row);
+          }
+        });
+      }
+    }
+  }
+
+  return merged;
+}
+
 function readAgendaItemsFromAll(agendaWeekRoot, cls){
   for(const ck of classKeyVariants(cls)){
     const itemsObj=agendaWeekRoot?.[ck]?.items;
@@ -1443,7 +1485,7 @@ function readAgendaItemsFromAll(agendaWeekRoot, cls){
   return [];
 }
 
-function progressHasCompletedItem(progress,item){
+function progressHasCompletedItem(progress, item, savedRecords = []){
   const row = progress?.[item.id];
 
   if(row?.completed === true || row?.status === "completed"){
@@ -1451,9 +1493,8 @@ function progressHasCompletedItem(progress,item){
   }
 
   const wanted = String(item.title || "").trim().toLowerCase();
-  if(!wanted) return false;
 
-  return Object.values(progress || {}).some(r=>{
+  const weeklyMatch = Object.values(progress || {}).some(r=>{
     const title = String(r?.title || r?.activityName || "").trim().toLowerCase();
 
     return title &&
@@ -1472,11 +1513,15 @@ function progressHasCompletedItem(progress,item){
         )
       );
   });
+
+  if(weeklyMatch) return true;
+
+  return savedRecords.some(r=>recordMatchesItem(r,item));
 }
   
-function studentFinishedDayItems(progress,items){
+function studentFinishedDayItems(progress, items, savedRecords = []){
   if(!items.length) return false;
-  return items.every(item=>progressHasCompletedItem(progress,item));
+  return items.every(item=>progressHasCompletedItem(progress, item, savedRecords));
 }
 
 function teacherProgressFillClass(pct){
@@ -1518,10 +1563,15 @@ async function buildTeacherCompletionCache(){
 
       if(dayItems.length && students.length){
         for(const st of students){
-          const progress=readProgressFromAll(progressRoot, cls, st);
-          const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
-          if(studentFinishedDayItems(progress,dayItems)) doneNames.push(displayName);
-          else missingNames.push(displayName);
+         const progress = readProgressFromAll(progressRoot, cls, st);
+const savedRecords = await readStudentSavedPerformanceForTeacher(cls, st);
+const displayName = st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+
+if(studentFinishedDayItems(progress, dayItems, savedRecords)){
+  doneNames.push(displayName);
+}else{
+  missingNames.push(displayName);
+}
         }
       }else if(dayItems.length && !students.length){
         /* no students found */
