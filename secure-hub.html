@@ -1104,29 +1104,49 @@ function recordMatchesItem(record,item){
   const recordTitle=String(
     record.activityName ||
     record.title ||
+    record.revisionTitle ||
     record.lessonTitle ||
     record.collectionTitle ||
+    record.assignmentTitle ||
     ""
   ).trim().toLowerCase();
 
   const pageText=String(
     record.page ||
     record.activityType ||
+    record.sourcePage ||
     ""
   ).toLowerCase();
 
   const pageMatch =
+    !page ||
+    !pageText ||
     pageText.includes(page) ||
     page.includes(pageText) ||
     pageText.includes(page.split(" ")[0]);
 
   const titleMatch =
     !wantedTitle ||
+    !recordTitle ||
     recordTitle===wantedTitle ||
     recordTitle.includes(wantedTitle) ||
     wantedTitle.includes(recordTitle);
 
-  return pageMatch && titleMatch;
+  const hasSavedWork =
+    record.completed === true ||
+    record.status === "completed" ||
+    record.score !== undefined ||
+    record.mark !== undefined ||
+    record.bestScore !== undefined ||
+    record.finalMark !== undefined ||
+    record.percentage !== undefined ||
+    record.bestPercentage !== undefined ||
+    record.total !== undefined ||
+    record.outOf !== undefined ||
+    record.updatedAt !== undefined ||
+    record.submittedAt !== undefined;
+
+  return pageMatch && titleMatch && hasSavedWork;
 }
 function isItemDone(item){
   if(studentRecordCache.manualAgenda?.[item.id]?.completed === true)
@@ -1399,8 +1419,11 @@ function renderTask(item,teacher){
 function studentPanelHtml(pct){return `<aside class="panel"><div class="panelCard"><h3>Connected Platforms</h3><div class="connected">${Object.values(PAGE_MAP).map(p=>`<div class="item"><span>${p.icon} ${p.label}</span><span style="color:var(--green)">●</span></div>`).join("")}</div></div><div class="panelCard"><h3>Progress</h3><p>Progress updates automatically from your saved activity marks.</p><div style="font-size:36px;font-family:Quicksand;color:#203a78">${pct}%</div></div></aside>`}
 
 
+
 let teacherCompletionDetails={};
 let teacherCompletionCache=null;
+let teacherCompletionBaseCache=null;
+let teacherSavedRootsCache={};
 let selectedTeacherCompletionDay=null;
 
 function getClassListForDashboard(){
@@ -1435,45 +1458,26 @@ function readProgressFromAll(progressRoot, cls, student){
   return merged;
 }
 
-  async function readStudentSavedPerformanceForTeacher(cls, student){
-  const merged = [];
+function readSavedPerformanceFromRoots(recordsRoot, revisionRoot, cls, student){
+  const merged=[];
+  const seen={};
 
-  const classKeys = classKeyVariants(cls);
-  const studentKeys = studentKeyVariants(student);
-  const seen = {};
+  for(const ck of classKeyVariants(cls)){
+    for(const sk of studentKeyVariants(student)){
+      const recObj=recordsRoot?.[ck]?.[sk] || {};
+      Object.values(recObj || {}).forEach(r=>{
+        const key=JSON.stringify(r);
+        if(!seen[key]){seen[key]=true;merged.push(r);}
+      });
 
-  for(const ck of classKeys){
-    for(const sk of studentKeys){
-
-      const recSnap = await db.ref(`teacherControlCenter/records/${ck}/${sk}`).get();
-      if(recSnap.exists()){
-        Object.values(recSnap.val() || {}).forEach(r=>{
-          const key = JSON.stringify(r);
-          if(!seen[key]){
-            seen[key] = true;
-            merged.push(r);
-          }
-        });
-      }
-
-      const revSnap = await db.ref(`teacherControlCenter/revisionProgress/${ck}/${sk}`).get();
-      if(revSnap.exists()){
-        Object.values(revSnap.val() || {}).forEach(r=>{
-          const row = {
-            ...r,
-            page: "Exam Page",
-            activityType: "Exam Page Revision"
-          };
-          const key = JSON.stringify(row);
-          if(!seen[key]){
-            seen[key] = true;
-            merged.push(row);
-          }
-        });
-      }
+      const revObj=revisionRoot?.[ck]?.[sk] || {};
+      Object.values(revObj || {}).forEach(r=>{
+        const row={...r,page:'Exam Page',activityType:'Exam Page Revision'};
+        const key=JSON.stringify(row);
+        if(!seen[key]){seen[key]=true;merged.push(row);}
+      });
     }
   }
-
   return merged;
 }
 
@@ -1485,43 +1489,41 @@ function readAgendaItemsFromAll(agendaWeekRoot, cls){
   return [];
 }
 
-function progressHasCompletedItem(progress, item, savedRecords = []){
-  const row = progress?.[item.id];
+function progressHasCompletedItem(progress,item,savedRecords=[]){
+  const row=progress?.[item.id];
+  if(row?.completed===true || row?.status==='completed') return true;
 
-  if(row?.completed === true || row?.status === "completed"){
-    return true;
+  const wanted=String(item.title || '').trim().toLowerCase();
+  if(wanted){
+    const weeklyMatch=Object.values(progress || {}).some(r=>{
+      const title=String(r?.title || r?.activityName || '').trim().toLowerCase();
+      return title &&
+        (title===wanted || title.includes(wanted) || wanted.includes(title)) &&
+        (
+          r.completed===true ||
+          r.status==='completed' ||
+          (
+            r.opened===true &&
+            (
+              r.score!==undefined ||
+              r.mark!==undefined ||
+              r.percentage!==undefined ||
+              r.finalMark!==undefined ||
+              r.bestScore!==undefined ||
+              r.bestPercentage!==undefined
+            )
+          )
+        );
+    });
+    if(weeklyMatch) return true;
   }
 
-  const wanted = String(item.title || "").trim().toLowerCase();
-
-  const weeklyMatch = Object.values(progress || {}).some(r=>{
-    const title = String(r?.title || r?.activityName || "").trim().toLowerCase();
-
-    return title &&
-      (title === wanted || title.includes(wanted) || wanted.includes(title)) &&
-      (
-        r.completed === true ||
-        r.status === "completed" ||
-        (
-          r.opened === true &&
-          (
-            r.score !== undefined ||
-            r.mark !== undefined ||
-            r.percentage !== undefined ||
-            r.finalMark !== undefined
-          )
-        )
-      );
-  });
-
-  if(weeklyMatch) return true;
-
-  return savedRecords.some(r=>recordMatchesItem(r,item));
+  return (savedRecords || []).some(r=>recordMatchesItem(r,item));
 }
-  
-function studentFinishedDayItems(progress, items, savedRecords = []){
+
+function studentFinishedDayItems(progress,items,savedRecords=[]){
   if(!items.length) return false;
-  return items.every(item=>progressHasCompletedItem(progress, item, savedRecords));
+  return items.every(item=>progressHasCompletedItem(progress,item,savedRecords));
 }
 
 function teacherProgressFillClass(pct){
@@ -1539,73 +1541,95 @@ function teacherCompletionDateLabel(dayKey){
   return niceDate(dayDate(teacherCompletionDayIndex(dayKey)));
 }
 
-async function buildTeacherCompletionCache(){
+async function loadTeacherCompletionBase(){
+  if(teacherCompletionBaseCache?.weekKey===weekKey()) return teacherCompletionBaseCache;
   const wk=weekKey();
-  const classList=getClassListForDashboard();
-  const agendaSnap=await db.ref(`secureHubWeeklyAgenda/${wk}`).get();
-  const progressSnap=await db.ref(`secureHubWeeklyProgress/${wk}`).get();
-  const agendaWeekRoot=agendaSnap.exists()?agendaSnap.val():{};
-  const progressRoot=progressSnap.exists()?progressSnap.val():{};
-
-  teacherCompletionDetails={};
-  const data={};
-
-  for(const [dayKey,dayName] of DAYS){
-    data[dayKey]={dayKey,dayName,rows:[],summary:{classes:0,students:0,done:0,tasks:0}};
-
-    for(const cls of classList){
-      const classId=cls.id || safeKey(cls.name);
-      const students=getClassStudents(cls);
-      const allItems=readAgendaItemsFromAll(agendaWeekRoot, cls);
-      const dayItems=allItems.filter(i=>i.day===dayKey);
-      const doneNames=[];
-      const missingNames=[];
-
-      if(dayItems.length && students.length){
-        for(const st of students){
-         const progress = readProgressFromAll(progressRoot, cls, st);
-const savedRecords = await readStudentSavedPerformanceForTeacher(cls, st);
-const displayName = st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
-
-if(studentFinishedDayItems(progress, dayItems, savedRecords)){
-  doneNames.push(displayName);
-}else{
-  missingNames.push(displayName);
+  const [agendaSnap,progressSnap]=await Promise.all([
+    db.ref(`secureHubWeeklyAgenda/${wk}`).get(),
+    db.ref(`secureHubWeeklyProgress/${wk}`).get()
+  ]);
+  teacherCompletionBaseCache={
+    weekKey:wk,
+    agendaWeekRoot:agendaSnap.exists()?agendaSnap.val():{},
+    progressRoot:progressSnap.exists()?progressSnap.val():{}
+  };
+  teacherCompletionCache=null;
+  teacherSavedRootsCache={};
+  return teacherCompletionBaseCache;
 }
-          }
-      }else if(dayItems.length && !students.length){
-        /* no students found */
-      }else if(!dayItems.length && students.length){
-        /* no tasks for this class/day */
-      }
 
-      const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
-      const detailKey=safeKey(dayKey+'_'+classId);
-      const row={
-        detailKey,
-        classId,
-        className:cls.name||classId,
-        students,
-        dayItems,
-        doneNames,
-        missingNames,
-        pct,
-        noTasks:!dayItems.length,
-        noStudents:!students.length
-      };
-      teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:row.className,dayName};
-      data[dayKey].rows.push(row);
-      data[dayKey].summary.classes += 1;
-      data[dayKey].summary.tasks += dayItems.length;
-      data[dayKey].summary.students += students.length;
-      data[dayKey].summary.done += doneNames.length;
-    }
+async function getSavedRootsForClass(cls){
+  const cacheKey=classKeyVariants(cls).join('|');
+  if(teacherSavedRootsCache[cacheKey]) return teacherSavedRootsCache[cacheKey];
+
+  const recordsRoot={};
+  const revisionRoot={};
+  const jobs=[];
+
+  for(const ck of classKeyVariants(cls)){
+    jobs.push(
+      db.ref(`teacherControlCenter/records/${ck}`).get().then(snap=>{
+        if(snap.exists()) recordsRoot[ck]=snap.val() || {};
+      }).catch(e=>console.warn('Teacher records read skipped',ck,e))
+    );
+    jobs.push(
+      db.ref(`teacherControlCenter/revisionProgress/${ck}`).get().then(snap=>{
+        if(snap.exists()) revisionRoot[ck]=snap.val() || {};
+      }).catch(e=>console.warn('Revision progress read skipped',ck,e))
+    );
   }
-  teacherCompletionCache=data;
-  return data;
+
+  await Promise.all(jobs);
+  teacherSavedRootsCache[cacheKey]={recordsRoot,revisionRoot};
+  return teacherSavedRootsCache[cacheKey];
 }
 
-function renderTeacherCompletionDashboardShell(){
+async function buildTeacherCompletionDay(dayKey){
+  const base=await loadTeacherCompletionBase();
+  const classList=getClassListForDashboard();
+
+  teacherCompletionCache=teacherCompletionCache || {};
+  teacherCompletionDetails={...teacherCompletionDetails};
+
+  const dayName=dayLabel(dayKey);
+  const dayData={dayKey,dayName,rows:[],summary:{classes:0,students:0,done:0,tasks:0}};
+
+  for(const cls of classList){
+    const classId=cls.id || safeKey(cls.name);
+    const students=getClassStudents(cls);
+    const allItems=readAgendaItemsFromAll(base.agendaWeekRoot,cls);
+    const dayItems=allItems.filter(i=>i.day===dayKey);
+    const doneNames=[];
+    const missingNames=[];
+
+    let roots={recordsRoot:{},revisionRoot:{}};
+    if(dayItems.length && students.length){
+      roots=await getSavedRootsForClass(cls);
+      for(const st of students){
+        const progress=readProgressFromAll(base.progressRoot,cls,st);
+        const savedRecords=readSavedPerformanceFromRoots(roots.recordsRoot,roots.revisionRoot,cls,st);
+        const displayName=st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+        if(studentFinishedDayItems(progress,dayItems,savedRecords)) doneNames.push(displayName);
+        else missingNames.push(displayName);
+      }
+    }
+
+    const pct=dayItems.length && students.length ? Math.round(doneNames.length/students.length*100) : 0;
+    const detailKey=safeKey(dayKey+'_'+classId);
+    const row={detailKey,classId,className:cls.name||classId,students,dayItems,doneNames,missingNames,pct,noTasks:!dayItems.length,noStudents:!students.length};
+    teacherCompletionDetails[detailKey]={doneNames,missingNames,dayItems,className:row.className,dayName};
+    dayData.rows.push(row);
+    dayData.summary.classes += 1;
+    dayData.summary.tasks += dayItems.length;
+    dayData.summary.students += students.length;
+    dayData.summary.done += doneNames.length;
+  }
+
+  teacherCompletionCache[dayKey]=dayData;
+  return dayData;
+}
+
+function renderTeacherCompletionDashboardShell(loadingDay=null){
   const box=byId('teacherCompletionDashboard');
   if(!box) return;
   box.innerHTML=`<h2>📊 Class Progress by Day</h2>
@@ -1614,13 +1638,13 @@ function renderTeacherCompletionDashboardShell(){
       ${DAYS.map(([dayKey,dayName])=>`<button class="teacherDayPickBtn ${selectedTeacherCompletionDay===dayKey?'active':''}" onclick="showTeacherCompletionDay('${dayKey}')">${esc(dayName)}<br><small>${esc(teacherCompletionDateLabel(dayKey))}</small></button>`).join('')}
     </div>
     <div id="teacherSelectedDayProgress" class="teacherSelectedDayWrap">
-      ${selectedTeacherCompletionDay ? renderTeacherCompletionDay(selectedTeacherCompletionDay) : '<div class="teacherNoTasks">Choose a day above to view all class progress bars.</div>'}
+      ${loadingDay ? '<div class="teacherNoTasks">Loading '+esc(dayLabel(loadingDay))+' progress...</div>' : (selectedTeacherCompletionDay ? renderTeacherCompletionDay(selectedTeacherCompletionDay) : '<div class="teacherNoTasks">Choose a day above to view all class progress bars.</div>')}
     </div>`;
 }
 
 function renderTeacherCompletionDay(dayKey){
   const dayData=teacherCompletionCache?.[dayKey];
-  if(!dayData) return '<div class="teacherNoTasks">Loading day progress...</div>';
+  if(!dayData) return '<div class="teacherNoTasks">Choose this day to load progress.</div>';
 
   const rows=dayData.rows.map(row=>{
     const label=row.noTasks ? 'No tasks' : (row.noStudents ? 'No students' : `${row.pct}% • ${row.doneNames.length}/${row.students.length}`);
@@ -1653,27 +1677,39 @@ function renderTeacherCompletionDay(dayKey){
 async function loadTeacherCompletionDashboard(){
   const box=byId('teacherCompletionDashboard');
   if(!box || !db) return;
-
   try{
-    box.innerHTML=`<h2>📊 Class Progress by Day</h2><div class="teacherDashHint">Loading class progress...</div>`;
-    const classList=getClassListForDashboard();
-    if(!classList.length){
-      box.innerHTML='<h2>📊 Class Progress by Day</h2><div class="teacherNoTasks">No classes found.</div>';
-      return;
-    }
-    await buildTeacherCompletionCache();
+    teacherCompletionCache=null;
+    selectedTeacherCompletionDay=null;
+    renderTeacherCompletionDashboardShell();
+    await loadTeacherCompletionBase();
     renderTeacherCompletionDashboardShell();
   }catch(err){
-    console.warn('Teacher completion dashboard failed:', err);
+    console.warn('Teacher completion dashboard failed:',err);
     box.innerHTML=`<h2>📊 Class Progress by Day</h2>
       <div class="teacherNoTasks">Could not load completion dashboard. The rest of Weekly Agenda is still working.</div>
       <div class="teacherDashHint">Open Console for details: ${esc(err.message || err)}</div>`;
   }
 }
 
-function showTeacherCompletionDay(dayKey){
+async function showTeacherCompletionDay(dayKey){
   selectedTeacherCompletionDay = selectedTeacherCompletionDay===dayKey ? null : dayKey;
-  renderTeacherCompletionDashboardShell();
+  if(!selectedTeacherCompletionDay){
+    renderTeacherCompletionDashboardShell();
+    return;
+  }
+  if(teacherCompletionCache?.[dayKey]){
+    renderTeacherCompletionDashboardShell();
+    return;
+  }
+  renderTeacherCompletionDashboardShell(dayKey);
+  try{
+    await buildTeacherCompletionDay(dayKey);
+    renderTeacherCompletionDashboardShell();
+  }catch(err){
+    console.warn('Day progress failed:',err);
+    const wrap=byId('teacherSelectedDayProgress');
+    if(wrap) wrap.innerHTML=`<div class="teacherNoTasks">Could not load ${esc(dayLabel(dayKey))} progress.</div><div class="teacherDashHint">${esc(err.message || err)}</div>`;
+  }
 }
 
 function toggleTeacherClassDayDetail(key){
