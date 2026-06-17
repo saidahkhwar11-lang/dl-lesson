@@ -1419,18 +1419,18 @@ function readAgendaItemsFromAll(agendaWeekRoot, cls){
 }
 
 function progressHasCompletedItem(progress,item){
-  const row=progress?.[item.id];
+  const row = progress?.[item.id];
 
   if(row && (
       row.completed === true ||
       row.status === 'completed'
   )) return true;
 
-  const wanted=String(item.title||'').trim().toLowerCase();
+  const wanted = String(item.title || '').trim().toLowerCase();
   if(!wanted) return false;
 
-  return Object.values(progress||{}).some(r=>{
-    const title=String(
+  return Object.values(progress || {}).some(r=>{
+    const title = String(
       r?.title ||
       r?.activityName ||
       ''
@@ -1443,9 +1443,16 @@ function progressHasCompletedItem(progress,item){
       (
         r.completed === true ||
         r.status === 'completed' ||
+
+        /* old saved records */
         (
           r.opened === true &&
-          item.platform === 'imposter'
+          (
+            r.score !== undefined ||
+            r.mark !== undefined ||
+            r.percentage !== undefined ||
+            r.finalMark !== undefined
+          )
         )
       );
   });
