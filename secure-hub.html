@@ -1104,8 +1104,18 @@ function recordMatchesItem(record,item){
   return txt.includes(page.split(" ")[0]) && (!title || txt.includes(title) || title.includes(String(record.activityName||record.title||"").toLowerCase()));
 }
 function isItemDone(item){
-  if(studentRecordCache.manualAgenda?.[item.id]?.completed) return true;
-  if(item.platform==="imposter") return !!studentRecordCache.manualAgenda?.[item.id]?.opened;
+  if(studentRecordCache.manualAgenda?.[item.id]?.completed === true)
+    return true;
+
+  if(item.platform==="imposter"){
+    const rec=studentRecordCache.manualAgenda?.[item.id];
+    return !!(
+      rec?.completed === true ||
+      rec?.status === 'completed' ||
+      rec?.opened === true
+    );
+  }
+
   return studentRecordCache.some(r=>recordMatchesItem(r,item));
 }
 
@@ -1410,17 +1420,34 @@ function readAgendaItemsFromAll(agendaWeekRoot, cls){
 
 function progressHasCompletedItem(progress,item){
   const row=progress?.[item.id];
-  if(row && (row.completed === true || row.status === 'completed')) return true;
+
+  if(row && (
+      row.completed === true ||
+      row.status === 'completed'
+  )) return true;
 
   const wanted=String(item.title||'').trim().toLowerCase();
   if(!wanted) return false;
 
   return Object.values(progress||{}).some(r=>{
-    const title=String(r?.title || r?.activityName || '').trim().toLowerCase();
+    const title=String(
+      r?.title ||
+      r?.activityName ||
+      ''
+    ).trim().toLowerCase();
 
     return title &&
-      (title===wanted || title.includes(wanted) || wanted.includes(title)) &&
-      (r.completed === true || r.status === 'completed');
+      (title===wanted ||
+       title.includes(wanted) ||
+       wanted.includes(title)) &&
+      (
+        r.completed === true ||
+        r.status === 'completed' ||
+        (
+          r.opened === true &&
+          item.platform === 'imposter'
+        )
+      );
   });
 }
 function studentFinishedDayItems(progress,items){
