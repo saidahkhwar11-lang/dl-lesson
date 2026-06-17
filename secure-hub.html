@@ -1104,49 +1104,29 @@ function recordMatchesItem(record,item){
   const recordTitle=String(
     record.activityName ||
     record.title ||
-    record.revisionTitle ||
     record.lessonTitle ||
     record.collectionTitle ||
-    record.assignmentTitle ||
     ""
   ).trim().toLowerCase();
 
   const pageText=String(
     record.page ||
     record.activityType ||
-    record.sourcePage ||
     ""
   ).toLowerCase();
 
   const pageMatch =
-    !page ||
-    !pageText ||
     pageText.includes(page) ||
     page.includes(pageText) ||
     pageText.includes(page.split(" ")[0]);
 
   const titleMatch =
     !wantedTitle ||
-    !recordTitle ||
     recordTitle===wantedTitle ||
     recordTitle.includes(wantedTitle) ||
     wantedTitle.includes(recordTitle);
 
-  const hasSavedWork =
-    record.completed === true ||
-    record.status === "completed" ||
-    record.score !== undefined ||
-    record.mark !== undefined ||
-    record.bestScore !== undefined ||
-    record.finalMark !== undefined ||
-    record.percentage !== undefined ||
-    record.bestPercentage !== undefined ||
-    record.total !== undefined ||
-    record.outOf !== undefined ||
-    record.updatedAt !== undefined ||
-    record.submittedAt !== undefined;
-
-  return pageMatch && titleMatch && hasSavedWork;
+  return pageMatch && titleMatch;
 }
 function isItemDone(item){
   if(studentRecordCache.manualAgenda?.[item.id]?.completed === true)
@@ -1455,35 +1435,42 @@ function readProgressFromAll(progressRoot, cls, student){
   return merged;
 }
 
-
-function readSavedPerformanceFromRoots(recordsRoot, revisionRoot, cls, student){
+  async function readStudentSavedPerformanceForTeacher(cls, student){
   const merged = [];
+
+  const classKeys = classKeyVariants(cls);
+  const studentKeys = studentKeyVariants(student);
   const seen = {};
 
-  for(const ck of classKeyVariants(cls)){
-    for(const sk of studentKeyVariants(student)){
-      const recObj = recordsRoot?.[ck]?.[sk] || {};
-      Object.values(recObj || {}).forEach(r=>{
-        const key = JSON.stringify(r);
-        if(!seen[key]){
-          seen[key] = true;
-          merged.push(r);
-        }
-      });
+  for(const ck of classKeys){
+    for(const sk of studentKeys){
 
-      const revObj = revisionRoot?.[ck]?.[sk] || {};
-      Object.values(revObj || {}).forEach(r=>{
-        const row = {
-          ...r,
-          page: "Exam Page",
-          activityType: "Exam Page Revision"
-        };
-        const key = JSON.stringify(row);
-        if(!seen[key]){
-          seen[key] = true;
-          merged.push(row);
-        }
-      });
+      const recSnap = await db.ref(`teacherControlCenter/records/${ck}/${sk}`).get();
+      if(recSnap.exists()){
+        Object.values(recSnap.val() || {}).forEach(r=>{
+          const key = JSON.stringify(r);
+          if(!seen[key]){
+            seen[key] = true;
+            merged.push(r);
+          }
+        });
+      }
+
+      const revSnap = await db.ref(`teacherControlCenter/revisionProgress/${ck}/${sk}`).get();
+      if(revSnap.exists()){
+        Object.values(revSnap.val() || {}).forEach(r=>{
+          const row = {
+            ...r,
+            page: "Exam Page",
+            activityType: "Exam Page Revision"
+          };
+          const key = JSON.stringify(row);
+          if(!seen[key]){
+            seen[key] = true;
+            merged.push(row);
+          }
+        });
+      }
     }
   }
 
@@ -1521,9 +1508,7 @@ function progressHasCompletedItem(progress, item, savedRecords = []){
             r.score !== undefined ||
             r.mark !== undefined ||
             r.percentage !== undefined ||
-            r.finalMark !== undefined ||
-            r.bestScore !== undefined ||
-            r.bestPercentage !== undefined
+            r.finalMark !== undefined
           )
         )
       );
@@ -1531,8 +1516,9 @@ function progressHasCompletedItem(progress, item, savedRecords = []){
 
   if(weeklyMatch) return true;
 
-  return (savedRecords || []).some(r=>recordMatchesItem(r,item));
+  return savedRecords.some(r=>recordMatchesItem(r,item));
 }
+  
 function studentFinishedDayItems(progress, items, savedRecords = []){
   if(!items.length) return false;
   return items.every(item=>progressHasCompletedItem(progress, item, savedRecords));
@@ -1558,13 +1544,8 @@ async function buildTeacherCompletionCache(){
   const classList=getClassListForDashboard();
   const agendaSnap=await db.ref(`secureHubWeeklyAgenda/${wk}`).get();
   const progressSnap=await db.ref(`secureHubWeeklyProgress/${wk}`).get();
-  const recordsSnap=await db.ref("teacherControlCenter/records").get();
-  const revisionSnap=await db.ref("teacherControlCenter/revisionProgress").get();
-
   const agendaWeekRoot=agendaSnap.exists()?agendaSnap.val():{};
   const progressRoot=progressSnap.exists()?progressSnap.val():{};
-  const recordsRoot=recordsSnap.exists()?recordsSnap.val():{};
-  const revisionRoot=revisionSnap.exists()?revisionSnap.val():{};
 
   teacherCompletionDetails={};
   const data={};
@@ -1582,15 +1563,15 @@ async function buildTeacherCompletionCache(){
 
       if(dayItems.length && students.length){
         for(const st of students){
-          const progress = readProgressFromAll(progressRoot, cls, st);
-          const savedRecords = readSavedPerformanceFromRoots(recordsRoot, revisionRoot, cls, st);
-          const displayName = st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
+         const progress = readProgressFromAll(progressRoot, cls, st);
+const savedRecords = await readStudentSavedPerformanceForTeacher(cls, st);
+const displayName = st.name || st.fullName || st.studentName || st.password || st.id || 'Student';
 
-          if(studentFinishedDayItems(progress, dayItems, savedRecords)){
-            doneNames.push(displayName);
-          }else{
-            missingNames.push(displayName);
-          }
+if(studentFinishedDayItems(progress, dayItems, savedRecords)){
+  doneNames.push(displayName);
+}else{
+  missingNames.push(displayName);
+}
           }
       }else if(dayItems.length && !students.length){
         /* no students found */
