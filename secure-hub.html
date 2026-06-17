@@ -1410,16 +1410,19 @@ function readAgendaItemsFromAll(agendaWeekRoot, cls){
 
 function progressHasCompletedItem(progress,item){
   const row=progress?.[item.id];
-  if(row && (row.completed || row.status==='completed')) return true;
+  if(row && (row.completed === true || row.status === 'completed')) return true;
 
   const wanted=String(item.title||'').trim().toLowerCase();
   if(!wanted) return false;
+
   return Object.values(progress||{}).some(r=>{
     const title=String(r?.title || r?.activityName || '').trim().toLowerCase();
-    return title && (title===wanted || title.includes(wanted) || wanted.includes(title)) && (r.completed || r.status==='completed' || r.opened);
+
+    return title &&
+      (title===wanted || title.includes(wanted) || wanted.includes(title)) &&
+      (r.completed === true || r.status === 'completed');
   });
 }
-
 function studentFinishedDayItems(progress,items){
   if(!items.length) return false;
   return items.every(item=>progressHasCompletedItem(progress,item));
